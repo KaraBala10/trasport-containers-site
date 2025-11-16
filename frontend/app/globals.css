@@ -3,25 +3,34 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    font-family: 'Arial', sans-serif;
-  }
-  
-  html[dir="rtl"] {
-    direction: rtl;
-  }
-  
-  html[dir="ltr"] {
-    direction: ltr;
-  }
-
-  /* Performance optimizations */
   img {
     content-visibility: auto;
+    loading: lazy;
   }
-
-  img[loading="lazy"] {
-    content-visibility: auto;
+  
+  /* Prevent layout shift */
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+  
+  /* Fix accessibility issues from third-party libraries */
+  [id="imageFileInput"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  
+  /* Hide reCAPTCHA accessibility issues */
+  .aiinhbfoop-bg-neutral-100,
+  .aiinhbfoop-bg-neutral-900 {
+    /* These are from third-party libraries, ensure they don't break accessibility */
+    pointer-events: auto;
   }
 }
 

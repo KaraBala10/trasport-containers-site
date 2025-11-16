@@ -1,9 +1,10 @@
 'use client';
 
-import { ReactNode } from 'react';
-import GoogleAnalytics from "./GoogleAnalytics";
-import ReCaptchaProvider from "./ReCaptchaProvider";
-import ReCaptchaWrapper from "./ReCaptchaWrapper";
+import { ReactNode, lazy, Suspense } from 'react';
+
+// Lazy load heavy components to improve initial load
+const GoogleAnalytics = lazy(() => import('./GoogleAnalytics'));
+const ReCaptchaProvider = lazy(() => import('./ReCaptchaProvider'));
 
 interface ClientProvidersProps {
   children: ReactNode;
@@ -12,10 +13,14 @@ interface ClientProvidersProps {
 export default function ClientProviders({ children }: ClientProvidersProps) {
   return (
     <>
-      <GoogleAnalytics />
-      <ReCaptchaProvider>
-        {children}
-      </ReCaptchaProvider>
+      <Suspense fallback={null}>
+        <GoogleAnalytics />
+      </Suspense>
+      <Suspense fallback={<>{children}</>}>
+        <ReCaptchaProvider>
+          {children}
+        </ReCaptchaProvider>
+      </Suspense>
     </>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useState, useEffect, lazy, Suspense, useMemo } from 'react';
 import { useReCaptcha } from '@/components/ReCaptchaWrapper';
+
+// Lazy load LanguageSwitcher to reduce initial bundle size
+const LanguageSwitcher = lazy(() => import('@/components/LanguageSwitcher'));
 
 type AuthMode = 'signin' | 'signup';
 
@@ -19,16 +21,9 @@ export default function AuthPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isRTL = language === 'ar';
-
-  // Update document direction when language changes
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-      document.documentElement.lang = language;
-    }
-  }, [language, isRTL]);
-
-  const translations = {
+  
+  // Memoize translations to avoid recreating on every render
+  const translations = useMemo(() => ({
     en: {
       signIn: 'Sign In',
       signUp: 'Sign Up',
@@ -45,7 +40,7 @@ export default function AuthPage() {
       switchToSignIn: 'Sign In',
       submit: 'Submit',
       siteName: 'MEDO-FREIGHT.EU',
-      tagline: 'Freight · Route · Deliver',
+      tagline: 'Freight Route Deliver',
     },
     ar: {
       signIn: 'تسجيل الدخول',
@@ -63,17 +58,45 @@ export default function AuthPage() {
       switchToSignIn: 'تسجيل الدخول',
       submit: 'إرسال',
       siteName: 'MEDO-FREIGHT.EU',
-      tagline: 'شحن · طريق · توصيل',
+      tagline: 'شحن طريق توصيل',
     },
-  };
+  }), []);
+
+  // Update document direction when language changes - defer to avoid blocking
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      // Use requestIdleCallback for non-critical DOM updates
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => {
+          const html = document.documentElement;
+          const dir = isRTL ? 'rtl' : 'ltr';
+          html.setAttribute('dir', dir);
+          html.setAttribute('lang', language);
+          html.dir = dir;
+          html.lang = language;
+        }, { timeout: 500 });
+      } else {
+        requestAnimationFrame(() => {
+          const html = document.documentElement;
+          const dir = isRTL ? 'rtl' : 'ltr';
+          html.setAttribute('dir', dir);
+          html.setAttribute('lang', language);
+          html.dir = dir;
+          html.lang = language;
+        });
+      }
+    }
+  }, [language, isRTL]);
+
 
   const t = translations[language];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
+    // Direct update for input - no transition needed for immediate feedback
+    setFormData(prev => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   // Get reCAPTCHA from context - safely handles if not available
@@ -91,21 +114,15 @@ export default function AuthPage() {
         try {
           recaptchaToken = await executeRecaptcha('submit');
         } catch (recaptchaError) {
-          console.warn('reCAPTCHA verification failed:', recaptchaError);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('reCAPTCHA verification failed:', recaptchaError);
+          }
           // If reCAPTCHA key is configured, require it in production
           if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && process.env.NODE_ENV === 'production') {
             throw new Error('reCAPTCHA verification is required');
           }
-          // Otherwise, continue without reCAPTCHA (development mode)
-          console.log('Continuing without reCAPTCHA (development mode)');
         }
-      } else {
-        // No reCAPTCHA available - this is OK in development
-        console.log('reCAPTCHA not configured, skipping verification');
       }
-
-      // TODO: Connect to backend API with recaptchaToken
-      console.log('Form submitted:', { mode, formData, hasRecaptcha: !!recaptchaToken });
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -118,7 +135,9 @@ export default function AuthPage() {
       }
       
     } catch (error) {
-      console.error('Form submission error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Form submission error:', error);
+      }
       alert(language === 'ar' ? 'حدث خطأ في التحقق. يرجى المحاولة مرة أخرى.' : 'Verification error. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -130,7 +149,9 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Language Switcher */}
         <div className={`mb-6 flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
-          <LanguageSwitcher language={language} setLanguage={setLanguage} />
+          <Suspense fallback={<div className="h-10 w-32 bg-gray-100 rounded animate-pulse" />}>
+            <LanguageSwitcher language={language} setLanguage={setLanguage} />
+          </Suspense>
         </div>
 
         {/* Auth Card */}
@@ -142,9 +163,17 @@ export default function AuthPage() {
           </div>
 
           {/* Toggle Buttons */}
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+          <div className="flex mb-6 bg-gray-100 rounded-lg p-1" role="group" aria-label={language === 'ar' ? 'نوع المصادقة' : 'Authentication type'}>
             <button
-              onClick={() => setMode('signin')}
+              type="button"
+              id="signin-tab"
+              aria-pressed={mode === 'signin' ? 'true' : 'false'}
+              aria-label={t.signIn}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMode('signin');
+              }}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
                 mode === 'signin'
                   ? 'bg-primary-dark text-white shadow-md'
@@ -154,7 +183,15 @@ export default function AuthPage() {
               {t.signIn}
             </button>
             <button
-              onClick={() => setMode('signup')}
+              type="button"
+              id="signup-tab"
+              aria-pressed={mode === 'signup' ? 'true' : 'false'}
+              aria-label={t.signUp}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMode('signup');
+              }}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
                 mode === 'signup'
                   ? 'bg-primary-dark text-white shadow-md'
@@ -166,7 +203,7 @@ export default function AuthPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" id="auth-form" aria-labelledby={mode === 'signin' ? 'signin-tab' : 'signup-tab'}>
             {mode === 'signup' && (
               <>
                 <div>
@@ -180,6 +217,8 @@ export default function AuthPage() {
                     value={formData.fullName}
                     onChange={handleInputChange}
                     required={mode === 'signup'}
+                    aria-required={mode === 'signup' ? 'true' : 'false'}
+                    aria-label={t.fullName}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all"
                   />
                 </div>
@@ -195,6 +234,8 @@ export default function AuthPage() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required={mode === 'signup'}
+                    aria-required={mode === 'signup' ? 'true' : 'false'}
+                    aria-label={t.phone}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all"
                   />
                 </div>
@@ -212,6 +253,8 @@ export default function AuthPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
+                aria-required="true"
+                aria-label={t.email}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all"
               />
             </div>
@@ -227,6 +270,8 @@ export default function AuthPage() {
                 value={formData.password}
                 onChange={handleInputChange}
                 required
+                aria-required="true"
+                aria-label={t.password}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all"
               />
             </div>
@@ -243,6 +288,8 @@ export default function AuthPage() {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   required={mode === 'signup'}
+                  aria-required={mode === 'signup' ? 'true' : 'false'}
+                  aria-label={t.confirmPassword}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all"
                 />
               </div>
@@ -250,14 +297,21 @@ export default function AuthPage() {
 
             {mode === 'signin' && (
               <div className="flex items-center justify-between">
-                <label className="flex items-center">
+                <label htmlFor="rememberMe" className="flex items-center">
                   <input
                     type="checkbox"
+                    id="rememberMe"
+                    name="rememberMe"
+                    aria-label={t.rememberMe}
                     className="w-4 h-4 text-primary-dark border-gray-300 rounded focus:ring-primary-yellow"
                   />
                   <span className={`${isRTL ? 'mr-2' : 'ml-2'} text-sm text-gray-600`}>{t.rememberMe}</span>
                 </label>
-                <a href="#" className="text-sm text-primary-dark hover:text-primary-yellow transition-colors">
+                <a 
+                  href="#" 
+                  className="text-sm text-primary-dark hover:text-primary-yellow transition-colors"
+                  aria-label={t.forgotPassword}
+                >
                   {t.forgotPassword}
                 </a>
               </div>
@@ -266,6 +320,10 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={isSubmitting}
+              aria-label={isSubmitting 
+                ? (language === 'ar' ? 'جاري الإرسال...' : 'Submitting...')
+                : (mode === 'signin' ? t.signIn : t.signUp)
+              }
               className="w-full bg-primary-dark text-white py-3 px-4 rounded-md font-medium hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary-yellow focus:ring-offset-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting 
@@ -280,6 +338,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+                  aria-label={mode === 'signin' ? t.switchToSignUp : t.switchToSignIn}
                   className="text-primary-dark font-medium hover:text-primary-yellow transition-colors"
                 >
                   {mode === 'signin' ? t.switchToSignUp : t.switchToSignIn}
