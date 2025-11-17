@@ -78,6 +78,7 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - CHOKIDAR_INTERVAL=1000
       - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=/api
     depends_on:
       - backend
     networks:
