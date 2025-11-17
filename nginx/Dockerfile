@@ -3,16 +3,21 @@ FROM nginx:alpine
 # Install openssl for certificate generation
 RUN apk add --no-cache openssl
 
+# Generate self-signed SSL certificates during build
+RUN mkdir -p /etc/nginx/ssl && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout /etc/nginx/ssl/key.pem \
+        -out /etc/nginx/ssl/cert.pem \
+        -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost" && \
+    chmod 600 /etc/nginx/ssl/key.pem && \
+    chmod 644 /etc/nginx/ssl/cert.pem
+
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy entrypoint script
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
 
 # Expose ports
 EXPOSE 80 443
 
-# Use custom entrypoint
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# Use default nginx command
+CMD ["nginx", "-g", "daemon off;"]
 
