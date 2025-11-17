@@ -11,9 +11,9 @@ export default function PartnerLogos() {
   }, []);
 
   const partners = [
-    { name: 'PostNL', logo: '/logos/postnl.png', alt: 'PostNL Logo' },
-    { name: 'BMC', logo: '/logos/bmc.png', alt: 'BMC Logo' },
-    { name: 'DHL', logo: '/logos/dhl.png', alt: 'DHL Logo' },
+    { name: 'PostNL', logo: '/logos/postnl.png', alt: 'PostNL - Logistics Partner' },
+    { name: 'BMC', logo: '/logos/bmc.png', alt: 'BMC - Business Partner' },
+    { name: 'DHL', logo: '/logos/dhl.png', alt: 'DHL - Express Shipping Partner' },
   ];
 
   // Render placeholder during SSR to match structure
@@ -33,11 +33,12 @@ export default function PartnerLogos() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center justify-items-center">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center justify-items-center" role="list" aria-label="Partner companies">
       {partners.map((partner) => (
         <div
           key={partner.name}
-          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all min-w-[200px] max-w-[250px] flex items-center justify-center h-32"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all min-w-[200px] max-w-[250px] flex items-center justify-center h-32 focus-within:ring-4 focus-within:ring-primary-yellow/50"
+          role="listitem"
         >
           <Image
             src={partner.logo}
@@ -47,6 +48,7 @@ export default function PartnerLogos() {
             className="object-contain max-h-24 w-auto filter grayscale hover:grayscale-0 transition-all duration-300"
             loading="lazy"
             unoptimized
+            aria-label={`${partner.name} company logo`}
           />
         </div>
       ))}

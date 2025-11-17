@@ -31,15 +31,21 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
+        {/* Preconnect to external resources for better performance */}
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+        
+        {/* Inline critical CSS for better FCP */}
         <style dangerouslySetInnerHTML={{
-          __html: `*{font-family:Arial,sans-serif;margin:0;padding:0}html[dir="rtl"]{direction:rtl}html[dir="ltr"]{direction:ltr}body{text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}`
+          __html: `*{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;margin:0;padding:0}html[dir="rtl"]{direction:rtl}html[dir="ltr"]{direction:ltr}body{text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-display:swap}`
         }} />
         <script
           dangerouslySetInnerHTML={{
             __html: `!function(){"use strict";var e=document.querySelectorAll('link[rel="stylesheet"]');e.forEach(function(t){t.href&&t.href.includes("layout.css")&&(t.media="print",t.onload=function(){this.media="all"},t.onload())})}();`,
           }}
         />
-        {/* Preload removed - no critical external images */}
       </head>
       <body className="font-sans">
         <ClientProviders>

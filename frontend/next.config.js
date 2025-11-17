@@ -99,11 +99,12 @@ const nextConfig = {
 
   // Image Optimization - Optimized for LCP
   images: {
-    formats: ['image/webp', 'image/avif'],
+    formats: ['image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 31536000,
     dangerouslyAllowSVG: false,
+    unoptimized: false,
     // Optimize for LCP
     remotePatterns: [
       {
@@ -130,11 +131,8 @@ const nextConfig = {
   
   // Latest performance features
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['react-google-recaptcha-v3', 'react', 'react-dom'],
-    optimizeServerReact: true,
     serverMinification: true,
-    cssChunking: 'strict',
     serverActions: {
       bodySizeLimit: '2mb',
     },
@@ -156,26 +154,19 @@ const nextConfig = {
     },
   },
   
-  // Enable source maps for better debugging (development only)
-  productionBrowserSourceMaps: true,
+  // Disable source maps in production for better performance
+  productionBrowserSourceMaps: false,
   
   // Optimize fonts
   optimizeFonts: true,
   
   // Webpack optimizations for production
   webpack: (config, { dev, isServer }) => {
-    // Suppress specific warnings and errors that don't affect functionality
-    config.stats = {
-      ...config.stats,
-      warnings: false,
-      errorDetails: dev,
-    };
-    
-    // Better error handling
+    // Better performance hints
     config.performance = {
       hints: dev ? false : 'warning',
-      maxAssetSize: 512000,
-      maxEntrypointSize: 512000,
+      maxAssetSize: 800000,
+      maxEntrypointSize: 800000,
     };
     
     if (!dev && !isServer) {
@@ -184,14 +175,13 @@ const nextConfig = {
         moduleIds: 'deterministic',
         runtimeChunk: 'single',
         usedExports: true,
-        sideEffects: false,
         minimize: true,
         splitChunks: {
           chunks: 'all',
-          minSize: 3000,
-          maxSize: 100000,
-          maxAsyncRequests: 20,
-          maxInitialRequests: 15,
+          minSize: 20000,
+          maxSize: 244000,
+          maxAsyncRequests: 30,
+          maxInitialRequests: 25,
           cacheGroups: {
             default: false,
             vendors: false,

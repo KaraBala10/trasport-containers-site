@@ -45,36 +45,57 @@ export default function Header({ language, setLanguage }: HeaderProps) {
   const t = translations[language];
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
+    <header className="bg-white shadow-md sticky top-0 z-50" role="banner">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo Placeholder */}
-          <Link href="/" className="flex items-center">
+          <Link 
+            href="/" 
+            className="flex items-center focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded-md px-2 py-1 -mx-2 -my-1"
+            aria-label={language === 'ar' ? 'العودة إلى الصفحة الرئيسية - MEDO-FREIGHT.EU' : 'Go to homepage - MEDO-FREIGHT.EU'}
+          >
             <div className="text-2xl font-bold text-primary-dark">
               MEDO-FREIGHT.EU
             </div>
-            <div className={`${isRTL ? 'mr-2' : 'ml-2'} text-sm text-gray-600`}>
+            <div className={`${isRTL ? 'mr-2' : 'ml-2'} text-sm text-gray-700 font-medium`} aria-hidden="true">
               Freight · Route · Deliver
             </div>
           </Link>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-gray-700 hover:text-primary-dark transition-colors">
+          <nav className="hidden md:flex items-center gap-6" role="navigation" aria-label={language === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'}>
+            <Link 
+              href="/" 
+              className="text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1"
+              aria-label={t.home}
+            >
               {t.home}
             </Link>
-            <Link href="/services" className="text-gray-700 hover:text-primary-dark transition-colors">
+            <Link 
+              href="/services" 
+              className="text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1"
+              aria-label={t.services}
+            >
               {t.services}
             </Link>
-            <Link href="/about" className="text-gray-700 hover:text-primary-dark transition-colors">
+            <Link 
+              href="/about" 
+              className="text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1"
+              aria-label={t.about}
+            >
               {t.about}
             </Link>
-            <Link href="/contact" className="text-gray-700 hover:text-primary-dark transition-colors">
+            <Link 
+              href="/contact" 
+              className="text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1"
+              aria-label={t.contact}
+            >
               {t.contact}
             </Link>
             <Link 
               href="/quote" 
-              className="bg-primary-yellow text-primary-dark px-4 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors"
+              className="bg-primary-yellow text-primary-dark px-4 py-2 rounded-md font-bold hover:bg-opacity-90 transition-colors focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 focus:ring-offset-2"
+              aria-label={language === 'ar' ? 'احصل على عرض سعر للشحن' : 'Get a shipping quote'}
             >
               {t.quote}
             </Link>

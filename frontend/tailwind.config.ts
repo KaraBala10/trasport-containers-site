@@ -11,7 +11,7 @@ const config: Config = {
       colors: {
         primary: {
           dark: '#002E5D',
-          yellow: '#FFD200',
+          yellow: '#FFC700', // Darker yellow for better contrast (was #FFD200)
         },
       },
       fontFamily: {
