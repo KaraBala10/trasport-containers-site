@@ -47,9 +47,27 @@ export default function Countdown({ language, targetDate }: CountdownProps) {
 
     // Calculate immediately after mount
     calculateTimeLeft();
-    const interval = setInterval(calculateTimeLeft, 1000);
+    
+    // Use requestAnimationFrame for better performance
+    let rafId: number;
+    let lastUpdate = Date.now();
+    
+    const updateCountdown = () => {
+      const now = Date.now();
+      if (now - lastUpdate >= 1000) {
+        calculateTimeLeft();
+        lastUpdate = now;
+      }
+      rafId = requestAnimationFrame(updateCountdown);
+    };
+    
+    rafId = requestAnimationFrame(updateCountdown);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
   }, [targetDate]);
 
   const translations = {

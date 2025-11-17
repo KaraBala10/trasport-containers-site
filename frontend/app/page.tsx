@@ -75,26 +75,15 @@ export default function Home() {
       <main className="flex-grow">
         {/* Hero Banner with Countdown */}
         <section className="bg-gradient-to-r from-primary-dark to-primary-dark relative overflow-hidden">
-          {/* Background Image - Optimized for LCP */}
-          <div className="absolute inset-0 opacity-20">
-            <Image
-              src="https://images.unsplash.com/photo-1605745341112-85968b19335b?w=1920&q=80"
-              alt="Shipping containers"
-              fill
-              priority
-              quality={75}
-              className="object-cover"
-              sizes="100vw"
-            />
-          </div>
+          {/* Background removed for better performance - using CSS gradient only */}
           <div className="container mx-auto px-4 py-20 text-center text-white relative z-10">
             <h1 className="text-5xl md:text-6xl font-bold mb-4">{t.heroTitle}</h1>
             <p className="text-2xl md:text-3xl mb-2 text-primary-yellow">{t.heroSubtitle}</p>
             <p className="text-lg mb-8 opacity-90">{t.heroDescription}</p>
             
             {/* Countdown */}
-            <div className="mb-12" suppressHydrationWarning>
-              <p className="text-xl mb-6" suppressHydrationWarning>{language === 'ar' ? 'العد التنازلي حتى 1 ديسمبر 2025' : 'Countdown to December 1, 2025'}</p>
+            <div className="mb-12">
+              <p className="text-xl mb-6">{language === 'ar' ? 'العد التنازلي حتى 1 ديسمبر 2025' : 'Countdown to December 1, 2025'}</p>
               <Countdown language={language} targetDate={targetDate} />
             </div>
 
@@ -189,15 +178,17 @@ export default function Home() {
             <h2 className="text-4xl font-bold text-center mb-12 text-primary-dark">{t.galleryTitle}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* European Centers Image */}
-              <div className="relative h-64 rounded-lg overflow-hidden shadow-lg">
+              <div className="relative h-64 rounded-lg overflow-hidden shadow-lg bg-gradient-to-br from-gray-200 to-gray-300">
                 <Image
-                  src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80"
+                  src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=70"
                   alt={language === 'ar' ? 'مراكز أوروبية' : 'European Centers'}
                   fill
-                  quality={75}
+                  quality={70}
                   className="object-cover hover:scale-110 transition-transform duration-300"
                   loading="lazy"
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//9k="
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                   <p className="text-white font-bold">
@@ -207,15 +198,17 @@ export default function Home() {
               </div>
               
               {/* Containers Image */}
-              <div className="relative h-64 rounded-lg overflow-hidden shadow-lg">
+              <div className="relative h-64 rounded-lg overflow-hidden shadow-lg bg-gradient-to-br from-gray-200 to-gray-300">
                 <Image
-                  src="https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800&q=80"
+                  src="https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800&q=70"
                   alt={language === 'ar' ? 'حاويات شحن' : 'Shipping Containers'}
                   fill
-                  quality={75}
+                  quality={70}
                   className="object-cover hover:scale-110 transition-transform duration-300"
                   loading="lazy"
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//9k="
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                   <p className="text-white font-bold">
@@ -225,15 +218,17 @@ export default function Home() {
               </div>
               
               {/* Logistics Image */}
-              <div className="relative h-64 rounded-lg overflow-hidden shadow-lg">
+              <div className="relative h-64 rounded-lg overflow-hidden shadow-lg bg-gradient-to-br from-gray-200 to-gray-300">
                 <Image
-                  src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&q=80"
+                  src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&q=70"
                   alt={language === 'ar' ? 'خدمات لوجستية' : 'Logistics Services'}
                   fill
-                  quality={75}
+                  quality={70}
                   className="object-cover hover:scale-110 transition-transform duration-300"
                   loading="lazy"
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//9k="
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                   <p className="text-white font-bold">
@@ -306,9 +301,7 @@ export default function Home() {
       <Footer language={language} />
       
       {/* WhatsApp Floating Button */}
-      <div suppressHydrationWarning>
-        <WhatsAppButton language={language} />
-      </div>
+      <WhatsAppButton language={language} />
     </div>
   );
 } 
