@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  img {
+  /* Optimize LCP - don't lazy load critical images */
+  img:not([loading]) {
     content-visibility: auto;
-    loading: lazy;
   }
   
   /* Prevent layout shift */

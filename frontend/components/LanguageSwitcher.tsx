@@ -23,7 +23,7 @@ export default function LanguageSwitcher({ language, setLanguage }: LanguageSwit
           handleLanguageChange('ar');
         }}
         aria-label="Switch to Arabic"
-        aria-pressed={language === 'ar' ? 'true' : 'false'}
+        aria-pressed={language === 'ar'}
         className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
           language === 'ar'
             ? 'bg-primary-dark text-white'
@@ -40,7 +40,7 @@ export default function LanguageSwitcher({ language, setLanguage }: LanguageSwit
           handleLanguageChange('en');
         }}
         aria-label="Switch to English"
-        aria-pressed={language === 'en' ? 'true' : 'false'}
+        aria-pressed={language === 'en'}
         className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
           language === 'en'
             ? 'bg-primary-dark text-white'
@@ -52,4 +52,4 @@ export default function LanguageSwitcher({ language, setLanguage }: LanguageSwit
     </div>
   );
 }
-
+ 

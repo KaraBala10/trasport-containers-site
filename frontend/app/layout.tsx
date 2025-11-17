@@ -39,11 +39,20 @@ export default function RootLayout({
             __html: `!function(){"use strict";var e=document.querySelectorAll('link[rel="stylesheet"]');e.forEach(function(t){t.href&&t.href.includes("layout.css")&&(t.media="print",t.onload=function(){this.media="all"},t.onload())})}();`,
           }}
         />
+        {/* Preload critical images for LCP */}
+        <link
+          rel="preload"
+          as="image"
+          href="https://images.unsplash.com/photo-1605745341112-85968b19335b?w=1920&q=80"
+          fetchPriority="high"
+        />
       </head>
       <body className="font-sans" suppressHydrationWarning>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        <div suppressHydrationWarning>
+          <ClientProviders>
+            {children}
+          </ClientProviders>
+        </div>
       </body>
     </html>
   );

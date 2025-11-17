@@ -12,8 +12,11 @@ export default function ReCaptchaProvider({ children }: ReCaptchaProviderProps) 
   const [Provider, setProvider] = useState<React.ComponentType<any> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+    
     // Get key from environment on client side
     const key = typeof window !== 'undefined' 
       ? (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '')
@@ -60,16 +63,16 @@ export default function ReCaptchaProvider({ children }: ReCaptchaProviderProps) 
         if (!loaded) {
           loaded = true;
           loadRecaptcha();
-          window.removeEventListener('scroll', loadOnInteraction, { passive: true });
+          window.removeEventListener('scroll', loadOnInteraction, { passive: true } as AddEventListenerOptions);
           window.removeEventListener('mousedown', loadOnInteraction);
-          window.removeEventListener('touchstart', loadOnInteraction, { passive: true });
+          window.removeEventListener('touchstart', loadOnInteraction, { passive: true } as AddEventListenerOptions);
         }
       };
 
       // Load on user interaction
-      window.addEventListener('scroll', loadOnInteraction, { passive: true });
+      window.addEventListener('scroll', loadOnInteraction, { passive: true } as AddEventListenerOptions);
       window.addEventListener('mousedown', loadOnInteraction);
-      window.addEventListener('touchstart', loadOnInteraction, { passive: true });
+      window.addEventListener('touchstart', loadOnInteraction, { passive: true } as AddEventListenerOptions);
 
       // Fallback: load after 5 seconds if no interaction
       if ('requestIdleCallback' in window) {
@@ -90,8 +93,9 @@ export default function ReCaptchaProvider({ children }: ReCaptchaProviderProps) 
     }
   }, []);
 
-  // Show children while loading or if not ready
-  if (isLoading || !isReady || !Provider || !recaptchaKey) {
+  // Always return children during SSR to avoid hydration mismatch
+  // Only wrap with Provider after mount and when ready
+  if (!isMounted || isLoading || !isReady || !Provider || !recaptchaKey) {
     return <>{children}</>;
   }
 
