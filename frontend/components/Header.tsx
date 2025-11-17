@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import LanguageSwitcher from './LanguageSwitcher';
 
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export default function Header({ language, setLanguage }: HeaderProps) {
   const isRTL = language === 'ar';
+  const pathname = usePathname();
 
   useLayoutEffect(() => {
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
@@ -28,17 +30,19 @@ export default function Header({ language, setLanguage }: HeaderProps) {
   const translations = {
     ar: {
       home: 'الرئيسية',
-      services: 'الخدمات',
+      pricing: 'الأسعار',
+      tracking: 'التتبع',
       about: 'من نحن',
       contact: 'اتصل بنا',
-      quote: 'عرض سعر',
+      createShipment: 'إنشاء شحنة',
     },
     en: {
       home: 'Home',
-      services: 'Services',
+      pricing: 'Pricing',
+      tracking: 'Tracking',
       about: 'About',
       contact: 'Contact',
-      quote: 'Get Quote',
+      createShipment: 'Create Shipment',
     },
   };
 
@@ -66,38 +70,81 @@ export default function Header({ language, setLanguage }: HeaderProps) {
           <nav className="hidden md:flex items-center gap-6" role="navigation" aria-label={language === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'}>
             <Link 
               href="/" 
-              className="text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1"
+              className={`relative text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1 ${
+                pathname === '/' ? 'text-primary-dark' : ''
+              }`}
               aria-label={t.home}
+              aria-current={pathname === '/' ? 'page' : undefined}
             >
               {t.home}
+              {pathname === '/' && (
+                <span className="absolute bottom-0 left-0 right-0 h-1 bg-primary-yellow rounded-full" aria-hidden="true"></span>
+              )}
             </Link>
             <Link 
-              href="/services" 
-              className="text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1"
-              aria-label={t.services}
+              href="/pricing" 
+              className={`relative text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1 ${
+                pathname === '/pricing' ? 'text-primary-dark' : ''
+              }`}
+              aria-label={t.pricing}
+              aria-current={pathname === '/pricing' ? 'page' : undefined}
             >
-              {t.services}
+              {t.pricing}
+              {pathname === '/pricing' && (
+                <span className="absolute bottom-0 left-0 right-0 h-1 bg-primary-yellow rounded-full" aria-hidden="true"></span>
+              )}
+            </Link>
+            <Link 
+              href="/tracking" 
+              className={`relative text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1 ${
+                pathname === '/tracking' ? 'text-primary-dark' : ''
+              }`}
+              aria-label={t.tracking}
+              aria-current={pathname === '/tracking' ? 'page' : undefined}
+            >
+              {t.tracking}
+              {pathname === '/tracking' && (
+                <span className="absolute bottom-0 left-0 right-0 h-1 bg-primary-yellow rounded-full" aria-hidden="true"></span>
+              )}
             </Link>
             <Link 
               href="/about" 
-              className="text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1"
+              className={`relative text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1 ${
+                pathname === '/about' ? 'text-primary-dark' : ''
+              }`}
               aria-label={t.about}
+              aria-current={pathname === '/about' ? 'page' : undefined}
             >
               {t.about}
+              {pathname === '/about' && (
+                <span className="absolute bottom-0 left-0 right-0 h-1 bg-primary-yellow rounded-full" aria-hidden="true"></span>
+              )}
             </Link>
             <Link 
               href="/contact" 
-              className="text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1"
+              className={`relative text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1 ${
+                pathname === '/contact' ? 'text-primary-dark' : ''
+              }`}
               aria-label={t.contact}
+              aria-current={pathname === '/contact' ? 'page' : undefined}
             >
               {t.contact}
+              {pathname === '/contact' && (
+                <span className="absolute bottom-0 left-0 right-0 h-1 bg-primary-yellow rounded-full" aria-hidden="true"></span>
+              )}
             </Link>
             <Link 
-              href="/quote" 
-              className="bg-primary-yellow text-primary-dark px-4 py-2 rounded-md font-bold hover:bg-opacity-90 transition-colors focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 focus:ring-offset-2"
-              aria-label={language === 'ar' ? 'احصل على عرض سعر للشحن' : 'Get a shipping quote'}
+              href="/create-shipment" 
+              className={`relative text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1 ${
+                pathname === '/create-shipment' ? 'text-primary-dark' : ''
+              }`}
+              aria-label={language === 'ar' ? 'إنشاء شحنة جديدة' : 'Create a new shipment'}
+              aria-current={pathname === '/create-shipment' ? 'page' : undefined}
             >
-              {t.quote}
+              {t.createShipment}
+              {pathname === '/create-shipment' && (
+                <span className="absolute bottom-0 left-0 right-0 h-1 bg-primary-yellow rounded-full" aria-hidden="true"></span>
+              )}
             </Link>
           </nav>
 

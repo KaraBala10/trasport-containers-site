@@ -13,7 +13,7 @@ import Image from 'next/image';
 type Language = 'ar' | 'en';
 
 export default function Home() {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>('ar');
   const isRTL = language === 'ar';
 
   // Target date: December 1, 2025

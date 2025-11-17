@@ -10,7 +10,7 @@ type AuthMode = 'signin' | 'signup';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('signin');
-  const [language, setLanguage] = useState<'ar' | 'en'>('en');
+  const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',

@@ -11,11 +11,11 @@ const config: Config = {
       colors: {
         primary: {
           dark: '#002E5D',
-          yellow: '#FFC700', // Darker yellow for better contrast (was #FFD200)
+          yellow: '#FFD200',
         },
       },
       fontFamily: {
-        sans: ['Arial', 'sans-serif'],
+        sans: ['Arial', 'Arial Rounded MT Bold', 'sans-serif'],
       },
     },
   },
