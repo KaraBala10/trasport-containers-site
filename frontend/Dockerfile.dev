@@ -14,7 +14,9 @@ EXPOSE 3000
 # Set environment to development
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV WATCHPACK_POLLING=true
+ENV CHOKIDAR_USEPOLLING=true
 
-# Start development server
+# Start development server with polling enabled
 CMD ["npm", "run", "dev"]
 

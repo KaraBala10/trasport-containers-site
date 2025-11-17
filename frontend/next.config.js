@@ -1,7 +1,73 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standalone output for Docker
-  output: "standalone",
+  // Standalone output for Docker (only in production)
+  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+
+  // Enable hot reloading in development
+  reactStrictMode: true,
+
+  // Webpack config for better hot reloading
+  webpack: (config, { dev, isServer }) => {
+    // Enable polling for file watching in Docker (development only)
+    if (dev && !isServer) {
+      config.watchOptions = {
+        poll: 1000, // Check for changes every second
+        aggregateTimeout: 300, // Delay before rebuilding
+        ignored: /node_modules/,
+      };
+    }
+
+    // Keep existing webpack optimizations
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: "deterministic",
+        runtimeChunk: "single",
+        usedExports: true,
+        minimize: true,
+        splitChunks: {
+          chunks: "all",
+          minSize: 20000,
+          maxSize: 244000,
+          maxAsyncRequests: 30,
+          maxInitialRequests: 25,
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            framework: {
+              name: "framework",
+              chunks: "all",
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
+              priority: 40,
+              enforce: true,
+            },
+            lib: {
+              name: "lib",
+              test: /[\\/]node_modules[\\/]/,
+              priority: 30,
+              minChunks: 1,
+              reuseExistingChunk: true,
+            },
+            commons: {
+              name: "commons",
+              minChunks: 2,
+              priority: 20,
+              reuseExistingChunk: true,
+            },
+          },
+        },
+      };
+    }
+
+    // Better performance hints
+    config.performance = {
+      hints: dev ? false : "warning",
+      maxAssetSize: 800000,
+      maxEntrypointSize: 800000,
+    };
+
+    return config;
+  },
 
   // Security Headers
   async headers() {
@@ -170,58 +236,6 @@ const nextConfig = {
 
   // Optimize fonts
   optimizeFonts: true,
-
-  // Webpack optimizations for production
-  webpack: (config, { dev, isServer }) => {
-    // Better performance hints
-    config.performance = {
-      hints: dev ? false : "warning",
-      maxAssetSize: 800000,
-      maxEntrypointSize: 800000,
-    };
-
-    if (!dev && !isServer) {
-      config.optimization = {
-        ...config.optimization,
-        moduleIds: "deterministic",
-        runtimeChunk: "single",
-        usedExports: true,
-        minimize: true,
-        splitChunks: {
-          chunks: "all",
-          minSize: 20000,
-          maxSize: 244000,
-          maxAsyncRequests: 30,
-          maxInitialRequests: 25,
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            framework: {
-              name: "framework",
-              chunks: "all",
-              test: /[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
-              priority: 40,
-              enforce: true,
-            },
-            lib: {
-              name: "lib",
-              test: /[\\/]node_modules[\\/]/,
-              priority: 30,
-              minChunks: 1,
-              reuseExistingChunk: true,
-            },
-            commons: {
-              name: "commons",
-              minChunks: 2,
-              priority: 20,
-              reuseExistingChunk: true,
-            },
-          },
-        },
-      };
-    }
-    return config;
-  },
 };
 
 module.exports = nextConfig;
