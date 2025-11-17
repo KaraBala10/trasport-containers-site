@@ -39,16 +39,22 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: django_backend
-    ports:
-      - "8000:8000"
+    # Backend is only accessible through nginx (not directly from host)
+    expose:
+      - "8000"
     volumes:
       - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     env_file:
       - .env
     environment:
       - DEBUG=${DEBUG:-1}
       - PYTHONUNBUFFERED=1
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+      - SECURE_SSL_REDIRECT=${SECURE_SSL_REDIRECT:-false}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-false}
+      - CSRF_COOKIE_SECURE=${CSRF_COOKIE_SECURE:-false}
+    command: sh -c "python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
     depends_on:
       db:
         condition: service_healthy
@@ -60,8 +66,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: nextjs_frontend
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -76,11 +82,32 @@ services:
     networks:
       - app-network
 
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx_ssl:/etc/nginx/ssl
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - app-network
+
 volumes:
   postgres_data:
   pgadmin_data:
+  static_volume:
+  media_volume:
+  nginx_ssl:
 
 networks:
   app-network:
     driver: bridge
-

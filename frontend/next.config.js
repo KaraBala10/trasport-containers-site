@@ -82,22 +82,27 @@ const nextConfig = {
     ];
   },
 
-  // Redirect HTTP to HTTPS in production
+  // Redirect HTTP to HTTPS in production only
   async redirects() {
-    return [
-      {
-        source: "/:path*",
-        has: [
-          {
-            type: "header",
-            key: "x-forwarded-proto",
-            value: "http",
-          },
-        ],
-        destination: "https://medo-freight.eu/:path*",
-        permanent: true,
-      },
-    ];
+    // Only redirect in production
+    if (process.env.NODE_ENV === "production") {
+      return [
+        {
+          source: "/:path*",
+          has: [
+            {
+              type: "header",
+              key: "x-forwarded-proto",
+              value: "http",
+            },
+          ],
+          destination: "https://medo-freight.eu/:path*",
+          permanent: true,
+        },
+      ];
+    }
+    // No redirects in development
+    return [];
   },
 
   // Image Optimization - Optimized for LCP
