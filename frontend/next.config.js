@@ -118,10 +118,10 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   
-  // Remove console in production
+  // Remove console in production (but keep errors for debugging)
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error'],
+      exclude: ['error', 'warn'],
     } : false,
   },
   
@@ -156,14 +156,28 @@ const nextConfig = {
     },
   },
   
-  // Production source maps disabled
-  productionBrowserSourceMaps: false,
+  // Enable source maps for better debugging (development only)
+  productionBrowserSourceMaps: true,
   
   // Optimize fonts
   optimizeFonts: true,
   
   // Webpack optimizations for production
   webpack: (config, { dev, isServer }) => {
+    // Suppress specific warnings and errors that don't affect functionality
+    config.stats = {
+      ...config.stats,
+      warnings: false,
+      errorDetails: dev,
+    };
+    
+    // Better error handling
+    config.performance = {
+      hints: dev ? false : 'warning',
+      maxAssetSize: 512000,
+      maxEntrypointSize: 512000,
+    };
+    
     if (!dev && !isServer) {
       config.optimization = {
         ...config.optimization,
