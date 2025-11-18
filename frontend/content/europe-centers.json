@@ -1,0 +1,74 @@
+{
+  "ar": {
+    "pageTitle": "مراكز أوروبا",
+    "pageDescription": "مواقعنا ومراكزنا في أوروبا لخدمة الشحن",
+    "mainTitle": "مراكزنا في أوروبا",
+    "intro": "نوفر لكم شبكة من المراكز الأوروبية لتسهيل عملية الشحن والتخليص الجمركي",
+    
+    "tableHeaders": {
+      "country": "الدولة",
+      "city": "المدينة",
+      "address": "العنوان",
+      "service": "الخدمة"
+    },
+    
+    "locations": [
+      {
+        "country": "هولندا",
+        "countryCode": "NL",
+        "city": "Axel",
+        "address": "Meekrapweg 2 – 4571 RX",
+        "services": ["LCL", "FCL"]
+      }
+    ],
+    
+    "servicesInfo": {
+      "title": "أنواع الخدمات",
+      "lcl": {
+        "title": "LCL - شحنات جزئية",
+        "description": "للشحنات الصغيرة التي لا تملأ حاوية كاملة (Less than Container Load)"
+      },
+      "fcl": {
+        "title": "FCL - حاوية كاملة",
+        "description": "للشحنات الكبيرة التي تحتاج حاوية كاملة (Full Container Load)"
+      }
+    }
+  },
+  
+  "en": {
+    "pageTitle": "Europe Centers",
+    "pageDescription": "Our locations and centers in Europe for freight services",
+    "mainTitle": "Our Centers in Europe",
+    "intro": "We provide you with a network of European centers to facilitate the shipping and customs clearance process",
+    
+    "tableHeaders": {
+      "country": "Country",
+      "city": "City",
+      "address": "Address",
+      "service": "Service"
+    },
+    
+    "locations": [
+      {
+        "country": "Netherlands",
+        "countryCode": "NL",
+        "city": "Axel",
+        "address": "Meekrapweg 2 – 4571 RX",
+        "services": ["LCL", "FCL"]
+      }
+    ],
+    
+    "servicesInfo": {
+      "title": "Service Types",
+      "lcl": {
+        "title": "LCL - Less than Container Load",
+        "description": "For small shipments that don't fill a full container"
+      },
+      "fcl": {
+        "title": "FCL - Full Container Load",
+        "description": "For large shipments that require a full container"
+      }
+    }
+  }
+}
+
