@@ -1,0 +1,149 @@
+{
+  "ar": {
+    "mainTitle": "تواصل معنا",
+    "intro": "نحن هنا لمساعدتك. تواصل معنا في أي وقت وسنكون سعداء بالرد على استفساراتك.",
+    "form": {
+      "title": "أرسل لنا رسالة",
+      "fullName": {
+        "label": "الاسم الكامل",
+        "placeholder": "أدخل اسمك الكامل"
+      },
+      "email": {
+        "label": "البريد الإلكتروني",
+        "placeholder": "example@email.com"
+      },
+      "phone": {
+        "label": "رقم الهاتف",
+        "placeholder": "+963 xxx xxx xxx"
+      },
+      "subject": {
+        "label": "الموضوع",
+        "placeholder": "اختر الموضوع",
+        "options": [
+          "استفسار عام",
+          "طلب عرض سعر",
+          "شكوى أو اقتراح",
+          "مشكلة في الشحن",
+          "أخرى"
+        ]
+      },
+      "message": {
+        "label": "الرسالة",
+        "placeholder": "اكتب رسالتك هنا..."
+      },
+      "submitButton": "إرسال الرسالة",
+      "sending": "جاري الإرسال...",
+      "successMessage": "تم إرسال رسالتك بنجاح! سنتواصل معك قريباً.",
+      "errorMessage": "حدث خطأ أثناء إرسال الرسالة. يرجى المحاولة مرة أخرى.",
+      "requiredError": "هذا الحقل مطلوب",
+      "emailError": "البريد الإلكتروني غير صحيح"
+    },
+    "offices": {
+      "title": "مكاتبنا",
+      "europe": {
+        "title": "مكتب أوروبا",
+        "companyName": "Medo-Freight EU",
+        "address": "Meekrapweg 2 – 4571 RX – Axel – Zeeland – Netherlands",
+        "phone": "+31683083916",
+        "email": "contact@medo-freight.eu",
+        "website": "www.medo-freight.eu"
+      },
+      "syria": {
+        "title": "الشريك المحلي في سورية",
+        "companyName": "شركة الإكرام التجارية",
+        "locations": [
+          {
+            "name": "الراموسة",
+            "address": "حلب – الراموسة (بجانب كراج البولمان)"
+          },
+          {
+            "name": "الشيخ نجار",
+            "address": "حلب – المدينة الصناعية الشيخ نجار (منطقة مكاتب الشحن الدولي)"
+          }
+        ],
+        "phone": "+9639954778188",
+        "email": "alikramtrading.co@gmail.com"
+      }
+    },
+    "workingHours": {
+      "title": "ساعات العمل",
+      "weekdays": "الإثنين - الجمعة: 9:00 صباحاً - 6:00 مساءً",
+      "saturday": "السبت: 9:00 صباحاً - 2:00 مساءً",
+      "sunday": "الأحد: مغلق"
+    }
+  },
+  "en": {
+    "mainTitle": "Contact Us",
+    "intro": "We are here to help you. Contact us anytime and we will be happy to answer your inquiries.",
+    "form": {
+      "title": "Send Us a Message",
+      "fullName": {
+        "label": "Full Name",
+        "placeholder": "Enter your full name"
+      },
+      "email": {
+        "label": "Email Address",
+        "placeholder": "example@email.com"
+      },
+      "phone": {
+        "label": "Phone Number",
+        "placeholder": "+31 xxx xxx xxx"
+      },
+      "subject": {
+        "label": "Subject",
+        "placeholder": "Choose a subject",
+        "options": [
+          "General Inquiry",
+          "Quote Request",
+          "Complaint or Suggestion",
+          "Shipping Issue",
+          "Other"
+        ]
+      },
+      "message": {
+        "label": "Message",
+        "placeholder": "Write your message here..."
+      },
+      "submitButton": "Send Message",
+      "sending": "Sending...",
+      "successMessage": "Your message has been sent successfully! We will contact you soon.",
+      "errorMessage": "An error occurred while sending the message. Please try again.",
+      "requiredError": "This field is required",
+      "emailError": "Invalid email address"
+    },
+    "offices": {
+      "title": "Our Offices",
+      "europe": {
+        "title": "Europe Office",
+        "companyName": "Medo-Freight EU",
+        "address": "Meekrapweg 2 – 4571 RX – Axel – Zeeland – Netherlands",
+        "phone": "+31683083916",
+        "email": "contact@medo-freight.eu",
+        "website": "www.medo-freight.eu"
+      },
+      "syria": {
+        "title": "Local Partner in Syria",
+        "companyName": "Al Ikram Trading Co.",
+        "locations": [
+          {
+            "name": "Ramousa",
+            "address": "Aleppo – Ramousa (next to Pullman Garage)"
+          },
+          {
+            "name": "Sheikh Najjar",
+            "address": "Aleppo – Sheikh Najjar Industrial City (International Shipping Offices Area)"
+          }
+        ],
+        "phone": "+9639954778188",
+        "email": "alikramtrading.co@gmail.com"
+      }
+    },
+    "workingHours": {
+      "title": "Working Hours",
+      "weekdays": "Monday - Friday: 9:00 AM - 6:00 PM",
+      "saturday": "Saturday: 9:00 AM - 2:00 PM",
+      "sunday": "Sunday: Closed"
+    }
+  }
+}
+

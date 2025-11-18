@@ -13,10 +13,7 @@ export default function AppendixBPage() {
   const isRTL = language === 'ar';
 
   const handleDownload = () => {
-    // رابط ثابت لملف PDF - يمكن تغييره عند توفر الملف
-    const pdfUrl = `/documents/${content.downloadSection.fileName}`;
-    // يمكن أيضاً استخدام window.open(pdfUrl, '_blank');
-    alert(language === 'ar' ? 'سيتم توفير رابط التحميل قريباً' : 'Download link will be available soon');
+    window.open('/documents/shipping-annexes.pdf', '_blank');
   };
 
   return (

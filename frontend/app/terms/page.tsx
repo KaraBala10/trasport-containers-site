@@ -45,11 +45,6 @@ export default function TermsPage() {
   const content = termsContent[language];
   const isRTL = language === 'ar';
 
-  const handleDownload = () => {
-    // يمكن استبدال هذا برابط ملف حقيقي
-    alert(language === 'ar' ? 'سيتم توفير رابط التحميل قريباً' : 'Download link will be available soon');
-  };
-
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       <Header language={language} setLanguage={setLanguage} />
@@ -135,15 +130,17 @@ export default function TermsPage() {
               <p className="text-xl mb-8">
                 {content.contractSection.description}
               </p>
-              <button
-                onClick={handleDownload}
+              <a
+                href="/documents/shipping-contract-full.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 bg-primary-yellow text-primary-dark px-8 py-4 rounded-md font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 {content.contractSection.downloadButton}
-              </button>
+              </a>
               <div className="mt-4 text-sm text-gray-300">
                 {content.contractSection.fileSize}
               </div>

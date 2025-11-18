@@ -57,7 +57,7 @@ export default function ProhibitedGoodsPage() {
 
   const handleDownload = () => {
     // يمكن استبدال هذا برابط ملف حقيقي
-    alert(language === 'ar' ? 'سيتم توفير رابط التحميل قريباً' : 'Download link will be available soon');
+    window.open('/documents/shipping-annexes.pdf', '_blank');
   };
 
   return (
