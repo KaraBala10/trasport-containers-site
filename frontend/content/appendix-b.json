@@ -1,0 +1,242 @@
+{
+  "ar": {
+    "pageTitle": "الملحق B - المواد المحظورة",
+    "pageDescription": "القائمة التفصيلية الكاملة للمواد المحظورة من الشحن",
+    "mainTitle": "الملحق (B)",
+    "subtitle": "قائمة المواد المحظورة التفصيلية",
+    "intro": "هذا الملحق يحتوي على القائمة الشاملة والتفصيلية لجميع المواد والبضائع المحظورة من الشحن وفقاً للقوانين الأوروبية والدولية.",
+    
+    "downloadSection": {
+      "title": "تحميل الملحق الكامل",
+      "description": "للحصول على القائمة الكاملة والتفصيلية بصيغة PDF",
+      "downloadButton": "تحميل الملحق B - PDF",
+      "fileSize": "PDF - 2.5 MB",
+      "fileName": "appendix-b-prohibited-materials.pdf"
+    },
+    
+    "categories": [
+      {
+        "id": 1,
+        "title": "المواد المالية والثمينة",
+        "items": [
+          "النقود الورقية والمعدنية من جميع العملات",
+          "السبائك الذهبية والفضية والبلاتينية",
+          "المجوهرات الثمينة والأحجار الكريمة",
+          "الساعات الفاخرة (قيمة تزيد عن 5000 يورو)",
+          "اللوحات الفنية والتحف النادرة",
+          "الطوابع البريدية النادرة والعملات القديمة"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "الأسلحة والمواد العسكرية",
+        "items": [
+          "جميع أنواع الأسلحة النارية والذخائر",
+          "المتفجرات والقنابل اليدوية",
+          "السكاكين والخناجر القتالية",
+          "معدات التدريب العسكري",
+          "الزي العسكري الرسمي",
+          "أجهزة الرؤية الليلية العسكرية"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "المواد الكيميائية الخطرة",
+        "items": [
+          "المواد السامة والسموم",
+          "المواد القابلة للاشتعال والانفجار",
+          "الأحماض والقواعد المركزة",
+          "المبيدات الحشرية الخطرة",
+          "المواد المشعة والنظائر",
+          "الغازات المضغوطة والسوائل الخطرة"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "المواد الغذائية والنباتية",
+        "items": [
+          "اللحوم الطازجة غير المجمدة",
+          "منتجات الألبان غير المعلبة",
+          "الفواكه والخضروات الطازجة سريعة التلف",
+          "البذور والنباتات الحية",
+          "المواد الغذائية منتهية الصلاحية",
+          "العسل والمنتجات النباتية غير المرخصة"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "الأدوية والمواد الطبية",
+        "items": [
+          "الأدوية المخدرة والمؤثرات العقلية",
+          "الأدوية بدون وصفة طبية رسمية",
+          "المنشطات والهرمونات",
+          "الدم ومشتقاته",
+          "الأعضاء البشرية والحيوانية",
+          "الأدوات الطبية الحادة بدون ترخيص"
+        ]
+      },
+      {
+        "id": 6,
+        "title": "التكنولوجيا والاتصالات",
+        "items": [
+          "أجهزة التشويش على الإشارات",
+          "أجهزة الاتصالات العسكرية",
+          "أجهزة الاستماع والتجسس",
+          "أجهزة فك التشفير غير المصرح بها",
+          "الطائرات بدون طيار بدون تصريح",
+          "معدات القرصنة الإلكترونية"
+        ]
+      },
+      {
+        "id": 7,
+        "title": "المستندات والوثائق",
+        "items": [
+          "جوازات السفر الأصلية",
+          "بطاقات الهوية الوطنية الأصلية",
+          "رخص القيادة الأصلية",
+          "الشهادات الجامعية الأصلية",
+          "الوثائق الحكومية الرسمية",
+          "الأختام والطوابع الرسمية"
+        ]
+      },
+      {
+        "id": 8,
+        "title": "مواد خاضعة للعقوبات الدولية",
+        "items": [
+          "منتجات من دول محظورة دولياً",
+          "سلع خاضعة لعقوبات الأمم المتحدة",
+          "مواد مرتبطة بالإرهاب",
+          "ممتلكات ثقافية مسروقة",
+          "أنواع حيوانات مهددة بالانقراض",
+          "منتجات تنتهك حقوق الملكية الفكرية"
+        ]
+      }
+    ],
+    
+    "warningBox": {
+      "title": "إخلاء المسؤولية",
+      "content": "هذه القائمة استرشادية وقد لا تشمل جميع المواد المحظورة. يجب على العميل التحقق من القوانين المحلية والدولية قبل الشحن. نحتفظ بحق رفض أي شحنة نشك في محتواها."
+    }
+  },
+  
+  "en": {
+    "pageTitle": "Appendix B - Prohibited Materials",
+    "pageDescription": "Complete detailed list of materials prohibited from shipping",
+    "mainTitle": "Appendix (B)",
+    "subtitle": "Detailed Prohibited Materials List",
+    "intro": "This appendix contains the comprehensive and detailed list of all materials and goods prohibited from shipping according to European and international laws.",
+    
+    "downloadSection": {
+      "title": "Download Complete Appendix",
+      "description": "To obtain the complete and detailed list in PDF format",
+      "downloadButton": "Download Appendix B - PDF",
+      "fileSize": "PDF - 2.5 MB",
+      "fileName": "appendix-b-prohibited-materials.pdf"
+    },
+    
+    "categories": [
+      {
+        "id": 1,
+        "title": "Financial and Precious Materials",
+        "items": [
+          "Paper and coin currency of all types",
+          "Gold, silver, and platinum bars",
+          "Precious jewelry and gemstones",
+          "Luxury watches (value exceeding €5000)",
+          "Art paintings and rare antiques",
+          "Rare stamps and old coins"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Weapons and Military Materials",
+        "items": [
+          "All types of firearms and ammunition",
+          "Explosives and hand grenades",
+          "Combat knives and daggers",
+          "Military training equipment",
+          "Official military uniforms",
+          "Military night vision devices"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Hazardous Chemicals",
+        "items": [
+          "Toxic materials and poisons",
+          "Flammable and explosive materials",
+          "Concentrated acids and bases",
+          "Dangerous pesticides",
+          "Radioactive materials and isotopes",
+          "Compressed gases and hazardous liquids"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Food and Plant Materials",
+        "items": [
+          "Fresh unfrozen meat",
+          "Non-canned dairy products",
+          "Perishable fresh fruits and vegetables",
+          "Seeds and live plants",
+          "Expired food items",
+          "Honey and unlicensed plant products"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Medicines and Medical Materials",
+        "items": [
+          "Narcotic drugs and psychotropic substances",
+          "Medicines without official prescription",
+          "Steroids and hormones",
+          "Blood and blood derivatives",
+          "Human and animal organs",
+          "Sharp medical instruments without license"
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Technology and Communications",
+        "items": [
+          "Signal jamming devices",
+          "Military communication devices",
+          "Listening and espionage devices",
+          "Unauthorized decryption devices",
+          "Drones without permit",
+          "Electronic hacking equipment"
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Documents and Certificates",
+        "items": [
+          "Original passports",
+          "Original national ID cards",
+          "Original driver's licenses",
+          "Original university certificates",
+          "Official government documents",
+          "Official seals and stamps"
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Materials Subject to International Sanctions",
+        "items": [
+          "Products from internationally prohibited countries",
+          "Goods subject to UN sanctions",
+          "Terrorism-related materials",
+          "Stolen cultural property",
+          "Endangered animal species",
+          "Products violating intellectual property rights"
+        ]
+      }
+    ],
+    
+    "warningBox": {
+      "title": "Disclaimer",
+      "content": "This list is indicative and may not include all prohibited materials. The customer must verify local and international laws before shipping. We reserve the right to refuse any shipment we suspect of its content."
+    }
+  }
+}
+
