@@ -1,0 +1,73 @@
+{
+  "ar": {
+    "pageTitle": "الأسئلة الشائعة",
+    "pageDescription": "إجابات على الأسئلة الأكثر شيوعاً حول خدمات الشحن",
+    "mainTitle": "الأسئلة الشائعة",
+    "intro": "نجيب على أكثر الأسئلة شيوعاً حول خدمات الشحن من أوروبا إلى سوريا",
+    
+    "faqItems": [
+      {
+        "id": 1,
+        "question": "كم يستغرق الشحن؟",
+        "answer": "عادةً يستغرق الشحن البحري من أوروبا إلى سوريا من 3 إلى 6 أسابيع، وذلك يعتمد على نوع الشحن (LCL أو FCL) والوجهة النهائية. نقوم بإعلامكم بالمواعيد المحددة عند حجز الشحنة."
+      },
+      {
+        "id": 2,
+        "question": "هل يوجد رسوم إضافية؟",
+        "answer": "جميع الرسوم واضحة ومحددة مسبقاً. السعر المعروض يشمل الشحن البحري من المركز الأوروبي إلى ميناء اللاذقية. قد تكون هناك رسوم جمركية محلية في سوريا حسب نوع البضاعة، وسنوضح لكم كل التفاصيل قبل الشحن."
+      },
+      {
+        "id": 3,
+        "question": "هل يوجد توصيل باب لباب؟",
+        "answer": "نعم، نوفر خدمة التوصيل من الباب في أوروبا إلى الباب في سوريا. يمكنكم اختيار هذه الخدمة عند إنشاء الشحنة، وسيتم احتساب التكلفة الإضافية بناءً على الموقع والمسافة."
+      },
+      {
+        "id": 4,
+        "question": "ماذا لو تلفت البضاعة؟",
+        "answer": "جميع شحناتنا مؤمنة. في حالة حدوث أي تلف أو فقدان للبضاعة خلال عملية الشحن، يمكنكم تقديم مطالبة تأمين. ننصح بتصوير البضاعة قبل الشحن وعند الاستلام، والإبلاغ عن أي مشكلة فوراً."
+      }
+    ],
+    
+    "contactSection": {
+      "title": "لم تجد إجابة لسؤالك؟",
+      "description": "تواصل معنا مباشرة وسنكون سعداء بمساعدتك",
+      "button": "تواصل معنا"
+    }
+  },
+  
+  "en": {
+    "pageTitle": "Frequently Asked Questions",
+    "pageDescription": "Answers to the most common questions about shipping services",
+    "mainTitle": "Frequently Asked Questions",
+    "intro": "We answer the most frequently asked questions about shipping from Europe to Syria",
+    
+    "faqItems": [
+      {
+        "id": 1,
+        "question": "How long does shipping take?",
+        "answer": "Sea freight from Europe to Syria typically takes 3 to 6 weeks, depending on the type of shipment (LCL or FCL) and final destination. We will inform you of specific timelines when booking your shipment."
+      },
+      {
+        "id": 2,
+        "question": "Are there additional fees?",
+        "answer": "All fees are clear and predetermined. The quoted price includes sea freight from the European center to Latakia port. There may be local customs fees in Syria depending on the type of goods, and we will clarify all details before shipping."
+      },
+      {
+        "id": 3,
+        "question": "Is door-to-door delivery available?",
+        "answer": "Yes, we provide door-to-door delivery service from Europe to Syria. You can select this service when creating your shipment, and the additional cost will be calculated based on location and distance."
+      },
+      {
+        "id": 4,
+        "question": "What if the goods are damaged?",
+        "answer": "All our shipments are insured. In case of any damage or loss of goods during shipping, you can file an insurance claim. We recommend photographing the goods before shipping and upon receipt, and reporting any issues immediately."
+      }
+    ],
+    
+    "contactSection": {
+      "title": "Didn't find an answer to your question?",
+      "description": "Contact us directly and we'll be happy to help",
+      "button": "Contact Us"
+    }
+  }
+}
