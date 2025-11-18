@@ -1,0 +1,112 @@
+{
+  "ar": {
+    "pageTitle": "اتصال الطوارئ",
+    "pageDescription": "رقم الاتصال للحالات الطارئة على مدار الساعة",
+    "mainTitle": "اتصال الطوارئ",
+    "subtitle": "متاح 24/7",
+    "intro": "للحالات الطارئة والاستفسارات العاجلة، يمكنكم التواصل معنا على مدار الساعة طوال أيام الأسبوع",
+    
+    "emergencyNumber": "0031683083916",
+    "emergencyNumberFormatted": "+31 6 8308 3916",
+    "availabilityTitle": "التوفر",
+    "availability": "24 ساعة / 7 أيام في الأسبوع",
+    
+    "whenToCall": {
+      "title": "متى تتصل بنا؟",
+      "situations": [
+        {
+          "id": 1,
+          "title": "تأخير غير متوقع في الشحنة",
+          "description": "إذا كانت شحنتك متأخرة بشكل غير متوقع أو لم تصل في الموعد المحدد",
+          "icon": "clock"
+        },
+        {
+          "id": 2,
+          "title": "مشاكل في الجمارك",
+          "description": "إذا واجهتك مشكلة عاجلة في الإجراءات الجمركية تحتاج تدخل فوري",
+          "icon": "alert"
+        },
+        {
+          "id": 3,
+          "title": "تلف أو فقدان الشحنة",
+          "description": "في حالة اكتشاف تلف أو فقدان في الشحنة يحتاج إبلاغ فوري",
+          "icon": "damage"
+        },
+        {
+          "id": 4,
+          "title": "استفسار عاجل",
+          "description": "لأي استفسار عاجل لا يمكن تأجيله لساعات العمل العادية",
+          "icon": "question"
+        }
+      ]
+    },
+    
+    "alternativeContact": {
+      "title": "وسائل اتصال أخرى",
+      "email": "contact@medo-freight.eu",
+      "whatsapp": "متاح على واتساب",
+      "note": "للاستفسارات غير العاجلة، يرجى استخدام نموذج الاتصال في صفحة 'تواصل معنا'"
+    },
+    
+    "languages": {
+      "title": "اللغات المتاحة",
+      "list": "العربية - الإنجليزية - الهولندية"
+    }
+  },
+  
+  "en": {
+    "pageTitle": "Emergency Contact",
+    "pageDescription": "24/7 emergency contact number",
+    "mainTitle": "Emergency Contact",
+    "subtitle": "Available 24/7",
+    "intro": "For emergencies and urgent inquiries, you can contact us around the clock, seven days a week",
+    
+    "emergencyNumber": "0031683083916",
+    "emergencyNumberFormatted": "+31 6 8308 3916",
+    "availabilityTitle": "Availability",
+    "availability": "24 Hours / 7 Days a Week",
+    
+    "whenToCall": {
+      "title": "When to Call Us?",
+      "situations": [
+        {
+          "id": 1,
+          "title": "Unexpected Shipment Delay",
+          "description": "If your shipment is unexpectedly delayed or has not arrived on schedule",
+          "icon": "clock"
+        },
+        {
+          "id": 2,
+          "title": "Customs Issues",
+          "description": "If you face an urgent customs clearance problem requiring immediate intervention",
+          "icon": "alert"
+        },
+        {
+          "id": 3,
+          "title": "Damage or Loss of Shipment",
+          "description": "In case of discovering damage or loss in the shipment requiring immediate reporting",
+          "icon": "damage"
+        },
+        {
+          "id": 4,
+          "title": "Urgent Inquiry",
+          "description": "For any urgent inquiry that cannot be postponed to regular business hours",
+          "icon": "question"
+        }
+      ]
+    },
+    
+    "alternativeContact": {
+      "title": "Other Contact Methods",
+      "email": "contact@medo-freight.eu",
+      "whatsapp": "Available on WhatsApp",
+      "note": "For non-urgent inquiries, please use the contact form on the 'Contact Us' page"
+    },
+    
+    "languages": {
+      "title": "Available Languages",
+      "list": "Arabic - English - Dutch"
+    }
+  }
+}
+
