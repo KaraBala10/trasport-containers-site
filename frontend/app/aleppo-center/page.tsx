@@ -22,11 +22,6 @@ export default function AleppoCenterPage() {
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">{content.mainTitle}</h1>
             <p className="text-xl max-w-3xl mx-auto">{content.intro}</p>
-            <div className="mt-4">
-              <span className="inline-block bg-primary-yellow text-primary-dark px-4 py-2 rounded-full text-sm font-bold">
-                {content.note}
-              </span>
-            </div>
           </div>
         </div>
 

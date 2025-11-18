@@ -1,0 +1,132 @@
+{
+  "ar": {
+    "pageTitle": "سياسة الخصوصية",
+    "pageDescription": "سياسة الخصوصية وحماية البيانات وفقاً لـ GDPR",
+    "mainTitle": "سياسة الخصوصية - GDPR",
+    "intro": "نحن في MEDO-FREIGHT EU نلتزم بحماية خصوصيتك وبياناتك الشخصية وفقاً للائحة العامة لحماية البيانات الأوروبية (GDPR)",
+    "note": "لا تحتاج Backend",
+    "lastUpdated": "آخر تحديث: نوفمبر 2025",
+    
+    "sections": [
+      {
+        "id": 1,
+        "title": "جمع البيانات الضرورية فقط",
+        "icon": "database",
+        "content": "نقوم بجمع البيانات الشخصية الضرورية فقط لتقديم خدمات الشحن. تشمل هذه البيانات: الاسم الكامل، العنوان، رقم الهاتف، البريد الإلكتروني، ومعلومات الشحنة. لا نجمع أي بيانات زائدة أو غير ضرورية لتنفيذ الخدمة."
+      },
+      {
+        "id": 2,
+        "title": "عدم مشاركة البيانات خارج الإطار الجمركي",
+        "icon": "shield",
+        "content": "نلتزم بعدم مشاركة بياناتك الشخصية مع أي جهات خارجية إلا في حالات محددة: السلطات الجمركية الرسمية في أوروبا وسوريا، شركات النقل المعتمدة لدينا، والجهات القانونية عند الضرورة. لن يتم بيع أو تأجير بياناتك لأي طرف ثالث."
+      },
+      {
+        "id": 3,
+        "title": "تخزين البيانات في الفرونت إند",
+        "icon": "lock",
+        "content": "يتم تخزين بعض البيانات محلياً في متصفحك (Local Storage) لتحسين تجربة المستخدم، مثل تفضيلات اللغة. هذه البيانات لا تغادر جهازك ولا يمكن الوصول إليها من قبل أي جهة خارجية. يمكنك حذفها في أي وقت من إعدادات المتصفح."
+      },
+      {
+        "id": 4,
+        "title": "حقوقك في حماية البيانات (GDPR)",
+        "icon": "user",
+        "content": "وفقاً للـ GDPR، لديك الحق في: الوصول إلى بياناتك الشخصية، تصحيح البيانات غير الدقيقة، حذف بياناتك (الحق في النسيان)، تقييد معالجة البيانات، نقل البيانات إلى مزود خدمة آخر، والاعتراض على معالجة بياناتك. للممارسة أي من هذه الحقوق، يرجى التواصل معنا."
+      },
+      {
+        "id": 5,
+        "title": "مدة الاحتفاظ بالبيانات",
+        "icon": "clock",
+        "content": "نحتفظ ببياناتك الشخصية طالما كانت ضرورية لتقديم الخدمة أو وفقاً للمتطلبات القانونية والجمركية. عادةً يتم الاحتفاظ بسجلات الشحن لمدة 5 سنوات وفقاً للقوانين الأوروبية. بعد انتهاء هذه المدة، يتم حذف البيانات بشكل آمن."
+      },
+      {
+        "id": 6,
+        "title": "الأمان والحماية",
+        "icon": "security",
+        "content": "نستخدم تقنيات التشفير المتقدمة (SSL/TLS) لحماية بياناتك أثناء النقل. جميع الاتصالات مع موقعنا مشفرة. نطبق إجراءات أمنية صارمة لحماية بياناتك من الوصول غير المصرح به، التعديل، الإفصاح، أو التدمير."
+      },
+      {
+        "id": 7,
+        "title": "ملفات تعريف الارتباط (Cookies)",
+        "icon": "cookie",
+        "content": "نستخدم ملفات تعريف الارتباط الضرورية فقط لتشغيل الموقع، مثل حفظ تفضيلات اللغة وجلسة المستخدم. لا نستخدم ملفات تعريف ارتباط تتبعية أو إعلانية. يمكنك التحكم في ملفات تعريف الارتباط من إعدادات المتصفح الخاص بك."
+      },
+      {
+        "id": 8,
+        "title": "التواصل معنا",
+        "icon": "mail",
+        "content": "إذا كان لديك أي أسئلة حول سياسة الخصوصية أو ترغب في ممارسة حقوقك في حماية البيانات، يمكنك التواصل معنا عبر: contact@medo-freight.eu أو الاتصال على +31 683083916"
+      }
+    ],
+    
+    "footer": {
+      "title": "القانون المطبق",
+      "content": "تخضع هذه السياسة لقوانين مملكة هولندا ولائحة GDPR الأوروبية. الاختصاص القضائي: روتردام، هولندا."
+    }
+  },
+  
+  "en": {
+    "pageTitle": "Privacy Policy",
+    "pageDescription": "Privacy policy and data protection according to GDPR",
+    "mainTitle": "Privacy Policy - GDPR",
+    "intro": "At MEDO-FREIGHT EU, we are committed to protecting your privacy and personal data in accordance with the European General Data Protection Regulation (GDPR)",
+    "note": "No Backend needed",
+    "lastUpdated": "Last updated: November 2025",
+    
+    "sections": [
+      {
+        "id": 1,
+        "title": "Collection of Necessary Data Only",
+        "icon": "database",
+        "content": "We collect only the personal data necessary to provide shipping services. This data includes: full name, address, phone number, email, and shipment information. We do not collect any excessive or unnecessary data for service execution."
+      },
+      {
+        "id": 2,
+        "title": "No Data Sharing Outside Customs Framework",
+        "icon": "shield",
+        "content": "We are committed not to share your personal data with any third parties except in specific cases: official customs authorities in Europe and Syria, our authorized shipping companies, and legal entities when necessary. Your data will not be sold or rented to any third party."
+      },
+      {
+        "id": 3,
+        "title": "Frontend Data Storage",
+        "icon": "lock",
+        "content": "Some data is stored locally in your browser (Local Storage) to improve user experience, such as language preferences. This data does not leave your device and cannot be accessed by any external party. You can delete it anytime from your browser settings."
+      },
+      {
+        "id": 4,
+        "title": "Your Data Protection Rights (GDPR)",
+        "icon": "user",
+        "content": "Under GDPR, you have the right to: access your personal data, correct inaccurate data, delete your data (right to be forgotten), restrict data processing, transfer data to another service provider, and object to data processing. To exercise any of these rights, please contact us."
+      },
+      {
+        "id": 5,
+        "title": "Data Retention Period",
+        "icon": "clock",
+        "content": "We retain your personal data as long as necessary to provide the service or according to legal and customs requirements. Typically, shipping records are kept for 5 years according to European laws. After this period, data is securely deleted."
+      },
+      {
+        "id": 6,
+        "title": "Security and Protection",
+        "icon": "security",
+        "content": "We use advanced encryption technologies (SSL/TLS) to protect your data during transmission. All communications with our website are encrypted. We implement strict security measures to protect your data from unauthorized access, modification, disclosure, or destruction."
+      },
+      {
+        "id": 7,
+        "title": "Cookies",
+        "icon": "cookie",
+        "content": "We use only necessary cookies to operate the website, such as saving language preferences and user sessions. We do not use tracking or advertising cookies. You can control cookies from your browser settings."
+      },
+      {
+        "id": 8,
+        "title": "Contact Us",
+        "icon": "mail",
+        "content": "If you have any questions about the privacy policy or wish to exercise your data protection rights, you can contact us at: contact@medo-freight.eu or call +31 683083916"
+      }
+    ],
+    
+    "footer": {
+      "title": "Applicable Law",
+      "content": "This policy is subject to the laws of the Kingdom of the Netherlands and the European GDPR regulation. Jurisdiction: Rotterdam, Netherlands."
+    }
+  }
+}
+
