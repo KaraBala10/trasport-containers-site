@@ -1,0 +1,132 @@
+{
+  "ar": {
+    "pageTitle": "الشروط والأحكام",
+    "pageDescription": "شروط وأحكام الخدمة وعقد الشحن",
+    "mainTitle": "الشروط والأحكام",
+    "subtitle": "شروط الخدمة",
+    "intro": "يرجى قراءة الشروط والأحكام التالية بعناية قبل استخدام خدمات الشحن. باستخدام خدماتنا، فإنك توافق على الالتزام بهذه الشروط.",
+    "lastUpdated": "آخر تحديث: نوفمبر 2025",
+    
+    "terms": [
+      {
+        "id": 1,
+        "title": "الدفع 100% مقدماً",
+        "description": "يجب دفع كامل قيمة الشحن مقدماً قبل بدء عملية الشحن. لا يتم قبول أي شحنة دون الدفع الكامل المسبق. الدفع يشمل جميع رسوم النقل البحري من المركز الأوروبي إلى ميناء الوصول.",
+        "icon": "payment"
+      },
+      {
+        "id": 2,
+        "title": "الجمارك مشمولة",
+        "description": "السعر يشمل الرسوم الجمركية الأوروبية والنقل البحري. أما الرسوم الجمركية في دولة الوصول (سوريا) فهي مسؤولية العميل وتختلف حسب نوع البضاعة والقوانين المحلية. سنقدم لكم معلومات تقديرية عن الرسوم المتوقعة.",
+        "icon": "customs"
+      },
+      {
+        "id": 3,
+        "title": "التغليف مسؤولية العميل ما لم يطلبه",
+        "description": "التغليف والتعبئة الصحيحة للبضائع هي مسؤولية العميل. نحن نوفر خدمات التغليف الاحترافي بناءً على الطلب مقابل رسوم إضافية. نوصي بشدة بالتغليف الجيد لحماية البضائع أثناء النقل البحري.",
+        "icon": "package"
+      },
+      {
+        "id": 4,
+        "title": "أوقات الشحن تقديرية",
+        "description": "المدة الزمنية للشحن (3-6 أسابيع) هي تقديرية وقد تختلف بناءً على عوامل خارجة عن إرادتنا مثل: الأحوال الجوية، الإجراءات الجمركية، ازدحام الموانئ، والظروف اللوجستية. لا نتحمل مسؤولية التأخير الناتج عن هذه العوامل.",
+        "icon": "time"
+      },
+      {
+        "id": 5,
+        "title": "بدون تأمين: حد المسؤولية = قيمة أجرة الشحن فقط",
+        "description": "في حالة عدم شراء التأمين الإضافي، فإن مسؤوليتنا القصوى في حالة الفقدان أو التلف تقتصر على قيمة أجرة الشحن المدفوعة فقط (وليس قيمة البضاعة). ننصح بشدة بشراء التأمين للبضائع الثمينة أو الهشة.",
+        "icon": "insurance"
+      },
+      {
+        "id": 6,
+        "title": "يمنع شحن بضائع محظورة",
+        "description": "يمنع منعاً باتاً شحن أي من المواد المحظورة المذكورة في القائمة الرسمية (الملحق B). نحتفظ بالحق في فحص جميع الشحنات. في حالة اكتشاف مواد محظورة، سيتم مصادرة الشحنة وإبلاغ السلطات المختصة، وسيتحمل المرسل كامل المسؤولية القانونية والمالية.",
+        "icon": "prohibited"
+      }
+    ],
+    
+    "contractSection": {
+      "title": "عقد الشحن",
+      "description": "للحصول على عقد الشحن الكامل بصيغة PDF، يمكنكم تحميله من الزر أدناه. يحتوي العقد على جميع الشروط والأحكام التفصيلية.",
+      "downloadButton": "تحميل عقد الشحن PDF",
+      "fileSize": "PDF - 1.8 MB"
+    },
+    
+    "acceptanceBox": {
+      "title": "الموافقة على الشروط",
+      "content": "باستخدام خدماتنا، فإنك تقر بأنك قرأت وفهمت ووافقت على جميع الشروط والأحكام المذكورة أعلاه. إذا كنت لا توافق على أي من هذه الشروط، يرجى عدم استخدام خدماتنا."
+    },
+    
+    "footer": {
+      "title": "القانون الساري والاختصاص القضائي",
+      "content": "تخضع هذه الشروط لقوانين مملكة هولندا. أي نزاع ينشأ عن هذا العقد يخضع للاختصاص الحصري لمحاكم روتردام، هولندا."
+    }
+  },
+  
+  "en": {
+    "pageTitle": "Terms & Conditions",
+    "pageDescription": "Service terms and conditions and shipping contract",
+    "mainTitle": "Terms & Conditions",
+    "subtitle": "Service Terms",
+    "intro": "Please read the following terms and conditions carefully before using our shipping services. By using our services, you agree to be bound by these terms.",
+    "lastUpdated": "Last updated: November 2025",
+    
+    "terms": [
+      {
+        "id": 1,
+        "title": "100% Payment in Advance",
+        "description": "Full shipping payment must be made in advance before the shipping process begins. No shipment will be accepted without full prepayment. Payment includes all sea freight charges from the European center to the port of arrival.",
+        "icon": "payment"
+      },
+      {
+        "id": 2,
+        "title": "Customs Included",
+        "description": "The price includes European customs fees and sea freight. Customs fees at the destination country (Syria) are the customer's responsibility and vary depending on the type of goods and local laws. We will provide you with estimated information about expected fees.",
+        "icon": "customs"
+      },
+      {
+        "id": 3,
+        "title": "Packaging is Customer's Responsibility Unless Requested",
+        "description": "Proper packaging and packing of goods is the customer's responsibility. We provide professional packaging services upon request for additional fees. We strongly recommend good packaging to protect goods during sea transport.",
+        "icon": "package"
+      },
+      {
+        "id": 4,
+        "title": "Shipping Times are Estimates",
+        "description": "The shipping duration (3-6 weeks) is an estimate and may vary based on factors beyond our control such as: weather conditions, customs procedures, port congestion, and logistical circumstances. We are not responsible for delays resulting from these factors.",
+        "icon": "time"
+      },
+      {
+        "id": 5,
+        "title": "Without Insurance: Liability Limit = Freight Charge Value Only",
+        "description": "Without purchasing additional insurance, our maximum liability in case of loss or damage is limited to the freight charge paid only (not the value of goods). We strongly recommend purchasing insurance for valuable or fragile goods.",
+        "icon": "insurance"
+      },
+      {
+        "id": 6,
+        "title": "Prohibited Goods Shipping is Forbidden",
+        "description": "Shipping any prohibited materials mentioned in the official list (Appendix B) is strictly forbidden. We reserve the right to inspect all shipments. If prohibited materials are discovered, the shipment will be confiscated and authorities will be notified, and the sender will bear full legal and financial responsibility.",
+        "icon": "prohibited"
+      }
+    ],
+    
+    "contractSection": {
+      "title": "Shipping Contract",
+      "description": "To obtain the complete shipping contract in PDF format, you can download it from the button below. The contract contains all detailed terms and conditions.",
+      "downloadButton": "Download Shipping Contract PDF",
+      "fileSize": "PDF - 1.8 MB"
+    },
+    
+    "acceptanceBox": {
+      "title": "Acceptance of Terms",
+      "content": "By using our services, you acknowledge that you have read, understood, and agreed to all the terms and conditions mentioned above. If you do not agree to any of these terms, please do not use our services."
+    },
+    
+    "footer": {
+      "title": "Applicable Law and Jurisdiction",
+      "content": "These terms are subject to the laws of the Kingdom of the Netherlands. Any dispute arising from this contract is subject to the exclusive jurisdiction of the courts of Rotterdam, Netherlands."
+    }
+  }
+}
+
