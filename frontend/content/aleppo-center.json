@@ -1,0 +1,104 @@
+{
+  "ar": {
+    "pageTitle": "مركز حلب والتوزيع",
+    "pageDescription": "مراكزنا في حلب لاستلام وتوزيع الشحنات",
+    "mainTitle": "مركز حلب والتوزيع",
+    "intro": "نوفر لكم مراكز استلام وتوزيع في حلب لتسهيل استلام شحناتكم القادمة من أوروبا",
+    "note": "لا تحتاج لـ Backend",
+    
+    "tableHeaders": {
+      "country": "الدولة",
+      "city": "المدينة",
+      "address": "العنوان",
+      "service": "الخدمة"
+    },
+    
+    "locations": [
+      {
+        "country": "سوريا",
+        "countryCode": "SY",
+        "city": "حلب - الرامسة",
+        "address": "بجانب كراج البولمان",
+        "services": ["توزيع LCL", "توزيع FCL"]
+      },
+      {
+        "country": "سوريا",
+        "countryCode": "SY",
+        "city": "حلب - الشيخ نجار",
+        "address": "منطقة مكاتب الشحن الدولي",
+        "services": ["FCL"]
+      }
+    ],
+    
+    "servicesInfo": {
+      "title": "أنواع الخدمات",
+      "distribution": {
+        "title": "خدمة التوزيع",
+        "description": "نوفر خدمة التوزيع المحلي لشحنات LCL و FCL من المراكز إلى عنوانكم في حلب والمناطق المحيطة"
+      },
+      "storage": {
+        "title": "التخزين المؤقت",
+        "description": "إمكانية التخزين المؤقت للشحنات في مراكزنا لحين جاهزيتكم للاستلام"
+      }
+    },
+    
+    "contactInfo": {
+      "title": "معلومات الاتصال",
+      "partner": "الشريك المحلي: شركة الإكرام التجارية",
+      "phone": "+963 995 477 8188",
+      "email": "alikramtrading.co@gmail.com"
+    }
+  },
+  
+  "en": {
+    "pageTitle": "Aleppo Distribution Center",
+    "pageDescription": "Our centers in Aleppo for receiving and distributing shipments",
+    "mainTitle": "Aleppo Distribution Center",
+    "intro": "We provide receiving and distribution centers in Aleppo to facilitate receiving your shipments from Europe",
+    "note": "No Backend needed",
+    
+    "tableHeaders": {
+      "country": "Country",
+      "city": "City",
+      "address": "Address",
+      "service": "Service"
+    },
+    
+    "locations": [
+      {
+        "country": "Syria",
+        "countryCode": "SY",
+        "city": "Aleppo - Al-Ramsa",
+        "address": "Next to Pullman Garage",
+        "services": ["LCL Distribution", "FCL Distribution"]
+      },
+      {
+        "country": "Syria",
+        "countryCode": "SY",
+        "city": "Aleppo - Sheikh Najjar",
+        "address": "International Freight Offices Area",
+        "services": ["FCL"]
+      }
+    ],
+    
+    "servicesInfo": {
+      "title": "Service Types",
+      "distribution": {
+        "title": "Distribution Service",
+        "description": "We provide local distribution service for LCL and FCL shipments from centers to your address in Aleppo and surrounding areas"
+      },
+      "storage": {
+        "title": "Temporary Storage",
+        "description": "Option for temporary storage of shipments in our centers until you're ready for pickup"
+      }
+    },
+    
+    "contactInfo": {
+      "title": "Contact Information",
+      "partner": "Local Partner: Al Ikram Trading Co.",
+      "phone": "+963 995 477 8188",
+      "email": "alikramtrading.co@gmail.com"
+    }
+  }
+}
+
