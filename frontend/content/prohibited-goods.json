@@ -1,0 +1,144 @@
+{
+  "ar": {
+    "pageTitle": "البضائع المحظورة",
+    "pageDescription": "قائمة المواد الممنوعة من الشحن وفقاً للقوانين الدولية",
+    "mainTitle": "البضائع المحظورة",
+    "subtitle": "المواد الممنوعة",
+    "intro": "وفقاً للقوانين الأوروبية والدولية، يمنع شحن المواد التالية. نلتزم بفحص جميع الشحنات للتأكد من التوافق التام مع اللوائح.",
+    
+    "prohibitedItems": [
+      {
+        "id": 1,
+        "title": "نقد، ذهب، مجوهرات",
+        "description": "يمنع شحن النقود الورقية أو المعدنية، السبائك الذهبية، المجوهرات الثمينة، والأحجار الكريمة",
+        "icon": "money"
+      },
+      {
+        "id": 2,
+        "title": "أسلحة وذخائر",
+        "description": "جميع أنواع الأسلحة النارية، الذخائر، المتفجرات، والأدوات العسكرية محظورة بشكل كامل",
+        "icon": "weapon"
+      },
+      {
+        "id": 3,
+        "title": "كيماويات خطرة",
+        "description": "المواد الكيميائية الخطرة، القابلة للاشتعال، السامة، أو المسببة للتآكل",
+        "icon": "chemical"
+      },
+      {
+        "id": 4,
+        "title": "أغذية قابلة للتلف",
+        "description": "المواد الغذائية سريعة التلف، اللحوم الطازجة، الألبان غير المعلبة، والمنتجات التي تحتاج تبريد",
+        "icon": "food"
+      },
+      {
+        "id": 5,
+        "title": "أجهزة اتصالات محظورة",
+        "description": "أجهزة الاتصالات غير المرخصة، أجهزة التشويش، ومعدات الاتصال العسكرية",
+        "icon": "signal"
+      },
+      {
+        "id": 6,
+        "title": "مواد خاضعة للعقوبات الدولية",
+        "description": "أي مواد أو منتجات خاضعة للعقوبات الدولية أو الحظر من قبل الأمم المتحدة أو الاتحاد الأوروبي",
+        "icon": "ban"
+      },
+      {
+        "id": 7,
+        "title": "مستندات رسمية أصلية",
+        "description": "جوازات السفر، البطاقات الشخصية، الشهادات الرسمية الأصلية، والوثائق الحكومية",
+        "icon": "document"
+      },
+      {
+        "id": 8,
+        "title": "طائرات مسيّرة بدون موافقة",
+        "description": "الطائرات بدون طيار (Drones) تحتاج إلى موافقة مسبقة وتصاريح خاصة للشحن",
+        "icon": "drone"
+      }
+    ],
+    
+    "appendixSection": {
+      "title": "الملحق (B) - قائمة المواد المحظورة الكاملة",
+      "description": "للاطلاع على القائمة الكاملة والتفصيلية للمواد المحظورة، يمكنكم تحميل الملحق (B)",
+      "downloadButton": "تحميل الملحق B",
+      "fileSize": "PDF - 2.5 MB"
+    },
+    
+    "warningBox": {
+      "title": "تحذير هام",
+      "content": "محاولة شحن أي من المواد المحظورة قد تؤدي إلى: مصادرة الشحنة، غرامات مالية كبيرة، إجراءات قانونية، وإدراج في القائمة السوداء. نحن نفحص جميع الشحنات قبل القبول."
+    }
+  },
+  
+  "en": {
+    "pageTitle": "Prohibited Goods",
+    "pageDescription": "List of prohibited materials from shipping according to international laws",
+    "mainTitle": "Prohibited Goods",
+    "subtitle": "Prohibited Materials",
+    "intro": "According to European and international laws, shipping the following materials is prohibited. We are committed to inspecting all shipments to ensure full compliance with regulations.",
+    
+    "prohibitedItems": [
+      {
+        "id": 1,
+        "title": "Cash, Gold, Jewelry",
+        "description": "Shipping paper or coin currency, gold bars, precious jewelry, and gemstones is prohibited",
+        "icon": "money"
+      },
+      {
+        "id": 2,
+        "title": "Weapons and Ammunition",
+        "description": "All types of firearms, ammunition, explosives, and military equipment are completely prohibited",
+        "icon": "weapon"
+      },
+      {
+        "id": 3,
+        "title": "Hazardous Chemicals",
+        "description": "Dangerous chemicals, flammable, toxic, or corrosive materials",
+        "icon": "chemical"
+      },
+      {
+        "id": 4,
+        "title": "Perishable Food",
+        "description": "Perishable food items, fresh meat, non-canned dairy products, and products requiring refrigeration",
+        "icon": "food"
+      },
+      {
+        "id": 5,
+        "title": "Prohibited Communication Devices",
+        "description": "Unlicensed communication devices, jamming equipment, and military communication gear",
+        "icon": "signal"
+      },
+      {
+        "id": 6,
+        "title": "Materials Subject to International Sanctions",
+        "description": "Any materials or products subject to international sanctions or embargo by the United Nations or European Union",
+        "icon": "ban"
+      },
+      {
+        "id": 7,
+        "title": "Original Official Documents",
+        "description": "Passports, ID cards, original official certificates, and government documents",
+        "icon": "document"
+      },
+      {
+        "id": 8,
+        "title": "Drones Without Approval",
+        "description": "Unmanned aerial vehicles (Drones) require prior approval and special permits for shipping",
+        "icon": "drone"
+      }
+    ],
+    
+    "appendixSection": {
+      "title": "Appendix (B) - Complete Prohibited Materials List",
+      "description": "For the complete and detailed list of prohibited materials, you can download Appendix (B)",
+      "downloadButton": "Download Appendix B",
+      "fileSize": "PDF - 2.5 MB"
+    },
+    
+    "warningBox": {
+      "title": "Important Warning",
+      "content": "Attempting to ship any prohibited materials may result in: shipment confiscation, significant fines, legal proceedings, and blacklisting. We inspect all shipments before acceptance."
+    }
+  }
+}
+
