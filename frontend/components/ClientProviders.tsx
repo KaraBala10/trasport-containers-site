@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import Script from 'next/script';
 import ReCaptchaProvider from './ReCaptchaProvider';
+import WhatsAppButton from './WhatsAppButton';
 
 interface ClientProvidersProps {
   children: ReactNode;
@@ -11,12 +12,35 @@ interface ClientProvidersProps {
 export default function ClientProviders({ children }: ClientProvidersProps) {
   const [shouldLoadGA, setShouldLoadGA] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const gaId = process.env.NEXT_PUBLIC_GA_ID || '';
+  
+  // WhatsApp Configuration - يمكن تغيير الرقم من هنا
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '31612345678'; // رقم مؤقت
 
   useEffect(() => {
     setIsMounted(true);
     
-    if (!gaId) return;
+    // تتبع تغيير اللغة من الـ HTML element
+    const updateLanguage = () => {
+      const htmlLang = document.documentElement.lang;
+      if (htmlLang === 'ar' || htmlLang === 'en') {
+        setLanguage(htmlLang);
+      }
+    };
+    
+    updateLanguage();
+    
+    // مراقبة تغييرات اللغة
+    const observer = new MutationObserver(updateLanguage);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['lang']
+    });
+    
+    if (!gaId) {
+      return () => observer.disconnect();
+    }
 
     // Delay GA loading significantly - only load after 10 seconds or on user interaction
     let loaded = false;
@@ -44,6 +68,7 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
 
     return () => {
       clearTimeout(timer);
+      observer.disconnect();
       events.forEach(event => {
         window.removeEventListener(event, loadGA);
       });
@@ -78,6 +103,14 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
       <ReCaptchaProvider>
         {children}
       </ReCaptchaProvider>
+      
+      {/* زر الواتساب العائم - يظهر في جميع الصفحات */}
+      {isMounted && (
+        <WhatsAppButton 
+          phoneNumber={whatsappNumber}
+          language={language}
+        />
+      )}
     </>
   );
 }

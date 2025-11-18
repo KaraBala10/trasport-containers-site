@@ -38,6 +38,7 @@ export default function Header({ language, setLanguage }: HeaderProps) {
       tracking: "التتبع",
       about: "من نحن",
       contact: "اتصل بنا",
+      faq: "الأسئلة الشائعة",
       createShipment: "إنشاء شحنة",
     },
     en: {
@@ -46,6 +47,7 @@ export default function Header({ language, setLanguage }: HeaderProps) {
       tracking: "Tracking",
       about: "About",
       contact: "Contact",
+      faq: "FAQ",
       createShipment: "Create Shipment",
     },
   };
@@ -161,6 +163,22 @@ export default function Header({ language, setLanguage }: HeaderProps) {
             >
               {t.contact}
               {pathname === "/contact" && (
+                <span
+                  className="absolute bottom-0 left-0 right-0 h-1 bg-primary-yellow rounded-full"
+                  aria-hidden="true"
+                ></span>
+              )}
+            </Link>
+            <Link
+              href="/faq"
+              className={`relative text-gray-800 hover:text-primary-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded px-2 py-1 ${
+                pathname === "/faq" ? "text-primary-dark" : ""
+              }`}
+              aria-label={t.faq}
+              aria-current={pathname === "/faq" ? "page" : undefined}
+            >
+              {t.faq}
+              {pathname === "/faq" && (
                 <span
                   className="absolute bottom-0 left-0 right-0 h-1 bg-primary-yellow rounded-full"
                   aria-hidden="true"

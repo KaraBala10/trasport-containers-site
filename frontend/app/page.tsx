@@ -5,7 +5,6 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Countdown from "@/components/Countdown";
-import WhatsAppButton from "@/components/WhatsAppButton";
 import PartnerLogos from "@/components/PartnerLogos";
 import InteractiveMap from "@/components/InteractiveMap";
 import Image from "next/image";
@@ -29,7 +28,6 @@ export default function Home() {
         heroDescription: "خدمات شحن احترافية عالمية",
         calculatePrice: "احسب سعرك الآن",
         bookShipment: "احجز شحنتك",
-        monthlyShipping: "اشترك في الشحن الشهري",
         serviceTitle: "خدماتنا",
         serviceDescription: "نقدم خدمات شحن احترافية مع ضمان الجودة والسرعة",
         shippingStages: "مراحل الشحن",
@@ -54,7 +52,6 @@ export default function Home() {
         heroDescription: "Professional Global Freight Services",
         calculatePrice: "Calculate Your Price Now",
         bookShipment: "Book Your Shipment",
-        monthlyShipping: "Subscribe to Monthly Shipping",
         serviceTitle: "Our Services",
         serviceDescription:
           "We provide professional shipping services with guaranteed quality and speed",
@@ -166,17 +163,6 @@ export default function Home() {
                 }
               >
                 {t.bookShipment}
-              </Link>
-              <Link
-                href="/subscribe"
-                className="border-2 border-white text-white px-8 py-3 rounded-md font-bold text-lg hover:bg-white hover:text-primary-dark transition-all focus:outline-none focus:ring-4 focus:ring-white/50 focus:ring-offset-2"
-                aria-label={
-                  language === "ar"
-                    ? "اشترك في الشحن الشهري"
-                    : "Subscribe to monthly shipping service"
-                }
-              >
-                {t.monthlyShipping}
               </Link>
             </div>
 
@@ -608,9 +594,6 @@ export default function Home() {
       </main>
 
       <Footer language={language} />
-
-      {/* WhatsApp Floating Button */}
-      <WhatsAppButton language={language} />
     </div>
   );
 }

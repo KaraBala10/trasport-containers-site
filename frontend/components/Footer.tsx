@@ -29,6 +29,7 @@ export default function Footer({ language }: FooterProps) {
       pricing: 'الأسعار والحاسبة',
       createShipment: 'إنشاء شحنة',
       tracking: 'تتبع الشحنة',
+      faq: 'الأسئلة الشائعة',
       europeCenters: 'مراكز أوروبا',
       aleppoCenter: 'مركز حلب والتوزيع',
       prohibitedGoods: 'البضائع المحظورة',
@@ -49,6 +50,7 @@ export default function Footer({ language }: FooterProps) {
       pricing: 'Pricing & Calculator',
       createShipment: 'Create Shipment',
       tracking: 'Track Shipment',
+      faq: 'FAQ',
       europeCenters: 'Europe Centers',
       aleppoCenter: 'Aleppo Distribution Center',
       prohibitedGoods: 'Prohibited Goods',
@@ -84,6 +86,7 @@ export default function Footer({ language }: FooterProps) {
               <li><Link href="/pricing" className="text-gray-300 hover:text-primary-yellow transition-colors focus:outline-none focus:ring-2 focus:ring-primary-yellow/50 rounded px-1 py-0.5 inline-block">{t.pricing}</Link></li>
               <li><Link href="/create-shipment" className="text-gray-300 hover:text-primary-yellow transition-colors focus:outline-none focus:ring-2 focus:ring-primary-yellow/50 rounded px-1 py-0.5 inline-block">{t.createShipment}</Link></li>
               <li><Link href="/tracking" className="text-gray-300 hover:text-primary-yellow transition-colors focus:outline-none focus:ring-2 focus:ring-primary-yellow/50 rounded px-1 py-0.5 inline-block">{t.tracking}</Link></li>
+              <li><Link href="/faq" className="text-gray-300 hover:text-primary-yellow transition-colors focus:outline-none focus:ring-2 focus:ring-primary-yellow/50 rounded px-1 py-0.5 inline-block">{t.faq}</Link></li>
             </ul>
           </div>
 
