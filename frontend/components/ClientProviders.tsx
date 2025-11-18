@@ -16,7 +16,7 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID || '';
   
   // WhatsApp Configuration - يمكن تغيير الرقم من هنا
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '31612345678'; // رقم مؤقت
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '31683083916';
 
   useEffect(() => {
     setIsMounted(true);
