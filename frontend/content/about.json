@@ -1,0 +1,76 @@
+{
+  "ar": {
+    "pageTitle": "من نحن",
+    "pageDescription": "تعرف على MEDO-FREIGHT ومكاتبنا في أوروبا وسوريا",
+    "mainTitle": "من نحن",
+    "intro": "نحن شركة رائدة في مجال الشحن الدولي بين أوروبا والشرق الأوسط، نوفر خدمات شحن احترافية وموثوقة.",
+    
+    "offices": {
+      "title": "مكاتبنا",
+      "europe": {
+        "title": "أوروبا – هولندا",
+        "companyName": "Medo-Freight EU",
+        "tagline": "Ship · Route · Deliver",
+        "address": "Meekrapweg 2 – 4571 RX – Axel – Zeeland – Netherlands",
+        "phone": "+31 683083916",
+        "email": "contact@medo-freight.eu",
+        "website": "www.medo-freight.eu"
+      },
+      "syria": {
+        "title": "سوريا — الشريك المحلي",
+        "companyName": "شركة الإكرام التجارية",
+        "companyNameEn": "Al Ikram Trading Co.",
+        "locations": [
+          {
+            "name": "مكتب الرامسة",
+            "address": "الرامسة (بجانب كراج البولمان) – حلب"
+          },
+          {
+            "name": "مكتب المدينة الصناعية",
+            "address": "المدينة الصناعية الشيخ نجار (منطقة مكاتب الشحن الدولي) – حلب"
+          }
+        ],
+        "phone": "+963 995 477 8188",
+        "email": "alikramtrading.co@gmail.com"
+      }
+    }
+  },
+  
+  "en": {
+    "pageTitle": "About Us",
+    "pageDescription": "Learn about MEDO-FREIGHT and our offices in Europe and Syria",
+    "mainTitle": "About Us",
+    "intro": "We are a leading company in international freight between Europe and the Middle East, providing professional and reliable shipping services.",
+    
+    "offices": {
+      "title": "Our Offices",
+      "europe": {
+        "title": "Europe – Netherlands",
+        "companyName": "Medo-Freight EU",
+        "tagline": "Ship · Route · Deliver",
+        "address": "Meekrapweg 2 – 4571 RX – Axel – Zeeland – Netherlands",
+        "phone": "+31 683083916",
+        "email": "contact@medo-freight.eu",
+        "website": "www.medo-freight.eu"
+      },
+      "syria": {
+        "title": "Syria — Local Partner",
+        "companyName": "Al Ikram Trading Co.",
+        "companyNameEn": "Al Ikram Trading Co.",
+        "locations": [
+          {
+            "name": "Al-Ramsa Office",
+            "address": "Al-Ramsa (next to Pullman Garage) – Aleppo"
+          },
+          {
+            "name": "Industrial City Office",
+            "address": "Sheikh Najjar Industrial City (International Freight Offices Area) – Aleppo"
+          }
+        ],
+        "phone": "+963 995 477 8188",
+        "email": "alikramtrading.co@gmail.com"
+      }
+    }
+  }
+}
+
