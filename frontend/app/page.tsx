@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -9,12 +9,10 @@ import PartnerLogos from "@/components/PartnerLogos";
 import InteractiveMap from "@/components/InteractiveMap";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
-
-type Language = "ar" | "en";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function Home() {
-  const [language, setLanguage] = useState<Language>("ar");
-  const isRTL = language === "ar";
+  const { language, isRTL } = useLanguage();
   const { isAuthenticated, loading: authLoading } = useAuth();
 
   // Target date: December 1, 2025
@@ -93,7 +91,7 @@ export default function Home() {
         {language === "ar" ? "انتقل إلى المحتوى" : "Skip to content"}
       </a>
 
-      <Header language={language} setLanguage={setLanguage} />
+      <Header />
 
       <main id="main-content" className="flex-grow" role="main">
         {/* Hero Banner with Countdown */}

@@ -1,30 +1,53 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-type Language = "ar" | "en";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated } = useAuth();
-  const [language, setLanguage] = useState<Language>("en");
+  const { language, setLanguage, mounted, isRTL } = useLanguage();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  // Fix hydration error
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Translations
+  const translations = useMemo(
+    () => ({
+      ar: {
+        signIn: "تسجيل الدخول",
+        signInToAccount: "تسجيل الدخول إلى حسابك",
+        username: "اسم المستخدم",
+        password: "كلمة المرور",
+        signingIn: "جاري تسجيل الدخول...",
+        dontHaveAccount: "ليس لديك حساب؟",
+        signUp: "إنشاء حساب",
+        loginFailed:
+          "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.",
+      },
+      en: {
+        signIn: "Sign In",
+        signInToAccount: "Sign in to your account",
+        username: "Username",
+        password: "Password",
+        signingIn: "Signing in...",
+        dontHaveAccount: "Don't have an account?",
+        signUp: "Sign up",
+        loginFailed: "Login failed. Please check your credentials.",
+      },
+    }),
+    []
+  );
+
+  const t = translations[language];
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -43,7 +66,7 @@ export default function LoginPage() {
     if (result.success) {
       router.push("/dashboard");
     } else {
-      setError(result.error || "Login failed. Please check your credentials.");
+      setError(result.error || t.loginFailed);
     }
 
     setLoading(false);
@@ -54,13 +77,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header language={language} setLanguage={setLanguage} />
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen flex flex-col">
+      <Header />
       <main className="flex-grow flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Sign in to your account
+              {t.signInToAccount}
             </h2>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -73,7 +96,7 @@ export default function LoginPage() {
             <div className="rounded-md shadow-sm -space-y-px">
               <div>
                 <label htmlFor="username" className="sr-only">
-                  Username
+                  {t.username}
                 </label>
                 <input
                   id="username"
@@ -81,7 +104,7 @@ export default function LoginPage() {
                   type="text"
                   required
                   className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Username"
+                  placeholder={t.username}
                   value={formData.username}
                   onChange={(e) =>
                     setFormData({ ...formData, username: e.target.value })
@@ -90,7 +113,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <label htmlFor="password" className="sr-only">
-                  Password
+                  {t.password}
                 </label>
                 <input
                   id="password"
@@ -98,7 +121,7 @@ export default function LoginPage() {
                   type="password"
                   required
                   className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Password"
+                  placeholder={t.password}
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
@@ -113,7 +136,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? t.signingIn : t.signIn}
               </button>
             </div>
 
@@ -122,7 +145,7 @@ export default function LoginPage() {
                 href="/register"
                 className="font-medium text-indigo-600 hover:text-indigo-500"
               >
-                Don't have an account? Sign up
+                {t.dontHaveAccount} {t.signUp}
               </Link>
             </div>
           </form>

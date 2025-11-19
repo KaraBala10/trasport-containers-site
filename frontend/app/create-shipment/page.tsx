@@ -1,26 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-
-type Language = 'ar' | 'en';
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function CreateShipmentPage() {
-  const [language, setLanguage] = useState<Language>('ar');
+  const { language } = useLanguage();
 
   const translations = {
     ar: {
-      title: 'إنشاء شحنة',
-      description: 'أنشئ شحنة جديدة وتابعها من البداية حتى الوصول',
-      comingSoon: 'قريباً',
-      placeholder: 'هذه الصفحة قيد التطوير. سيتم إضافة نموذج إنشاء الشحنات قريباً.',
+      title: "إنشاء شحنة",
+      description: "أنشئ شحنة جديدة وتابعها من البداية حتى الوصول",
+      comingSoon: "قريباً",
+      placeholder:
+        "هذه الصفحة قيد التطوير. سيتم إضافة نموذج إنشاء الشحنات قريباً.",
     },
     en: {
-      title: 'Create Shipment',
-      description: 'Create a new shipment and track it from start to delivery',
-      comingSoon: 'Coming Soon',
-      placeholder: 'This page is under development. The shipment creation form will be added soon.',
+      title: "Create Shipment",
+      description: "Create a new shipment and track it from start to delivery",
+      comingSoon: "Coming Soon",
+      placeholder:
+        "This page is under development. The shipment creation form will be added soon.",
     },
   };
 
@@ -28,8 +28,8 @@ export default function CreateShipmentPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header language={language} setLanguage={setLanguage} />
-      
+      <Header />
+
       <main className="flex-grow" role="main">
         <div className="bg-primary-dark text-white py-16">
           <div className="container mx-auto px-4 text-center">
@@ -41,7 +41,9 @@ export default function CreateShipmentPage() {
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-3xl mx-auto text-center">
             <div className="bg-primary-yellow p-8 rounded-lg shadow-lg">
-              <h2 className="text-3xl font-bold text-primary-dark mb-4">{t.comingSoon}</h2>
+              <h2 className="text-3xl font-bold text-primary-dark mb-4">
+                {t.comingSoon}
+              </h2>
               <p className="text-lg text-gray-700">{t.placeholder}</p>
             </div>
           </div>
@@ -52,4 +54,3 @@ export default function CreateShipmentPage() {
     </div>
   );
 }
-

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, lazy, Suspense, useMemo } from 'react';
+import { useState, lazy, Suspense, useMemo } from 'react';
 import { useReCaptcha } from '@/components/ReCaptchaWrapper';
+import { useLanguage } from '@/hooks/useLanguage';
 
 // Lazy load LanguageSwitcher to reduce initial bundle size
 const LanguageSwitcher = lazy(() => import('@/components/LanguageSwitcher'));
@@ -10,7 +11,7 @@ type AuthMode = 'signin' | 'signup';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('signin');
-  const [language, setLanguage] = useState<'ar' | 'en'>('ar');
+  const { language, setLanguage, isRTL } = useLanguage();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -19,8 +20,6 @@ export default function AuthPage() {
     confirmPassword: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isRTL = language === 'ar';
   
   // Memoize translations to avoid recreating on every render
   const translations = useMemo(() => ({
@@ -61,33 +60,6 @@ export default function AuthPage() {
       tagline: 'شحن طريق توصيل',
     },
   }), []);
-
-  // Update document direction when language changes - defer to avoid blocking
-  useEffect(() => {
-    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-      // Use requestIdleCallback for non-critical DOM updates
-      if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => {
-          const html = document.documentElement;
-          const dir = isRTL ? 'rtl' : 'ltr';
-          html.setAttribute('dir', dir);
-          html.setAttribute('lang', language);
-          html.dir = dir;
-          html.lang = language;
-        }, { timeout: 500 });
-      } else {
-        requestAnimationFrame(() => {
-          const html = document.documentElement;
-          const dir = isRTL ? 'rtl' : 'ltr';
-          html.setAttribute('dir', dir);
-          html.setAttribute('lang', language);
-          html.dir = dir;
-          html.lang = language;
-        });
-      }
-    }
-  }, [language, isRTL]);
-
 
   const t = translations[language];
 

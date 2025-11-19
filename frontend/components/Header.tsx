@@ -5,43 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 
-type Language = "ar" | "en";
+export default function Header() {
+  // Always use the context hook for consistent language state
+  const { language, setLanguage, mounted, isRTL } = useLanguage();
 
-interface HeaderProps {
-  language?: Language;
-  setLanguage?: (lang: Language) => void;
-}
-
-export default function Header({
-  language: propLanguage,
-  setLanguage: propSetLanguage,
-}: HeaderProps = {}) {
-  // Default to 'ar' if language prop is not provided
-  const [internalLanguage, setInternalLanguage] = useState<Language>("ar");
-  // Ensure language is always a valid value ('ar' or 'en')
-  const language: Language =
-    propLanguage === "ar" || propLanguage === "en"
-      ? propLanguage
-      : internalLanguage;
-  const setLanguage = propSetLanguage ?? setInternalLanguage;
-
-  const isRTL = language === "ar";
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, user, logout } = useAuth();
-  const [mounted, setMounted] = useState(false);
-
-  // Fix hydration error by only setting dir/lang after mount
-  useEffect(() => {
-    setMounted(true);
-    if (typeof window !== "undefined" && typeof document !== "undefined") {
-      const html = document.documentElement;
-      const dir = isRTL ? "rtl" : "ltr";
-      html.setAttribute("dir", dir);
-      html.setAttribute("lang", language);
-    }
-  }, [language, isRTL]);
 
   const translations = {
     ar: {

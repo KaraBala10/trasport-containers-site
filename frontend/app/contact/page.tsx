@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import contactContent from '@/content/contact.json';
-
-type Language = 'ar' | 'en';
+import { useState } from "react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import contactContent from "@/content/contact.json";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface FormData {
   fullName: string;
@@ -24,20 +23,21 @@ interface FormErrors {
 }
 
 export default function ContactPage() {
-  const [language, setLanguage] = useState<Language>('ar');
+  const { language, isRTL } = useLanguage();
   const [formData, setFormData] = useState<FormData>({
-    fullName: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
+    fullName: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
 
   const content = contactContent[language];
-  const isRTL = language === 'ar';
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -81,7 +81,7 @@ export default function ContactPage() {
     }
 
     setIsSubmitting(true);
-    setSubmitStatus('idle');
+    setSubmitStatus("idle");
 
     try {
       // TODO: استبدل هذا بـ API endpoint حقيقي
@@ -100,30 +100,32 @@ export default function ContactPage() {
       // محاكاة إرسال
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      setSubmitStatus('success');
+      setSubmitStatus("success");
       setFormData({
-        fullName: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: '',
+        fullName: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
       });
       setErrors({});
 
       // إخفاء رسالة النجاح بعد 5 ثواني
       setTimeout(() => {
-        setSubmitStatus('idle');
+        setSubmitStatus("idle");
       }, 5000);
     } catch (error) {
-      console.error('Error submitting form:', error);
-      setSubmitStatus('error');
+      console.error("Error submitting form:", error);
+      setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -134,14 +136,16 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
-      <Header language={language} setLanguage={setLanguage} />
+    <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
+      <Header />
 
       <main className="flex-grow" role="main">
         {/* Hero Section */}
         <div className="bg-primary-dark text-white py-16">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">{content.mainTitle}</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              {content.mainTitle}
+            </h1>
             <p className="text-xl max-w-3xl mx-auto">{content.intro}</p>
           </div>
         </div>
@@ -151,13 +155,19 @@ export default function ContactPage() {
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <div className="bg-white rounded-lg shadow-xl p-8 border-t-4 border-primary-yellow">
-              <h2 className="text-3xl font-bold text-primary-dark mb-6">{content.form.title}</h2>
+              <h2 className="text-3xl font-bold text-primary-dark mb-6">
+                {content.form.title}
+              </h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Full Name */}
                 <div>
-                  <label htmlFor="fullName" className="block text-gray-700 font-semibold mb-2">
-                    {content.form.fullName.label} <span className="text-red-600">*</span>
+                  <label
+                    htmlFor="fullName"
+                    className="block text-gray-700 font-semibold mb-2"
+                  >
+                    {content.form.fullName.label}{" "}
+                    <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -168,20 +178,26 @@ export default function ContactPage() {
                     placeholder={content.form.fullName.placeholder}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                       errors.fullName
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-primary-yellow'
-                    } ${isRTL ? 'text-right' : 'text-left'}`}
-                    dir={isRTL ? 'rtl' : 'ltr'}
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-primary-yellow"
+                    } ${isRTL ? "text-right" : "text-left"}`}
+                    dir={isRTL ? "rtl" : "ltr"}
                   />
                   {errors.fullName && (
-                    <p className="text-red-600 text-sm mt-1">{errors.fullName}</p>
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.fullName}
+                    </p>
                   )}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label htmlFor="email" className="block text-gray-700 font-semibold mb-2">
-                    {content.form.email.label} <span className="text-red-600">*</span>
+                  <label
+                    htmlFor="email"
+                    className="block text-gray-700 font-semibold mb-2"
+                  >
+                    {content.form.email.label}{" "}
+                    <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="email"
@@ -192,18 +208,24 @@ export default function ContactPage() {
                     placeholder={content.form.email.placeholder}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                       errors.email
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-primary-yellow'
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-primary-yellow"
                     } text-left`}
                     dir="ltr"
                   />
-                  {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                  )}
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label htmlFor="phone" className="block text-gray-700 font-semibold mb-2">
-                    {content.form.phone.label} <span className="text-red-600">*</span>
+                  <label
+                    htmlFor="phone"
+                    className="block text-gray-700 font-semibold mb-2"
+                  >
+                    {content.form.phone.label}{" "}
+                    <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="tel"
@@ -214,18 +236,24 @@ export default function ContactPage() {
                     placeholder={content.form.phone.placeholder}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                       errors.phone
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-primary-yellow'
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-primary-yellow"
                     } text-left`}
                     dir="ltr"
                   />
-                  {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone}</p>}
+                  {errors.phone && (
+                    <p className="text-red-600 text-sm mt-1">{errors.phone}</p>
+                  )}
                 </div>
 
                 {/* Subject */}
                 <div>
-                  <label htmlFor="subject" className="block text-gray-700 font-semibold mb-2">
-                    {content.form.subject.label} <span className="text-red-600">*</span>
+                  <label
+                    htmlFor="subject"
+                    className="block text-gray-700 font-semibold mb-2"
+                  >
+                    {content.form.subject.label}{" "}
+                    <span className="text-red-600">*</span>
                   </label>
                   <select
                     id="subject"
@@ -234,10 +262,10 @@ export default function ContactPage() {
                     onChange={handleChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                       errors.subject
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-primary-yellow'
-                    } ${isRTL ? 'text-right' : 'text-left'}`}
-                    dir={isRTL ? 'rtl' : 'ltr'}
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-primary-yellow"
+                    } ${isRTL ? "text-right" : "text-left"}`}
+                    dir={isRTL ? "rtl" : "ltr"}
                   >
                     <option value="">{content.form.subject.placeholder}</option>
                     {content.form.subject.options.map((option, index) => (
@@ -247,14 +275,20 @@ export default function ContactPage() {
                     ))}
                   </select>
                   {errors.subject && (
-                    <p className="text-red-600 text-sm mt-1">{errors.subject}</p>
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.subject}
+                    </p>
                   )}
                 </div>
 
                 {/* Message */}
                 <div>
-                  <label htmlFor="message" className="block text-gray-700 font-semibold mb-2">
-                    {content.form.message.label} <span className="text-red-600">*</span>
+                  <label
+                    htmlFor="message"
+                    className="block text-gray-700 font-semibold mb-2"
+                  >
+                    {content.form.message.label}{" "}
+                    <span className="text-red-600">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -265,13 +299,15 @@ export default function ContactPage() {
                     rows={5}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                       errors.message
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-primary-yellow'
-                    } ${isRTL ? 'text-right' : 'text-left'} resize-none`}
-                    dir={isRTL ? 'rtl' : 'ltr'}
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-primary-yellow"
+                    } ${isRTL ? "text-right" : "text-left"} resize-none`}
+                    dir={isRTL ? "rtl" : "ltr"}
                   ></textarea>
                   {errors.message && (
-                    <p className="text-red-600 text-sm mt-1">{errors.message}</p>
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.message}
+                    </p>
                   )}
                 </div>
 
@@ -326,7 +362,7 @@ export default function ContactPage() {
                 </button>
 
                 {/* Success Message */}
-                {submitStatus === 'success' && (
+                {submitStatus === "success" && (
                   <div className="bg-green-50 border border-green-500 text-green-800 px-4 py-3 rounded-lg">
                     <div className="flex items-center gap-3">
                       <svg
@@ -348,7 +384,7 @@ export default function ContactPage() {
                 )}
 
                 {/* Error Message */}
-                {submitStatus === 'error' && (
+                {submitStatus === "error" && (
                   <div className="bg-red-50 border border-red-500 text-red-800 px-4 py-3 rounded-lg">
                     <div className="flex items-center gap-3">
                       <svg
@@ -404,7 +440,9 @@ export default function ContactPage() {
                         d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                       />
                     </svg>
-                    <p className="text-gray-700">{content.offices.europe.address}</p>
+                    <p className="text-gray-700">
+                      {content.offices.europe.address}
+                    </p>
                   </div>
 
                   {/* Phone */}
@@ -513,7 +551,9 @@ export default function ContactPage() {
                         />
                       </svg>
                       <div>
-                        <div className="font-semibold text-primary-dark">{location.name}</div>
+                        <div className="font-semibold text-primary-dark">
+                          {location.name}
+                        </div>
                         <div className="text-gray-700">{location.address}</div>
                       </div>
                     </div>
@@ -569,10 +609,17 @@ export default function ContactPage() {
 
               {/* Working Hours */}
               <div className="bg-gradient-to-r from-primary-dark to-blue-900 text-white rounded-lg shadow-xl p-8">
-                <h3 className="text-2xl font-bold mb-4">{content.workingHours.title}</h3>
+                <h3 className="text-2xl font-bold mb-4">
+                  {content.workingHours.title}
+                </h3>
                 <div className="space-y-2">
                   <p className="flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -583,7 +630,12 @@ export default function ContactPage() {
                     {content.workingHours.weekdays}
                   </p>
                   <p className="flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -594,7 +646,12 @@ export default function ContactPage() {
                     {content.workingHours.saturday}
                   </p>
                   <p className="flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"

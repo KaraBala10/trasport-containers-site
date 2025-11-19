@@ -4,42 +4,29 @@ import { ReactNode, useEffect, useState } from 'react';
 import Script from 'next/script';
 import ReCaptchaProvider from './ReCaptchaProvider';
 import WhatsAppButton from './WhatsAppButton';
+import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 
 interface ClientProvidersProps {
   children: ReactNode;
 }
 
+function WhatsAppButtonWrapper() {
+  const { language } = useLanguage();
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '31683083916';
+  
+  return <WhatsAppButton phoneNumber={whatsappNumber} language={language} />;
+}
+
 export default function ClientProviders({ children }: ClientProvidersProps) {
   const [shouldLoadGA, setShouldLoadGA] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const gaId = process.env.NEXT_PUBLIC_GA_ID || '';
-  
-  // WhatsApp Configuration - يمكن تغيير الرقم من هنا
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '31683083916';
 
   useEffect(() => {
     setIsMounted(true);
     
-    // تتبع تغيير اللغة من الـ HTML element
-    const updateLanguage = () => {
-      const htmlLang = document.documentElement.lang;
-      if (htmlLang === 'ar' || htmlLang === 'en') {
-        setLanguage(htmlLang);
-      }
-    };
-    
-    updateLanguage();
-    
-    // مراقبة تغييرات اللغة
-    const observer = new MutationObserver(updateLanguage);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['lang']
-    });
-    
     if (!gaId) {
-      return () => observer.disconnect();
+      return;
     }
 
     // Delay GA loading significantly - only load after 10 seconds or on user interaction
@@ -68,7 +55,6 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
 
     return () => {
       clearTimeout(timer);
-      observer.disconnect();
       events.forEach(event => {
         window.removeEventListener(event, loadGA);
       });
@@ -76,7 +62,7 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
   }, [gaId]);
 
   return (
-    <>
+    <LanguageProvider>
       {isMounted && gaId && shouldLoadGA && (
         <>
           <Script
@@ -105,13 +91,8 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
       </ReCaptchaProvider>
       
       {/* زر الواتساب العائم - يظهر في جميع الصفحات */}
-      {isMounted && (
-        <WhatsAppButton 
-          phoneNumber={whatsappNumber}
-          language={language}
-        />
-      )}
-    </>
+      {isMounted && <WhatsAppButtonWrapper />}
+    </LanguageProvider>
   );
 }
 

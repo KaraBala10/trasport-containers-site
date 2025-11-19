@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import privacyContent from '@/content/privacy.json';
-
-type Language = 'ar' | 'en';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const iconComponents: Record<string, React.FC<{ className?: string }>> = {
   database: ({ className }) => (
@@ -51,13 +49,12 @@ const iconComponents: Record<string, React.FC<{ className?: string }>> = {
 };
 
 export default function PrivacyPage() {
-  const [language, setLanguage] = useState<Language>('ar');
+  const { language, isRTL } = useLanguage();
   const content = privacyContent[language];
-  const isRTL = language === 'ar';
 
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
-      <Header language={language} setLanguage={setLanguage} />
+      <Header />
       
       <main className="flex-grow" role="main">
         {/* Hero Section */}
