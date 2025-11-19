@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import contactContent from "@/content/contact.json";
 import { useLanguage } from "@/hooks/useLanguage";
+import { apiService } from "@/lib/api";
 
 interface FormData {
   fullName: string;
@@ -84,39 +85,72 @@ export default function ContactPage() {
     setSubmitStatus("idle");
 
     try {
-      // TODO: استبدل هذا بـ API endpoint حقيقي
-      // const response = await fetch('/api/contact', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-
-      // if (!response.ok) {
-      //   throw new Error('Failed to send message');
-      // }
-
-      // محاكاة إرسال
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setSubmitStatus("success");
-      setFormData({
-        fullName: "",
-        email: "",
-        phone: "",
-        subject: "",
-        message: "",
+      // Send form data to backend API
+      const response = await apiService.createContactMessage({
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        subject: formData.subject,
+        message: formData.message,
       });
-      setErrors({});
 
-      // إخفاء رسالة النجاح بعد 5 ثواني
-      setTimeout(() => {
-        setSubmitStatus("idle");
-      }, 5000);
-    } catch (error) {
+      if (response.data.success) {
+        setSubmitStatus("success");
+        setFormData({
+          fullName: "",
+          email: "",
+          phone: "",
+          subject: "",
+          message: "",
+        });
+        setErrors({});
+
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          setSubmitStatus("idle");
+        }, 5000);
+      } else {
+        throw new Error(response.data.message || "Failed to send message");
+      }
+    } catch (error: any) {
       console.error("Error submitting form:", error);
       setSubmitStatus("error");
+
+      // Handle validation errors from backend
+      if (error.response?.data) {
+        const backendErrors = error.response.data;
+        const newErrors: FormErrors = {};
+
+        if (backendErrors.full_name) {
+          newErrors.fullName = Array.isArray(backendErrors.full_name)
+            ? backendErrors.full_name[0]
+            : backendErrors.full_name;
+        }
+        if (backendErrors.email) {
+          newErrors.email = Array.isArray(backendErrors.email)
+            ? backendErrors.email[0]
+            : backendErrors.email;
+        }
+        if (backendErrors.phone) {
+          newErrors.phone = Array.isArray(backendErrors.phone)
+            ? backendErrors.phone[0]
+            : backendErrors.phone;
+        }
+        if (backendErrors.subject) {
+          newErrors.subject = Array.isArray(backendErrors.subject)
+            ? backendErrors.subject[0]
+            : backendErrors.subject;
+        }
+        if (backendErrors.message) {
+          newErrors.message = Array.isArray(backendErrors.message)
+            ? backendErrors.message[0]
+            : backendErrors.message;
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors);
+        }
+      }
     } finally {
       setIsSubmitting(false);
     }

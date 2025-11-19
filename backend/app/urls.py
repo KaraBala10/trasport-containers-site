@@ -3,6 +3,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
     ChangePasswordView,
+    ContactMessageView,
     LoginView,
     RegisterView,
     UserProfileView,
@@ -22,4 +23,6 @@ urlpatterns = [
     path("user/", current_user_view, name="current_user"),
     path("user/profile/", UserProfileView.as_view(), name="user_profile"),
     path("user/change-password/", ChangePasswordView.as_view(), name="change_password"),
+    # Contact endpoint
+    path("contact/", ContactMessageView.as_view(), name="contact"),
 ]

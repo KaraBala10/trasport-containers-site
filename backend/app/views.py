@@ -7,7 +7,13 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import ChangePasswordSerializer, RegisterSerializer, UserSerializer
+from .models import ContactMessage
+from .serializers import (
+    ChangePasswordSerializer,
+    ContactMessageSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -115,3 +121,25 @@ class ChangePasswordView(generics.UpdateAPIView):
 def current_user_view(request):
     serializer = UserSerializer(request.user)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ContactMessageView(generics.CreateAPIView):
+    """API endpoint for submitting contact form messages"""
+    
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializer
+    permission_classes = [AllowAny]  # Allow anyone to submit contact form
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        contact_message = serializer.save()
+        
+        return Response(
+            {
+                "success": True,
+                "message": "Your message has been sent successfully. We will contact you soon.",
+                "id": contact_message.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
