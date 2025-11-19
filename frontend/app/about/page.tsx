@@ -1,15 +1,21 @@
 "use client";
 
+import { useMemo } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import aboutContent from "@/content/about.json";
 import { useLanguage } from "@/hooks/useLanguage";
 
+export const dynamic = "force-dynamic";
+
 export default function AboutPage() {
   const { language, isRTL, mounted } = useLanguage();
-  
+
   // Ensure content exists, fallback to Arabic if needed
-  const content = aboutContent[language] || aboutContent.ar;
+  // Use useMemo with language as dependency to prevent stale content
+  const content = useMemo(() => {
+    return aboutContent[language] || aboutContent.ar;
+  }, [language]);
 
   // Wait for hydration to prevent mismatch
   if (!mounted) {
@@ -17,7 +23,11 @@ export default function AboutPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
+    <div
+      key={language}
+      className="min-h-screen flex flex-col"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       <Header />
 
       <main className="flex-grow" role="main">

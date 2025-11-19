@@ -145,6 +145,25 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Prevent aggressive caching of HTML pages to avoid language cache issues
+        // This only applies to non-static assets (HTML pages)
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value:
+              "public, max-age=0, must-revalidate, stale-while-revalidate=0",
+          },
+        ],
+        has: [
+          {
+            type: "header",
+            key: "accept",
+            value: "text/html",
+          },
+        ],
+      },
     ];
   },
 

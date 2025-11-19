@@ -170,7 +170,11 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
+    <div
+      key={language}
+      className="min-h-screen flex flex-col"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       <Header />
 
       <main className="flex-grow" role="main">
