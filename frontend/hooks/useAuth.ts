@@ -112,6 +112,7 @@ export function useAuth() {
     password2: string;
     first_name?: string;
     last_name?: string;
+    recaptcha_token?: string;
   }) => {
     try {
       const response = await apiService.register(data);

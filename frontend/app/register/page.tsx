@@ -3,15 +3,53 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Script from "next/script";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useReCaptcha } from "@/components/ReCaptchaWrapper";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+// Extend Window interface for grecaptcha
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (callback: () => void) => void;
+      render: (
+        element: string | HTMLElement,
+        options: {
+          sitekey: string;
+          size?: "normal" | "compact" | "invisible";
+          theme?: "light" | "dark";
+          callback?: (token: string) => void;
+          "expired-callback"?: () => void;
+          "error-callback"?: () => void;
+        }
+      ) => number;
+    };
+  }
+}
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register, isAuthenticated } = useAuth();
   const { language, setLanguage, mounted, isRTL } = useLanguage();
+  const { executeRecaptcha } = useReCaptcha();
+
+  // Store env variable in constant to avoid issues with conditional access
+  // Use Google's test key for localhost development (works without domain configuration)
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1");
+
+  // Use test key on localhost, otherwise use configured key
+  const recaptchaSiteKey =
+    isDevelopment && isLocalhost
+      ? "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Google's test key (works with localhost)
+      : process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -22,6 +60,8 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
   // Translations
   const translations = useMemo(
@@ -40,6 +80,8 @@ export default function RegisterPage() {
         signIn: "تسجيل الدخول",
         passwordsDoNotMatch: "كلمات المرور غير متطابقة",
         registrationFailed: "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+        recaptchaError: "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى.",
+        recaptchaRequired: "التحقق من reCAPTCHA مطلوب. يرجى المحاولة مرة أخرى.",
       },
       en: {
         createAccount: "Create your account",
@@ -55,6 +97,9 @@ export default function RegisterPage() {
         signIn: "Sign in",
         passwordsDoNotMatch: "Passwords do not match",
         registrationFailed: "Registration failed. Please try again.",
+        recaptchaError: "reCAPTCHA verification failed. Please try again.",
+        recaptchaRequired:
+          "reCAPTCHA verification is required. Please try again.",
       },
     }),
     []
@@ -69,6 +114,65 @@ export default function RegisterPage() {
     }
   }, [mounted, isAuthenticated, router]);
 
+  // Initialize reCAPTCHA widget after component mounts and script loads
+  useEffect(() => {
+    if (!mounted || !isDevelopment || !recaptchaSiteKey) return;
+
+    // Wait for script to load and widget element to exist
+    const initRecaptcha = () => {
+      const widgetElement = document.getElementById("recaptcha-widget");
+      if (!widgetElement) {
+        setTimeout(initRecaptcha, 200);
+        return;
+      }
+
+      if (!window.grecaptcha) {
+        setTimeout(initRecaptcha, 200);
+        return;
+      }
+
+      // Check if already rendered
+      if (widgetElement.hasChildNodes()) {
+        setRecaptchaLoaded(true);
+        return;
+      }
+
+      window.grecaptcha.ready(() => {
+        try {
+          const widgetId = window.grecaptcha!.render("recaptcha-widget", {
+            sitekey: recaptchaSiteKey,
+            size: "normal",
+            theme: "light",
+            callback: (token: string) => {
+              console.log(
+                "reCAPTCHA verified:",
+                token.substring(0, 20) + "..."
+              );
+              setRecaptchaToken(token);
+            },
+            "expired-callback": () => {
+              console.log("reCAPTCHA expired");
+              setRecaptchaToken("");
+            },
+            "error-callback": () => {
+              console.error("reCAPTCHA error");
+              setRecaptchaToken("");
+            },
+          });
+          console.log("reCAPTCHA widget rendered, widgetId:", widgetId);
+          setRecaptchaLoaded(true);
+        } catch (error) {
+          console.error("Error rendering reCAPTCHA:", error);
+          setRecaptchaLoaded(false);
+        }
+      });
+    };
+
+    // Start initialization after a delay to ensure script is loaded
+    const timer = setTimeout(initRecaptcha, 1000);
+    return () => clearTimeout(timer);
+  }, [mounted, isDevelopment, recaptchaSiteKey]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -80,26 +184,76 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const result = await register({
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      password2: formData.password2,
-      first_name: formData.first_name || undefined,
-      last_name: formData.last_name || undefined,
-    });
+    try {
+      // Verify reCAPTCHA before registration
+      let finalRecaptchaToken = "";
 
-    if (result.success) {
-      router.push("/dashboard");
-    } else {
-      setError(result.error || t.registrationFailed);
+      // In development, use v2 token if available, otherwise use v3
+      if (isDevelopment && recaptchaToken) {
+        finalRecaptchaToken = recaptchaToken;
+      } else if (executeRecaptcha) {
+        try {
+          finalRecaptchaToken = await executeRecaptcha("register");
+        } catch (recaptchaError) {
+          if (isDevelopment) {
+            console.warn("reCAPTCHA verification failed:", recaptchaError);
+          }
+          // If reCAPTCHA key is configured, require it in production
+          if (recaptchaSiteKey && !isDevelopment) {
+            setError(t.recaptchaRequired);
+            setLoading(false);
+            return;
+          }
+        }
+      } else if (recaptchaSiteKey && !isDevelopment) {
+        // reCAPTCHA is required but not available
+        setError(t.recaptchaRequired);
+        setLoading(false);
+        return;
+      }
+
+      // In development, require v2 token if widget is shown
+      if (isDevelopment && recaptchaLoaded && !finalRecaptchaToken) {
+        setError(
+          language === "ar"
+            ? "يرجى التحقق من reCAPTCHA"
+            : "Please complete the reCAPTCHA verification"
+        );
+        setLoading(false);
+        return;
+      }
+
+      const result = await register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        password2: formData.password2,
+        first_name: formData.first_name || undefined,
+        last_name: formData.last_name || undefined,
+        recaptcha_token: finalRecaptchaToken || undefined,
+      });
+
+      if (result.success) {
+        router.push("/dashboard");
+      } else {
+        setError(result.error || t.registrationFailed);
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Registration error:", error);
+      }
+      setError(t.recaptchaError);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   if (!mounted) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-dark"></div>
+      </div>
+    );
   }
 
   return (
@@ -107,6 +261,21 @@ export default function RegisterPage() {
       dir={isRTL ? "rtl" : "ltr"}
       className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50"
     >
+      {/* Load reCAPTCHA v2 script */}
+      {isDevelopment && recaptchaSiteKey && mounted && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=explicit&hl=${language}`}
+          strategy="afterInteractive"
+          onLoad={() => {
+            console.log("reCAPTCHA v2 script loaded successfully");
+          }}
+          onError={(error) => {
+            console.error("Failed to load reCAPTCHA script:", error);
+            setRecaptchaLoaded(false);
+          }}
+        />
+      )}
+
       <Header />
 
       {/* Spacer for fixed header */}
@@ -410,6 +579,39 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
+
+                {/* reCAPTCHA Widget (Development Only) */}
+                {isDevelopment && recaptchaSiteKey && (
+                  <div className="flex flex-col items-center justify-center py-4">
+                    <div
+                      id="recaptcha-widget"
+                      className="flex justify-center items-center min-h-[78px] w-full"
+                      style={{ minWidth: "304px" }}
+                    ></div>
+                    {recaptchaSiteKey ===
+                      "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" && (
+                      <p className="mt-2 text-xs text-yellow-600 text-center">
+                        {language === "ar"
+                          ? "⚠️ استخدام مفتاح اختبار Google (localhost غير مدعوم)"
+                          : "⚠️ Using Google test key (localhost not supported)"}
+                      </p>
+                    )}
+                    {recaptchaLoaded && (
+                      <p className="mt-2 text-xs text-gray-500 text-center">
+                        {language === "ar"
+                          ? "reCAPTCHA v2 (وضع التطوير)"
+                          : "reCAPTCHA v2 (Development Mode)"}
+                      </p>
+                    )}
+                    {!recaptchaLoaded && (
+                      <p className="mt-2 text-xs text-gray-400 text-center animate-pulse">
+                        {language === "ar"
+                          ? "جاري تحميل reCAPTCHA..."
+                          : "Loading reCAPTCHA..."}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Submit Button */}
                 <div className="pt-2">
