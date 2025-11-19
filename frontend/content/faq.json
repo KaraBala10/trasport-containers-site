@@ -25,6 +25,11 @@
         "id": 4,
         "question": "ماذا لو تلفت البضاعة؟",
         "answer": "جميع شحناتنا مؤمنة. في حالة حدوث أي تلف أو فقدان للبضاعة خلال عملية الشحن، يمكنكم تقديم مطالبة تأمين. ننصح بتصوير البضاعة قبل الشحن وعند الاستلام، والإبلاغ عن أي مشكلة فوراً."
+      },
+      {
+        "id": 5,
+        "question": "متى يُدفع قيمة الشحن؟",
+        "answer": "يجب دفع قيمة الشحن 100% مقدماً قبل تنفيذ عملية الشحن. يتم التحويل البنكي إلى الحساب الرسمي للشركة في هولندا. بعد تأكيد استلام المبلغ، نقوم بإصدار فاتورة إلكترونية ونبدأ في تجهيز شحنتكم مباشرة."
       }
     ],
     
@@ -61,6 +66,11 @@
         "id": 4,
         "question": "What if the goods are damaged?",
         "answer": "All our shipments are insured. In case of any damage or loss of goods during shipping, you can file an insurance claim. We recommend photographing the goods before shipping and upon receipt, and reporting any issues immediately."
+      },
+      {
+        "id": 5,
+        "question": "When should I pay for shipping?",
+        "answer": "Shipping charges must be paid 100% in advance before any shipping activity begins. Bank transfers are made to the company's official account in the Netherlands. After payment confirmation, we issue an electronic invoice and immediately begin preparing your shipment."
       }
     ],
     
