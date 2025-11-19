@@ -92,6 +92,9 @@ export default function Home() {
       </a>
 
       <Header />
+      
+      {/* Spacer for fixed header */}
+      <div className="h-20" aria-hidden="true" />
 
       <main id="main-content" className="flex-grow" role="main">
         {/* Hero Banner with Countdown */}

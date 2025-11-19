@@ -30,6 +30,9 @@ export default function AboutPage() {
     >
       <Header />
 
+      {/* Spacer for fixed header */}
+      <div className="h-20" aria-hidden="true" />
+
       <main className="flex-grow" role="main">
         {/* Hero Section */}
         <div className="bg-primary-dark text-white py-16">

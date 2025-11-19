@@ -176,6 +176,9 @@ export default function ContactPage() {
       dir={isRTL ? "rtl" : "ltr"}
     >
       <Header />
+      
+      {/* Spacer for fixed header */}
+      <div className="h-20" aria-hidden="true" />
 
       <main className="flex-grow" role="main">
         {/* Hero Section */}
