@@ -9,11 +9,23 @@ import { useAuth } from "@/hooks/useAuth";
 type Language = "ar" | "en";
 
 interface HeaderProps {
-  language: Language;
-  setLanguage: (lang: Language) => void;
+  language?: Language;
+  setLanguage?: (lang: Language) => void;
 }
 
-export default function Header({ language, setLanguage }: HeaderProps) {
+export default function Header({
+  language: propLanguage,
+  setLanguage: propSetLanguage,
+}: HeaderProps = {}) {
+  // Default to 'ar' if language prop is not provided
+  const [internalLanguage, setInternalLanguage] = useState<Language>("ar");
+  // Ensure language is always a valid value ('ar' or 'en')
+  const language: Language =
+    propLanguage === "ar" || propLanguage === "en"
+      ? propLanguage
+      : internalLanguage;
+  const setLanguage = propSetLanguage ?? setInternalLanguage;
+
   const isRTL = language === "ar";
   const pathname = usePathname();
   const router = useRouter();
@@ -52,7 +64,8 @@ export default function Header({ language, setLanguage }: HeaderProps) {
     },
   };
 
-  const t = translations[language];
+  // Ensure we always have a valid translation object
+  const t = translations[language] || translations.ar;
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50" role="banner">
