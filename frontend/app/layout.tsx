@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: "MEDO-FREIGHT.EU - Freight Route Deliver",
   description: "MEDO-FREIGHT.EU - Freight Route Deliver",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://medo-freight.eu"),
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
   robots: {
     index: true,
     follow: true,
@@ -34,6 +39,11 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
+        
         {/* Preconnect to external resources for better performance */}
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
