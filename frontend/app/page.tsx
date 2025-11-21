@@ -154,9 +154,9 @@ export default function Home() {
               >
                 {t.calculatePrice}
               </Link>
-              <button
-                disabled
-                className="bg-white text-primary-dark px-8 py-3 rounded-md font-bold text-lg opacity-50 cursor-not-allowed transition-all shadow-lg focus:outline-none focus:ring-4 focus:ring-white/50 focus:ring-offset-2"
+              <Link
+                href="/fcl-quote"
+                className="bg-white text-primary-dark px-8 py-3 rounded-md font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-white/50 focus:ring-offset-2"
                 aria-label={
                   language === "ar"
                     ? "FCL Quote (أوروبا)"
@@ -164,7 +164,7 @@ export default function Home() {
                 }
               >
                 {t.bookShipment}
-              </button>
+              </Link>
             </div>
 
             {/* Authentication Buttons - Only show if not authenticated */}
@@ -580,7 +580,7 @@ export default function Home() {
                 : "Get an instant quote for your shipment"}
             </p>
             <Link
-              href="/quote"
+              href="/fcl-quote"
               className="bg-primary-yellow text-primary-dark px-8 py-3 rounded-md font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl inline-block focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 focus:ring-offset-2 focus:ring-offset-primary-dark"
               aria-label={
                 language === "ar"

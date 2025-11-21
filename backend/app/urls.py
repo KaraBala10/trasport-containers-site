@@ -4,6 +4,9 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     ChangePasswordView,
     ContactMessageView,
+    FCLPricingView,
+    FCLQuoteCalculateView,
+    FCLQuoteView,
     LoginView,
     RegisterView,
     UserProfileView,
@@ -25,4 +28,8 @@ urlpatterns = [
     path("user/change-password/", ChangePasswordView.as_view(), name="change_password"),
     # Contact endpoint
     path("contact/", ContactMessageView.as_view(), name="contact"),
+    # FCL endpoints
+    path("fcl/pricing/", FCLPricingView.as_view(), name="fcl_pricing"),
+    path("fcl/calculate/", FCLQuoteCalculateView.as_view(), name="fcl_calculate"),
+    path("fcl/quote/", FCLQuoteView.as_view(), name="fcl_quote"),
 ]

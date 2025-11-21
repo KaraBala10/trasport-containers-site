@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ContactMessage
+from .models import ContactMessage, FCLQuote, FCLPricing
 
 
 @admin.register(ContactMessage)
@@ -21,5 +21,84 @@ class ContactMessageAdmin(admin.ModelAdmin):
         }),
         ("Status", {
             "fields": ("is_read", "created_at")
+        }),
+    )
+
+
+@admin.register(FCLPricing)
+class FCLPricingAdmin(admin.ModelAdmin):
+    list_display = ("port_of_loading", "port_of_discharge", "container_type", "total_price_per_container", "is_active", "updated_at")
+    list_filter = ("is_active", "container_type", "port_of_loading", "port_of_discharge")
+    search_fields = ("port_of_loading", "port_of_discharge")
+    readonly_fields = ("created_at", "updated_at", "total_price_per_container")
+    
+    fieldsets = (
+        ("Route Information", {
+            "fields": ("port_of_loading", "port_of_discharge", "container_type")
+        }),
+        ("Pricing", {
+            "fields": (
+                "base_ocean_freight",
+                "origin_charges",
+                "destination_charges",
+                "documentation_fee",
+                "margin",
+                "total_price_per_container"
+            )
+        }),
+        ("Status", {
+            "fields": ("is_active", "created_at", "updated_at")
+        }),
+    )
+
+
+@admin.register(FCLQuote)
+class FCLQuoteAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "company_name", "port_of_loading", "port_of_discharge", "container_type", "number_of_containers", "total_price", "created_at", "is_processed")
+    list_filter = ("is_processed", "container_type", "usage_type", "created_at", "is_dangerous")
+    search_fields = ("full_name", "company_name", "email", "phone", "port_of_loading", "port_of_discharge")
+    readonly_fields = ("created_at", "price_per_container", "total_price")
+    date_hierarchy = "created_at"
+    
+    fieldsets = (
+        ("Route Details", {
+            "fields": (
+                ("origin_country", "origin_city", "origin_zip"),
+                "port_of_loading",
+                ("destination_country", "destination_city"),
+                "port_of_discharge"
+            )
+        }),
+        ("Container Details", {
+            "fields": ("container_type", "number_of_containers", "cargo_ready_date")
+        }),
+        ("Cargo Details", {
+            "fields": (
+                "commodity_type",
+                "usage_type",
+                ("total_weight", "total_volume", "cargo_value"),
+                ("is_dangerous", "un_number", "dangerous_class")
+            )
+        }),
+        ("Additional Services", {
+            "fields": (
+                ("pickup_required", "pickup_address", "forklift_available"),
+                "eu_export_clearance",
+                "cargo_insurance",
+                "on_carriage"
+            )
+        }),
+        ("Customer Details", {
+            "fields": (
+                ("full_name", "company_name", "country"),
+                ("phone", "email", "preferred_contact"),
+                ("packing_list", "photos")
+            )
+        }),
+        ("Pricing & Status", {
+            "fields": ("price_per_container", "total_price", "is_processed", "created_at")
+        }),
+        ("Terms", {
+            "fields": ("accepted_terms",)
         }),
     )
