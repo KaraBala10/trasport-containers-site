@@ -24,7 +24,6 @@ export default function Home() {
         heroTitle: "MEDO-FREIGHT.EU",
         heroSubtitle: "Freight · Route · Deliver",
         heroDescription: "خدمات شحن احترافية عالمية",
-        calculatePrice: "احسب سعرك الآن",
         bookShipment: "FCL Quote (أوروبا)",
         serviceTitle: "خدماتنا",
         serviceDescription: "نقدم خدمات شحن احترافية مع ضمان الجودة والسرعة",
@@ -48,7 +47,6 @@ export default function Home() {
         heroTitle: "MEDO-FREIGHT.EU",
         heroSubtitle: "Freight · Route · Deliver",
         heroDescription: "Professional Global Freight Services",
-        calculatePrice: "Calculate Your Price Now",
         bookShipment: "FCL Quote (Europe)",
         serviceTitle: "Our Services",
         serviceDescription:
@@ -144,19 +142,8 @@ export default function Home() {
               }
             >
               <Link
-                href="/quote"
-                className="bg-primary-yellow text-primary-dark px-8 py-3 rounded-md font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 focus:ring-offset-2"
-                aria-label={
-                  language === "ar"
-                    ? "احسب سعر شحنتك الآن"
-                    : "Calculate your shipment price now"
-                }
-              >
-                {t.calculatePrice}
-              </Link>
-              <Link
                 href="/fcl-quote"
-                className="bg-white text-primary-dark px-8 py-3 rounded-md font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-white/50 focus:ring-offset-2"
+                className="bg-primary-yellow text-primary-dark px-8 py-3 rounded-md font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 focus:ring-offset-2"
                 aria-label={
                   language === "ar"
                     ? "FCL Quote (أوروبا)"
