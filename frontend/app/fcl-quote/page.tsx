@@ -14,11 +14,6 @@ export default function FCLQuotePage() {
   const [currentSection, setCurrentSection] = useState<string>("route");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
-  const [calculatedPrice, setCalculatedPrice] = useState<{
-    price_per_container: number;
-    total_price: number;
-    number_of_containers: number;
-  } | null>(null);
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -71,6 +66,130 @@ export default function FCLQuotePage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // European countries and cities data
+  const europeanCountries = {
+    "Netherlands": {
+      cities: ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven", "Groningen", "Tilburg", "Almere", "Breda", "Nijmegen"],
+      ar: { name: "هولندا", cities: ["أمستردام", "روتردام", "لاهاي", "أوتريخت", "آيندهوفن", "خرونينجن", "تيلبورخ", "ألميره", "بريدا", "نايميخن"] }
+    },
+    "Germany": {
+      cities: ["Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt", "Stuttgart", "Düsseldorf", "Dortmund", "Essen", "Leipzig", "Bremen", "Dresden"],
+      ar: { name: "ألمانيا", cities: ["برلين", "هامبورغ", "ميونخ", "كولونيا", "فرانكفورت", "شتوتغارت", "دوسلدورف", "دورتموند", "إيسن", "لايبزيغ", "بريمن", "درسدن"] }
+    },
+    "Belgium": {
+      cities: ["Brussels", "Antwerp", "Ghent", "Charleroi", "Liège", "Bruges", "Namur", "Leuven", "Mons", "Aalst"],
+      ar: { name: "بلجيكا", cities: ["بروكسل", "أنتويرب", "غنت", "شارلوروا", "لييج", "بروج", "نامور", "لوفان", "مونس", "آلست"] }
+    },
+    "France": {
+      cities: ["Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Nantes", "Strasbourg", "Montpellier", "Bordeaux", "Lille"],
+      ar: { name: "فرنسا", cities: ["باريس", "مرسيليا", "ليون", "تولوز", "نيس", "نانت", "ستراسبورغ", "مونبلييه", "بوردو", "ليل"] }
+    },
+    "Italy": {
+      cities: ["Rome", "Milan", "Naples", "Turin", "Palermo", "Genoa", "Bologna", "Florence", "Bari", "Catania"],
+      ar: { name: "إيطاليا", cities: ["روما", "ميلانو", "نابولي", "تورينو", "باليرمو", "جنوة", "بولونيا", "فلورنسا", "باري", "كاتانيا"] }
+    },
+    "Spain": {
+      cities: ["Madrid", "Barcelona", "Valencia", "Seville", "Zaragoza", "Málaga", "Murcia", "Palma", "Las Palmas", "Bilbao"],
+      ar: { name: "إسبانيا", cities: ["مدريد", "برشلونة", "بلنسية", "إشبيلية", "سرقسطة", "مالقة", "مرسية", "بالما", "لاس بالماس", "بلباو"] }
+    },
+    "Poland": {
+      cities: ["Warsaw", "Kraków", "Łódź", "Wrocław", "Poznań", "Gdańsk", "Szczecin", "Bydgoszcz", "Lublin", "Katowice"],
+      ar: { name: "بولندا", cities: ["وارسو", "كراكوف", "وودج", "فروتسواف", "بوزنان", "غدانسك", "شتشيتسين", "بيدغوشتش", "لوبلين", "كاتوفيتسه"] }
+    },
+    "Austria": {
+      cities: ["Vienna", "Graz", "Linz", "Salzburg", "Innsbruck", "Klagenfurt", "Villach", "Wels", "Sankt Pölten", "Dornbirn"],
+      ar: { name: "النمسا", cities: ["فيينا", "غراتس", "لينتس", "سالزبورغ", "إنسبروك", "كلاغنفورت", "فيلاخ", "فيلس", "سانكت بولتن", "دورنبيرن"] }
+    },
+    "Switzerland": {
+      cities: ["Zurich", "Geneva", "Basel", "Bern", "Lausanne", "St. Gallen", "Lucerne", "Lugano", "Biel", "Thun"],
+      ar: { name: "سويسرا", cities: ["زيورخ", "جنيف", "بازل", "برن", "لوزان", "سانت غالن", "لوسيرن", "لوغانو", "بييل", "تون"] }
+    },
+    "Denmark": {
+      cities: ["Copenhagen", "Aarhus", "Odense", "Aalborg", "Esbjerg", "Randers", "Kolding", "Horsens", "Vejle", "Roskilde"],
+      ar: { name: "الدنمارك", cities: ["كوبنهاغن", "آرهوس", "أودنسه", "ألبورغ", "إسبيرغ", "رانديرس", "كولدينغ", "هورسينس", "فيلي", "روسكيلد"] }
+    },
+    "Sweden": {
+      cities: ["Stockholm", "Gothenburg", "Malmö", "Uppsala", "Västerås", "Örebro", "Linköping", "Helsingborg", "Jönköping", "Norrköping"],
+      ar: { name: "السويد", cities: ["ستوكهولم", "غوتنبرغ", "مالمو", "أوبسالا", "فيستيروس", "أوريبرو", "لينشوبينغ", "هلسينغبورغ", "يونشوبينغ", "نورشوبينغ"] }
+    },
+    "Norway": {
+      cities: ["Oslo", "Bergen", "Trondheim", "Stavanger", "Bærum", "Kristiansand", "Fredrikstad", "Sandnes", "Tromsø", "Sarpsborg"],
+      ar: { name: "النرويج", cities: ["أوسلو", "برغن", "تروندهايم", "ستافانغر", "بيروم", "كريستيانساند", "فريدريكستاد", "ساندنس", "ترومسو", "ساربسبورغ"] }
+    },
+    "Finland": {
+      cities: ["Helsinki", "Espoo", "Tampere", "Vantaa", "Oulu", "Turku", "Jyväskylä", "Lahti", "Kuopio", "Pori"],
+      ar: { name: "فنلندا", cities: ["هلسنكي", "إسبو", "تامبيري", "فانتا", "أولو", "توركو", "يوفاسكيلا", "لاهتي", "كووبيو", "بوري"] }
+    },
+    "Czech Republic": {
+      cities: ["Prague", "Brno", "Ostrava", "Plzeň", "Liberec", "Olomouc", "Ústí nad Labem", "České Budějovice", "Hradec Králové", "Pardubice"],
+      ar: { name: "جمهورية التشيك", cities: ["براغ", "برنو", "أوسترافا", "بلزن", "ليبيريتس", "أولوموتس", "أوستي ناد لابم", "تشيسكي بوديوفيتسه", "هراديتس كرالوفه", "باردوبيتسه"] }
+    },
+    "Portugal": {
+      cities: ["Lisbon", "Porto", "Vila Nova de Gaia", "Amadora", "Braga", "Funchal", "Coimbra", "Setúbal", "Almada", "Agualva-Cacém"],
+      ar: { name: "البرتغال", cities: ["لشبونة", "بورتو", "فيلا نوفا دي غايا", "أمادورا", "براغا", "فونشال", "كويمبرا", "سيطوبال", "ألمادا", "أغوالفا-كاسيم"] }
+    },
+    "Greece": {
+      cities: ["Athens", "Thessaloniki", "Patras", "Piraeus", "Larissa", "Heraklion", "Peristeri", "Kallithea", "Acharnes", "Kalamaria"],
+      ar: { name: "اليونان", cities: ["أثينا", "سالونيك", "باتراس", "بيرايوس", "لاريسا", "هراكليون", "بيريستيري", "كاليذيا", "أخارنيس", "كالاماريا"] }
+    },
+    "Hungary": {
+      cities: ["Budapest", "Debrecen", "Szeged", "Miskolc", "Pécs", "Győr", "Nyíregyháza", "Kecskemét", "Székesfehérvár", "Szombathely"],
+      ar: { name: "المجر", cities: ["بودابست", "دبرتسن", "سجيد", "ميشكولتس", "بيكس", "جيور", "نييريغيهازا", "كيشكيميت", "سيكشفهيرفار", "سومباتهي"] }
+    },
+    "Romania": {
+      cities: ["Bucharest", "Cluj-Napoca", "Timișoara", "Iași", "Constanța", "Craiova", "Brașov", "Galați", "Ploiești", "Oradea"],
+      ar: { name: "رومانيا", cities: ["بوخارست", "كلوج نابوكا", "تيميشوارا", "ياش", "كونستانتسا", "كرايوفا", "براشوف", "غالاتسي", "بلويشت", "أوراديا"] }
+    },
+    "Bulgaria": {
+      cities: ["Sofia", "Plovdiv", "Varna", "Burgas", "Ruse", "Stara Zagora", "Pleven", "Sliven", "Dobrich", "Shumen"],
+      ar: { name: "بلغاريا", cities: ["صوفيا", "بلوفديف", "فارنا", "بورغاس", "روسيه", "ستارا زاغورا", "بليفين", "سليفن", "دوبريتش", "شومن"] }
+    },
+    "Croatia": {
+      cities: ["Zagreb", "Split", "Rijeka", "Osijek", "Zadar", "Slavonski Brod", "Pula", "Sesvete", "Karlovac", "Varaždin"],
+      ar: { name: "كرواتيا", cities: ["زغرب", "سبليت", "رييكا", "أوسييك", "زادار", "سلافونسكي برود", "بولا", "سيسفيتي", "كارلوفاتس", "فاراجدين"] }
+    },
+    "Slovakia": {
+      cities: ["Bratislava", "Košice", "Prešov", "Žilina", "Banská Bystrica", "Nitra", "Trnava", "Trenčín", "Martin", "Poprad"],
+      ar: { name: "سلوفاكيا", cities: ["براتيسلافا", "كوشيتسه", "بريشوف", "جيلينا", "بانسكا بيستريتسا", "نيترا", "ترنافا", "ترنتشين", "مارتن", "بوبراد"] }
+    },
+    "Slovenia": {
+      cities: ["Ljubljana", "Maribor", "Celje", "Kranj", "Velenje", "Koper", "Novo Mesto", "Ptuj", "Trbovlje", "Kamnik"],
+      ar: { name: "سلوفينيا", cities: ["ليوبليانا", "ماريبور", "تسليي", "كراني", "فيلينيه", "كوبر", "نوفو ميستو", "بتوي", "تربوفلي", "كامنيك"] }
+    },
+    "Estonia": {
+      cities: ["Tallinn", "Tartu", "Narva", "Pärnu", "Kohtla-Järve", "Viljandi", "Rakvere", "Maardu", "Kuressaare", "Sillamäe"],
+      ar: { name: "إستونيا", cities: ["تالين", "تارتو", "نارفا", "بارنو", "كوهتلا-يارفه", "فيلجاندي", "راكفيري", "ماردو", "كوريسار", "سيلامي"] }
+    },
+    "Latvia": {
+      cities: ["Riga", "Daugavpils", "Liepāja", "Jelgava", "Jūrmala", "Ventspils", "Rēzekne", "Valmiera", "Ogre", "Cēsis"],
+      ar: { name: "لاتفيا", cities: ["ريغا", "داوغافبيلس", "لييباجا", "ييلغافا", "يورمالا", "فنتسبيلس", "ريزكني", "فالميرا", "أوغري", "تسيسيس"] }
+    },
+    "Lithuania": {
+      cities: ["Vilnius", "Kaunas", "Klaipėda", "Šiauliai", "Panevėžys", "Alytus", "Marijampolė", "Mazeikiai", "Jonava", "Utena"],
+      ar: { name: "ليتوانيا", cities: ["فيلنيوس", "كاوناس", "كلايبيدا", "شياولياي", "بانيفيزيس", "أليتوس", "ماريامبولي", "مازيكياي", "يونافا", "أوتينا"] }
+    },
+    "Ireland": {
+      cities: ["Dublin", "Cork", "Limerick", "Galway", "Waterford", "Drogheda", "Kilkenny", "Wexford", "Sligo", "Clonmel"],
+      ar: { name: "أيرلندا", cities: ["دبلن", "كورك", "ليميريك", "غالواي", "واترفورد", "دروغيدا", "كيلكيني", "ويكسفورد", "سليغو", "كلونميل"] }
+    },
+    "Luxembourg": {
+      cities: ["Luxembourg City", "Esch-sur-Alzette", "Differdange", "Dudelange", "Pétange", "Sanem", "Hesperange", "Bettembourg", "Schifflange", "Ettelbruck"],
+      ar: { name: "لوكسمبورغ", cities: ["مدينة لوكسمبورغ", "إيش سور ألزيت", "ديفردانج", "دوديلانج", "بيتانج", "سانيم", "هيسبيرانج", "بيتمبورغ", "شيفلانج", "إيتلبروك"] }
+    },
+    "Malta": {
+      cities: ["Valletta", "Birkirkara", "Mosta", "Qormi", "Żabbar", "Sliema", "San Ġwann", "Fgura", "Żejtun", "Marsaskala"],
+      ar: { name: "مالطا", cities: ["فاليتا", "بيركيركارا", "موستا", "كورمي", "زابار", "سليما", "سان جوان", "فغورا", "زيتون", "مارساسكالا"] }
+    },
+    "Cyprus": {
+      cities: ["Nicosia", "Limassol", "Larnaca", "Paphos", "Famagusta", "Kyrenia", "Aradippou", "Paralimni", "Aglandjia", "Morphou"],
+      ar: { name: "قبرص", cities: ["نيقوسيا", "ليماسول", "لارنكا", "بافوس", "فاماغوستا", "كيرينيا", "أراديبو", "باراليمني", "أغلاندجيا", "مورفو"] }
+    },
+    "Syria": {
+      cities: ["Damascus", "Aleppo", "Latakia", "Tartus", "Homs", "Hama", "Deir ez-Zor", "Raqqa", "Idlib", "Daraa"],
+      ar: { name: "سوريا", cities: ["دمشق", "حلب", "اللاذقية", "طرطوس", "حمص", "حماة", "دير الزور", "الرقة", "إدلب", "درعا"] }
+    }
+  };
 
   const translations = {
     ar: {
@@ -140,7 +259,6 @@ export default function FCLQuotePage() {
       privacyPolicy: "سياسة الخصوصية",
       
       // Buttons
-      calculatePrice: "احسب السعر",
       confirmBooking: "تأكيد الحجز",
       next: "التالي",
       previous: "السابق",
@@ -222,7 +340,6 @@ export default function FCLQuotePage() {
       privacyPolicy: "Privacy Policy",
       
       // Buttons
-      calculatePrice: "Calculate Price",
       confirmBooking: "Confirm Booking",
       next: "Next",
       previous: "Previous",
@@ -307,36 +424,32 @@ export default function FCLQuotePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleCalculatePrice = async () => {
-    if (!validateSection("route") || !validateSection("container")) {
-      return;
-    }
-
-    try {
-      const response = await apiService.calculateFCLPrice({
-        port_of_loading: formData.port_of_loading,
-        port_of_discharge: formData.port_of_discharge,
-        container_type: formData.container_type,
-        number_of_containers: formData.number_of_containers,
-      });
-
-      if (response.data.success) {
-        setCalculatedPrice({
-          price_per_container: response.data.price_per_container,
-          total_price: response.data.total_price,
-          number_of_containers: response.data.number_of_containers,
-        });
-      }
-    } catch (error: any) {
-      console.error("Error calculating price:", error);
-      setSubmitStatus("error");
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateSection("customer")) {
+    // Validate all sections including terms acceptance
+    const routeValid = validateSection("route");
+    const containerValid = validateSection("container");
+    const cargoValid = validateSection("cargo");
+    const servicesValid = validateSection("services");
+    const customerValid = validateSection("customer");
+    
+    if (!routeValid || !containerValid || !cargoValid || !servicesValid || !customerValid) {
+      // Scroll to first error
+      const firstError = Object.keys(errors)[0];
+      if (firstError) {
+        const element = document.querySelector(`[name="${firstError}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+      return;
+    }
+    
+    // Double check terms acceptance
+    if (!formData.accepted_terms) {
+      setErrors((prev) => ({ ...prev, accepted_terms: t.required }));
       return;
     }
 
@@ -349,22 +462,41 @@ export default function FCLQuotePage() {
       // Add all form fields
       Object.keys(formData).forEach((key) => {
         const value = formData[key as keyof typeof formData];
-        if (value !== null && value !== undefined && value !== "") {
-          if (key === "packing_list" || key === "photos") {
-            if (value instanceof File) {
-              formDataToSend.append(key, value);
-            }
-          } else if (key === "accepted_terms" || key === "is_dangerous" || key === "pickup_required" || 
-                     key === "forklift_available" || key === "eu_export_clearance" || 
-                     key === "cargo_insurance" || key === "on_carriage") {
-            // Boolean fields
-            formDataToSend.append(key, value ? "true" : "false");
-          } else if (key === "number_of_containers" || key === "total_weight" || key === "total_volume" || 
-                     key === "cargo_value") {
-            // Number fields
+        
+        // Skip null, undefined, and empty strings (except for files and booleans)
+        if (value === null || value === undefined) {
+          return;
+        }
+        
+        if (key === "packing_list" || key === "photos") {
+          // File fields
+          if (value instanceof File) {
+            formDataToSend.append(key, value);
+          }
+        } else if (key === "accepted_terms" || key === "is_dangerous" || key === "pickup_required" || 
+                   key === "forklift_available" || key === "eu_export_clearance" || 
+                   key === "cargo_insurance" || key === "on_carriage") {
+          // Boolean fields - always send
+          formDataToSend.append(key, value ? "true" : "false");
+        } else if (key === "number_of_containers") {
+          // Integer field
+          if (value !== "" && value !== null) {
             formDataToSend.append(key, String(value));
-          } else {
-            // String fields
+          }
+        } else if (key === "total_weight" || key === "total_volume" || key === "cargo_value") {
+          // Decimal fields
+          if (value !== "" && value !== null && value !== undefined) {
+            formDataToSend.append(key, String(value));
+          }
+        } else if (key === "cargo_ready_date") {
+          // Date field
+          if (value !== "" && value !== null) {
+            formDataToSend.append(key, String(value));
+          }
+        } else {
+          // String fields - skip empty strings for optional fields
+          const optionalFields = ["origin_zip", "company_name", "un_number", "dangerous_class", "pickup_address"];
+          if (value !== "" || !optionalFields.includes(key)) {
             formDataToSend.append(key, String(value));
           }
         }
@@ -383,7 +515,16 @@ export default function FCLQuotePage() {
       }
     } catch (error: any) {
       console.error("Error submitting form:", error);
+      console.error("Error details:", error.response?.data);
       setSubmitStatus("error");
+      // Show error message to user
+      if (error.response?.data?.error) {
+        setErrors((prev) => ({ ...prev, api: error.response.data.error }));
+      } else if (error.response?.data?.details && process.env.NODE_ENV === 'development') {
+        setErrors((prev) => ({ ...prev, api: error.response.data.details }));
+      } else {
+        setErrors((prev) => ({ ...prev, api: language === "ar" ? "حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى." : "An error occurred while submitting your request. Please try again." }));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -391,13 +532,98 @@ export default function FCLQuotePage() {
 
   // Common ports list (you can expand this)
   const commonPorts = [
+    // Netherlands
     "Rotterdam, Netherlands",
+    "Amsterdam, Netherlands",
+    "Vlissingen, Netherlands",
+    "Terneuzen, Netherlands",
+    // Belgium
     "Antwerp, Belgium",
+    "Ghent, Belgium",
+    "Zeebrugge, Belgium",
+    "Brussels, Belgium",
+    // Germany
     "Hamburg, Germany",
     "Bremen, Germany",
-    "Amsterdam, Netherlands",
-    "Lattakia, Syria",
+    "Bremerhaven, Germany",
+    "Wilhelmshaven, Germany",
+    "Rostock, Germany",
+    "Lübeck, Germany",
+    // France
+    "Le Havre, France",
+    "Marseille, France",
+    "Dunkirk, France",
+    "Nantes, France",
+    "Bordeaux, France",
+    "La Rochelle, France",
+    // Italy
+    "Genoa, Italy",
+    "Naples, Italy",
+    "La Spezia, Italy",
+    "Livorno, Italy",
+    "Venice, Italy",
+    "Trieste, Italy",
+    "Gioia Tauro, Italy",
+    // Spain
+    "Algeciras, Spain",
+    "Valencia, Spain",
+    "Barcelona, Spain",
+    "Bilbao, Spain",
+    "Cartagena, Spain",
+    "Vigo, Spain",
+    // United Kingdom
+    "Felixstowe, United Kingdom",
+    "Southampton, United Kingdom",
+    "London, United Kingdom",
+    "Liverpool, United Kingdom",
+    "Bristol, United Kingdom",
+    // Poland
+    "Gdansk, Poland",
+    "Gdynia, Poland",
+    "Szczecin, Poland",
+    "Swinoujscie, Poland",
+    // Greece
+    "Piraeus, Greece",
+    "Thessaloniki, Greece",
+    "Patras, Greece",
+    "Heraklion, Greece",
+    // Portugal
+    "Lisbon, Portugal",
+    "Leixoes, Portugal",
+    "Sines, Portugal",
+    // Denmark
+    "Copenhagen, Denmark",
+    "Aarhus, Denmark",
+    // Sweden
+    "Gothenburg, Sweden",
+    "Stockholm, Sweden",
+    "Malmö, Sweden",
+    // Norway
+    "Oslo, Norway",
+    "Bergen, Norway",
+    // Finland
+    "Helsinki, Finland",
+    "Turku, Finland",
+    // Austria (via river ports)
+    "Vienna, Austria",
+    // Switzerland (via river ports)
+    "Basel, Switzerland",
+    // Croatia
+    "Rijeka, Croatia",
+    "Split, Croatia",
+    // Romania
+    "Constanta, Romania",
+    // Bulgaria
+    "Varna, Bulgaria",
+    "Burgas, Bulgaria",
+    // Turkey
+    "Istanbul, Turkey",
+    "Mersin, Turkey",
+    "Izmir, Turkey",
+    // Syria
+    "Latakia, Syria",
     "Tartous, Syria",
+    "Baniyas, Syria",
   ];
 
   // Progress calculation
@@ -505,18 +731,26 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.originCountry}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.origin_country && <span className="text-red-500">*</span>}
                     </label>
-                    <input
-                      type="text"
+                    <select
                       name="origin_country"
                       value={formData.origin_country}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setFormData(prev => ({ ...prev, origin_city: "" })); // Reset city when country changes
+                      }}
                       className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
                         errors.origin_country ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-primary-yellow/50"
                       }`}
-                      placeholder={language === "ar" ? "مثال: هولندا" : "e.g., Netherlands"}
-                    />
+                    >
+                      <option value="">{language === "ar" ? "اختر البلد" : "Select Country"}</option>
+                      {Object.keys(europeanCountries).map((country) => (
+                        <option key={country} value={country}>
+                          {language === "ar" ? europeanCountries[country as keyof typeof europeanCountries].ar.name : country}
+                        </option>
+                      ))}
+                    </select>
                     {errors.origin_country && (
                       <motion.p 
                         initial={{ opacity: 0 }}
@@ -538,18 +772,24 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.originCity}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.origin_city && <span className="text-red-500">*</span>}
                     </label>
-                    <input
-                      type="text"
+                    <select
                       name="origin_city"
                       value={formData.origin_city}
                       onChange={handleChange}
+                      disabled={!formData.origin_country}
                       className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
                         errors.origin_city ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-primary-yellow/50"
-                      }`}
-                      placeholder={language === "ar" ? "مثال: أمستردام" : "e.g., Amsterdam"}
-                    />
+                      } ${!formData.origin_country ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                    >
+                      <option value="">{formData.origin_country ? (language === "ar" ? "اختر المدينة" : "Select City") : (language === "ar" ? "اختر البلد أولاً" : "Select Country First")}</option>
+                      {formData.origin_country && europeanCountries[formData.origin_country as keyof typeof europeanCountries]?.cities.map((city, index) => (
+                        <option key={city} value={city}>
+                          {language === "ar" ? europeanCountries[formData.origin_country as keyof typeof europeanCountries].ar.cities[index] : city}
+                        </option>
+                      ))}
+                    </select>
                     {errors.origin_city && (
                       <motion.p 
                         initial={{ opacity: 0 }}
@@ -587,7 +827,7 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.portOfLoading}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.port_of_loading && <span className="text-red-500">*</span>}
                     </label>
                     <input
                       type="text"
@@ -626,18 +866,30 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.destinationCountry}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.destination_country && <span className="text-red-500">*</span>}
                     </label>
-                    <input
-                      type="text"
+                    <select
                       name="destination_country"
                       value={formData.destination_country}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setFormData(prev => ({ ...prev, destination_city: "" })); // Reset city when country changes
+                      }}
                       className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
                         errors.destination_country ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-primary-yellow/50"
                       }`}
-                      placeholder={language === "ar" ? "مثال: سوريا" : "e.g., Syria"}
-                    />
+                    >
+                      <option value="">{language === "ar" ? "اختر البلد" : "Select Country"}</option>
+                      {/* Show Syria first for destination */}
+                      <option value="Syria">
+                        {language === "ar" ? europeanCountries.Syria.ar.name : "Syria"}
+                      </option>
+                      {Object.keys(europeanCountries).filter(c => c !== "Syria").map((country) => (
+                        <option key={country} value={country}>
+                          {language === "ar" ? europeanCountries[country as keyof typeof europeanCountries].ar.name : country}
+                        </option>
+                      ))}
+                    </select>
                     {errors.destination_country && (
                       <motion.p 
                         initial={{ opacity: 0 }}
@@ -659,18 +911,24 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.destinationCity}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.destination_city && <span className="text-red-500">*</span>}
                     </label>
-                    <input
-                      type="text"
+                    <select
                       name="destination_city"
                       value={formData.destination_city}
                       onChange={handleChange}
+                      disabled={!formData.destination_country}
                       className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
                         errors.destination_city ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-primary-yellow/50"
-                      }`}
-                      placeholder={language === "ar" ? "مثال: حلب" : "e.g., Aleppo"}
-                    />
+                      } ${!formData.destination_country ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                    >
+                      <option value="">{formData.destination_country ? (language === "ar" ? "اختر المدينة" : "Select City") : (language === "ar" ? "اختر البلد أولاً" : "Select Country First")}</option>
+                      {formData.destination_country && europeanCountries[formData.destination_country as keyof typeof europeanCountries]?.cities.map((city, index) => (
+                        <option key={city} value={city}>
+                          {language === "ar" ? europeanCountries[formData.destination_country as keyof typeof europeanCountries].ar.cities[index] : city}
+                        </option>
+                      ))}
+                    </select>
                     {errors.destination_city && (
                       <motion.p 
                         initial={{ opacity: 0 }}
@@ -693,7 +951,7 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.portOfDischarge}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.port_of_discharge && <span className="text-red-500">*</span>}
                     </label>
                     <input
                       type="text"
@@ -767,7 +1025,7 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.containerType}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.container_type && <span className="text-red-500">*</span>}
                     </label>
                     <select
                       name="container_type"
@@ -803,7 +1061,7 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.numberOfContainers}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.number_of_containers && <span className="text-red-500">*</span>}
                     </label>
                     <input
                       type="number"
@@ -822,7 +1080,7 @@ export default function FCLQuotePage() {
                   >
                     <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
                       <span>{t.cargoReadyDate}</span>
-                      <span className="text-red-500">*</span>
+                      {!formData.cargo_ready_date && <span className="text-red-500">*</span>}
                     </label>
                     <input
                       type="date"
@@ -848,66 +1106,6 @@ export default function FCLQuotePage() {
                   </motion.div>
                 </div>
 
-                  {/* Calculate Price Button */}
-                  {formData.port_of_loading && formData.port_of_discharge && formData.container_type && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-8"
-                    >
-                      <motion.button
-                        type="button"
-                        onClick={handleCalculatePrice}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 mx-auto"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        {t.calculatePrice}
-                      </motion.button>
-                    </motion.div>
-                  )}
-
-                  {/* Price Display */}
-                  <AnimatePresence>
-                    {calculatedPrice && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="mt-8 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded-2xl p-6 shadow-lg"
-                      >
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </div>
-                          <h3 className="text-xl font-bold text-green-900">{t.pricePerContainer}</h3>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center bg-white/50 rounded-lg p-3">
-                            <span className="text-gray-700">{t.pricePerContainer}:</span>
-                            <span className="font-bold text-lg text-green-700">{calculatedPrice.price_per_container.toFixed(2)} EUR</span>
-                          </div>
-                          <div className="flex justify-between items-center bg-white/50 rounded-lg p-3">
-                            <span className="text-gray-700">{t.totalPrice} ({calculatedPrice.number_of_containers} {t.numberOfContainers}):</span>
-                            <span className="font-bold text-2xl text-green-700">{calculatedPrice.total_price.toFixed(2)} EUR</span>
-                          </div>
-                          <div className="mt-4 pt-4 border-t border-green-300">
-                            <p className="text-sm text-gray-600 flex items-center gap-2">
-                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                              </svg>
-                              {t.priceNote}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
 
                   <div className="mt-8 flex justify-between">
                     <motion.button
@@ -961,7 +1159,10 @@ export default function FCLQuotePage() {
                 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.commodityType} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.commodityType}</span>
+                      {!formData.commodity_type && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                       type="text"
                       name="commodity_type"
@@ -973,7 +1174,10 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.usageType} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.usageType}</span>
+                      {!formData.usage_type && <span className="text-red-500">*</span>}
+                    </label>
                     <select
                       name="usage_type"
                       value={formData.usage_type}
@@ -988,7 +1192,10 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.totalWeight} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.totalWeight}</span>
+                      {!formData.total_weight && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                       type="number"
                       name="total_weight"
@@ -1001,7 +1208,10 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.totalVolume} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.totalVolume}</span>
+                      {!formData.total_volume && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                       type="number"
                       name="total_volume"
@@ -1014,7 +1224,10 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.cargoValue} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.cargoValue}</span>
+                      {!formData.cargo_value && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                       type="number"
                       name="cargo_value"
@@ -1252,7 +1465,10 @@ export default function FCLQuotePage() {
                 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.fullName} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.fullName}</span>
+                      {!formData.full_name && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                       type="text"
                       name="full_name"
@@ -1275,7 +1491,10 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.customerCountry} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.customerCountry}</span>
+                      {!formData.country && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                       type="text"
                       name="country"
@@ -1287,7 +1506,10 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.phone} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.phone}</span>
+                      {!formData.phone && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                       type="tel"
                       name="phone"
@@ -1299,7 +1521,10 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.email} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.email}</span>
+                      {!formData.email && <span className="text-red-500">*</span>}
+                    </label>
                     <input
                       type="email"
                       name="email"
@@ -1311,7 +1536,10 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-semibold mb-2">{t.preferredContact} *</label>
+                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
+                      <span>{t.preferredContact}</span>
+                      {!formData.preferred_contact && <span className="text-red-500">*</span>}
+                    </label>
                     <select
                       name="preferred_contact"
                       value={formData.preferred_contact}
@@ -1346,22 +1574,36 @@ export default function FCLQuotePage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="accepted_terms"
-                        checked={formData.accepted_terms}
-                        onChange={handleChange}
-                        className="mr-2"
-                      />
-                      <span>
-                        {t.acceptTerms}{" "}
-                        <a href="/terms" className="text-primary-yellow hover:underline">
-                          {t.privacyPolicy}
-                        </a>
-                      </span>
-                    </label>
-                    {errors.accepted_terms && <p className="text-red-600 text-sm mt-1">{errors.accepted_terms}</p>}
+                    <div className={`p-4 rounded-lg border-2 transition-all ${errors.accepted_terms ? "border-red-500 bg-red-50" : formData.accepted_terms ? "border-green-500 bg-green-50" : "border-gray-300 bg-gray-50"}`}>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="accepted_terms"
+                          checked={formData.accepted_terms}
+                          onChange={handleChange}
+                          className="mr-3 w-5 h-5 text-primary-yellow rounded focus:ring-2 focus:ring-primary-yellow cursor-pointer"
+                        />
+                        <span className="text-gray-700">
+                          {t.acceptTerms}{" "}
+                          <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary-yellow hover:underline font-semibold">
+                            {t.privacyPolicy}
+                          </a>
+                          {!formData.accepted_terms && <span className="text-red-500 ml-1">*</span>}
+                        </span>
+                      </label>
+                      {errors.accepted_terms && (
+                        <motion.p 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="text-red-600 text-sm mt-2 flex items-center gap-1"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          {errors.accepted_terms}
+                        </motion.p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1381,9 +1623,9 @@ export default function FCLQuotePage() {
                     </motion.button>
                     <motion.button
                       type="submit"
-                      disabled={isSubmitting}
-                      whileHover={!isSubmitting ? { scale: 1.05 } : {}}
-                      whileTap={!isSubmitting ? { scale: 0.95 } : {}}
+                      disabled={isSubmitting || !formData.accepted_terms}
+                      whileHover={!isSubmitting && formData.accepted_terms ? { scale: 1.05 } : {}}
+                      whileTap={!isSubmitting && formData.accepted_terms ? { scale: 0.95 } : {}}
                       className="bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       {isSubmitting ? (

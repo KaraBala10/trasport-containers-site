@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions, status
@@ -214,47 +215,65 @@ class FCLQuoteView(generics.CreateAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]  # Support file uploads
     
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        # Calculate pricing
-        port_of_loading = serializer.validated_data.get('port_of_loading')
-        port_of_discharge = serializer.validated_data.get('port_of_discharge')
-        container_type = serializer.validated_data.get('container_type')
-        number_of_containers = serializer.validated_data.get('number_of_containers', 1)
-        
-        price_per_container = None
-        total_price = None
-        
         try:
-            pricing = FCLPricing.objects.get(
-                port_of_loading=port_of_loading,
-                port_of_discharge=port_of_discharge,
-                container_type=container_type,
-                is_active=True
+            # Log request data for debugging (only in DEBUG mode)
+            if settings.DEBUG:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"Request data keys: {list(request.data.keys())}")
+            
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            # Calculate pricing
+            port_of_loading = serializer.validated_data.get('port_of_loading')
+            port_of_discharge = serializer.validated_data.get('port_of_discharge')
+            container_type = serializer.validated_data.get('container_type')
+            number_of_containers = serializer.validated_data.get('number_of_containers', 1)
+            
+            price_per_container = None
+            total_price = None
+            
+            try:
+                pricing = FCLPricing.objects.get(
+                    port_of_loading=port_of_loading,
+                    port_of_discharge=port_of_discharge,
+                    container_type=container_type,
+                    is_active=True
+                )
+                price_per_container = pricing.total_price_per_container
+                total_price = price_per_container * number_of_containers
+            except FCLPricing.DoesNotExist:
+                pass  # Pricing will be calculated manually
+            
+            # Save quote with pricing
+            fcl_quote = serializer.save(
+                price_per_container=price_per_container,
+                total_price=total_price
             )
-            price_per_container = pricing.total_price_per_container
-            total_price = price_per_container * number_of_containers
-        except FCLPricing.DoesNotExist:
-            pass  # Pricing will be calculated manually
-        
-        # Save quote with pricing
-        fcl_quote = serializer.save(
-            price_per_container=price_per_container,
-            total_price=total_price
-        )
-        
-        # TODO: Send email notification here
-        # You can use Django's email backend or a service like SendGrid
-        
-        return Response(
-            {
-                "success": True,
-                "message": "Your FCL quote request has been submitted successfully. We will contact you soon.",
-                "id": fcl_quote.id,
-                "quote_number": f"FCL-{fcl_quote.id:06d}",
-                "price_per_container": float(price_per_container) if price_per_container else None,
-                "total_price": float(total_price) if total_price else None,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+            
+            # TODO: Send email notification here
+            # You can use Django's email backend or a service like SendGrid
+            
+            return Response(
+                {
+                    "success": True,
+                    "message": "Your FCL quote request has been submitted successfully. We will contact you soon.",
+                    "id": fcl_quote.id,
+                    "quote_number": f"FCL-{fcl_quote.id:06d}",
+                    "price_per_container": float(price_per_container) if price_per_container else None,
+                    "total_price": float(total_price) if total_price else None,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            return Response(
+                {
+                    "success": False,
+                    "error": str(e),
+                    "details": error_details if settings.DEBUG else None,
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

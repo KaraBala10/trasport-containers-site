@@ -117,17 +117,55 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
     
     def to_internal_value(self, data):
         """Convert string booleans to actual booleans for FormData"""
+        from django.http import QueryDict
+        
+        # Convert QueryDict to regular dict (QueryDict is immutable)
+        if isinstance(data, QueryDict):
+            data_dict = {}
+            for key in data.keys():
+                values = data.getlist(key)
+                # For most fields, take the first value
+                # For files, keep as list
+                if len(values) == 1:
+                    data_dict[key] = values[0]
+                elif len(values) > 1:
+                    # Multiple values (e.g., files)
+                    data_dict[key] = values
+                else:
+                    data_dict[key] = None
+        elif hasattr(data, 'copy'):
+            data_dict = data.copy()
+        else:
+            data_dict = dict(data) if data else {}
+        
         # Handle boolean fields that come as strings from FormData
         boolean_fields = [
             'is_dangerous', 'pickup_required', 'forklift_available',
             'eu_export_clearance', 'cargo_insurance', 'on_carriage', 'accepted_terms'
         ]
         for field in boolean_fields:
-            if field in data:
-                value = data[field]
+            if field in data_dict:
+                value = data_dict[field]
                 if isinstance(value, str):
-                    data[field] = value.lower() in ('true', '1', 'yes', 'on')
-        return super().to_internal_value(data)
+                    data_dict[field] = value.lower() in ('true', '1', 'yes', 'on')
+                elif isinstance(value, list) and len(value) > 0:
+                    # Handle list from QueryDict
+                    data_dict[field] = value[0].lower() in ('true', '1', 'yes', 'on') if isinstance(value[0], str) else False
+        
+        # Handle empty strings for optional fields
+        optional_fields = ['origin_zip', 'company_name', 'un_number', 'dangerous_class', 'pickup_address']
+        for field in optional_fields:
+            if field in data_dict:
+                value = data_dict[field]
+                if isinstance(value, list):
+                    value = value[0] if value else ''
+                if value == '' or value is None:
+                    if field in ['un_number', 'dangerous_class', 'pickup_address']:
+                        data_dict[field] = None
+                    else:
+                        data_dict[field] = ''
+        
+        return super().to_internal_value(data_dict)
     
     def validate_accepted_terms(self, value):
         """Validate that terms are accepted"""
