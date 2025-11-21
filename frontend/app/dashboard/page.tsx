@@ -60,8 +60,8 @@ export default function DashboardPage() {
                   href="/create-shipment"
                   className="bg-primary-yellow text-primary-dark p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
                 >
-                  <h3 className="text-xl font-bold mb-2">Create Shipment</h3>
-                  <p className="text-gray-700">Create a new shipment request</p>
+                  <h3 className="text-xl font-bold mb-2">Create LCL Shipment Syria</h3>
+                  <p className="text-gray-700">Create a new LCL shipment request to Syria</p>
                 </Link>
 
                 <Link

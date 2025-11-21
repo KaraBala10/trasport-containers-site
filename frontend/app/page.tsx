@@ -25,7 +25,7 @@ export default function Home() {
         heroSubtitle: "Freight · Route · Deliver",
         heroDescription: "خدمات شحن احترافية عالمية",
         calculatePrice: "احسب سعرك الآن",
-        bookShipment: "احجز شحنتك",
+        bookShipment: "FCL Quote (أوروبا)",
         serviceTitle: "خدماتنا",
         serviceDescription: "نقدم خدمات شحن احترافية مع ضمان الجودة والسرعة",
         shippingStages: "مراحل الشحن",
@@ -49,7 +49,7 @@ export default function Home() {
         heroSubtitle: "Freight · Route · Deliver",
         heroDescription: "Professional Global Freight Services",
         calculatePrice: "Calculate Your Price Now",
-        bookShipment: "Book Your Shipment",
+        bookShipment: "FCL Quote (Europe)",
         serviceTitle: "Our Services",
         serviceDescription:
           "We provide professional shipping services with guaranteed quality and speed",
@@ -154,17 +154,17 @@ export default function Home() {
               >
                 {t.calculatePrice}
               </Link>
-              <Link
-                href="/book"
-                className="bg-white text-primary-dark px-8 py-3 rounded-md font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-white/50 focus:ring-offset-2"
+              <button
+                disabled
+                className="bg-white text-primary-dark px-8 py-3 rounded-md font-bold text-lg opacity-50 cursor-not-allowed transition-all shadow-lg focus:outline-none focus:ring-4 focus:ring-white/50 focus:ring-offset-2"
                 aria-label={
                   language === "ar"
-                    ? "احجز شحنتك الآن"
-                    : "Book your shipment now"
+                    ? "FCL Quote (أوروبا)"
+                    : "FCL Quote (Europe)"
                 }
               >
                 {t.bookShipment}
-              </Link>
+              </button>
             </div>
 
             {/* Authentication Buttons - Only show if not authenticated */}
