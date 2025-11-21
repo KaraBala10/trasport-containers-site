@@ -1,0 +1,511 @@
+"use client";
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ShippingDirection, PersonInfo } from '@/types/shipment';
+
+interface Step3SenderReceiverProps {
+  direction: ShippingDirection;
+  sender: PersonInfo | null;
+  receiver: PersonInfo | null;
+  onSenderChange: (sender: PersonInfo) => void;
+  onReceiverChange: (receiver: PersonInfo) => void;
+  language: 'ar' | 'en';
+}
+
+// European countries
+const europeanCountries = [
+  { code: 'NL', name: 'Netherlands', nameAr: 'هولندا' },
+  { code: 'BE', name: 'Belgium', nameAr: 'بلجيكا' },
+  { code: 'DE', name: 'Germany', nameAr: 'ألمانيا' },
+  { code: 'FR', name: 'France', nameAr: 'فرنسا' },
+  { code: 'ES', name: 'Spain', nameAr: 'إسبانيا' },
+  { code: 'IT', name: 'Italy', nameAr: 'إيطاليا' },
+  { code: 'AT', name: 'Austria', nameAr: 'النمسا' },
+  { code: 'CH', name: 'Switzerland', nameAr: 'سويسرا' },
+  { code: 'UK', name: 'United Kingdom', nameAr: 'المملكة المتحدة' },
+  { code: 'SE', name: 'Sweden', nameAr: 'السويد' },
+  { code: 'NO', name: 'Norway', nameAr: 'النرويج' },
+  { code: 'DK', name: 'Denmark', nameAr: 'الدنمارك' },
+  { code: 'FI', name: 'Finland', nameAr: 'فنلندا' },
+  { code: 'PL', name: 'Poland', nameAr: 'بولندا' },
+  { code: 'CZ', name: 'Czech Republic', nameAr: 'جمهورية التشيك' },
+  { code: 'PT', name: 'Portugal', nameAr: 'البرتغال' },
+  { code: 'GR', name: 'Greece', nameAr: 'اليونان' },
+  { code: 'IE', name: 'Ireland', nameAr: 'أيرلندا' },
+];
+
+// Syrian provinces
+const syrianProvinces = [
+  { code: 'ALEPPO', name: 'Aleppo', nameAr: 'حلب' },
+  { code: 'DAMASCUS', name: 'Damascus', nameAr: 'دمشق' },
+  { code: 'LATAKIA', name: 'Latakia', nameAr: 'اللاذقية' },
+  { code: 'TARTOUS', name: 'Tartous', nameAr: 'طرطوس' },
+  { code: 'HOMS', name: 'Homs', nameAr: 'حمص' },
+  { code: 'HAMA', name: 'Hama', nameAr: 'حماة' },
+  { code: 'IDLIB', name: 'Idlib', nameAr: 'إدلب' },
+  { code: 'SUWEIDA', name: 'Suweida', nameAr: 'السويداء' },
+  { code: 'DER_EZZOR', name: 'Deir ez-Zor', nameAr: 'دير الزور' },
+  { code: 'HASAKA', name: 'Hasaka', nameAr: 'الحسكة' },
+  { code: 'RAQQA', name: 'Raqqa', nameAr: 'الرقة' },
+  { code: 'DARA', name: 'Daraa', nameAr: 'درعا' },
+  { code: 'QUNEITRA', name: 'Quneitra', nameAr: 'القنيطرة' },
+];
+
+export default function Step3SenderReceiver({
+  direction,
+  sender,
+  receiver,
+  onSenderChange,
+  onReceiverChange,
+  language,
+}: Step3SenderReceiverProps) {
+  const translations = {
+    ar: {
+      senderInfo: 'معلومات المرسل',
+      receiverInfo: 'معلومات المستلم',
+      fullName: 'الاسم الكامل',
+      phone: 'رقم الهاتف / واتساب',
+      email: 'البريد الإلكتروني',
+      street: 'اسم الشارع',
+      streetNumber: 'رقم المنزل',
+      city: 'المدينة',
+      postalCode: 'الرمز البريدي',
+      country: 'الدولة',
+      province: 'المحافظة',
+      idNumber: 'رقم الهوية / الجواز',
+      required: 'مطلوب',
+      inEurope: 'في أوروبا',
+      inSyria: 'في سورية',
+    },
+    en: {
+      senderInfo: 'Sender Information',
+      receiverInfo: 'Receiver Information',
+      fullName: 'Full Name',
+      phone: 'Phone / WhatsApp',
+      email: 'Email',
+      street: 'Street Name',
+      streetNumber: 'House Number',
+      city: 'City',
+      postalCode: 'Postal Code',
+      country: 'Country',
+      province: 'Province',
+      idNumber: 'ID / Passport Number',
+      required: 'Required',
+      inEurope: 'in Europe',
+      inSyria: 'in Syria',
+    },
+  };
+
+  const t = translations[language];
+  const isEUtoSY = direction === 'eu-sy';
+
+  // Initialize sender and receiver if null
+  const senderData: PersonInfo = sender || {
+    fullName: '',
+    phone: '',
+    email: '',
+    street: '',
+    streetNumber: '',
+    city: '',
+    postalCode: '',
+    country: isEUtoSY ? '' : undefined,
+    province: isEUtoSY ? undefined : '',
+    idNumber: '',
+  };
+
+  const receiverData: PersonInfo = receiver || {
+    fullName: '',
+    phone: '',
+    email: '',
+    street: '',
+    streetNumber: '',
+    city: '',
+    postalCode: '',
+    country: isEUtoSY ? undefined : '',
+    province: isEUtoSY ? '' : undefined,
+    idNumber: '',
+  };
+
+  const updateSender = (field: keyof PersonInfo, value: any) => {
+    onSenderChange({
+      ...senderData,
+      [field]: value,
+    });
+  };
+
+  const updateReceiver = (field: keyof PersonInfo, value: any) => {
+    onReceiverChange({
+      ...receiverData,
+      [field]: value,
+    });
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Sender Information */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
+      >
+        <h3 className="text-xl font-bold text-primary-dark mb-6 flex items-center gap-2">
+          <span className="w-10 h-10 bg-primary-yellow rounded-full flex items-center justify-center text-primary-dark font-bold">
+            1
+          </span>
+          {t.senderInfo} {isEUtoSY ? `(${t.inEurope})` : `(${t.inSyria})`}
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Full Name */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.fullName} *
+            </label>
+            <input
+              type="text"
+              value={senderData.fullName}
+              onChange={(e) => updateSender('fullName', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.phone} *
+            </label>
+            <input
+              type="tel"
+              value={senderData.phone}
+              onChange={(e) => updateSender('phone', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.email} *
+            </label>
+            <input
+              type="email"
+              value={senderData.email}
+              onChange={(e) => updateSender('email', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Street */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.street} *
+            </label>
+            <input
+              type="text"
+              value={senderData.street}
+              onChange={(e) => updateSender('street', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Street Number */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.streetNumber} *
+            </label>
+            <input
+              type="text"
+              value={senderData.streetNumber}
+              onChange={(e) => updateSender('streetNumber', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* City */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.city} *
+            </label>
+            <input
+              type="text"
+              value={senderData.city}
+              onChange={(e) => updateSender('city', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Postal Code */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.postalCode} *
+            </label>
+            <input
+              type="text"
+              value={senderData.postalCode}
+              onChange={(e) => updateSender('postalCode', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Country (for EU) */}
+          {isEUtoSY && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.country} *
+              </label>
+              <select
+                value={senderData.country || ''}
+                onChange={(e) => updateSender('country', e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                required
+              >
+                <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                {europeanCountries.map(country => (
+                  <option key={country.code} value={country.code}>
+                    {language === 'ar' ? country.nameAr : country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Province (for Syria) */}
+          {!isEUtoSY && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.province} *
+              </label>
+              <select
+                value={senderData.province || ''}
+                onChange={(e) => updateSender('province', e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                required
+              >
+                <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                {syrianProvinces.map(province => (
+                  <option key={province.code} value={province.code}>
+                    {language === 'ar' ? province.nameAr : province.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* ID Number */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.idNumber} {isEUtoSY ? '' : '*'}
+            </label>
+            <input
+              type="text"
+              value={senderData.idNumber || ''}
+              onChange={(e) => updateSender('idNumber', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required={!isEUtoSY}
+            />
+            {isEUtoSY && (
+              <p className="mt-1 text-xs text-gray-500">
+                {language === 'ar' 
+                  ? 'اختياري (متوافق مع GDPR - لا نطلب صور وثائق رسمية)' 
+                  : 'Optional (GDPR compliant - we do not request official document photos)'}
+              </p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Receiver Information */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
+      >
+        <h3 className="text-xl font-bold text-primary-dark mb-6 flex items-center gap-2">
+          <span className="w-10 h-10 bg-primary-yellow rounded-full flex items-center justify-center text-primary-dark font-bold">
+            2
+          </span>
+          {t.receiverInfo} {isEUtoSY ? `(${t.inSyria})` : `(${t.inEurope})`}
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Full Name */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.fullName} *
+            </label>
+            <input
+              type="text"
+              value={receiverData.fullName}
+              onChange={(e) => updateReceiver('fullName', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.phone} *
+            </label>
+            <input
+              type="tel"
+              value={receiverData.phone}
+              onChange={(e) => updateReceiver('phone', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.email} *
+            </label>
+            <input
+              type="email"
+              value={receiverData.email}
+              onChange={(e) => updateReceiver('email', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Street */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.street} *
+            </label>
+            <input
+              type="text"
+              value={receiverData.street}
+              onChange={(e) => updateReceiver('street', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Street Number */}
+          {!isEUtoSY && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.streetNumber} *
+              </label>
+              <input
+                type="text"
+                value={receiverData.streetNumber}
+                onChange={(e) => updateReceiver('streetNumber', e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                required
+              />
+            </div>
+          )}
+
+          {/* City */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.city} *
+            </label>
+            <input
+              type="text"
+              value={receiverData.city}
+              onChange={(e) => updateReceiver('city', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required
+            />
+          </div>
+
+          {/* Postal Code */}
+          {!isEUtoSY && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.postalCode} *
+              </label>
+              <input
+                type="text"
+                value={receiverData.postalCode}
+                onChange={(e) => updateReceiver('postalCode', e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                required
+              />
+            </div>
+          )}
+
+          {/* Country (for EU) */}
+          {!isEUtoSY && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.country} *
+              </label>
+              <select
+                value={receiverData.country || ''}
+                onChange={(e) => updateReceiver('country', e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                required
+              >
+                <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                {europeanCountries.map(country => (
+                  <option key={country.code} value={country.code}>
+                    {language === 'ar' ? country.nameAr : country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Province (for Syria) */}
+          {isEUtoSY && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.province} *
+              </label>
+              <select
+                value={receiverData.province || ''}
+                onChange={(e) => updateReceiver('province', e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                required
+              >
+                <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                {syrianProvinces.map(province => (
+                  <option key={province.code} value={province.code}>
+                    {language === 'ar' ? province.nameAr : province.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* ID Number */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {t.idNumber} {isEUtoSY ? '*' : ''}
+            </label>
+            <input
+              type="text"
+              value={receiverData.idNumber || ''}
+              onChange={(e) => updateReceiver('idNumber', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+              required={isEUtoSY}
+            />
+            {!isEUtoSY && (
+              <p className="mt-1 text-xs text-gray-500">
+                {language === 'ar' 
+                  ? 'اختياري (متوافق مع GDPR - لا نطلب صور وثائق رسمية)' 
+                  : 'Optional (GDPR compliant - we do not request official document photos)'}
+              </p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+

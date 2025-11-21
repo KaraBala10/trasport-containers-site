@@ -1,143 +1,279 @@
 "use client";
 
-import { ShipmentDirection } from '@/types/shipment';
-import DirectionCard from './DirectionCard';
+import { motion } from 'framer-motion';
+import { ShippingDirection } from '@/app/create-shipment/page';
 
 interface Step1DirectionProps {
-  selectedDirection: ShipmentDirection | null;
-  onDirectionChange: (direction: ShipmentDirection) => void;
+  direction: ShippingDirection;
+  onDirectionChange: (direction: ShippingDirection) => void;
   language: 'ar' | 'en';
 }
 
 export default function Step1Direction({
-  selectedDirection,
+  direction,
   onDirectionChange,
   language,
 }: Step1DirectionProps) {
   const translations = {
     ar: {
-      title: 'اختر اتجاه الشحنة',
-      description: 'حدد مسار الشحن المناسب لك',
       euToSy: {
         title: 'من أوروبا إلى سورية',
-        subtitle: 'شحن موثوق من قلب أوروبا',
-        features: [
-          'تجميع الطرود من جميع دول أوروبا → Axel (هولندا)',
-          'شحن شهري مضمون إلى سورية',
-          'تخليص جمركي شامل ومضمون 100%',
-          'تسليم سريع في حلب + توزيع لجميع المحافظات',
-        ],
+        description: 'تجميع من أوروبا، الشحن إلى Axel (هولندا)، ثم إلى سورية',
       },
       syToEu: {
         title: 'من سورية إلى أوروبا',
-        subtitle: 'شحن سريع وآمن إلى أوروبا',
-        features: [
-          'تجميع من جميع المحافظات → مركز حلب',
-          'شحن مباشر إلى Axel (هولندا) ثم توزيع أوروبي',
-          'تخليص جمركي شامل ومضمون 100%',
-          'دفع مرن: كاش أو حوالة محلية',
-          'معالجة سريعة وخدمة متميزة',
-        ],
+        description: 'تجميع من المحافظات، حلب، الشحن إلى Axel (هولندا)، ثم إلى أوروبا',
       },
+      continue: 'متابعة',
     },
     en: {
-      title: 'Choose Your Shipment Direction',
-      description: 'Select the route that suits you best',
       euToSy: {
-        title: 'From Europe to Syria',
-        subtitle: 'Reliable shipping from the heart of Europe',
-        features: [
-          'Collection from all European countries → Axel (Netherlands)',
-          'Guaranteed monthly shipping to Syria',
-          'Full customs clearance 100% included',
-          'Fast delivery to Aleppo + distribution to all governorates',
-        ],
+        title: 'Europe to Syria',
+        description: 'Collection from Europe, shipping to Axel (Netherlands), then to Syria',
       },
       syToEu: {
-        title: 'From Syria to Europe',
-        subtitle: 'Fast and secure shipping to Europe',
-        features: [
-          'Collection from all governorates → Aleppo center',
-          'Direct shipping to Axel (Netherlands) then European distribution',
-          'Full customs clearance 100% included',
-          'Flexible payment: Cash or local transfer',
-          'Fast processing and excellent service',
-        ],
+        title: 'Syria to Europe',
+        description: 'Collection from Provinces, Aleppo, shipping to Axel (Netherlands), then to Europe',
       },
+      continue: 'Continue',
     },
   };
 
   const t = translations[language];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1],
+      },
+    },
+  };
+
   return (
-    <div className="space-y-12">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="inline-block">
-          <div className="bg-gradient-to-r from-primary-dark to-blue-900 text-white px-8 py-3 rounded-full shadow-lg">
-            <span className="text-sm font-bold uppercase tracking-wider">
-              {language === 'ar' ? 'الخطوة 1 من 7' : 'Step 1 of 7'}
-            </span>
-          </div>
-        </div>
-        
-        <h2 className="text-5xl md:text-6xl font-black text-primary-dark">
-          <span className="inline-block animate-bounce">🔄</span> {t.title}
-        </h2>
-        
-        <p className="text-xl text-gray-600 font-medium max-w-2xl mx-auto">
-          {t.description}
-        </p>
-      </div>
-
-      {/* Direction Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-        <DirectionCard
-          direction="eu-sy"
-          icon="🇪🇺 ✈️ 🇸🇾"
-          title={t.euToSy.title}
-          subtitle={t.euToSy.subtitle}
-          features={t.euToSy.features}
-          isSelected={selectedDirection === 'eu-sy'}
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* EU → SY Option */}
+        <motion.button
+          variants={cardVariants}
           onClick={() => onDirectionChange('eu-sy')}
-          language={language}
-        />
+          className={`
+            group relative w-full p-10 rounded-3xl border-2 transition-all duration-500
+            overflow-hidden
+            ${direction === 'eu-sy'
+              ? 'border-primary-yellow bg-gradient-to-br from-primary-yellow/10 to-primary-yellow/5 shadow-2xl shadow-primary-yellow/20'
+              : 'border-gray-200 bg-white hover:border-primary-dark/30 hover:shadow-xl'
+            }
+          `}
+          whileHover={{ 
+            scale: direction === 'eu-sy' ? 1 : 1.02,
+            y: direction === 'eu-sy' ? 0 : -5,
+          }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {/* Background gradient effect */}
+          <div className={`
+            absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500
+            bg-gradient-to-br from-primary-dark/5 to-transparent
+            ${direction === 'eu-sy' ? 'opacity-100' : ''}
+          `} />
 
-        <DirectionCard
-          direction="sy-eu"
-          icon="🇸🇾 ✈️ 🇪🇺"
-          title={t.syToEu.title}
-          subtitle={t.syToEu.subtitle}
-          features={t.syToEu.features}
-          isSelected={selectedDirection === 'sy-eu'}
+          {/* Content */}
+          <div className="relative z-10">
+            {/* Icon */}
+            <div className="mb-6 flex justify-center">
+              <motion.div
+                className={`
+                  w-20 h-20 rounded-full flex items-center justify-center
+                  transition-all duration-500
+                  ${direction === 'eu-sy'
+                    ? 'bg-primary-yellow text-primary-dark'
+                    : 'bg-gray-100 text-gray-400 group-hover:bg-primary-dark/10 group-hover:text-primary-dark'
+                  }
+                `}
+                animate={{
+                  rotate: direction === 'eu-sy' ? [0, 5, -5, 0] : 0,
+                }}
+                transition={{ duration: 2, repeat: direction === 'eu-sy' ? Infinity : 0, repeatDelay: 3 }}
+              >
+                <svg
+                  className="w-10 h-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+                  />
+                </svg>
+              </motion.div>
+            </div>
+
+            {/* Title */}
+            <h3 className={`
+              text-2xl font-bold mb-3 text-center transition-colors duration-300
+              ${direction === 'eu-sy' ? 'text-primary-dark' : 'text-gray-800 group-hover:text-primary-dark'}
+            `}>
+              {t.euToSy.title}
+            </h3>
+
+            {/* Description */}
+            <p className={`
+              text-sm text-center leading-relaxed transition-colors duration-300
+              ${direction === 'eu-sy' ? 'text-gray-700' : 'text-gray-500 group-hover:text-gray-700'}
+            `}>
+              {t.euToSy.description}
+            </p>
+
+            {/* Checkmark indicator */}
+            {direction === 'eu-sy' && (
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                className="absolute top-4 right-4 w-8 h-8 bg-primary-yellow rounded-full flex items-center justify-center shadow-lg"
+              >
+                <svg
+                  className="w-5 h-5 text-primary-dark"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </motion.div>
+            )}
+          </div>
+        </motion.button>
+
+        {/* SY → EU Option */}
+        <motion.button
+          variants={cardVariants}
           onClick={() => onDirectionChange('sy-eu')}
-          language={language}
-        />
+          className={`
+            group relative w-full p-10 rounded-3xl border-2 transition-all duration-500
+            overflow-hidden
+            ${direction === 'sy-eu'
+              ? 'border-primary-yellow bg-gradient-to-br from-primary-yellow/10 to-primary-yellow/5 shadow-2xl shadow-primary-yellow/20'
+              : 'border-gray-200 bg-white hover:border-primary-dark/30 hover:shadow-xl'
+            }
+          `}
+          whileHover={{ 
+            scale: direction === 'sy-eu' ? 1 : 1.02,
+            y: direction === 'sy-eu' ? 0 : -5,
+          }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {/* Background gradient effect */}
+          <div className={`
+            absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500
+            bg-gradient-to-br from-primary-dark/5 to-transparent
+            ${direction === 'sy-eu' ? 'opacity-100' : ''}
+          `} />
+
+          {/* Content */}
+          <div className="relative z-10">
+            {/* Icon */}
+            <div className="mb-6 flex justify-center">
+              <motion.div
+                className={`
+                  w-20 h-20 rounded-full flex items-center justify-center
+                  transition-all duration-500
+                  ${direction === 'sy-eu'
+                    ? 'bg-primary-yellow text-primary-dark'
+                    : 'bg-gray-100 text-gray-400 group-hover:bg-primary-dark/10 group-hover:text-primary-dark'
+                  }
+                `}
+                animate={{
+                  rotate: direction === 'sy-eu' ? [0, -5, 5, 0] : 0,
+                }}
+                transition={{ duration: 2, repeat: direction === 'sy-eu' ? Infinity : 0, repeatDelay: 3 }}
+              >
+                <svg
+                  className="w-10 h-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+                  />
+                </svg>
+              </motion.div>
+            </div>
+
+            {/* Title */}
+            <h3 className={`
+              text-2xl font-bold mb-3 text-center transition-colors duration-300
+              ${direction === 'sy-eu' ? 'text-primary-dark' : 'text-gray-800 group-hover:text-primary-dark'}
+            `}>
+              {t.syToEu.title}
+            </h3>
+
+            {/* Description */}
+            <p className={`
+              text-sm text-center leading-relaxed transition-colors duration-300
+              ${direction === 'sy-eu' ? 'text-gray-700' : 'text-gray-500 group-hover:text-gray-700'}
+            `}>
+              {t.syToEu.description}
+            </p>
+
+            {/* Checkmark indicator */}
+            {direction === 'sy-eu' && (
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                className="absolute top-4 right-4 w-8 h-8 bg-primary-yellow rounded-full flex items-center justify-center shadow-lg"
+              >
+                <svg
+                  className="w-5 h-5 text-primary-dark"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </motion.div>
+            )}
+          </div>
+        </motion.button>
       </div>
 
-      {/* Info Banner */}
-      {selectedDirection && (
-        <div className="max-w-4xl mx-auto animate-fadeIn">
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500 rounded-2xl p-6 shadow-lg">
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl">
-                ✓
-              </div>
-              <div>
-                <p className="text-lg font-bold text-green-900">
-                  {language === 'ar' ? 'تم الاختيار بنجاح!' : 'Selected Successfully!'}
-                </p>
-                <p className="text-green-700">
-                  {language === 'ar' 
-                    ? 'اضغط "متابعة" للانتقال إلى الخطوة التالية'
-                    : 'Click "Continue" to proceed to the next step'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </motion.div>
   );
 }
+
