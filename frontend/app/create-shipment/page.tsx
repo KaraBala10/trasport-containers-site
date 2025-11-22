@@ -16,7 +16,8 @@ import Step9Payment from "@/components/ShipmentForm/Step9Payment";
 import Step10Review from "@/components/ShipmentForm/Step10Review";
 import Step11Confirmation from "@/components/ShipmentForm/Step11Confirmation";
 import ProgressBar from "@/components/ShipmentForm/ProgressBar";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import {
   ShippingDirection,
   ShipmentType,
@@ -261,7 +262,7 @@ export default function CreateShipmentPage() {
       back: "رجوع",
       continue: "متابعة",
       contactInfo: "معلومات الاتصال",
-      europeCenter: "مركز أوروبا – هولندا (Axel)",
+      europeCenter: "مركز أوروبا – هولندا (Bergen op Zoom)",
       syriaCenter: "مركز سورية – حلب",
       email: "البريد الإلكتروني",
       phone: "الهاتف",
@@ -283,7 +284,7 @@ export default function CreateShipmentPage() {
       back: "Back",
       continue: "Continue",
       contactInfo: "Contact Information",
-      europeCenter: "Europe Center – Netherlands (Axel)",
+      europeCenter: "Europe Center – Netherlands (Bergen op Zoom)",
       syriaCenter: "Syria Center – Aleppo",
       email: "Email",
       phone: "Phone",
@@ -293,14 +294,16 @@ export default function CreateShipmentPage() {
   const t = translations[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 py-16 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Language Switcher */}
-        <div className="flex justify-end mb-6">
-          <LanguageSwitcher language={language} setLanguage={setLanguage} />
-        </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+      <Header />
+      
+      {/* Spacer for fixed header */}
+      <div className="h-20" aria-hidden="true" />
+      
+      <div className="flex-grow py-16 px-4">
+        <div className="max-w-5xl mx-auto">
 
-        {/* Header */}
+        {/* Title */}
         <div className="text-center mb-8">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
@@ -1189,9 +1192,9 @@ export default function CreateShipmentPage() {
               </h3>
               <div className="space-y-2 text-sm text-gray-700">
                 <p className="font-semibold">Medo-Freight EU</p>
-                <p>Meekrapweg 2</p>
-                <p>4571 RX Axel</p>
-                <p>Zeeland – Netherlands</p>
+                <p>Wattweg 5</p>
+                <p>4622RA Bergen op Zoom</p>
+                <p>Nederland</p>
                 <div className="pt-3 border-t border-gray-200 mt-3">
                   <p className="flex items-center gap-2">
                     <span className="text-primary-dark font-semibold">
@@ -1256,7 +1259,10 @@ export default function CreateShipmentPage() {
             </div>
           </motion.div>
         )}
+        </div>
       </div>
+      
+      <Footer language={language} />
     </div>
   );
 }

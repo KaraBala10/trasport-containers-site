@@ -18,22 +18,22 @@ export default function Step1Direction({
     ar: {
       euToSy: {
         title: 'من أوروبا إلى سورية',
-        description: 'تجميع من أوروبا، الشحن إلى Axel (هولندا)، ثم إلى سورية',
+        description: 'تجميع من أوروبا، الشحن إلى Bergen op Zoom (هولندا)، ثم إلى سورية',
       },
       syToEu: {
         title: 'من سورية إلى أوروبا',
-        description: 'تجميع من المحافظات، حلب، الشحن إلى Axel (هولندا)، ثم إلى أوروبا',
+        description: 'تجميع من المحافظات، حلب، الشحن إلى Bergen op Zoom (هولندا)، ثم إلى أوروبا',
       },
       continue: 'متابعة',
     },
     en: {
       euToSy: {
         title: 'Europe to Syria',
-        description: 'Collection from Europe, shipping to Axel (Netherlands), then to Syria',
+        description: 'Collection from Europe, shipping to Bergen op Zoom (Netherlands), then to Syria',
       },
       syToEu: {
         title: 'Syria to Europe',
-        description: 'Collection from Provinces, Aleppo, shipping to Axel (Netherlands), then to Europe',
+        description: 'Collection from Provinces, Aleppo, shipping to Bergen op Zoom (Netherlands), then to Europe',
       },
       continue: 'Continue',
     },

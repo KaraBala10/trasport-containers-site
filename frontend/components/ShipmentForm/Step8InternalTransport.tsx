@@ -47,7 +47,7 @@ export default function Step8InternalTransport({
     ar: {
       title: 'النقل الداخلي',
       euTransport: 'النقل الداخلي في أوروبا',
-      euTransportDesc: 'استلام من عنوانك في أوروبا إلى مركز Axel (هولندا)',
+      euTransportDesc: 'استلام من عنوانك في أوروبا إلى مركز Bergen op Zoom (هولندا)',
       pickupAddress: 'عنوان الاستلام',
       approximateWeight: 'الوزن التقريبي (كغ)',
       sendcloudNote: 'سيتم حساب السعر عبر Sendcloud API',
@@ -64,7 +64,7 @@ export default function Step8InternalTransport({
     en: {
       title: 'Internal Transport',
       euTransport: 'Internal Transport in Europe',
-      euTransportDesc: 'Pickup from your address in Europe to Axel center (Netherlands)',
+      euTransportDesc: 'Pickup from your address in Europe to Bergen op Zoom center (Netherlands)',
       pickupAddress: 'Pickup Address',
       approximateWeight: 'Approximate Weight (kg)',
       sendcloudNote: 'Price will be calculated via Sendcloud API',
