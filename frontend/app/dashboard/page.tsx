@@ -457,9 +457,18 @@ export default function DashboardPage() {
         }
       }
 
-      await apiService.updateFCLQuoteStatus(quoteId, newStatus, offerMessage);
+      const response = await apiService.updateFCLQuoteStatus(quoteId, newStatus, offerMessage);
+      
+      // Update the quote in the list immediately with the response data
+      if (response.data?.data) {
+        setFclQuotes((prevQuotes) =>
+          prevQuotes.map((q) =>
+            q.id === quoteId ? { ...q, ...response.data.data } : q
+          )
+        );
+      }
 
-      // Refresh quotes list
+      // Refresh quotes list to ensure consistency
       const quotesResponse = await apiService.getFCLQuotes();
       const quotes = quotesResponse.data?.results || quotesResponse.data || [];
       setFclQuotes(Array.isArray(quotes) ? quotes : []);

@@ -64,7 +64,14 @@ class UserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "is_staff",
         )
-        read_only_fields = ("id", "date_joined")
+        read_only_fields = ("id", "username", "date_joined", "is_superuser", "is_staff")
+
+    def validate_email(self, value):
+        """Validate email uniqueness, excluding current user"""
+        user = self.instance
+        if user and User.objects.filter(email=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
 
 
 class RegisterSerializer(serializers.ModelSerializer):

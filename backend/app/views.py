@@ -22,6 +22,7 @@ from .serializers import (
     RegisterSerializer,
     UserSerializer,
 )
+from .email_service import send_status_update_email
 
 
 class RegisterView(generics.CreateAPIView):
@@ -106,6 +107,15 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        """Override update to allow partial updates"""
+        partial = kwargs.pop('partial', True)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 
 class ChangePasswordView(generics.UpdateAPIView):
@@ -509,6 +519,9 @@ def update_fcl_quote_status_view(request, pk):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Store old status for email notification
+        old_status = quote.status
+
         quote.status = new_status
 
         # If status is OFFER_SENT, save message and timestamp
@@ -522,6 +535,19 @@ def update_fcl_quote_status_view(request, pk):
             )
 
         quote.save()
+
+        # Send email notification to user
+        try:
+            send_status_update_email(
+                quote=quote,
+                old_status=old_status,
+                new_status=new_status,
+                offer_message=offer_message if new_status == "OFFER_SENT" else None,
+            )
+        except Exception as email_error:
+            # Log email error but don't fail the request
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send status update email: {str(email_error)}")
 
         # Get status display name
         status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status, new_status)
