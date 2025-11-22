@@ -16,8 +16,8 @@
       {
         "country": "هولندا",
         "countryCode": "NL",
-        "city": "Axel",
-        "address": "Meekrapweg 2 – 4571 RX",
+        "city": "Bergen op Zoom",
+        "address": "Wattweg 5, 4622RA Bergen op Zoom, Nederland",
         "services": ["LCL", "FCL"]
       }
     ],
@@ -52,8 +52,8 @@
       {
         "country": "Netherlands",
         "countryCode": "NL",
-        "city": "Axel",
-        "address": "Meekrapweg 2 – 4571 RX",
+        "city": "Bergen op Zoom",
+        "address": "Wattweg 5, 4622RA Bergen op Zoom, Nederland",
         "services": ["LCL", "FCL"]
       }
     ],
