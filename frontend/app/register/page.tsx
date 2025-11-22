@@ -378,7 +378,7 @@ export default function RegisterPage() {
                     htmlFor="username"
                     className="block text-sm font-semibold text-gray-700 mb-2"
                   >
-                    {t.username} <span className="text-red-500">*</span>
+                    {t.username} {!formData.username && <span className="text-red-500">*</span>}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -417,7 +417,7 @@ export default function RegisterPage() {
                     htmlFor="email"
                     className="block text-sm font-semibold text-gray-700 mb-2"
                   >
-                    {t.email} <span className="text-red-500">*</span>
+                    {t.email} {!formData.email && <span className="text-red-500">*</span>}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -539,7 +539,7 @@ export default function RegisterPage() {
                     htmlFor="password"
                     className="block text-sm font-semibold text-gray-700 mb-2"
                   >
-                    {t.password} <span className="text-red-500">*</span>
+                    {t.password} {!formData.password && <span className="text-red-500">*</span>}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -584,7 +584,7 @@ export default function RegisterPage() {
                     htmlFor="password2"
                     className="block text-sm font-semibold text-gray-700 mb-2"
                   >
-                    {t.confirmPassword} <span className="text-red-500">*</span>
+                    {t.confirmPassword} {!formData.password2 && <span className="text-red-500">*</span>}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
