@@ -8,6 +8,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { apiService } from "@/lib/api";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface FCLQuote {
   id: number;
@@ -24,7 +25,7 @@ interface FCLQuote {
 
 export default function DashboardPage() {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const { language, isRTL, mounted } = useLanguage();
+  const { language, setLanguage, isRTL, mounted } = useLanguage();
   const router = useRouter();
   const [fclQuotes, setFclQuotes] = useState<FCLQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
@@ -180,7 +181,7 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="max-w-6xl mx-auto">
             {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-primary-dark via-primary-dark to-primary-yellow rounded-2xl shadow-2xl p-8 md:p-10 mb-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-primary-dark via-primary-dark to-primary-yellow rounded-2xl shadow-2xl p-8 md:p-10 mb-8 text-white relative" style={{ overflow: 'visible' }}>
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-yellow/20 rounded-full -ml-32 -mb-32 blur-3xl"></div>
 
@@ -198,7 +199,10 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 items-center relative" style={{ zIndex: 50, overflow: 'visible' }}>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg border border-white/30 p-1" style={{ overflow: 'visible' }}>
+                    <LanguageSwitcher language={language} setLanguage={setLanguage} />
+                  </div>
                   <Link
                     href="/"
                     className="px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2 border border-white/30"

@@ -150,9 +150,14 @@ export default function LanguageSwitcher({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="absolute top-full mt-2 right-0 bg-white rounded-lg shadow-lg border border-gray-200 py-2 min-w-[180px] z-50 transform transition-all duration-200 ease-out origin-top-right opacity-100 scale-100"
+          className="absolute top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] max-h-[300px] overflow-y-auto z-[9999] transform transition-all duration-200 ease-out origin-top-right opacity-100 scale-100"
           role="menu"
           aria-orientation="vertical"
+          style={{
+            [language === 'ar' ? 'left' : 'right']: 0,
+            maxHeight: '300px',
+            overflowY: 'auto',
+          }}
         >
           {languages.map((lang) => (
             <button

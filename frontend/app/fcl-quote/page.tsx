@@ -988,6 +988,42 @@ export default function FCLQuotePage() {
     },
   };
 
+  // Extended countries list for customer country field (includes all countries)
+  const allCountries = [
+    // European countries
+    ...Object.keys(europeanCountries).map((country) => ({
+      en: country,
+      ar: europeanCountries[country as keyof typeof europeanCountries]?.ar?.name || country,
+    })),
+    // Other important countries
+    { en: "Syria", ar: "سوريا" },
+    { en: "United States", ar: "الولايات المتحدة" },
+    { en: "Canada", ar: "كندا" },
+    { en: "United Kingdom", ar: "المملكة المتحدة" },
+    { en: "Australia", ar: "أستراليا" },
+    { en: "New Zealand", ar: "نيوزيلندا" },
+    { en: "United Arab Emirates", ar: "الإمارات العربية المتحدة" },
+    { en: "Saudi Arabia", ar: "المملكة العربية السعودية" },
+    { en: "Qatar", ar: "قطر" },
+    { en: "Kuwait", ar: "الكويت" },
+    { en: "Bahrain", ar: "البحرين" },
+    { en: "Oman", ar: "عمان" },
+    { en: "Jordan", ar: "الأردن" },
+    { en: "Lebanon", ar: "لبنان" },
+    { en: "Iraq", ar: "العراق" },
+    { en: "Egypt", ar: "مصر" },
+    { en: "Turkey", ar: "تركيا" },
+    { en: "China", ar: "الصين" },
+    { en: "Japan", ar: "اليابان" },
+    { en: "South Korea", ar: "كوريا الجنوبية" },
+    { en: "India", ar: "الهند" },
+    { en: "Brazil", ar: "البرازيل" },
+    { en: "Mexico", ar: "المكسيك" },
+    { en: "Argentina", ar: "الأرجنتين" },
+    { en: "South Africa", ar: "جنوب أفريقيا" },
+    { en: "Other", ar: "أخرى" },
+  ];
+
   const translations = {
     ar: {
       title: "طلب عرض سعر FCL - حاوية كاملة",
@@ -2996,15 +3032,32 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <input
-                        type="text"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-3 border rounded-lg ${
-                          errors.country ? "border-red-500" : "border-gray-300"
-                        }`}
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="country"
+                          value={formData.country}
+                          onChange={handleChange}
+                          list="country-list"
+                          placeholder={
+                            language === "ar"
+                              ? "اكتب أو اختر الدولة"
+                              : "Type or select country"
+                          }
+                          className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
+                            errors.country
+                              ? "border-red-500 bg-red-50"
+                              : "border-gray-300 hover:border-primary-yellow/50"
+                          }`}
+                        />
+                        <datalist id="country-list">
+                          {allCountries.map((country) => (
+                            <option key={country.en} value={country.en}>
+                              {language === "ar" ? country.ar : country.en}
+                            </option>
+                          ))}
+                        </datalist>
+                      </div>
                       {errors.country && (
                         <p className="text-red-600 text-sm mt-1">
                           {errors.country}
