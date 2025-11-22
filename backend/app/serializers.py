@@ -2,39 +2,48 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import ContactMessage, FCLQuote, FCLPricing
+from .models import ContactMessage, FCLQuote
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
-        fields = ("id", "full_name", "email", "phone", "subject", "message", "created_at", "is_read")
+        fields = (
+            "id",
+            "full_name",
+            "email",
+            "phone",
+            "subject",
+            "message",
+            "created_at",
+            "is_read",
+        )
         read_only_fields = ("id", "created_at", "is_read")
-    
+
     def validate_email(self, value):
         """Validate email format"""
         if not value:
             raise serializers.ValidationError("Email is required.")
         return value
-    
+
     def validate_full_name(self, value):
         """Validate full name"""
         if not value or not value.strip():
             raise serializers.ValidationError("Full name is required.")
         return value.strip()
-    
+
     def validate_phone(self, value):
         """Validate phone"""
         if not value or not value.strip():
             raise serializers.ValidationError("Phone is required.")
         return value.strip()
-    
+
     def validate_subject(self, value):
         """Validate subject"""
         if not value or not value.strip():
             raise serializers.ValidationError("Subject is required.")
         return value.strip()
-    
+
     def validate_message(self, value):
         """Validate message"""
         if not value or not value.strip():
@@ -97,28 +106,24 @@ class ChangePasswordSerializer(serializers.Serializer):
         return user
 
 
-class FCLPricingSerializer(serializers.ModelSerializer):
-    """Serializer for FCL Pricing"""
-    total_price_per_container = serializers.ReadOnlyField()
-    
-    class Meta:
-        model = FCLPricing
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at')
-
-
 class FCLQuoteSerializer(serializers.ModelSerializer):
     """Serializer for FCL Quote requests"""
-    
+
     class Meta:
         model = FCLQuote
-        fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'price_per_container', 'total_price', 'is_processed')
-    
+        fields = "__all__"
+        read_only_fields = (
+            "id",
+            "created_at",
+            "price_per_container",
+            "total_price",
+            "is_processed",
+        )
+
     def to_internal_value(self, data):
         """Convert string booleans to actual booleans for FormData"""
         from django.http import QueryDict
-        
+
         # Convert QueryDict to regular dict (QueryDict is immutable)
         if isinstance(data, QueryDict):
             data_dict = {}
@@ -133,59 +138,78 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
                     data_dict[key] = values
                 else:
                     data_dict[key] = None
-        elif hasattr(data, 'copy'):
+        elif hasattr(data, "copy"):
             data_dict = data.copy()
         else:
             data_dict = dict(data) if data else {}
-        
+
         # Handle boolean fields that come as strings from FormData
         boolean_fields = [
-            'is_dangerous', 'pickup_required', 'forklift_available',
-            'eu_export_clearance', 'cargo_insurance', 'on_carriage', 'accepted_terms'
+            "is_dangerous",
+            "pickup_required",
+            "forklift_available",
+            "eu_export_clearance",
+            "cargo_insurance",
+            "on_carriage",
+            "accepted_terms",
         ]
         for field in boolean_fields:
             if field in data_dict:
                 value = data_dict[field]
                 if isinstance(value, str):
-                    data_dict[field] = value.lower() in ('true', '1', 'yes', 'on')
+                    data_dict[field] = value.lower() in ("true", "1", "yes", "on")
                 elif isinstance(value, list) and len(value) > 0:
                     # Handle list from QueryDict
-                    data_dict[field] = value[0].lower() in ('true', '1', 'yes', 'on') if isinstance(value[0], str) else False
-        
+                    data_dict[field] = (
+                        value[0].lower() in ("true", "1", "yes", "on")
+                        if isinstance(value[0], str)
+                        else False
+                    )
+
         # Handle empty strings for optional fields
-        optional_fields = ['origin_zip', 'company_name', 'un_number', 'dangerous_class', 'pickup_address']
+        optional_fields = [
+            "origin_zip",
+            "company_name",
+            "un_number",
+            "dangerous_class",
+            "pickup_address",
+        ]
         for field in optional_fields:
             if field in data_dict:
                 value = data_dict[field]
                 if isinstance(value, list):
-                    value = value[0] if value else ''
-                if value == '' or value is None:
-                    if field in ['un_number', 'dangerous_class', 'pickup_address']:
+                    value = value[0] if value else ""
+                if value == "" or value is None:
+                    if field in ["un_number", "dangerous_class", "pickup_address"]:
                         data_dict[field] = None
                     else:
-                        data_dict[field] = ''
-        
+                        data_dict[field] = ""
+
         return super().to_internal_value(data_dict)
-    
+
     def validate_accepted_terms(self, value):
         """Validate that terms are accepted"""
         if not value:
-            raise serializers.ValidationError("You must accept the terms and conditions.")
+            raise serializers.ValidationError(
+                "You must accept the terms and conditions."
+            )
         return value
-    
+
     def validate_is_dangerous(self, value):
         """Validate dangerous goods fields"""
         if value:
-            if not self.initial_data.get('un_number') or not self.initial_data.get('dangerous_class'):
+            if not self.initial_data.get("un_number") or not self.initial_data.get(
+                "dangerous_class"
+            ):
                 raise serializers.ValidationError(
                     "UN Number and Dangerous Class are required for dangerous goods."
                 )
         return value
-    
+
     def validate_pickup_required(self, value):
         """Validate pickup address if pickup is required"""
         if value:
-            if not self.initial_data.get('pickup_address'):
+            if not self.initial_data.get("pickup_address"):
                 raise serializers.ValidationError(
                     "Pickup address is required when pickup service is selected."
                 )
