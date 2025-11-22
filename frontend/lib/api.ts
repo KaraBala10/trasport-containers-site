@@ -93,6 +93,14 @@ export const apiService = {
     return apiClient.get('/user/', {});
   },
 
+  updateProfile: (data: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+  }) => {
+    return apiClient.put('/user/profile/', data);
+  },
+
   refreshToken: (refreshToken: string) => {
     return apiClient.post('/token/refresh/', { refresh: refreshToken });
   },
@@ -169,6 +177,12 @@ export const apiService = {
 
   deleteFCLQuote: (id: number) => {
     return apiClient.delete(`/fcl/quotes/${id}/`);
+  },
+
+  respondToOffer: (id: number, response: "ACCEPTED" | "REJECTED") => {
+    return apiClient.patch(`/fcl/quotes/${id}/respond/`, {
+      user_response: response,
+    });
   },
 
   // Document endpoints

@@ -957,48 +957,11 @@ export default function DashboardPage() {
                                   {t.status}
                                 </p>
                                 <span
-                                  className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                                    isAdmin
-                                      ? getStatusColor(
-                                          quote.status || "CREATED"
-                                        )
-                                      : getUserStatus(quote) ===
-                                        "PENDING_PAYMENT"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : getUserStatus(quote) === "ACCEPTED"
-                                      ? "bg-green-100 text-green-800"
-                                      : getUserStatus(quote) === "REJECTED"
-                                      ? "bg-red-100 text-red-800"
-                                      : getUserStatus(quote) === "OFFER_SENT"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : getUserStatus(quote) === "CREATED"
-                                      ? "bg-gray-100 text-gray-800"
-                                      : "bg-yellow-100 text-yellow-800"
-                                  }`}
+                                  className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                                    quote.status || "CREATED"
+                                  )}`}
                                 >
-                                  {isAdmin
-                                    ? getStatusDisplay(
-                                        quote.status || "CREATED"
-                                      )
-                                    : getUserStatus(quote) === "ACCEPTED"
-                                    ? language === "ar"
-                                      ? "مقبول"
-                                      : "Accepted"
-                                    : getUserStatus(quote) === "REJECTED"
-                                    ? language === "ar"
-                                      ? "مرفوض"
-                                      : "Rejected"
-                                    : getUserStatus(quote) === "OFFER_SENT"
-                                    ? language === "ar"
-                                      ? "تم إرسال العرض"
-                                      : "Offer Sent"
-                                    : getUserStatus(quote) === "CREATED"
-                                    ? language === "ar"
-                                      ? "تم الإنشاء"
-                                      : "Created"
-                                    : language === "ar"
-                                    ? "قيد الانتظار"
-                                    : "Pending"}
+                                  {getStatusDisplay(quote.status || "CREATED")}
                                 </span>
                               </div>
                             </div>
