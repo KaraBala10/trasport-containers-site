@@ -1,3 +1,6 @@
+import logging
+import traceback
+
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -153,43 +156,24 @@ class FCLQuoteView(generics.CreateAPIView):
 
     queryset = FCLQuote.objects.all()
     serializer_class = FCLQuoteSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]  # Require authentication
     parser_classes = [MultiPartParser, FormParser, JSONParser]  # Support file uploads
 
     def create(self, request, *args, **kwargs):
+        # Log request data for debugging (only in DEBUG mode)
+        if settings.DEBUG:
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Request data keys: {list(request.data.keys())}")
+
         try:
-            # Log request data for debugging (only in DEBUG mode)
-            if settings.DEBUG:
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.debug(f"Request data keys: {list(request.data.keys())}")
-
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
             # Calculate pricing
-            port_of_loading = serializer.validated_data.get("port_of_loading")
-            port_of_discharge = serializer.validated_data.get("port_of_discharge")
-            container_type = serializer.validated_data.get("container_type")
-            number_of_containers = serializer.validated_data.get(
-                "number_of_containers", 1
-            )
-
+            # Pricing calculation can be added here if FCLPricing model is created
+            # For now, pricing will be calculated manually by admin
             price_per_container = None
             total_price = None
-
-            try:
-                pricing = FCLPricing.objects.get(
-                    port_of_loading=port_of_loading,
-                    port_of_discharge=port_of_discharge,
-                    container_type=container_type,
-                    is_active=True,
-                )
-                price_per_container = pricing.total_price_per_container
-                total_price = price_per_container * number_of_containers
-            except FCLPricing.DoesNotExist:
-                pass  # Pricing will be calculated manually
 
             # Save quote with pricing
             fcl_quote = serializer.save(
@@ -213,14 +197,12 @@ class FCLQuoteView(generics.CreateAPIView):
                 status=status.HTTP_201_CREATED,
             )
         except Exception as e:
-            import traceback
-
-            error_details = traceback.format_exc()
+            error_details = traceback.format_exc() if settings.DEBUG else None
             return Response(
                 {
                     "success": False,
                     "error": str(e),
-                    "details": error_details if settings.DEBUG else None,
+                    "details": error_details,
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

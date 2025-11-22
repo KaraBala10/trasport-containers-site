@@ -173,12 +173,50 @@ export default function RegisterPage() {
     return () => clearTimeout(timer);
   }, [mounted, isDevelopment, recaptchaSiteKey]);
 
+  // Check if reCAPTCHA is required and completed
+  const isRecaptchaValid = useMemo(() => {
+    // If no reCAPTCHA key is configured, it's not required
+    if (!recaptchaSiteKey) {
+      return true;
+    }
+
+    // In development mode with v2 widget (visible checkbox)
+    // Button should be disabled if widget is loaded but not checked
+    if (isDevelopment && recaptchaLoaded) {
+      return !!recaptchaToken; // Must have token if widget is loaded
+    }
+
+    // In production with v3 (invisible, executed on submit)
+    // Allow button to be enabled (v3 executes on submit)
+    if (!isDevelopment) {
+      return true;
+    }
+
+    // If widget hasn't loaded yet, allow button (will be disabled once loaded)
+    if (!recaptchaLoaded) {
+      return true;
+    }
+
+    // Default: require token
+    return !!recaptchaToken;
+  }, [recaptchaSiteKey, isDevelopment, recaptchaLoaded, recaptchaToken]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     if (formData.password !== formData.password2) {
       setError(t.passwordsDoNotMatch);
+      return;
+    }
+
+    // Check reCAPTCHA before submitting
+    if (!isRecaptchaValid) {
+      setError(
+        language === "ar"
+          ? "يرجى التحقق من reCAPTCHA"
+          : "Please complete the reCAPTCHA verification"
+      );
       return;
     }
 
@@ -613,11 +651,38 @@ export default function RegisterPage() {
                   </div>
                 )}
 
+                {/* reCAPTCHA Required Message */}
+                {isDevelopment &&
+                  recaptchaSiteKey &&
+                  recaptchaLoaded &&
+                  !recaptchaToken && (
+                    <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded-r-lg flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium">
+                        {language === "ar"
+                          ? "يرجى التحقق من reCAPTCHA للمتابعة"
+                          : "Please complete the reCAPTCHA verification to continue"}
+                      </span>
+                    </div>
+                  )}
+
                 {/* Submit Button */}
                 <div className="pt-2">
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !isRecaptchaValid}
                     className="group relative w-full flex justify-center items-center py-3 px-4 border border-transparent text-base font-semibold rounded-lg text-white bg-gradient-to-r from-primary-dark to-primary-dark hover:from-primary-dark/90 hover:to-primary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-yellow disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   >
                     {loading ? (
