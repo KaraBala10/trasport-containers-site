@@ -96,19 +96,19 @@ export default function ContactPage() {
 
       if (response.data.success) {
         setSubmitStatus("success");
-        setFormData({
+      setFormData({
           fullName: "",
           email: "",
           phone: "",
           subject: "",
           message: "",
-        });
-        setErrors({});
+      });
+      setErrors({});
 
         // Hide success message after 5 seconds
-        setTimeout(() => {
+      setTimeout(() => {
           setSubmitStatus("idle");
-        }, 5000);
+      }, 5000);
       } else {
         throw new Error(response.data.message || "Failed to send message");
       }

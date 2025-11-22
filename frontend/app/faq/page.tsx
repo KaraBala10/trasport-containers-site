@@ -19,7 +19,7 @@ export default function FAQPage() {
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
       <Header />
-
+      
       <main className="flex-grow" role="main">
         {/* Hero Section */}
         <div className="bg-primary-dark text-white py-16">
@@ -35,8 +35,8 @@ export default function FAQPage() {
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto space-y-4">
             {content.faqItems.map((item, index) => (
-              <div
-                key={item.id}
+              <div 
+                key={item.id} 
                 className="bg-white rounded-lg shadow-lg overflow-hidden border-l-4 border-primary-yellow transition-all hover:shadow-xl"
               >
                 <button
@@ -63,7 +63,7 @@ export default function FAQPage() {
                     />
                   </svg>
                 </button>
-
+                
                 <div
                   className={`overflow-hidden transition-all duration-300 ${
                     openIndex === index ? "max-h-96" : "max-h-0"

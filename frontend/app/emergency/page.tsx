@@ -76,7 +76,7 @@ export default function EmergencyPage() {
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
       <Header />
-
+      
       <main className="flex-grow" role="main">
         {/* Hero Section */}
         <div className="bg-red-600 text-white py-16">
@@ -134,8 +134,8 @@ export default function EmergencyPage() {
                     </span>
                   </div>
                 </div>
-
-                <a
+                
+                <a 
                   href={`tel:${content.emergencyNumber}`}
                   className="inline-block group"
                 >
@@ -173,13 +173,13 @@ export default function EmergencyPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-primary-dark text-center mb-12">
               {content.whenToCall.title}
             </h2>
-
+            
             <div className="grid md:grid-cols-2 gap-6">
               {content.whenToCall.situations.map((situation) => {
                 const IconComponent = iconComponents[situation.icon];
-
+                
                 return (
-                  <div
+                  <div 
                     key={situation.id}
                     className="bg-white rounded-lg shadow-lg p-6 border-r-4 border-red-600 hover:shadow-xl transition-shadow"
                   >
@@ -212,7 +212,7 @@ export default function EmergencyPage() {
               <h2 className="text-3xl md:text-4xl font-bold text-primary-dark text-center mb-8">
                 {content.alternativeContact.title}
               </h2>
-
+              
               <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <div className="bg-white rounded-lg shadow-lg p-6 text-center">
                   <svg
@@ -238,7 +238,7 @@ export default function EmergencyPage() {
                     {content.alternativeContact.email}
                   </a>
                 </div>
-
+                
                 <div className="bg-white rounded-lg shadow-lg p-6 text-center">
                   <svg
                     className="w-12 h-12 mx-auto mb-4 text-green-600"
@@ -261,13 +261,13 @@ export default function EmergencyPage() {
                   </p>
                 </div>
               </div>
-
+              
               <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg">
                 <p className="text-gray-700 text-center">
                   {content.alternativeContact.note}
                 </p>
               </div>
-
+              
               {/* Languages */}
               <div className="mt-8 text-center">
                 <h3 className="text-xl font-bold text-primary-dark mb-3">

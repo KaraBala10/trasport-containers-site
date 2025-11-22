@@ -21,9 +21,11 @@ COPY manage.py .
 # Expose port
 EXPOSE 8000
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Collect static files (only in production)
+# RUN python manage.py collectstatic --noinput
 
-# Run migrations and start server with gunicorn
-CMD sh -c "python manage.py makemigrations && python manage.py migrate --noinput && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+# Default command (can be overridden in docker-compose.yml)
+# For development: python manage.py runserver 0.0.0.0:8000
+# For production: gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+CMD sh -c "python manage.py makemigrations && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
 

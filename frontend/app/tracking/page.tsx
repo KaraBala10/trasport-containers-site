@@ -28,7 +28,7 @@ export default function TrackingPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-
+      
       <main className="flex-grow" role="main">
         <div className="bg-primary-dark text-white py-16">
           <div className="container mx-auto px-4 text-center">

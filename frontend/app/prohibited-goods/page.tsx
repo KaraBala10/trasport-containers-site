@@ -140,7 +140,7 @@ export default function ProhibitedGoodsPage() {
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
       <Header />
-
+      
       <main className="flex-grow" role="main">
         {/* Hero Section */}
         <div className="bg-red-700 text-white py-16">
@@ -204,9 +204,9 @@ export default function ProhibitedGoodsPage() {
             <div className="grid md:grid-cols-2 gap-6">
               {content.prohibitedItems.map((item) => {
                 const IconComponent = iconComponents[item.icon];
-
+                
                 return (
-                  <div
+                  <div 
                     key={item.id}
                     className="bg-white rounded-lg shadow-lg p-6 border-r-4 border-red-600 hover:shadow-xl transition-shadow"
                   >

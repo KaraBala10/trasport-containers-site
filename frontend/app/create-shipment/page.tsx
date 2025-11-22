@@ -1,25 +1,31 @@
 "use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useMemo } from 'react';
-import Step1Direction from '@/components/ShipmentForm/Step1Direction';
-import Step2ShipmentType from '@/components/ShipmentForm/Step2ShipmentType';
-import Step3SenderReceiver from '@/components/ShipmentForm/Step3SenderReceiver';
-import Step4ParcelDetails from '@/components/ShipmentForm/Step4ParcelDetails';
-import Step5Pricing from '@/components/ShipmentForm/Step5Pricing';
-import Step6Packaging from '@/components/ShipmentForm/Step6Packaging';
-import Step7Insurance from '@/components/ShipmentForm/Step7Insurance';
-import Step8InternalTransport from '@/components/ShipmentForm/Step8InternalTransport';
-import Step9Payment from '@/components/ShipmentForm/Step9Payment';
-import Step10Review from '@/components/ShipmentForm/Step10Review';
-import Step11Confirmation from '@/components/ShipmentForm/Step11Confirmation';
-import ProgressBar from '@/components/ShipmentForm/ProgressBar';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { ShippingDirection, ShipmentType, Parcel, PersonInfo } from '@/types/shipment';
-import { calculateTotalPricing } from '@/lib/pricing';
-import { PricingResult } from '@/types/pricing';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useMemo } from "react";
+import Step1Direction from "@/components/ShipmentForm/Step1Direction";
+import Step2ShipmentType from "@/components/ShipmentForm/Step2ShipmentType";
+import Step3SenderReceiver from "@/components/ShipmentForm/Step3SenderReceiver";
+import Step4ParcelDetails from "@/components/ShipmentForm/Step4ParcelDetails";
+import Step5Pricing from "@/components/ShipmentForm/Step5Pricing";
+import Step6Packaging from "@/components/ShipmentForm/Step6Packaging";
+import Step7Insurance from "@/components/ShipmentForm/Step7Insurance";
+import Step8InternalTransport from "@/components/ShipmentForm/Step8InternalTransport";
+import Step9Payment from "@/components/ShipmentForm/Step9Payment";
+import Step10Review from "@/components/ShipmentForm/Step10Review";
+import Step11Confirmation from "@/components/ShipmentForm/Step11Confirmation";
+import ProgressBar from "@/components/ShipmentForm/ProgressBar";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import {
+  ShippingDirection,
+  ShipmentType,
+  Parcel,
+  PersonInfo,
+} from "@/types/shipment";
+import { calculateTotalPricing } from "@/lib/pricing";
+import { PricingResult } from "@/types/pricing";
+import { apiService } from "@/lib/api";
 
 const TOTAL_STEPS = 11;
 
@@ -31,128 +37,256 @@ export default function CreateShipmentPage() {
   const [sender, setSender] = useState<PersonInfo | null>(null);
   const [receiver, setReceiver] = useState<PersonInfo | null>(null);
   const [parcels, setParcels] = useState<Parcel[]>([]);
-  const [initialPackaging, setInitialPackaging] = useState<{ key: string; quantity: number }[]>([]);
-  const [finalPackaging, setFinalPackaging] = useState<{ key: string; quantity: number }[]>([]);
-  const [optionalInsuranceValue, setOptionalInsuranceValue] = useState<number>(0);
-  const [euPickupAddress, setEUPickupAddress] = useState<string>('');
+  const [initialPackaging, setInitialPackaging] = useState<
+    { key: string; quantity: number }[]
+  >([]);
+  const [finalPackaging, setFinalPackaging] = useState<
+    { key: string; quantity: number }[]
+  >([]);
+  const [optionalInsuranceValue, setOptionalInsuranceValue] =
+    useState<number>(0);
+  const [euPickupAddress, setEUPickupAddress] = useState<string>("");
   const [euPickupWeight, setEUPickupWeight] = useState<number>(0);
-  const [syriaProvince, setSyriaProvince] = useState<string>('');
+  const [syriaProvince, setSyriaProvince] = useState<string>("");
   const [syriaWeight, setSyriaWeight] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<'mollie' | 'cash' | 'internal-transfer' | null>(null);
-  const [transferSenderName, setTransferSenderName] = useState<string>('');
-  const [transferReference, setTransferReference] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<
+    "mollie" | "cash" | "internal-transfer" | null
+  >(null);
+  const [transferSenderName, setTransferSenderName] = useState<string>("");
+  const [transferReference, setTransferReference] = useState<string>("");
   const [transferSlip, setTransferSlip] = useState<File | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   const [acceptedPolicies, setAcceptedPolicies] = useState<boolean>(false);
   const [shipmentId, setShipmentId] = useState<string | null>(null);
-  
+  const [pricing, setPricing] = useState<PricingResult | null>(null);
+  const [pricingLoading, setPricingLoading] = useState<boolean>(false);
+
   // Generate shipment ID
   const generateShipmentId = (): string => {
     const year = new Date().getFullYear();
-    const randomNum = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
-    const prefix = direction === 'eu-sy' ? 'MF-EU' : 'MF-SY';
+    const randomNum = Math.floor(Math.random() * 100000)
+      .toString()
+      .padStart(5, "0");
+    const prefix = direction === "eu-sy" ? "MF-EU" : "MF-SY";
     return `${prefix}-${year}-${randomNum}`;
   };
-  
-  // Calculate pricing
-  const pricing: PricingResult | null = useMemo(() => {
-    if (parcels.length === 0) return null;
-    
-    // Separate parcels by type based on shipment types selected
-    // Parcel LCL: all parcels that are not electronics or large items
-    const regularParcels = parcels.filter(p => {
-      // If electronics is selected, exclude electronics products
-      if (shipmentTypes.includes('electronics')) {
-        const isElectronics = p.productCategory === 'MOBILE_PHONE' || 
-                              p.productCategory === 'LAPTOP' || 
-                              p.productCategory === 'LARGE_MIRROR';
-        if (isElectronics) return false;
+
+  // Calculate pricing using API for base price - only when user reaches Step 5
+  useEffect(() => {
+    const calculatePricing = async () => {
+      // Only calculate when user is on Step 5 (Pricing Summary)
+      if (currentStep !== 5) {
+        return;
       }
-      // If large items is selected, exclude large items (they have itemType)
-      if (shipmentTypes.includes('large-items') && p.itemType) {
-        return false;
+
+      if (parcels.length === 0) {
+        setPricing(null);
+        return;
       }
-      return true;
-    });
-    
-    // Electronics: parcels with electronics product categories
-    const electronicsParcels = parcels.filter(p => 
-      shipmentTypes.includes('electronics') && 
-      (p.productCategory === 'MOBILE_PHONE' || 
-       p.productCategory === 'LAPTOP' || 
-       p.productCategory === 'LARGE_MIRROR')
-    );
-    
-    // Large Items: parcels with itemType field
-    const largeItemsParcels = parcels.filter(p => 
-      shipmentTypes.includes('large-items') && p.itemType
-    );
-    
-    return calculateTotalPricing(
-      regularParcels,
-      electronicsParcels,
-      largeItemsParcels,
-      initialPackaging,
-      finalPackaging,
-      optionalInsuranceValue
-    );
-  }, [parcels, shipmentTypes, initialPackaging, finalPackaging, optionalInsuranceValue]);
-  
+
+      setPricingLoading(true);
+
+      try {
+        // Separate parcels by type based on shipment types selected
+        // Parcel LCL: all parcels that are not electronics or large items
+        const regularParcels = parcels.filter((p) => {
+          // If electronics is selected, exclude electronics products
+          if (shipmentTypes.includes("electronics")) {
+            const isElectronics =
+              p.productCategory === "MOBILE_PHONE" ||
+              p.productCategory === "LAPTOP" ||
+              p.productCategory === "LARGE_MIRROR";
+            if (isElectronics) return false;
+          }
+          // If large items is selected, exclude large items (they have itemType)
+          if (shipmentTypes.includes("large-items") && p.itemType) {
+            return false;
+          }
+          return true;
+        });
+
+        // Electronics: parcels with electronics product categories
+        const electronicsParcels = parcels.filter(
+          (p) =>
+            shipmentTypes.includes("electronics") &&
+            (p.productCategory === "MOBILE_PHONE" ||
+              p.productCategory === "LAPTOP" ||
+              p.productCategory === "LARGE_MIRROR")
+        );
+
+        // Large Items: parcels with itemType field
+        const largeItemsParcels = parcels.filter(
+          (p) => shipmentTypes.includes("large-items") && p.itemType
+        );
+
+        // Calculate total weight and CBM for regular parcels
+        const totalWeight = regularParcels.reduce(
+          (sum, p) => sum + (p.weight || 0),
+          0
+        );
+        const totalCBM = regularParcels.reduce(
+          (sum, p) => sum + (p.cbm || 0),
+          0
+        );
+
+        // Call API to calculate base price
+        let basePrice;
+        if (totalWeight > 0 || totalCBM > 0) {
+          const apiResponse = await apiService.calculatePricing(
+            totalWeight,
+            totalCBM
+          );
+          if (apiResponse.success) {
+            basePrice = {
+              priceByWeight: apiResponse.priceByWeight,
+              priceByCBM: apiResponse.priceByCBM,
+              final: apiResponse.basePrice,
+            };
+          } else {
+            // Fallback to local calculation if API fails
+            basePrice = {
+              priceByWeight: totalWeight * 3,
+              priceByCBM: totalCBM * 300,
+              final: Math.max(totalWeight * 3, totalCBM * 300, 75),
+            };
+          }
+        } else {
+          basePrice = {
+            priceByWeight: 0,
+            priceByCBM: 0,
+            final: 0,
+          };
+        }
+
+        // Calculate other pricing components (electronics, large items, packaging, insurance)
+        // We'll use the existing calculateTotalPricing but replace basePrice
+        const fullPricing = calculateTotalPricing(
+          regularParcels,
+          electronicsParcels,
+          largeItemsParcels,
+          initialPackaging,
+          finalPackaging,
+          optionalInsuranceValue
+        );
+
+        // Replace the basePrice with API-calculated value
+        setPricing({
+          ...fullPricing,
+          basePrice,
+        });
+      } catch (error) {
+        console.error("Error calculating pricing:", error);
+        // Fallback to local calculation on error
+        const regularParcels = parcels.filter((p) => {
+          if (shipmentTypes.includes("electronics")) {
+            const isElectronics =
+              p.productCategory === "MOBILE_PHONE" ||
+              p.productCategory === "LAPTOP" ||
+              p.productCategory === "LARGE_MIRROR";
+            if (isElectronics) return false;
+          }
+          if (shipmentTypes.includes("large-items") && p.itemType) {
+            return false;
+          }
+          return true;
+        });
+
+        const electronicsParcels = parcels.filter(
+          (p) =>
+            shipmentTypes.includes("electronics") &&
+            (p.productCategory === "MOBILE_PHONE" ||
+              p.productCategory === "LAPTOP" ||
+              p.productCategory === "LARGE_MIRROR")
+        );
+
+        const largeItemsParcels = parcels.filter(
+          (p) => shipmentTypes.includes("large-items") && p.itemType
+        );
+
+        setPricing(
+          calculateTotalPricing(
+            regularParcels,
+            electronicsParcels,
+            largeItemsParcels,
+            initialPackaging,
+            finalPackaging,
+            optionalInsuranceValue
+          )
+        );
+      } finally {
+        setPricingLoading(false);
+      }
+    };
+
+    calculatePricing();
+  }, [
+    currentStep, // Trigger when user reaches Step 5
+    parcels,
+    shipmentTypes,
+    initialPackaging,
+    finalPackaging,
+    optionalInsuranceValue,
+  ]);
+
   // Calculate electronics declared value for insurance
   const electronicsDeclaredValue = useMemo(() => {
-    if (!shipmentTypes.includes('electronics')) return 0;
-    const electronicsParcels = parcels.filter(p => 
-      p.productCategory === 'MOBILE_PHONE' || 
-      p.productCategory === 'LAPTOP' || 
-      p.productCategory === 'LARGE_MIRROR'
+    if (!shipmentTypes.includes("electronics")) return 0;
+    const electronicsParcels = parcels.filter(
+      (p) =>
+        p.productCategory === "MOBILE_PHONE" ||
+        p.productCategory === "LAPTOP" ||
+        p.productCategory === "LARGE_MIRROR"
     );
-    return electronicsParcels.reduce((sum, p) => sum + (p.declaredValue || 0), 0);
+    return electronicsParcels.reduce(
+      (sum, p) => sum + (p.declaredValue || 0),
+      0
+    );
   }, [parcels, shipmentTypes]);
 
   const translations = {
     ar: {
-      title: 'إنشاء شحنة جديدة',
-      subtitle: 'اختر اتجاه الشحن لبدء رحلتك',
-      step1Title: 'اختر اتجاه الشحن',
-      step2Title: 'اختر نوع الشحنة',
-      step3Title: 'بيانات المرسل والمستلم',
-      step4Title: 'تفاصيل الطرود',
-      step5Title: 'ملخص التسعير',
-      step6Title: 'خيارات التغليف',
-      step7Title: 'التأمين',
-      step8Title: 'النقل الداخلي',
-      step9Title: 'طريقة الدفع',
-      step10Title: 'مراجعة وتأكيد',
-      step11Title: 'تم إنشاء الشحنة',
-      back: 'رجوع',
-      continue: 'متابعة',
-      contactInfo: 'معلومات الاتصال',
-      europeCenter: 'مركز أوروبا – هولندا (Axel)',
-      syriaCenter: 'مركز سورية – حلب',
-      email: 'البريد الإلكتروني',
-      phone: 'الهاتف',
+      title: "إنشاء شحنة جديدة",
+      subtitle: "اختر اتجاه الشحن لبدء رحلتك",
+      step1Title: "اختر اتجاه الشحن",
+      step2Title: "اختر نوع الشحنة",
+      step3Title: "بيانات المرسل والمستلم",
+      step4Title: "تفاصيل الطرود",
+      step5Title: "ملخص التسعير",
+      step6Title: "خيارات التغليف",
+      step7Title: "التأمين",
+      step8Title: "النقل الداخلي",
+      step9Title: "طريقة الدفع",
+      step10Title: "مراجعة وتأكيد",
+      step11Title: "تم إنشاء الشحنة",
+      back: "رجوع",
+      continue: "متابعة",
+      contactInfo: "معلومات الاتصال",
+      europeCenter: "مركز أوروبا – هولندا (Axel)",
+      syriaCenter: "مركز سورية – حلب",
+      email: "البريد الإلكتروني",
+      phone: "الهاتف",
     },
     en: {
-      title: 'Create New Shipment',
-      subtitle: 'Select shipping direction to begin your journey',
-      step1Title: 'Select Shipping Direction',
-      step2Title: 'Select Shipment Type',
-      step3Title: 'Sender & Receiver Information',
-      step4Title: 'Parcel Details',
-      step5Title: 'Pricing Summary',
-      step6Title: 'Packaging Options',
-      step7Title: 'Insurance',
-      step8Title: 'Internal Transport',
-      step9Title: 'Payment Method',
-      step10Title: 'Review & Confirm',
-      step11Title: 'Shipment Created',
-      back: 'Back',
-      continue: 'Continue',
-      contactInfo: 'Contact Information',
-      europeCenter: 'Europe Center – Netherlands (Axel)',
-      syriaCenter: 'Syria Center – Aleppo',
-      email: 'Email',
-      phone: 'Phone',
+      title: "Create New Shipment",
+      subtitle: "Select shipping direction to begin your journey",
+      step1Title: "Select Shipping Direction",
+      step2Title: "Select Shipment Type",
+      step3Title: "Sender & Receiver Information",
+      step4Title: "Parcel Details",
+      step5Title: "Pricing Summary",
+      step6Title: "Packaging Options",
+      step7Title: "Insurance",
+      step8Title: "Internal Transport",
+      step9Title: "Payment Method",
+      step10Title: "Review & Confirm",
+      step11Title: "Shipment Created",
+      back: "Back",
+      continue: "Continue",
+      contactInfo: "Contact Information",
+      europeCenter: "Europe Center – Netherlands (Axel)",
+      syriaCenter: "Syria Center – Aleppo",
+      email: "Email",
+      phone: "Phone",
     },
   };
 
@@ -168,7 +302,7 @@ export default function CreateShipmentPage() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -179,7 +313,11 @@ export default function CreateShipmentPage() {
         </div>
 
         {/* Progress Bar */}
-        <ProgressBar currentStep={currentStep} totalSteps={TOTAL_STEPS} language={language} />
+        <ProgressBar
+          currentStep={currentStep}
+          totalSteps={TOTAL_STEPS}
+          language={language}
+        />
 
         {/* Step 1 Content */}
         {currentStep === 1 && (
@@ -221,14 +359,16 @@ export default function CreateShipmentPage() {
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                       initial={{ x: 0 }}
-                      whileHover={{ x: language === 'ar' ? -5 : 5 }}
+                      whileHover={{ x: language === "ar" ? -5 : 5 }}
                       transition={{ duration: 0.3 }}
                     >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2.5}
-                        d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                        d={
+                          language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"
+                        }
                       />
                     </motion.svg>
                   </span>
@@ -275,14 +415,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -292,30 +432,30 @@ export default function CreateShipmentPage() {
               {/* Continue Button */}
               <motion.button
                 onClick={() => setCurrentStep(3)}
-                  className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                  whileHover={{ scale: 1.08, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  <span className="relative z-10 flex items-center gap-3">
-                    {t.continue}
-                    <motion.svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      initial={{ x: 0 }}
-                      whileHover={{ x: language === 'ar' ? -5 : 5 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
-                      />
-                    </motion.svg>
-                  </span>
-                </motion.button>
+                className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  {t.continue}
+                  <motion.svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    initial={{ x: 0 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                    />
+                  </motion.svg>
+                </span>
+              </motion.button>
             </motion.div>
           </motion.div>
         )}
@@ -343,9 +483,9 @@ export default function CreateShipmentPage() {
               />
             ) : (
               <div className="text-center py-12 text-gray-500">
-                {language === 'ar' 
-                  ? 'يرجى اختيار اتجاه الشحن أولاً' 
-                  : 'Please select shipping direction first'}
+                {language === "ar"
+                  ? "يرجى اختيار اتجاه الشحن أولاً"
+                  : "Please select shipping direction first"}
               </div>
             )}
             <motion.div
@@ -368,14 +508,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -385,30 +525,30 @@ export default function CreateShipmentPage() {
               {/* Continue Button */}
               <motion.button
                 onClick={() => setCurrentStep(4)}
-                  className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                  whileHover={{ scale: 1.08, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  <span className="relative z-10 flex items-center gap-3">
-                    {t.continue}
-                    <motion.svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      initial={{ x: 0 }}
-                      whileHover={{ x: language === 'ar' ? -5 : 5 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
-                      />
-                    </motion.svg>
-                  </span>
-                </motion.button>
+                className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  {t.continue}
+                  <motion.svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    initial={{ x: 0 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                    />
+                  </motion.svg>
+                </span>
+              </motion.button>
             </motion.div>
           </motion.div>
         )}
@@ -451,14 +591,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -468,30 +608,30 @@ export default function CreateShipmentPage() {
               {/* Continue Button */}
               <motion.button
                 onClick={() => setCurrentStep(5)}
-                  className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                  whileHover={{ scale: 1.08, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  <span className="relative z-10 flex items-center gap-3">
-                    {t.continue}
-                    <motion.svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      initial={{ x: 0 }}
-                      whileHover={{ x: language === 'ar' ? -5 : 5 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
-                      />
-                    </motion.svg>
-                  </span>
-                </motion.button>
+                className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  {t.continue}
+                  <motion.svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    initial={{ x: 0 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                    />
+                  </motion.svg>
+                </span>
+              </motion.button>
             </motion.div>
           </motion.div>
         )}
@@ -535,14 +675,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -564,14 +704,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? -5 : 5 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
                     />
                   </motion.svg>
                 </span>
@@ -596,7 +736,7 @@ export default function CreateShipmentPage() {
               optionalInsuranceValue={optionalInsuranceValue}
               onOptionalInsuranceChange={setOptionalInsuranceValue}
               language={language}
-              hasElectronics={shipmentTypes.includes('electronics')}
+              hasElectronics={shipmentTypes.includes("electronics")}
               electronicsDeclaredValue={electronicsDeclaredValue}
             />
             <motion.div
@@ -619,14 +759,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -648,14 +788,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? -5 : 5 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
                     />
                   </motion.svg>
                 </span>
@@ -708,14 +848,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -737,14 +877,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? -5 : 5 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
                     />
                   </motion.svg>
                 </span>
@@ -797,14 +937,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -826,14 +966,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? -5 : 5 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
                     />
                   </motion.svg>
                 </span>
@@ -867,18 +1007,18 @@ export default function CreateShipmentPage() {
               onAcceptedPoliciesChange={setAcceptedPolicies}
               onCreateShipment={() => {
                 if (!direction) {
-                  console.error('Direction is required to create shipment');
+                  console.error("Direction is required to create shipment");
                   return;
                 }
-                
+
                 // Generate shipment ID
                 const newShipmentId = generateShipmentId();
                 setShipmentId(newShipmentId);
-                
+
                 // TODO: Send data to backend API
                 // This will be implemented with backend integration
-                console.log('Creating shipment with ID:', newShipmentId);
-                
+                console.log("Creating shipment with ID:", newShipmentId);
+
                 // Move to confirmation step
                 setCurrentStep(11);
               }}
@@ -904,14 +1044,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -930,16 +1070,22 @@ export default function CreateShipmentPage() {
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.4 }}
           >
-            {pricing ? (
-              <Step5Pricing
-                pricing={pricing}
-                language={language}
-              />
+            {pricingLoading ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-yellow mb-4"></div>
+                <p className="text-gray-600 text-lg">
+                  {language === "ar"
+                    ? "جاري حساب الأسعار..."
+                    : "Calculating prices..."}
+                </p>
+              </div>
+            ) : pricing ? (
+              <Step5Pricing pricing={pricing} language={language} />
             ) : (
               <div className="text-center py-12 text-gray-500">
-                {language === 'ar' 
-                  ? 'يرجى إضافة الطرود أولاً في الخطوة السابقة' 
-                  : 'Please add parcels first in the previous step'}
+                {language === "ar"
+                  ? "يرجى إضافة الطرود أولاً في الخطوة السابقة"
+                  : "Please add parcels first in the previous step"}
               </div>
             )}
             <motion.div
@@ -962,14 +1108,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? 3 : -3 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
                     />
                   </motion.svg>
                   {t.back}
@@ -991,14 +1137,14 @@ export default function CreateShipmentPage() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     initial={{ x: 0 }}
-                    whileHover={{ x: language === 'ar' ? -5 : 5 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
                     transition={{ duration: 0.3 }}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2.5}
-                      d={language === 'ar' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
                     />
                   </motion.svg>
                 </span>
@@ -1048,14 +1194,24 @@ export default function CreateShipmentPage() {
                 <p>Zeeland – Netherlands</p>
                 <div className="pt-3 border-t border-gray-200 mt-3">
                   <p className="flex items-center gap-2">
-                    <span className="text-primary-dark font-semibold">{t.email}:</span>
-                    <a href="mailto:contact@medo-freight.eu" className="text-primary-dark hover:text-primary-yellow transition-colors">
+                    <span className="text-primary-dark font-semibold">
+                      {t.email}:
+                    </span>
+                    <a
+                      href="mailto:contact@medo-freight.eu"
+                      className="text-primary-dark hover:text-primary-yellow transition-colors"
+                    >
                       contact@medo-freight.eu
                     </a>
                   </p>
                   <p className="flex items-center gap-2 mt-2">
-                    <span className="text-primary-dark font-semibold">{t.phone}:</span>
-                    <a href="tel:+31683083916" className="text-primary-dark hover:text-primary-yellow transition-colors">
+                    <span className="text-primary-dark font-semibold">
+                      {t.phone}:
+                    </span>
+                    <a
+                      href="tel:+31683083916"
+                      className="text-primary-dark hover:text-primary-yellow transition-colors"
+                    >
                       +31 683083916
                     </a>
                   </p>
@@ -1074,14 +1230,24 @@ export default function CreateShipmentPage() {
                 <p>المدينة الصناعية – الشيخ نجار</p>
                 <div className="pt-3 border-t border-gray-200 mt-3">
                   <p className="flex items-center gap-2">
-                    <span className="text-primary-dark font-semibold">{t.email}:</span>
-                    <a href="mailto:alikramtrading.co@gmail.com" className="text-primary-dark hover:text-primary-yellow transition-colors">
+                    <span className="text-primary-dark font-semibold">
+                      {t.email}:
+                    </span>
+                    <a
+                      href="mailto:alikramtrading.co@gmail.com"
+                      className="text-primary-dark hover:text-primary-yellow transition-colors"
+                    >
                       alikramtrading.co@gmail.com
                     </a>
                   </p>
                   <p className="flex items-center gap-2 mt-2">
-                    <span className="text-primary-dark font-semibold">{t.phone}:</span>
-                    <a href="tel:+9639954778188" className="text-primary-dark hover:text-primary-yellow transition-colors">
+                    <span className="text-primary-dark font-semibold">
+                      {t.phone}:
+                    </span>
+                    <a
+                      href="tel:+9639954778188"
+                      className="text-primary-dark hover:text-primary-yellow transition-colors"
+                    >
                       +963 995 477 8188
                     </a>
                   </p>

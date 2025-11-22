@@ -54,7 +54,9 @@ services:
       - SECURE_SSL_REDIRECT=${SECURE_SSL_REDIRECT:-false}
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-false}
       - CSRF_COOKIE_SECURE=${CSRF_COOKIE_SECURE:-false}
-    command: sh -c "python manage.py makemigrations && python manage.py migrate --noinput && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    # Use Django runserver for development (auto-reload on code changes)
+    # For production, use: gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+    command: sh -c "python manage.py makemigrations && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
     depends_on:
       db:
         condition: service_healthy

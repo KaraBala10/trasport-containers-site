@@ -231,3 +231,102 @@ class FCLQuoteListView(generics.ListAPIView):
             )
 
         return queryset
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Allow anyone to calculate CBM
+def calculate_cbm_view(request):
+    """API endpoint to calculate CBM (Cubic Meters) from dimensions in centimeters"""
+    try:
+        length = float(request.data.get("length", 0))
+        width = float(request.data.get("width", 0))
+        height = float(request.data.get("height", 0))
+
+        # Validate inputs
+        if length <= 0 or width <= 0 or height <= 0:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Length, width, and height must be greater than 0",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Calculate CBM: (Length * Width * Height) / 1,000,000
+        # This converts from cm³ to m³
+        cbm = (length * width * height) / 1000000
+
+        return Response(
+            {
+                "success": True,
+                "cbm": round(cbm, 6),  # Round to 6 decimal places
+                "formula": f"({length} × {width} × {height}) / 1,000,000 = {cbm:.6f} m³",
+            },
+            status=status.HTTP_200_OK,
+        )
+    except (ValueError, TypeError):
+        return Response(
+            {"success": False, "error": "Invalid input. Please provide valid numbers."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error calculating CBM: {str(e)}")
+        return Response(
+            {"success": False, "error": "An error occurred while calculating CBM."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Allow anyone to calculate pricing
+def calculate_pricing_view(request):
+    """API endpoint to calculate pricing based on weight and CBM"""
+    try:
+        total_weight_kg = float(request.data.get("total_weight_kg", 0))
+        total_cbm = float(request.data.get("total_cbm", 0))
+
+        # Validate inputs
+        if total_weight_kg < 0 or total_cbm < 0:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Weight and CBM must be non-negative numbers",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Calculate pricing according to the formula:
+        # priceByWeight = total_weight_kg * 3
+        # priceByCBM = total_cbm * 300
+        # basePrice = max(priceByWeight, priceByCBM, 75)
+        price_by_weight = total_weight_kg * 3
+        price_by_cbm = total_cbm * 300
+        base_price = max(price_by_weight, price_by_cbm, 75)
+
+        return Response(
+            {
+                "success": True,
+                "priceByWeight": round(price_by_weight, 2),
+                "priceByCBM": round(price_by_cbm, 2),
+                "basePrice": round(base_price, 2),
+                "formula": {
+                    "priceByWeight": f"{total_weight_kg} × 3 = {price_by_weight:.2f}",
+                    "priceByCBM": f"{total_cbm} × 300 = {price_by_cbm:.2f}",
+                    "basePrice": f"max({price_by_weight:.2f}, {price_by_cbm:.2f}, 75) = {base_price:.2f}",
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+    except (ValueError, TypeError):
+        return Response(
+            {"success": False, "error": "Invalid input. Please provide valid numbers."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error calculating pricing: {str(e)}")
+        return Response(
+            {"success": False, "error": "An error occurred while calculating pricing."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

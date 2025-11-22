@@ -9,6 +9,8 @@ from .views import (
     LoginView,
     RegisterView,
     UserProfileView,
+    calculate_cbm_view,
+    calculate_pricing_view,
     current_user_view,
     logout_view,
 )
@@ -30,4 +32,7 @@ urlpatterns = [
     # FCL endpoints
     path("fcl/quote/", FCLQuoteView.as_view(), name="fcl_quote"),
     path("fcl/quotes/", FCLQuoteListView.as_view(), name="fcl_quote_list"),
+    # Utility endpoints
+    path("calculate-cbm/", calculate_cbm_view, name="calculate_cbm"),
+    path("calculate-pricing/", calculate_pricing_view, name="calculate_pricing"),
 ]

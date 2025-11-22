@@ -12,7 +12,7 @@ export default function AleppoCenterPage() {
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
       <Header />
-
+      
       <main className="flex-grow" role="main">
         {/* Hero Section */}
         <div className="bg-primary-dark text-white py-16">
@@ -99,8 +99,8 @@ export default function AleppoCenterPage() {
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           {location.services.map((service, idx) => (
-                            <span
-                              key={idx}
+                            <span 
+                              key={idx} 
                               className="bg-primary-yellow text-primary-dark px-3 py-1 rounded-full text-sm font-bold"
                             >
                               {service}
@@ -152,22 +152,22 @@ export default function AleppoCenterPage() {
                       </div>
                     </div>
                   </div>
-
+                  
                   <div className="mb-4">
                     <div className="text-sm text-gray-500 mb-1">
                       {content.tableHeaders.address}
                     </div>
                     <div className="text-gray-700">{location.address}</div>
                   </div>
-
+                  
                   <div>
                     <div className="text-sm text-gray-500 mb-2">
                       {content.tableHeaders.service}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {location.services.map((service, idx) => (
-                        <span
-                          key={idx}
+                        <span 
+                          key={idx} 
                           className="bg-primary-yellow text-primary-dark px-3 py-1 rounded-full text-sm font-bold"
                         >
                           {service}
@@ -187,7 +187,7 @@ export default function AleppoCenterPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-primary-dark text-center mb-12">
               {content.servicesInfo.title}
             </h2>
-
+            
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Distribution Service Card */}
               <div className="bg-white rounded-lg shadow-lg p-8 border-t-4 border-primary-yellow">
@@ -248,14 +248,14 @@ export default function AleppoCenterPage() {
             <h2 className="text-3xl md:text-4xl font-bold mb-8">
               {content.contactInfo.title}
             </h2>
-
+            
             <div className="max-w-2xl mx-auto space-y-4">
               <p className="text-xl font-semibold text-primary-yellow">
                 {content.contactInfo.partner}
               </p>
-
+              
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-6">
-                <a
+                <a 
                   href={`tel:${content.contactInfo.phone}`}
                   className="flex items-center gap-2 text-lg hover:text-primary-yellow transition-colors"
                 >
@@ -274,8 +274,8 @@ export default function AleppoCenterPage() {
                   </svg>
                   {content.contactInfo.phone}
                 </a>
-
-                <a
+                
+                <a 
                   href={`mailto:${content.contactInfo.email}`}
                   className="flex items-center gap-2 text-lg hover:text-primary-yellow transition-colors"
                 >
