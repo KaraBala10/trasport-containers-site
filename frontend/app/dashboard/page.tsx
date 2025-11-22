@@ -303,12 +303,12 @@ export default function DashboardPage() {
                 {/* FCL Quote */}
                 <Link
                   href="/fcl-quote"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-blue-500 transform hover:-translate-y-2"
+                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                    <div className="w-12 h-12 bg-primary-dark/10 rounded-lg flex items-center justify-center group-hover:bg-primary-dark/20 transition-colors">
                       <svg
-                        className="w-6 h-6 text-blue-600"
+                        className="w-6 h-6 text-primary-dark"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -322,7 +322,7 @@ export default function DashboardPage() {
                       </svg>
                     </div>
                     <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors"
+                      className="w-5 h-5 text-gray-400 group-hover:text-primary-dark transition-colors"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -339,7 +339,7 @@ export default function DashboardPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
                     {t.fclQuote}
                   </h3>
                   <p className="text-gray-600 text-sm">{t.fclQuoteDesc}</p>
@@ -348,12 +348,12 @@ export default function DashboardPage() {
                 {/* Track Shipment */}
                 <Link
                   href="/tracking"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-green-500 transform hover:-translate-y-2"
+                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
+                    <div className="w-12 h-12 bg-primary-dark/10 rounded-lg flex items-center justify-center group-hover:bg-primary-dark/20 transition-colors">
                       <svg
-                        className="w-6 h-6 text-green-600"
+                        className="w-6 h-6 text-primary-dark"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -367,7 +367,7 @@ export default function DashboardPage() {
                       </svg>
                     </div>
                     <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-green-500 transition-colors"
+                      className="w-5 h-5 text-gray-400 group-hover:text-primary-dark transition-colors"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -384,7 +384,7 @@ export default function DashboardPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-green-600 transition-colors">
+                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
                     {t.trackShipment}
                   </h3>
                   <p className="text-gray-600 text-sm">{t.trackShipmentDesc}</p>
@@ -393,12 +393,12 @@ export default function DashboardPage() {
                 {/* Get Quote */}
                 <Link
                   href="/quote"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-purple-500 transform hover:-translate-y-2"
+                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-yellow transform hover:-translate-y-2"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                    <div className="w-12 h-12 bg-primary-yellow/10 rounded-lg flex items-center justify-center group-hover:bg-primary-yellow/20 transition-colors">
                       <svg
-                        className="w-6 h-6 text-purple-600"
+                        className="w-6 h-6 text-primary-dark"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -412,7 +412,7 @@ export default function DashboardPage() {
                       </svg>
                     </div>
                     <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors"
+                      className="w-5 h-5 text-gray-400 group-hover:text-primary-yellow transition-colors"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -429,7 +429,7 @@ export default function DashboardPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-purple-600 transition-colors">
+                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
                     {t.getQuote}
                   </h3>
                   <p className="text-gray-600 text-sm">{t.getQuoteDesc}</p>
@@ -438,12 +438,12 @@ export default function DashboardPage() {
                 {/* Profile */}
                 <Link
                   href="/profile"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-indigo-500 transform hover:-translate-y-2"
+                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-indigo-500/10 rounded-lg flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
+                    <div className="w-12 h-12 bg-primary-dark/10 rounded-lg flex items-center justify-center group-hover:bg-primary-dark/20 transition-colors">
                       <svg
-                        className="w-6 h-6 text-indigo-600"
+                        className="w-6 h-6 text-primary-dark"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -457,7 +457,7 @@ export default function DashboardPage() {
                       </svg>
                     </div>
                     <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors"
+                      className="w-5 h-5 text-gray-400 group-hover:text-primary-dark transition-colors"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-indigo-600 transition-colors">
+                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
                     {t.profile}
                   </h3>
                   <p className="text-gray-600 text-sm">{t.profileDesc}</p>
