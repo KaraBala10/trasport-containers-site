@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export default function Home() {
-  const { language, isRTL } = useLanguage();
+  const { language, isRTL, mounted } = useLanguage();
   const { isAuthenticated, loading: authLoading } = useAuth();
 
   // Target date: December 1, 2025
@@ -81,12 +81,18 @@ export default function Home() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary-yellow focus:text-primary-dark focus:px-6 focus:py-3 focus:rounded-md focus:font-bold focus:shadow-xl focus:ring-4 focus:ring-primary-yellow/50"
         aria-label={
-          language === "ar"
+          !mounted
+            ? "Skip to main content"
+            : language === "ar"
             ? "انتقل إلى المحتوى الرئيسي"
             : "Skip to main content"
         }
       >
-        {language === "ar" ? "انتقل إلى المحتوى" : "Skip to content"}
+        {!mounted
+          ? "Skip to content"
+          : language === "ar"
+          ? "انتقل إلى المحتوى"
+          : "Skip to content"}
       </a>
 
       <Header />

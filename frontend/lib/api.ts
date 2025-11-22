@@ -180,14 +180,20 @@ export const apiService = {
   },
 
   updateFCLQuoteStatus: (id: number, status: string, offerMessage?: string) => {
-    return apiClient.patch(`/fcl/quotes/${id}/`, {
-      is_processed: status === 'processed',
+    return apiClient.patch(`/fcl/quotes/${id}/status/`, {
+      status: status,
       offer_message: offerMessage || '',
     });
   },
 
   deleteFCLQuote: (id: number) => {
     return apiClient.delete(`/fcl/quotes/${id}/`);
+  },
+
+  respondToOffer: (id: number, response: "ACCEPTED" | "REJECTED") => {
+    return apiClient.patch(`/fcl/quotes/${id}/respond/`, {
+      user_response: response,
+    });
   },
 
   // Document endpoints
