@@ -278,8 +278,8 @@ export default function CreateShipmentPage() {
       step6Title: "Packaging Options",
       step7Title: "Insurance",
       step8Title: "Internal Transport",
-      step9Title: "Payment Method",
-      step10Title: "Review & Confirm",
+      step9Title: "Review & Confirm",
+      step10Title: "Payment Method",
       step11Title: "Shipment Created",
       back: "Back",
       continue: "Continue",
@@ -908,16 +908,21 @@ export default function CreateShipmentPage() {
             <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
               {t.step9Title}
             </h2>
-            <Step9Payment
+            <Step10Review
               direction={direction}
-              paymentMethod={paymentMethod}
-              onPaymentMethodChange={setPaymentMethod}
-              transferSenderName={transferSenderName}
-              transferReference={transferReference}
-              transferSlip={transferSlip}
-              onTransferSenderNameChange={setTransferSenderName}
-              onTransferReferenceChange={setTransferReference}
-              onTransferSlipChange={setTransferSlip}
+              shipmentTypes={shipmentTypes}
+              sender={sender}
+              receiver={receiver}
+              parcels={parcels}
+              pricing={pricing}
+              acceptedTerms={acceptedTerms}
+              acceptedPolicies={acceptedPolicies}
+              onAcceptedTermsChange={setAcceptedTerms}
+              onAcceptedPoliciesChange={setAcceptedPolicies}
+              onCreateShipment={() => {
+                // Move to payment step instead of creating shipment
+                setCurrentStep(10);
+              }}
               language={language}
             />
             <motion.div
@@ -997,34 +1002,16 @@ export default function CreateShipmentPage() {
             <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
               {t.step10Title}
             </h2>
-            <Step10Review
+            <Step9Payment
               direction={direction}
-              shipmentTypes={shipmentTypes}
-              sender={sender}
-              receiver={receiver}
-              parcels={parcels}
-              pricing={pricing}
-              acceptedTerms={acceptedTerms}
-              acceptedPolicies={acceptedPolicies}
-              onAcceptedTermsChange={setAcceptedTerms}
-              onAcceptedPoliciesChange={setAcceptedPolicies}
-              onCreateShipment={() => {
-                if (!direction) {
-                  console.error("Direction is required to create shipment");
-                  return;
-                }
-
-                // Generate shipment ID
-                const newShipmentId = generateShipmentId();
-                setShipmentId(newShipmentId);
-
-                // TODO: Send data to backend API
-                // This will be implemented with backend integration
-                console.log("Creating shipment with ID:", newShipmentId);
-
-                // Move to confirmation step
-                setCurrentStep(11);
-              }}
+              paymentMethod={paymentMethod}
+              onPaymentMethodChange={setPaymentMethod}
+              transferSenderName={transferSenderName}
+              transferReference={transferReference}
+              transferSlip={transferSlip}
+              onTransferSenderNameChange={setTransferSenderName}
+              onTransferReferenceChange={setTransferReference}
+              onTransferSlipChange={setTransferSlip}
               language={language}
             />
             <motion.div
@@ -1058,6 +1045,50 @@ export default function CreateShipmentPage() {
                     />
                   </motion.svg>
                   {t.back}
+                </span>
+              </motion.button>
+
+              {/* Continue/Submit Button */}
+              <motion.button
+                onClick={async () => {
+                  if (!direction) {
+                    console.error("Direction is required to create shipment");
+                    return;
+                  }
+
+                  // Generate shipment ID
+                  const newShipmentId = generateShipmentId();
+                  setShipmentId(newShipmentId);
+
+                  // TODO: Send data to backend API
+                  // This will be implemented with backend integration
+                  console.log("Creating shipment with ID:", newShipmentId);
+
+                  // Move to confirmation step
+                  setCurrentStep(11);
+                }}
+                className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  {language === "ar" ? "إتمام الطلب" : "Complete Order"}
+                  <motion.svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    initial={{ x: 0 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                    />
+                  </motion.svg>
                 </span>
               </motion.button>
             </motion.div>
