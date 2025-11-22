@@ -115,9 +115,8 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
             "created_at",
-            "price_per_container",
-            "total_price",
             "is_processed",
+            "user",
         )
 
     def to_internal_value(self, data):
@@ -214,3 +213,57 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
                     "Pickup address is required when pickup service is selected."
                 )
         return value
+
+    def save(self, **kwargs):
+        """Override save to capture user from perform_create"""
+        # Extract user from kwargs (passed from perform_create via serializer.save(user=...))
+        user = kwargs.pop("user", None)
+
+        # Store user to use in create() method
+        if user is not None:
+            self._user_from_perform_create = user
+
+        # Call parent save which will call create() with validated_data
+        return super().save(**kwargs)
+
+    def create(self, validated_data):
+        """Create FCL quote with user from perform_create or context"""
+        import logging
+
+        from django.conf import settings
+
+        logger = logging.getLogger(__name__)
+
+        # Get user from perform_create (stored in save method)
+        user = getattr(self, "_user_from_perform_create", None)
+
+        if user and settings.DEBUG:
+            logger.debug(f"User from perform_create: {user} (ID: {user.id})")
+
+        # Fallback: Get user from context
+        if user is None and self.context and "request" in self.context:
+            request = self.context["request"]
+            if request.user and request.user.is_authenticated:
+                user = request.user
+                if settings.DEBUG:
+                    logger.debug(f"User from context: {user} (ID: {user.id})")
+
+        # CRITICAL: If user is still None, this is a problem
+        if user is None:
+            logger.error(
+                "CRITICAL: USER IS NONE in serializer.create() - This will cause user_id to be NULL!"
+            )
+
+        # Create the quote instance with user
+        fcl_quote = FCLQuote.objects.create(
+            **validated_data,
+            user=user,
+        )
+
+        if settings.DEBUG:
+            logger.debug(
+                f"FCLQuote created: ID={fcl_quote.id}, User={fcl_quote.user} "
+                f"(ID: {fcl_quote.user.id if fcl_quote.user else 'NULL'})"
+            )
+
+        return fcl_quote

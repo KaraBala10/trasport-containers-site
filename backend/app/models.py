@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -124,6 +125,16 @@ class FCLQuote(models.Model):
 
     # Terms
     accepted_terms = models.BooleanField(default=False, verbose_name="Accepted Terms")
+
+    # User (link to authenticated user)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="fcl_quotes",
+        verbose_name="User",
+    )
 
     # Pricing (calculated)
     price_per_container = models.DecimalField(

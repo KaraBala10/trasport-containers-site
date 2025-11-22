@@ -23,12 +23,12 @@ class ContactMessageAdmin(admin.ModelAdmin):
 class FCLQuoteAdmin(admin.ModelAdmin):
     list_display = (
         "full_name",
+        "user",
         "company_name",
         "port_of_loading",
         "port_of_discharge",
         "container_type",
         "number_of_containers",
-        "total_price",
         "created_at",
         "is_processed",
     )
@@ -47,7 +47,7 @@ class FCLQuoteAdmin(admin.ModelAdmin):
         "port_of_loading",
         "port_of_discharge",
     )
-    readonly_fields = ("created_at", "price_per_container", "total_price")
+    readonly_fields = ("created_at",)
     date_hierarchy = "created_at"
 
     fieldsets = (
@@ -99,11 +99,10 @@ class FCLQuoteAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Pricing & Status",
+            "Status",
             {
                 "fields": (
-                    "price_per_container",
-                    "total_price",
+                    "user",
                     "is_processed",
                     "created_at",
                 )

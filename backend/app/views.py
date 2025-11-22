@@ -4,11 +4,12 @@ import traceback
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -156,53 +157,77 @@ class FCLQuoteView(generics.CreateAPIView):
 
     queryset = FCLQuote.objects.all()
     serializer_class = FCLQuoteSerializer
-    permission_classes = [IsAuthenticated]  # Require authentication
-    parser_classes = [MultiPartParser, FormParser, JSONParser]  # Support file uploads
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def perform_create(self, serializer):
+        # ensures user is always set on the quote
+        serializer.save(user=self.request.user)
+
+    def get_serializer_context(self):
+        """Add request to serializer context"""
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
 
     def create(self, request, *args, **kwargs):
-        # Log request data for debugging (only in DEBUG mode)
+        logger = logging.getLogger(__name__)
+
+        if settings.DEBUG:
+            logger.debug(f"Request data keys: {list(request.data.keys())}")
+            logger.debug(
+                f"Authenticated user: {request.user} (ID: {request.user.id if request.user.is_authenticated else 'N/A'})"
+            )
+
+        if not request.user.is_authenticated:
+            return Response(
+                {"success": False, "error": "User not authenticated"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # let DRF handle validation and object creation
+        # perform_create will be called automatically and set the user
+        response = super().create(request, *args, **kwargs)
+
+        quote_id = response.data.get("id")
+
+        return Response(
+            {
+                "success": True,
+                "message": "Your FCL quote request has been submitted successfully. We will contact you soon.",
+                "id": quote_id,
+                "quote_number": f"FCL-{quote_id:06d}" if quote_id is not None else None,
+            },
+            status=response.status_code,
+        )
+
+
+class FCLQuoteListView(generics.ListAPIView):
+    """API endpoint to list user's FCL quotes"""
+
+    serializer_class = FCLQuoteSerializer
+    authentication_classes = [JWTAuthentication]  # Explicitly use JWT authentication
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return only quotes for the authenticated user"""
         if settings.DEBUG:
             logger = logging.getLogger(__name__)
-            logger.debug(f"Request data keys: {list(request.data.keys())}")
-
-        try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-
-            # Calculate pricing
-            # Pricing calculation can be added here if FCLPricing model is created
-            # For now, pricing will be calculated manually by admin
-            price_per_container = None
-            total_price = None
-
-            # Save quote with pricing
-            fcl_quote = serializer.save(
-                price_per_container=price_per_container, total_price=total_price
+            logger.debug(
+                f"Fetching quotes for user: {self.request.user} (ID: {self.request.user.id if self.request.user.is_authenticated else 'N/A'})"
             )
 
-            # TODO: Send email notification here
-            # You can use Django's email backend or a service like SendGrid
+        if not self.request.user.is_authenticated:
+            return FCLQuote.objects.none()
 
-            return Response(
-                {
-                    "success": True,
-                    "message": "Your FCL quote request has been submitted successfully. We will contact you soon.",
-                    "id": fcl_quote.id,
-                    "quote_number": f"FCL-{fcl_quote.id:06d}",
-                    "price_per_container": (
-                        float(price_per_container) if price_per_container else None
-                    ),
-                    "total_price": float(total_price) if total_price else None,
-                },
-                status=status.HTTP_201_CREATED,
+        queryset = FCLQuote.objects.filter(user=self.request.user).order_by(
+            "-created_at"
+        )
+
+        if settings.DEBUG:
+            logger.debug(
+                f"Found {queryset.count()} quotes for user {self.request.user.id}"
             )
-        except Exception as e:
-            error_details = traceback.format_exc() if settings.DEBUG else None
-            return Response(
-                {
-                    "success": False,
-                    "error": str(e),
-                    "details": error_details,
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+
+        return queryset
