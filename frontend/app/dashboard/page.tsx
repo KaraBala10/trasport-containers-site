@@ -365,14 +365,56 @@ export default function DashboardPage() {
   const handleSaveProfile = async () => {
     try {
       setProfileSaving(true);
-      await apiService.updateProfile(profileData);
+      
+      // Prepare data - ensure email is not empty
+      const dataToSend: {
+        email?: string;
+        first_name?: string;
+        last_name?: string;
+      } = {};
+      
+      if (profileData.email && profileData.email.trim()) {
+        dataToSend.email = profileData.email.trim();
+      }
+      if (profileData.first_name !== undefined) {
+        dataToSend.first_name = profileData.first_name.trim();
+      }
+      if (profileData.last_name !== undefined) {
+        dataToSend.last_name = profileData.last_name.trim();
+      }
+      
+      await apiService.updateProfile(dataToSend);
 
       // Refresh user data by reloading the page
       alert(t.profileUpdated);
       window.location.reload();
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      const errorData = error.response?.data;
+      let errorMessage = t.error;
+      
+      if (errorData) {
+        // Handle validation errors
+        if (errorData.email) {
+          errorMessage = Array.isArray(errorData.email) 
+            ? errorData.email[0] 
+            : errorData.email;
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'object') {
+          // Get first error message from validation errors
+          const firstError = Object.values(errorData)[0];
+          errorMessage = Array.isArray(firstError) 
+            ? firstError[0] 
+            : String(firstError);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setProfileSaving(false);
     }

@@ -93,6 +93,25 @@ export const apiService = {
     return apiClient.get('/user/', {});
   },
 
+  updateProfile: (data: {
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+  }) => {
+    // Filter out empty strings and send only provided fields
+    const filteredData: any = {};
+    if (data.email !== undefined && data.email !== null && data.email !== '') {
+      filteredData.email = data.email;
+    }
+    if (data.first_name !== undefined && data.first_name !== null) {
+      filteredData.first_name = data.first_name;
+    }
+    if (data.last_name !== undefined && data.last_name !== null) {
+      filteredData.last_name = data.last_name;
+    }
+    return apiClient.patch('/user/profile/', filteredData);
+  },
+
   refreshToken: (refreshToken: string) => {
     return apiClient.post('/token/refresh/', { refresh: refreshToken });
   },
