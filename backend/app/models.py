@@ -155,6 +155,7 @@ class FCLQuote(models.Model):
     # Status
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     is_processed = models.BooleanField(default=False, verbose_name="Is Processed")
+    is_rejected = models.BooleanField(default=False, verbose_name="Is Rejected")
 
     class Meta:
         verbose_name = "FCL Quote"

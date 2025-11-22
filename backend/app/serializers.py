@@ -54,7 +54,7 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "date_joined")
+        fields = ("id", "username", "email", "first_name", "last_name", "date_joined", "is_superuser", "is_staff")
         read_only_fields = ("id", "date_joined")
 
 
@@ -115,9 +115,9 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
             "created_at",
-            "is_processed",
             "user",
         )
+        depth = 1  # Include user details in nested format
 
     def to_internal_value(self, data):
         """Convert string booleans to actual booleans for FormData"""

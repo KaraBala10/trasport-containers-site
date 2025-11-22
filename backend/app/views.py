@@ -204,14 +204,14 @@ class FCLQuoteView(generics.CreateAPIView):
 
 
 class FCLQuoteListView(generics.ListAPIView):
-    """API endpoint to list user's FCL quotes"""
+    """API endpoint to list user's FCL quotes (or all quotes for admin)"""
 
     serializer_class = FCLQuoteSerializer
     authentication_classes = [JWTAuthentication]  # Explicitly use JWT authentication
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return only quotes for the authenticated user"""
+        """Return quotes for the authenticated user, or all quotes if admin"""
         if settings.DEBUG:
             logger = logging.getLogger(__name__)
             logger.debug(
@@ -221,14 +221,20 @@ class FCLQuoteListView(generics.ListAPIView):
         if not self.request.user.is_authenticated:
             return FCLQuote.objects.none()
 
-        queryset = FCLQuote.objects.filter(user=self.request.user).order_by(
-            "-created_at"
-        )
-
-        if settings.DEBUG:
-            logger.debug(
-                f"Found {queryset.count()} quotes for user {self.request.user.id}"
+        # If user is superuser, return all quotes
+        if self.request.user.is_superuser:
+            queryset = FCLQuote.objects.all().order_by("-created_at")
+            if settings.DEBUG:
+                logger.debug(f"Admin user - Found {queryset.count()} total quotes")
+        else:
+            # Regular user - only their quotes
+            queryset = FCLQuote.objects.filter(user=self.request.user).order_by(
+                "-created_at"
             )
+            if settings.DEBUG:
+                logger.debug(
+                    f"Regular user - Found {queryset.count()} quotes for user {self.request.user.id}"
+                )
 
         return queryset
 
@@ -242,9 +248,12 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
-        """Return only quotes for the authenticated user"""
+        """Return quotes for the authenticated user, or all quotes if admin"""
         if not self.request.user.is_authenticated:
             return FCLQuote.objects.none()
+        # Admin can access all quotes, regular users only their own
+        if self.request.user.is_superuser:
+            return FCLQuote.objects.all()
         return FCLQuote.objects.filter(user=self.request.user)
 
     def get_serializer_context(self):
@@ -375,5 +384,52 @@ def calculate_pricing_view(request):
         logger.error(f"Error calculating pricing: {str(e)}")
         return Response(
             {"success": False, "error": "An error occurred while calculating pricing."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def approve_fcl_quote_view(request, pk):
+    """API endpoint for admin to approve/reject FCL quotes"""
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only superusers can approve quotes."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+        is_approved = request.data.get("is_approved", True)
+
+        if is_approved:
+            quote.is_processed = True
+            quote.is_rejected = False
+        else:
+            quote.is_processed = False
+            quote.is_rejected = True
+        quote.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": f"FCL quote {'approved' if is_approved else 'rejected'} successfully.",
+                "data": FCLQuoteSerializer(quote).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "FCL quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error approving quote: {str(e)}")
+        return Response(
+            {
+                "success": False,
+                "error": "An error occurred while processing the request.",
+            },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

@@ -11,6 +11,8 @@ interface User {
   first_name?: string;
   last_name?: string;
   date_joined?: string;
+  is_superuser?: boolean;
+  is_staff?: boolean;
 }
 
 interface AuthState {

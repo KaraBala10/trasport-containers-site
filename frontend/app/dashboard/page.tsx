@@ -55,7 +55,16 @@ interface FCLQuote {
   total_price: number | null;
   price_per_container: number | null;
   is_processed: boolean;
+  is_rejected?: boolean;
   created_at: string;
+  // User info (for admin view)
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  };
 }
 
 export default function DashboardPage() {
@@ -67,6 +76,13 @@ export default function DashboardPage() {
   const [expandedQuotes, setExpandedQuotes] = useState<Set<number>>(new Set());
   const [editingQuote, setEditingQuote] = useState<FCLQuote | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
 
   const translations = useMemo(
     () => ({
@@ -135,6 +151,22 @@ export default function DashboardPage() {
         updateSuccess: "تم تحديث الطلب بنجاح",
         error: "حدث خطأ",
         actions: "الإجراءات",
+        editProfile: "تعديل الملف الشخصي",
+        saveProfile: "حفظ التغييرات",
+        cancel: "إلغاء",
+        profileUpdated: "تم تحديث الملف الشخصي بنجاح",
+        firstName: "الاسم الأول",
+        lastName: "اسم العائلة",
+        allFCLQuotes: "جميع طلبات عرض السعر FCL",
+        approve: "موافقة",
+        reject: "رفض",
+        rejected: "مرفوض",
+        approveConfirm: "هل أنت متأكد من الموافقة على هذا الطلب؟",
+        rejectConfirm: "هل أنت متأكد من رفض هذا الطلب؟",
+        approveSuccess: "تمت الموافقة على الطلب بنجاح",
+        rejectSuccess: "تم رفض الطلب بنجاح",
+        customer: "العميل",
+        submittedBy: "مقدم من",
       },
       en: {
         dashboard: "Dashboard",
@@ -201,6 +233,24 @@ export default function DashboardPage() {
         updateSuccess: "Quote updated successfully",
         error: "An error occurred",
         actions: "Actions",
+        editProfile: "Edit Profile",
+        saveProfile: "Save Changes",
+        cancel: "Cancel",
+        profileUpdated: "Profile updated successfully",
+        firstName: "First Name",
+        lastName: "Last Name",
+        allFCLQuotes: "All FCL Quote Requests",
+        approve: "Approve",
+        reject: "Reject",
+        rejected: "Rejected",
+        approveConfirm: "Are you sure you want to approve this quote?",
+        rejectConfirm: "Are you sure you want to reject this quote?",
+        approveSuccess: "Quote approved successfully",
+        rejectSuccess: "Quote rejected successfully",
+        customer: "Customer",
+        submittedBy: "Submitted by",
+        unapprove: "Unapprove",
+        changeStatus: "Change Status",
       },
     }),
     []
@@ -268,6 +318,69 @@ export default function DashboardPage() {
   // Handle edit - open edit modal
   const handleEdit = (quote: FCLQuote) => {
     setEditingQuote(quote);
+  };
+
+  // Handle profile edit
+  const handleEditProfile = () => {
+    // Populate profileData with current user values
+    if (user) {
+      setProfileData({
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        email: user.email || "",
+      });
+    }
+    setEditingProfile(true);
+  };
+
+  // Handle save profile
+  const handleSaveProfile = async () => {
+    try {
+      setProfileSaving(true);
+      await apiService.updateProfile(profileData);
+
+      // Refresh user data by reloading the page
+      alert(t.profileUpdated);
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  // Handle cancel profile edit
+  const handleCancelProfileEdit = () => {
+    // Reset to original user data
+    if (user) {
+      setProfileData({
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        email: user.email || "",
+      });
+    }
+    setEditingProfile(false);
+  };
+
+  // Handle approve/reject quote (admin only)
+  const handleApproveQuote = async (quoteId: number, isApproved: boolean) => {
+    const confirmMessage = isApproved ? t.approveConfirm : t.rejectConfirm;
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      await apiService.approveFCLQuote(quoteId, isApproved);
+
+      // Refresh quotes list
+      const quotesResponse = await apiService.getFCLQuotes();
+      const quotes = quotesResponse.data?.results || quotesResponse.data || [];
+      setFclQuotes(Array.isArray(quotes) ? quotes : []);
+
+      alert(isApproved ? t.approveSuccess : t.rejectSuccess);
+    } catch (error: any) {
+      console.error("Error approving quote:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    }
   };
 
   // Handle save edit
@@ -369,6 +482,9 @@ export default function DashboardPage() {
 
   // Access translations only after mounted check to prevent hydration mismatch
   const t = translations[language];
+
+  // Check if user is admin
+  const isAdmin = user?.is_superuser || false;
 
   if (!isAuthenticated) {
     return null;
@@ -475,23 +591,38 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Quick Actions Section */}
-            <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-primary-dark mb-6 flex items-center gap-3">
-                <div className="w-1 h-8 bg-primary-yellow rounded-full"></div>
-                {t.quickActions}
-              </h2>
+            {/* Quick Actions Section - Only for regular users */}
+            {!isAdmin && (
+              <div className="mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-primary-dark mb-6 flex items-center gap-3">
+                  <div className="w-1 h-8 bg-primary-yellow rounded-full"></div>
+                  {t.quickActions}
+                </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Create LCL Shipment */}
-                <Link
-                  href="/create-shipment"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-yellow transform hover:-translate-y-2"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-primary-yellow/10 rounded-lg flex items-center justify-center group-hover:bg-primary-yellow/20 transition-colors">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Create LCL Shipment */}
+                  <Link
+                    href="/create-shipment"
+                    className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-yellow transform hover:-translate-y-2"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 bg-primary-yellow/10 rounded-lg flex items-center justify-center group-hover:bg-primary-yellow/20 transition-colors">
+                        <svg
+                          className="w-6 h-6 text-primary-dark"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                          />
+                        </svg>
+                      </div>
                       <svg
-                        className="w-6 h-6 text-primary-dark"
+                        className="w-5 h-5 text-gray-400 group-hover:text-primary-yellow transition-colors"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -500,45 +631,45 @@ export default function DashboardPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                          d={
+                            isRTL
+                              ? "M10 19l-7-7m0 0l7-7m-7 7h18"
+                              : "M14 5l7 7m0 0l-7 7m7-7H3"
+                          }
                         />
                       </svg>
                     </div>
-                    <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-primary-yellow transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={
-                          isRTL
-                            ? "M10 19l-7-7m0 0l7-7m-7 7h18"
-                            : "M14 5l7 7m0 0l-7 7m7-7H3"
-                        }
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
-                    {t.createLCLShipment}
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    {t.createLCLShipmentDesc}
-                  </p>
-                </Link>
+                    <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
+                      {t.createLCLShipment}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {t.createLCLShipmentDesc}
+                    </p>
+                  </Link>
 
-                {/* FCL Quote */}
-                <Link
-                  href="/fcl-quote"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-primary-dark/10 rounded-lg flex items-center justify-center group-hover:bg-primary-dark/20 transition-colors">
+                  {/* FCL Quote */}
+                  <Link
+                    href="/fcl-quote"
+                    className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 bg-primary-dark/10 rounded-lg flex items-center justify-center group-hover:bg-primary-dark/20 transition-colors">
+                        <svg
+                          className="w-6 h-6 text-primary-dark"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      </div>
                       <svg
-                        className="w-6 h-6 text-primary-dark"
+                        className="w-5 h-5 text-gray-400 group-hover:text-primary-dark transition-colors"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -547,43 +678,43 @@ export default function DashboardPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          d={
+                            isRTL
+                              ? "M10 19l-7-7m0 0l7-7m-7 7h18"
+                              : "M14 5l7 7m0 0l-7 7m7-7H3"
+                          }
                         />
                       </svg>
                     </div>
-                    <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-primary-dark transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={
-                          isRTL
-                            ? "M10 19l-7-7m0 0l7-7m-7 7h18"
-                            : "M14 5l7 7m0 0l-7 7m7-7H3"
-                        }
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
-                    {t.fclQuote}
-                  </h3>
-                  <p className="text-gray-600 text-sm">{t.fclQuoteDesc}</p>
-                </Link>
+                    <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
+                      {t.fclQuote}
+                    </h3>
+                    <p className="text-gray-600 text-sm">{t.fclQuoteDesc}</p>
+                  </Link>
 
-                {/* Track Shipment */}
-                <Link
-                  href="/tracking"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-primary-dark/10 rounded-lg flex items-center justify-center group-hover:bg-primary-dark/20 transition-colors">
+                  {/* Track Shipment */}
+                  <Link
+                    href="/tracking"
+                    className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 bg-primary-dark/10 rounded-lg flex items-center justify-center group-hover:bg-primary-dark/20 transition-colors">
+                        <svg
+                          className="w-6 h-6 text-primary-dark"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
                       <svg
-                        className="w-6 h-6 text-primary-dark"
+                        className="w-5 h-5 text-gray-400 group-hover:text-primary-dark transition-colors"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -592,41 +723,30 @@ export default function DashboardPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          d={
+                            isRTL
+                              ? "M10 19l-7-7m0 0l7-7m-7 7h18"
+                              : "M14 5l7 7m0 0l-7 7m7-7H3"
+                          }
                         />
                       </svg>
                     </div>
-                    <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-primary-dark transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={
-                          isRTL
-                            ? "M10 19l-7-7m0 0l7-7m-7 7h18"
-                            : "M14 5l7 7m0 0l-7 7m7-7H3"
-                        }
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
-                    {t.trackShipment}
-                  </h3>
-                  <p className="text-gray-600 text-sm">{t.trackShipmentDesc}</p>
-                </Link>
+                    <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
+                      {t.trackShipment}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {t.trackShipmentDesc}
+                    </p>
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* My FCL Quotes Section */}
+            {/* FCL Quotes Section */}
             <div className="mb-8">
               <h2 className="text-2xl md:text-3xl font-bold text-primary-dark mb-6 flex items-center gap-3">
                 <div className="w-1 h-8 bg-primary-yellow rounded-full"></div>
-                {t.myFCLQuotes}
+                {isAdmin ? t.allFCLQuotes : t.myFCLQuotes}
               </h2>
 
               {quotesLoading ? (
@@ -680,6 +800,16 @@ export default function DashboardPage() {
                                       .toString()
                                       .padStart(6, "0")}`}
                                 </p>
+                                {isAdmin && quote.user && (
+                                  <div className="mt-2">
+                                    <p className="text-xs text-gray-500">
+                                      {t.submittedBy}:{" "}
+                                      <span className="text-gray-700 font-medium">
+                                        {quote.user.username}
+                                      </span>
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500 mb-1">
@@ -705,34 +835,96 @@ export default function DashboardPage() {
                                 </p>
                                 <span
                                   className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                                    quote.is_processed
+                                    quote.is_rejected
+                                      ? "bg-red-100 text-red-800"
+                                      : quote.is_processed
                                       ? "bg-green-100 text-green-800"
                                       : "bg-yellow-100 text-yellow-800"
                                   }`}
                                 >
-                                  {quote.is_processed ? t.processed : t.pending}
+                                  {quote.is_rejected
+                                    ? t.rejected
+                                    : quote.is_processed
+                                    ? t.processed
+                                    : t.pending}
                                 </span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <button
                                 onClick={() => toggleQuote(quote.id)}
                                 className="px-4 py-2 text-sm font-medium text-primary-dark bg-primary-yellow/10 hover:bg-primary-yellow/20 rounded-lg transition-colors"
                               >
                                 {isExpanded ? t.collapse : t.expand}
                               </button>
-                              <button
-                                onClick={() => handleEdit(quote)}
-                                className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                              >
-                                {t.edit}
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirm(quote.id)}
-                                className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                              >
-                                {t.delete}
-                              </button>
+                              {isAdmin ? (
+                                <>
+                                  {/* Admin: Status change buttons */}
+                                  {!quote.is_processed && !quote.is_rejected ? (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          handleApproveQuote(quote.id, true)
+                                        }
+                                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                                      >
+                                        {t.approve}
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleApproveQuote(quote.id, false)
+                                        }
+                                        className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
+                                      >
+                                        {t.reject}
+                                      </button>
+                                    </>
+                                  ) : quote.is_processed ? (
+                                    <button
+                                      onClick={() =>
+                                        handleApproveQuote(quote.id, false)
+                                      }
+                                      className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors"
+                                    >
+                                      {language === "ar"
+                                        ? "إلغاء الموافقة"
+                                        : "Unapprove"}
+                                    </button>
+                                  ) : quote.is_rejected ? (
+                                    <button
+                                      onClick={() =>
+                                        handleApproveQuote(quote.id, true)
+                                      }
+                                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                                    >
+                                      {t.approve}
+                                    </button>
+                                  ) : null}
+                                  {/* Admin: Delete button */}
+                                  <button
+                                    onClick={() => setDeleteConfirm(quote.id)}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                  >
+                                    {t.delete}
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  {/* Regular user: Edit and Delete */}
+                                  <button
+                                    onClick={() => handleEdit(quote)}
+                                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                  >
+                                    {t.edit}
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirm(quote.id)}
+                                    className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                  >
+                                    {t.delete}
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1579,10 +1771,33 @@ export default function DashboardPage() {
 
             {/* Account Information Card */}
             <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-primary-dark mb-6 flex items-center gap-3">
-                <div className="w-1 h-8 bg-primary-yellow rounded-full"></div>
-                {t.accountInfo}
-              </h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-primary-dark flex items-center gap-3">
+                  <div className="w-1 h-8 bg-primary-yellow rounded-full"></div>
+                  {t.accountInfo}
+                </h2>
+                {!editingProfile && (
+                  <button
+                    onClick={handleEditProfile}
+                    className="px-4 py-2 text-sm font-medium text-primary-dark bg-primary-yellow hover:bg-primary-yellow/90 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    {t.editProfile}
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
@@ -1591,36 +1806,112 @@ export default function DashboardPage() {
                   <p className="text-lg font-medium text-gray-900">
                     {user?.username}
                   </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {language === "ar"
+                      ? "لا يمكن تغيير اسم المستخدم"
+                      : "Username cannot be changed"}
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
                     {t.email}
                   </label>
-                  <p className="text-lg font-medium text-gray-900">
-                    {user?.email}
-                  </p>
+                  {editingProfile ? (
+                    <input
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          email: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent text-lg"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium text-gray-900">
+                      {user?.email}
+                    </p>
+                  )}
                 </div>
-                {user?.first_name && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
-                      {language === "ar" ? "الاسم الأول" : "First Name"}
-                    </label>
+                <div>
+                  <label className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
+                    {t.firstName}
+                  </label>
+                  {editingProfile ? (
+                    <input
+                      type="text"
+                      value={profileData.first_name}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          first_name: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent text-lg"
+                    />
+                  ) : (
                     <p className="text-lg font-medium text-gray-900">
-                      {user.first_name}
+                      {user?.first_name || (
+                        <span className="text-gray-400 italic">
+                          {language === "ar" ? "غير محدد" : "Not set"}
+                        </span>
+                      )}
                     </p>
-                  </div>
-                )}
-                {user?.last_name && (
-                  <div>
-                    <label className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
-                      {language === "ar" ? "اسم العائلة" : "Last Name"}
-                    </label>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
+                    {t.lastName}
+                  </label>
+                  {editingProfile ? (
+                    <input
+                      type="text"
+                      value={profileData.last_name}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          last_name: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent text-lg"
+                    />
+                  ) : (
                     <p className="text-lg font-medium text-gray-900">
-                      {user.last_name}
+                      {user?.last_name || (
+                        <span className="text-gray-400 italic">
+                          {language === "ar" ? "غير محدد" : "Not set"}
+                        </span>
+                      )}
                     </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
+              {editingProfile && (
+                <div className="flex gap-3 justify-end mt-6 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={handleCancelProfileEdit}
+                    disabled={profileSaving}
+                    className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {t.cancel}
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={profileSaving}
+                    className="px-6 py-2 text-sm font-medium text-white bg-primary-yellow hover:bg-primary-yellow/90 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {profileSaving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        {language === "ar" ? "جاري الحفظ..." : "Saving..."}
+                      </>
+                    ) : (
+                      t.saveProfile
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
