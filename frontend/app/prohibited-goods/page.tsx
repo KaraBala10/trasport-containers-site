@@ -198,6 +198,57 @@ export default function ProhibitedGoodsPage() {
           </div>
         </div>
 
+        {/* UN Number and Class Info */}
+        <div className="bg-blue-50 border-t-4 border-blue-500 py-8">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-start gap-4 mb-6">
+                <svg
+                  className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div>
+                  <h3 className="text-xl font-bold text-blue-800 mb-2">
+                    {content.unNumberInfo.title}
+                  </h3>
+                  <p className="text-blue-700 mb-6">
+                    {content.unNumberInfo.description}
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                      <h4 className="font-bold text-blue-900 mb-2">
+                        {content.unNumberInfo.unNumber.title}
+                      </h4>
+                      <p className="text-gray-700 text-sm">
+                        {content.unNumberInfo.unNumber.description}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                      <h4 className="font-bold text-blue-900 mb-2">
+                        {content.unNumberInfo.class.title}
+                      </h4>
+                      <p className="text-gray-700 text-sm">
+                        {content.unNumberInfo.class.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Prohibited Items Grid */}
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-6xl mx-auto">

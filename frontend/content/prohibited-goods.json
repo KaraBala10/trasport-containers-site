@@ -67,6 +67,19 @@
     "warningBox": {
       "title": "تحذير هام",
       "content": "محاولة شحن أي من المواد المحظورة قد تؤدي إلى: مصادرة الشحنة، غرامات مالية كبيرة، إجراءات قانونية، وإدراج في القائمة السوداء. نحن نفحص جميع الشحنات قبل القبول."
+    },
+    
+    "unNumberInfo": {
+      "title": "معلومات مهمة: UN Number و Class",
+      "description": "إذا كانت شحنتك تحتوي على مواد خطرة، قد يُطلب منك توفير معلومات إضافية:",
+      "unNumber": {
+        "title": "UN Number (رقم الأمم المتحدة)",
+        "description": "هو رقم تعريف فريد من 4 أرقام يُستخدم لتحديد المواد الخطرة أثناء النقل. يتم تعيينه من قبل لجنة الخبراء في الأمم المتحدة لنقل البضائع الخطرة. مثال: UN 1202 (البنزين)، UN 1963 (غاز البترول المسال)."
+      },
+      "class": {
+        "title": "Class (الفئة)",
+        "description": "هي تصنيف المواد الخطرة إلى 9 فئات رئيسية حسب نوع الخطر: الفئة 1 (متفجرات)، الفئة 2 (غازات)، الفئة 3 (سوائل قابلة للاشتعال)، الفئة 4 (مواد صلبة قابلة للاشتعال)، الفئة 5 (مواد مؤكسدة)، الفئة 6 (مواد سامة)، الفئة 7 (مواد مشعة)، الفئة 8 (مواد مسببة للتآكل)، الفئة 9 (مواد وأشياء خطرة متنوعة)."
+      }
     }
   },
   
@@ -138,6 +151,19 @@
     "warningBox": {
       "title": "Important Warning",
       "content": "Attempting to ship any prohibited materials may result in: shipment confiscation, significant fines, legal proceedings, and blacklisting. We inspect all shipments before acceptance."
+    },
+    
+    "unNumberInfo": {
+      "title": "Important Information: UN Number and Class",
+      "description": "If your shipment contains dangerous goods, you may be required to provide additional information:",
+      "unNumber": {
+        "title": "UN Number (United Nations Number)",
+        "description": "A unique 4-digit identification number used to identify dangerous goods during transport. It is assigned by the United Nations Committee of Experts on the Transport of Dangerous Goods. Example: UN 1202 (Gasoline), UN 1963 (Liquefied petroleum gas)."
+      },
+      "class": {
+        "title": "Class (Danger Class)",
+        "description": "A classification of dangerous goods into 9 main categories according to the type of hazard: Class 1 (Explosives), Class 2 (Gases), Class 3 (Flammable liquids), Class 4 (Flammable solids), Class 5 (Oxidizing substances), Class 6 (Toxic substances), Class 7 (Radioactive materials), Class 8 (Corrosive substances), Class 9 (Miscellaneous dangerous substances and articles)."
+      }
     }
   }
 }

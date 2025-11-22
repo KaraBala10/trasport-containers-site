@@ -1066,6 +1066,9 @@ export default function FCLQuotePage() {
       isDangerous: "مواد خطرة؟",
       unNumber: "UN Number",
       dangerousClass: "Class",
+      dangerousGoodsInfo: "معلومات مهمة",
+      unNumberDescription: "UN Number هو رقم تعريف فريد من 4 أرقام يُستخدم لتحديد المواد الخطرة أثناء النقل. مثال: UN 1202 (البنزين)، UN 1963 (غاز البترول المسال).",
+      classDescription: "Class هو تصنيف المواد الخطرة إلى 9 فئات حسب نوع الخطر: الفئة 1 (متفجرات)، الفئة 2 (غازات)، الفئة 3 (سوائل قابلة للاشتعال)، الفئة 4 (مواد صلبة قابلة للاشتعال)، الفئة 5 (مواد مؤكسدة)، الفئة 6 (مواد سامة)، الفئة 7 (مواد مشعة)، الفئة 8 (مواد مسببة للتآكل)، الفئة 9 (مواد وأشياء خطرة متنوعة).",
 
       // Additional Services
       pickupRequired: "Pickup من الباب في المنشأ؟",
@@ -1150,6 +1153,9 @@ export default function FCLQuotePage() {
       isDangerous: "Dangerous Goods?",
       unNumber: "UN Number",
       dangerousClass: "Class",
+      dangerousGoodsInfo: "Important Information",
+      unNumberDescription: "UN Number is a unique 4-digit identification number used to identify dangerous goods during transport. Example: UN 1202 (Gasoline), UN 1963 (Liquefied petroleum gas).",
+      classDescription: "Class is a classification of dangerous goods into 9 main categories according to the type of hazard: Class 1 (Explosives), Class 2 (Gases), Class 3 (Flammable liquids), Class 4 (Flammable solids), Class 5 (Oxidizing substances), Class 6 (Toxic substances), Class 7 (Radioactive materials), Class 8 (Corrosive substances), Class 9 (Miscellaneous dangerous substances and articles).",
 
       // Additional Services
       pickupRequired: "Pickup from door at origin?",
@@ -1768,7 +1774,11 @@ export default function FCLQuotePage() {
                       {index + 1 < currentStep ? "✓" : index + 1}
                     </div>
                     <span className="text-xs mt-2 text-gray-600 hidden md:block">
-                      {t[section as keyof typeof t] || section}
+                      {section === "route" && t.routeDetails}
+                      {section === "container" && t.containerDetails}
+                      {section === "cargo" && t.cargoDetails}
+                      {section === "services" && t.additionalServices}
+                      {section === "customer" && t.customerDetails}
                     </span>
                   </div>
                   {index < sections.length - 1 && (
@@ -2657,6 +2667,38 @@ export default function FCLQuotePage() {
 
                     {formData.is_dangerous && (
                       <>
+                        {/* Info Box */}
+                        <div className="md:col-span-2 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-4">
+                          <div className="flex items-start gap-3">
+                            <svg
+                              className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-blue-900 mb-2 text-sm">
+                                {t.dangerousGoodsInfo}
+                              </h4>
+                              <div className="space-y-2 text-xs text-blue-800">
+                                <p>
+                                  <strong>UN Number:</strong> {t.unNumberDescription}
+                                </p>
+                                <p>
+                                  <strong>Class:</strong> {t.classDescription}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
                         <div>
                           <label className="block text-gray-700 font-semibold mb-2">
                             {t.unNumber} *
@@ -2666,6 +2708,7 @@ export default function FCLQuotePage() {
                             name="un_number"
                             value={formData.un_number}
                             onChange={handleChange}
+                            placeholder="مثال: UN 1202"
                             className={`w-full px-4 py-3 border rounded-lg ${
                               errors.dangerous
                                 ? "border-red-500"
@@ -2683,6 +2726,7 @@ export default function FCLQuotePage() {
                             name="dangerous_class"
                             value={formData.dangerous_class}
                             onChange={handleChange}
+                            placeholder="مثال: 3"
                             className={`w-full px-4 py-3 border rounded-lg ${
                               errors.dangerous
                                 ? "border-red-500"
