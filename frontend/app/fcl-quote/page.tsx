@@ -993,7 +993,9 @@ export default function FCLQuotePage() {
     // European countries
     ...Object.keys(europeanCountries).map((country) => ({
       en: country,
-      ar: europeanCountries[country as keyof typeof europeanCountries]?.ar?.name || country,
+      ar:
+        europeanCountries[country as keyof typeof europeanCountries]?.ar
+          ?.name || country,
     })),
     // Other important countries
     { en: "Syria", ar: "سوريا" },
@@ -1687,14 +1689,12 @@ export default function FCLQuotePage() {
   }, [recaptchaSiteKey, isDevelopment, recaptchaLoaded, recaptchaToken]);
 
   // Show loading state while checking authentication
-  if (authLoading) {
+  if (authLoading || !mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-dark mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {language === "ar" ? "جاري التحميل..." : "Loading..."}
-          </p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );

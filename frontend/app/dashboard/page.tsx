@@ -106,8 +106,6 @@ export default function DashboardPage() {
     []
   );
 
-  const t = translations[language];
-
   useEffect(() => {
     if (mounted && !loading && !isAuthenticated) {
       router.push("/login");
@@ -141,16 +139,20 @@ export default function DashboardPage() {
     fetchFCLQuotes();
   }, [isAuthenticated, mounted, router]);
 
+  // Early return with static text to prevent hydration mismatch
   if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-dark mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t.loading}</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
+
+  // Access translations only after mounted check to prevent hydration mismatch
+  const t = translations[language];
 
   if (!isAuthenticated) {
     return null;
@@ -181,7 +183,10 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="max-w-6xl mx-auto">
             {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-primary-dark via-primary-dark to-primary-yellow rounded-2xl shadow-2xl p-8 md:p-10 mb-8 text-white relative" style={{ overflow: 'visible' }}>
+            <div
+              className="bg-gradient-to-r from-primary-dark via-primary-dark to-primary-yellow rounded-2xl shadow-2xl p-8 md:p-10 mb-8 text-white relative"
+              style={{ overflow: "visible" }}
+            >
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-yellow/20 rounded-full -ml-32 -mb-32 blur-3xl"></div>
 
@@ -199,9 +204,18 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 items-center relative" style={{ zIndex: 50, overflow: 'visible' }}>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-lg border border-white/30 p-1" style={{ overflow: 'visible' }}>
-                    <LanguageSwitcher language={language} setLanguage={setLanguage} />
+                <div
+                  className="flex flex-col sm:flex-row gap-3 items-center relative"
+                  style={{ zIndex: 50, overflow: "visible" }}
+                >
+                  <div
+                    className="bg-white/20 backdrop-blur-sm rounded-lg border border-white/30 p-1"
+                    style={{ overflow: "visible" }}
+                  >
+                    <LanguageSwitcher
+                      language={language}
+                      setLanguage={setLanguage}
+                    />
                   </div>
                   <Link
                     href="/"
@@ -388,96 +402,6 @@ export default function DashboardPage() {
                     {t.trackShipment}
                   </h3>
                   <p className="text-gray-600 text-sm">{t.trackShipmentDesc}</p>
-                </Link>
-
-                {/* Get Quote */}
-                <Link
-                  href="/quote"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-yellow transform hover:-translate-y-2"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-primary-yellow/10 rounded-lg flex items-center justify-center group-hover:bg-primary-yellow/20 transition-colors">
-                      <svg
-                        className="w-6 h-6 text-primary-dark"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-primary-yellow transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={
-                          isRTL
-                            ? "M10 19l-7-7m0 0l7-7m-7 7h18"
-                            : "M14 5l7 7m0 0l-7 7m7-7H3"
-                        }
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
-                    {t.getQuote}
-                  </h3>
-                  <p className="text-gray-600 text-sm">{t.getQuoteDesc}</p>
-                </Link>
-
-                {/* Profile */}
-                <Link
-                  href="/profile"
-                  className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-primary-dark/10 rounded-lg flex items-center justify-center group-hover:bg-primary-dark/20 transition-colors">
-                      <svg
-                        className="w-6 h-6 text-primary-dark"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                    </div>
-                    <svg
-                      className="w-5 h-5 text-gray-400 group-hover:text-primary-dark transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={
-                          isRTL
-                            ? "M10 19l-7-7m0 0l7-7m-7 7h18"
-                            : "M14 5l7 7m0 0l-7 7m7-7H3"
-                        }
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:text-primary-yellow transition-colors">
-                    {t.profile}
-                  </h3>
-                  <p className="text-gray-600 text-sm">{t.profileDesc}</p>
                 </Link>
               </div>
             </div>
