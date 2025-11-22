@@ -54,8 +54,10 @@ interface FCLQuote {
   // Status
   total_price: number | null;
   price_per_container: number | null;
-  is_processed: boolean;
-  is_rejected?: boolean;
+  status: string;
+  offer_message?: string;
+  offer_sent_at?: string;
+  user_response?: string;
   created_at: string;
   // User info (for admin view)
   user?: {
@@ -165,8 +167,25 @@ export default function DashboardPage() {
         rejectConfirm: "هل أنت متأكد من رفض هذا الطلب؟",
         approveSuccess: "تمت الموافقة على الطلب بنجاح",
         rejectSuccess: "تم رفض الطلب بنجاح",
+        changeStatus: "تغيير الحالة",
+        statusUpdated: "تم تحديث الحالة بنجاح",
         customer: "العميل",
         submittedBy: "مقدم من",
+        // Status translations
+        CREATED: "تم الإنشاء",
+        PENDING_PAYMENT: "في انتظار الدفع",
+        PENDING_PICKUP: "في انتظار الاستلام",
+        IN_TRANSIT_TO_AXEL: "في الطريق إلى أكسل",
+        ARRIVED_AXEL: "وصل إلى أكسل",
+        SORTING_AXEL: "فرز في أكسل",
+        READY_FOR_EXPORT: "جاهز للتصدير",
+        IN_TRANSIT_TO_SYRIA: "في الطريق إلى سوريا",
+        ARRIVED_SYRIA: "وصل إلى سوريا",
+        SYRIA_SORTING: "فرز في سوريا",
+        READY_FOR_DELIVERY: "جاهز للتسليم",
+        OUT_FOR_DELIVERY: "خارج للتسليم",
+        DELIVERED: "تم التسليم",
+        CANCELLED: "ملغى",
       },
       en: {
         dashboard: "Dashboard",
@@ -240,17 +259,26 @@ export default function DashboardPage() {
         firstName: "First Name",
         lastName: "Last Name",
         allFCLQuotes: "All FCL Quote Requests",
-        approve: "Approve",
-        reject: "Reject",
-        rejected: "Rejected",
-        approveConfirm: "Are you sure you want to approve this quote?",
-        rejectConfirm: "Are you sure you want to reject this quote?",
-        approveSuccess: "Quote approved successfully",
-        rejectSuccess: "Quote rejected successfully",
+        changeStatus: "Change Status",
+        statusUpdated: "Status updated successfully",
         customer: "Customer",
         submittedBy: "Submitted by",
-        unapprove: "Unapprove",
-        changeStatus: "Change Status",
+        // Status translations
+        CREATED: "Created",
+        OFFER_SENT: "Offer Sent",
+        PENDING_PAYMENT: "Pending Payment",
+        PENDING_PICKUP: "Pending Pickup",
+        IN_TRANSIT_TO_AXEL: "In Transit to Axel",
+        ARRIVED_AXEL: "Arrived Axel",
+        SORTING_AXEL: "Sorting Axel",
+        READY_FOR_EXPORT: "Ready for Export",
+        IN_TRANSIT_TO_SYRIA: "In Transit to Syria",
+        ARRIVED_SYRIA: "Arrived Syria",
+        SYRIA_SORTING: "Syria Sorting",
+        READY_FOR_DELIVERY: "Ready for Delivery",
+        OUT_FOR_DELIVERY: "Out for Delivery",
+        DELIVERED: "Delivered",
+        CANCELLED: "Cancelled",
       },
     }),
     []
@@ -363,22 +391,109 @@ export default function DashboardPage() {
     setEditingProfile(false);
   };
 
-  // Handle approve/reject quote (admin only)
-  const handleApproveQuote = async (quoteId: number, isApproved: boolean) => {
-    const confirmMessage = isApproved ? t.approveConfirm : t.rejectConfirm;
-    if (!confirm(confirmMessage)) return;
-
+  // Handle status change (admin only)
+  const handleStatusChange = async (quoteId: number, newStatus: string) => {
     try {
-      await apiService.approveFCLQuote(quoteId, isApproved);
+      let offerMessage = "";
+
+      // If changing to OFFER_SENT, prompt for message
+      if (newStatus === "OFFER_SENT") {
+        offerMessage =
+          prompt(
+            language === "ar"
+              ? "أدخل رسالة العرض للمستخدم:"
+              : "Enter offer message for the user:"
+          ) || "";
+        if (offerMessage === null || offerMessage.trim() === "") {
+          // User cancelled or empty message, don't update status
+          alert(
+            language === "ar"
+              ? "يجب إدخال رسالة العرض"
+              : "Offer message is required"
+          );
+          return;
+        }
+      }
+
+      await apiService.updateFCLQuoteStatus(quoteId, newStatus, offerMessage);
 
       // Refresh quotes list
       const quotesResponse = await apiService.getFCLQuotes();
       const quotes = quotesResponse.data?.results || quotesResponse.data || [];
       setFclQuotes(Array.isArray(quotes) ? quotes : []);
 
-      alert(isApproved ? t.approveSuccess : t.rejectSuccess);
+      alert(t.statusUpdated);
     } catch (error: any) {
-      console.error("Error approving quote:", error);
+      console.error("Error updating status:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // Get status color based on status value
+  const getStatusColor = (status: string) => {
+    const statusColors: { [key: string]: string } = {
+      CREATED: "bg-gray-100 text-gray-800",
+      PENDING_PAYMENT: "bg-yellow-100 text-yellow-800",
+      PENDING_PICKUP: "bg-blue-100 text-blue-800",
+      IN_TRANSIT_TO_AXEL: "bg-indigo-100 text-indigo-800",
+      ARRIVED_AXEL: "bg-purple-100 text-purple-800",
+      SORTING_AXEL: "bg-pink-100 text-pink-800",
+      READY_FOR_EXPORT: "bg-cyan-100 text-cyan-800",
+      IN_TRANSIT_TO_SYRIA: "bg-teal-100 text-teal-800",
+      ARRIVED_SYRIA: "bg-emerald-100 text-emerald-800",
+      SYRIA_SORTING: "bg-lime-100 text-lime-800",
+      READY_FOR_DELIVERY: "bg-amber-100 text-amber-800",
+      OUT_FOR_DELIVERY: "bg-orange-100 text-orange-800",
+      DELIVERED: "bg-green-100 text-green-800",
+      CANCELLED: "bg-red-100 text-red-800",
+    };
+    return statusColors[status] || "bg-gray-100 text-gray-800";
+  };
+
+  // Get status display name
+  const getStatusDisplay = (status: string) => {
+    return (t as any)[status] || status.replace(/_/g, " ");
+  };
+
+  // Get simplified status for regular users
+  const getUserStatus = (quote: FCLQuote) => {
+    if (quote.user_response === "ACCEPTED") {
+      // If accepted, show PENDING_PAYMENT status
+      return quote.status === "PENDING_PAYMENT"
+        ? "PENDING_PAYMENT"
+        : "ACCEPTED";
+    }
+    if (quote.user_response === "REJECTED") return "REJECTED";
+    if (quote.status === "OFFER_SENT" && quote.offer_message)
+      return "OFFER_SENT";
+    if (quote.status === "CREATED") return "CREATED";
+    return "PENDING";
+  };
+
+  // Handle user response to offer
+  const handleRespondToOffer = async (
+    quoteId: number,
+    response: "ACCEPTED" | "REJECTED"
+  ) => {
+    try {
+      await apiService.respondToOffer(quoteId, response);
+
+      // Refresh quotes list
+      const quotesResponse = await apiService.getFCLQuotes();
+      const quotes = quotesResponse.data?.results || quotesResponse.data || [];
+      setFclQuotes(Array.isArray(quotes) ? quotes : []);
+
+      alert(
+        response === "ACCEPTED"
+          ? language === "ar"
+            ? "تم قبول العرض بنجاح"
+            : "Offer accepted successfully"
+          : language === "ar"
+          ? "تم رفض العرض بنجاح"
+          : "Offer rejected successfully"
+      );
+    } catch (error: any) {
+      console.error("Error responding to offer:", error);
       alert(t.error + ": " + (error.response?.data?.message || error.message));
     }
   };
@@ -789,12 +904,20 @@ export default function DashboardPage() {
                         {/* Summary Row */}
                         <div className="p-6">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div>
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                              <div className="sm:col-span-2 lg:col-span-2 min-w-0">
                                 <p className="text-xs text-gray-500 mb-1">
                                   {t.quoteNumber}
                                 </p>
-                                <p className="font-semibold text-primary-dark">
+                                <p
+                                  className="font-semibold text-primary-dark text-sm sm:text-base font-mono whitespace-nowrap overflow-hidden text-ellipsis"
+                                  title={
+                                    quote.quote_number ||
+                                    `FCL-${quote.id
+                                      .toString()
+                                      .padStart(6, "0")}`
+                                  }
+                                >
                                   {quote.quote_number ||
                                     `FCL-${quote.id
                                       .toString()
@@ -835,18 +958,47 @@ export default function DashboardPage() {
                                 </p>
                                 <span
                                   className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                                    quote.is_rejected
-                                      ? "bg-red-100 text-red-800"
-                                      : quote.is_processed
+                                    isAdmin
+                                      ? getStatusColor(
+                                          quote.status || "CREATED"
+                                        )
+                                      : getUserStatus(quote) ===
+                                        "PENDING_PAYMENT"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : getUserStatus(quote) === "ACCEPTED"
                                       ? "bg-green-100 text-green-800"
+                                      : getUserStatus(quote) === "REJECTED"
+                                      ? "bg-red-100 text-red-800"
+                                      : getUserStatus(quote) === "OFFER_SENT"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : getUserStatus(quote) === "CREATED"
+                                      ? "bg-gray-100 text-gray-800"
                                       : "bg-yellow-100 text-yellow-800"
                                   }`}
                                 >
-                                  {quote.is_rejected
-                                    ? t.rejected
-                                    : quote.is_processed
-                                    ? t.processed
-                                    : t.pending}
+                                  {isAdmin
+                                    ? getStatusDisplay(
+                                        quote.status || "CREATED"
+                                      )
+                                    : getUserStatus(quote) === "ACCEPTED"
+                                    ? language === "ar"
+                                      ? "مقبول"
+                                      : "Accepted"
+                                    : getUserStatus(quote) === "REJECTED"
+                                    ? language === "ar"
+                                      ? "مرفوض"
+                                      : "Rejected"
+                                    : getUserStatus(quote) === "OFFER_SENT"
+                                    ? language === "ar"
+                                      ? "تم إرسال العرض"
+                                      : "Offer Sent"
+                                    : getUserStatus(quote) === "CREATED"
+                                    ? language === "ar"
+                                      ? "تم الإنشاء"
+                                      : "Created"
+                                    : language === "ar"
+                                    ? "قيد الانتظار"
+                                    : "Pending"}
                                 </span>
                               </div>
                             </div>
@@ -859,47 +1011,63 @@ export default function DashboardPage() {
                               </button>
                               {isAdmin ? (
                                 <>
-                                  {/* Admin: Status change buttons */}
-                                  {!quote.is_processed && !quote.is_rejected ? (
-                                    <>
-                                      <button
-                                        onClick={() =>
-                                          handleApproveQuote(quote.id, true)
-                                        }
-                                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                                      >
-                                        {t.approve}
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleApproveQuote(quote.id, false)
-                                        }
-                                        className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
-                                      >
-                                        {t.reject}
-                                      </button>
-                                    </>
-                                  ) : quote.is_processed ? (
-                                    <button
-                                      onClick={() =>
-                                        handleApproveQuote(quote.id, false)
-                                      }
-                                      className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors"
-                                    >
-                                      {language === "ar"
-                                        ? "إلغاء الموافقة"
-                                        : "Unapprove"}
-                                    </button>
-                                  ) : quote.is_rejected ? (
-                                    <button
-                                      onClick={() =>
-                                        handleApproveQuote(quote.id, true)
-                                      }
-                                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                                    >
-                                      {t.approve}
-                                    </button>
-                                  ) : null}
+                                  {/* Admin: Status dropdown */}
+                                  <select
+                                    value={quote.status || "CREATED"}
+                                    onChange={(e) =>
+                                      handleStatusChange(
+                                        quote.id,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="px-4 py-2 text-sm font-medium text-primary-dark bg-white border-2 border-gray-300 rounded-lg hover:border-primary-yellow focus:border-primary-yellow focus:outline-none transition-colors"
+                                  >
+                                    <option value="CREATED">
+                                      {getStatusDisplay("CREATED")}
+                                    </option>
+                                    <option value="OFFER_SENT">
+                                      {getStatusDisplay("OFFER_SENT")}
+                                    </option>
+                                    <option value="PENDING_PAYMENT">
+                                      {getStatusDisplay("PENDING_PAYMENT")}
+                                    </option>
+                                    <option value="PENDING_PICKUP">
+                                      {getStatusDisplay("PENDING_PICKUP")}
+                                    </option>
+                                    <option value="IN_TRANSIT_TO_AXEL">
+                                      {getStatusDisplay("IN_TRANSIT_TO_AXEL")}
+                                    </option>
+                                    <option value="ARRIVED_AXEL">
+                                      {getStatusDisplay("ARRIVED_AXEL")}
+                                    </option>
+                                    <option value="SORTING_AXEL">
+                                      {getStatusDisplay("SORTING_AXEL")}
+                                    </option>
+                                    <option value="READY_FOR_EXPORT">
+                                      {getStatusDisplay("READY_FOR_EXPORT")}
+                                    </option>
+                                    <option value="IN_TRANSIT_TO_SYRIA">
+                                      {getStatusDisplay("IN_TRANSIT_TO_SYRIA")}
+                                    </option>
+                                    <option value="ARRIVED_SYRIA">
+                                      {getStatusDisplay("ARRIVED_SYRIA")}
+                                    </option>
+                                    <option value="SYRIA_SORTING">
+                                      {getStatusDisplay("SYRIA_SORTING")}
+                                    </option>
+                                    <option value="READY_FOR_DELIVERY">
+                                      {getStatusDisplay("READY_FOR_DELIVERY")}
+                                    </option>
+                                    <option value="OUT_FOR_DELIVERY">
+                                      {getStatusDisplay("OUT_FOR_DELIVERY")}
+                                    </option>
+                                    <option value="DELIVERED">
+                                      {getStatusDisplay("DELIVERED")}
+                                    </option>
+                                    <option value="CANCELLED">
+                                      {getStatusDisplay("CANCELLED")}
+                                    </option>
+                                  </select>
                                   {/* Admin: Delete button */}
                                   <button
                                     onClick={() => setDeleteConfirm(quote.id)}
@@ -1045,6 +1213,64 @@ export default function DashboardPage() {
                                   </div>
                                 )}
                               </div>
+
+                              {/* Offer Message (for users) */}
+                              {!isAdmin &&
+                                quote.status === "OFFER_SENT" &&
+                                quote.offer_message && (
+                                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-4">
+                                    <h4 className="font-bold text-blue-900 mb-2">
+                                      {language === "ar"
+                                        ? "رسالة العرض"
+                                        : "Offer Message"}
+                                    </h4>
+                                    <p className="text-sm text-blue-800 mb-4 whitespace-pre-wrap">
+                                      {quote.offer_message}
+                                    </p>
+                                    {quote.user_response === "PENDING" && (
+                                      <div className="flex gap-3">
+                                        <button
+                                          onClick={() =>
+                                            handleRespondToOffer(
+                                              quote.id,
+                                              "ACCEPTED"
+                                            )
+                                          }
+                                          className="px-6 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                                        >
+                                          {language === "ar"
+                                            ? "قبول"
+                                            : "Accept"}
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleRespondToOffer(
+                                              quote.id,
+                                              "REJECTED"
+                                            )
+                                          }
+                                          className="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                        >
+                                          {language === "ar" ? "رفض" : "Reject"}
+                                        </button>
+                                      </div>
+                                    )}
+                                    {quote.user_response === "ACCEPTED" && (
+                                      <p className="text-sm font-semibold text-green-700">
+                                        {language === "ar"
+                                          ? "✓ تم قبول العرض"
+                                          : "✓ Offer Accepted"}
+                                      </p>
+                                    )}
+                                    {quote.user_response === "REJECTED" && (
+                                      <p className="text-sm font-semibold text-red-700">
+                                        {language === "ar"
+                                          ? "✗ تم رفض العرض"
+                                          : "✗ Offer Rejected"}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
 
                               {/* Customer & Services */}
                               <div className="space-y-3">

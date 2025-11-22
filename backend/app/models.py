@@ -126,6 +126,15 @@ class FCLQuote(models.Model):
     # Terms
     accepted_terms = models.BooleanField(default=False, verbose_name="Accepted Terms")
 
+    # Quote Number
+    quote_number = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Quote Number",
+        unique=True,
+    )
+
     # User (link to authenticated user)
     user = models.ForeignKey(
         User,
@@ -153,9 +162,56 @@ class FCLQuote(models.Model):
     )
 
     # Status
+    STATUS_CHOICES = [
+        ("CREATED", "Created"),
+        ("OFFER_SENT", "Offer Sent"),
+        ("PENDING_PAYMENT", "Pending Payment"),
+        ("PENDING_PICKUP", "Pending Pickup"),
+        ("IN_TRANSIT_TO_AXEL", "In Transit to Axel"),
+        ("ARRIVED_AXEL", "Arrived Axel"),
+        ("SORTING_AXEL", "Sorting Axel"),
+        ("READY_FOR_EXPORT", "Ready for Export"),
+        ("IN_TRANSIT_TO_SYRIA", "In Transit to Syria"),
+        ("ARRIVED_SYRIA", "Arrived Syria"),
+        ("SYRIA_SORTING", "Syria Sorting"),
+        ("READY_FOR_DELIVERY", "Ready for Delivery"),
+        ("OUT_FOR_DELIVERY", "Out for Delivery"),
+        ("DELIVERED", "Delivered"),
+        ("CANCELLED", "Cancelled"),
+    ]
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
-    is_processed = models.BooleanField(default=False, verbose_name="Is Processed")
-    is_rejected = models.BooleanField(default=False, verbose_name="Is Rejected")
+    status = models.CharField(
+        max_length=50,
+        choices=STATUS_CHOICES,
+        default="CREATED",
+        verbose_name="Status",
+    )
+
+    # Offer and User Response
+    USER_RESPONSE_CHOICES = [
+        ("PENDING", "Pending"),
+        ("ACCEPTED", "Accepted"),
+        ("REJECTED", "Rejected"),
+    ]
+
+    offer_message = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Offer Message",
+        help_text="Message sent to user with the offer",
+    )
+    offer_sent_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Offer Sent At",
+    )
+    user_response = models.CharField(
+        max_length=20,
+        choices=USER_RESPONSE_CHOICES,
+        default="PENDING",
+        verbose_name="User Response",
+    )
 
     class Meta:
         verbose_name = "FCL Quote"

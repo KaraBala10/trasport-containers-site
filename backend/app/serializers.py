@@ -54,7 +54,16 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "date_joined", "is_superuser", "is_staff")
+        fields = (
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "date_joined",
+            "is_superuser",
+            "is_staff",
+        )
         read_only_fields = ("id", "date_joined")
 
 
@@ -116,6 +125,7 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
             "user",
+            "offer_sent_at",
         )
         depth = 1  # Include user details in nested format
 
@@ -256,6 +266,10 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
             )
 
         # Create the quote instance with user
+        # Ensure status is CREATED if not provided
+        if "status" not in validated_data:
+            validated_data["status"] = "CREATED"
+
         fcl_quote = FCLQuote.objects.create(
             **validated_data,
             user=user,

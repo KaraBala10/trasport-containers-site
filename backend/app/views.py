@@ -1,5 +1,6 @@
 import logging
 import traceback
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import authenticate
@@ -192,12 +193,100 @@ class FCLQuoteView(generics.CreateAPIView):
 
         quote_id = response.data.get("id")
 
+        # Generate quote number in format: MF-{ORIGIN}-{DEST}-FCL-{YEAR}-{COUNTER}
+        quote_number = None
+        if quote_id is not None:
+            try:
+                # Get the quote object to access origin and destination countries
+                quote = FCLQuote.objects.get(id=quote_id)
+
+                # Helper function to get country code
+                def get_country_code(country_name):
+                    """Convert country name to 2-letter code"""
+                    if not country_name:
+                        return "XX"
+
+                    country_name_upper = country_name.upper().strip()
+
+                    # Common country mappings
+                    country_map = {
+                        # European countries
+                        "ROMANIA": "RO",
+                        "IRELAND": "IE",
+                        "GERMANY": "DE",
+                        "FRANCE": "FR",
+                        "ITALY": "IT",
+                        "SPAIN": "ES",
+                        "NETHERLANDS": "NL",
+                        "BELGIUM": "BE",
+                        "POLAND": "PL",
+                        "GREECE": "GR",
+                        "PORTUGAL": "PT",
+                        "AUSTRIA": "AT",
+                        "SWEDEN": "SE",
+                        "DENMARK": "DK",
+                        "FINLAND": "FI",
+                        "EUROPE": "EU",
+                        "EU": "EU",
+                        # Middle East
+                        "SYRIA": "SY",
+                        "LEBANON": "LB",
+                        "JORDAN": "JO",
+                        "TURKEY": "TR",
+                        "EGYPT": "EG",
+                        "SAUDI ARABIA": "SA",
+                        "UAE": "AE",
+                        "UNITED ARAB EMIRATES": "AE",
+                        # If already a 2-letter code, return as is
+                    }
+
+                    # Check if it's already a 2-letter code
+                    if len(country_name_upper) == 2:
+                        return country_name_upper
+
+                    # Check mapping
+                    if country_name_upper in country_map:
+                        return country_map[country_name_upper]
+
+                    # Try to extract first 2 letters if it's a common pattern
+                    # Otherwise return first 2 letters of the country name
+                    return (
+                        country_name_upper[:2] if len(country_name_upper) >= 2 else "XX"
+                    )
+
+                origin_code = get_country_code(quote.origin_country)
+                dest_code = get_country_code(quote.destination_country)
+                current_year = (
+                    quote.created_at.year if quote.created_at else datetime.now().year
+                )
+                counter = quote_id
+
+                quote_number = (
+                    f"MF-{origin_code}-{dest_code}-FCL-{current_year}-{counter:05d}"
+                )
+
+                # Save quote number to database
+                quote.quote_number = quote_number
+                quote.save(update_fields=["quote_number"])
+
+            except Exception as e:
+                logger.error(f"Error generating quote number: {str(e)}")
+                # Fallback to simple format
+                quote_number = f"FCL-{quote_id:06d}" if quote_id is not None else None
+                if quote_number and quote_id:
+                    try:
+                        quote = FCLQuote.objects.get(id=quote_id)
+                        quote.quote_number = quote_number
+                        quote.save(update_fields=["quote_number"])
+                    except Exception:
+                        pass
+
         return Response(
             {
                 "success": True,
                 "message": "Your FCL quote request has been submitted successfully. We will contact you soon.",
                 "id": quote_id,
-                "quote_number": f"FCL-{quote_id:06d}" if quote_id is not None else None,
+                "quote_number": quote_number,
             },
             status=response.status_code,
         )
@@ -388,32 +477,59 @@ def calculate_pricing_view(request):
         )
 
 
-@api_view(["POST"])
+@api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
-def approve_fcl_quote_view(request, pk):
-    """API endpoint for admin to approve/reject FCL quotes"""
+def update_fcl_quote_status_view(request, pk):
+    """API endpoint for admin to update FCL quote status"""
     if not request.user.is_superuser:
         return Response(
-            {"success": False, "error": "Only superusers can approve quotes."},
+            {"success": False, "error": "Only superusers can update quote status."},
             status=status.HTTP_403_FORBIDDEN,
         )
 
     try:
         quote = FCLQuote.objects.get(pk=pk)
-        is_approved = request.data.get("is_approved", True)
+        new_status = request.data.get("status")
+        offer_message = request.data.get("offer_message", "")
 
-        if is_approved:
-            quote.is_processed = True
-            quote.is_rejected = False
-        else:
-            quote.is_processed = False
-            quote.is_rejected = True
+        if not new_status:
+            return Response(
+                {"success": False, "error": "Status is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate status
+        valid_statuses = [choice[0] for choice in FCLQuote.STATUS_CHOICES]
+        if new_status not in valid_statuses:
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Invalid status. Valid statuses are: {', '.join(valid_statuses)}",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        quote.status = new_status
+
+        # If status is OFFER_SENT, save message and timestamp
+        if new_status == "OFFER_SENT" and offer_message:
+            quote.offer_message = offer_message
+            from django.utils import timezone
+
+            quote.offer_sent_at = timezone.now()
+            quote.user_response = (
+                "PENDING"  # Reset user response when new offer is sent
+            )
+
         quote.save()
+
+        # Get status display name
+        status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status, new_status)
 
         return Response(
             {
                 "success": True,
-                "message": f"FCL quote {'approved' if is_approved else 'rejected'} successfully.",
+                "message": f"FCL quote status updated to {status_display} successfully.",
                 "data": FCLQuoteSerializer(quote).data,
             },
             status=status.HTTP_200_OK,
@@ -425,7 +541,76 @@ def approve_fcl_quote_view(request, pk):
         )
     except Exception as e:
         logger = logging.getLogger(__name__)
-        logger.error(f"Error approving quote: {str(e)}")
+        logger.error(f"Error updating quote status: {str(e)}")
+        return Response(
+            {
+                "success": False,
+                "error": "An error occurred while processing the request.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def respond_to_offer_view(request, pk):
+    """API endpoint for users to accept or reject an offer"""
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+
+        # Check if user owns this quote
+        if quote.user != request.user:
+            return Response(
+                {"success": False, "error": "You can only respond to your own quotes."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Check if offer has been sent
+        if quote.status != "OFFER_SENT" or not quote.offer_message:
+            return Response(
+                {
+                    "success": False,
+                    "error": "No offer has been sent for this quote yet.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_response = request.data.get("user_response")
+
+        if user_response not in ["ACCEPTED", "REJECTED"]:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Invalid response. Must be 'ACCEPTED' or 'REJECTED'.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        quote.user_response = user_response
+
+        # If user accepts, change status to PENDING_PAYMENT
+        if user_response == "ACCEPTED":
+            quote.status = "PENDING_PAYMENT"
+        # If user rejects, keep status as OFFER_SENT but mark as rejected
+
+        quote.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Offer {user_response.lower()} successfully.",
+                "data": FCLQuoteSerializer(quote).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "FCL quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error responding to offer: {str(e)}")
         return Response(
             {
                 "success": False,

@@ -30,10 +30,10 @@ class FCLQuoteAdmin(admin.ModelAdmin):
         "container_type",
         "number_of_containers",
         "created_at",
-        "is_processed",
+        "status",
     )
     list_filter = (
-        "is_processed",
+        "status",
         "container_type",
         "usage_type",
         "created_at",
@@ -103,7 +103,8 @@ class FCLQuoteAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "user",
-                    "is_processed",
+                    "status",
+                    "quote_number",
                     "created_at",
                 )
             },

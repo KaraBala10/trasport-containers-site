@@ -10,11 +10,12 @@ from .views import (
     LoginView,
     RegisterView,
     UserProfileView,
-    approve_fcl_quote_view,
     calculate_cbm_view,
     calculate_pricing_view,
     current_user_view,
     logout_view,
+    respond_to_offer_view,
+    update_fcl_quote_status_view,
 )
 
 app_name = "app"
@@ -35,7 +36,14 @@ urlpatterns = [
     path("fcl/quote/", FCLQuoteView.as_view(), name="fcl_quote"),
     path("fcl/quotes/", FCLQuoteListView.as_view(), name="fcl_quote_list"),
     path(
-        "fcl/quotes/<int:pk>/approve/", approve_fcl_quote_view, name="fcl_quote_approve"
+        "fcl/quotes/<int:pk>/status/",
+        update_fcl_quote_status_view,
+        name="fcl_quote_status",
+    ),
+    path(
+        "fcl/quotes/<int:pk>/respond/",
+        respond_to_offer_view,
+        name="fcl_quote_respond",
     ),
     path("fcl/quotes/<int:pk>/", FCLQuoteDetailView.as_view(), name="fcl_quote_detail"),
     # Utility endpoints
