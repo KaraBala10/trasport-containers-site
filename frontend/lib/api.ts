@@ -169,8 +169,8 @@ export const apiService = {
   },
 
   updateFCLQuoteStatus: (id: number, status: string, offerMessage?: string) => {
-    return apiClient.patch(`/fcl/quotes/${id}/`, {
-      is_processed: status === 'processed',
+    return apiClient.patch(`/fcl/quotes/${id}/status/`, {
+      status: status,
       offer_message: offerMessage || '',
     });
   },
