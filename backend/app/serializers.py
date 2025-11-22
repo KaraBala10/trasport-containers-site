@@ -187,8 +187,9 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data_dict)
 
     def validate_accepted_terms(self, value):
-        """Validate that terms are accepted"""
-        if not value:
+        """Validate that terms are accepted (only on create, not on update)"""
+        # Only validate on create, not on partial updates
+        if self.instance is None and not value:
             raise serializers.ValidationError(
                 "You must accept the terms and conditions."
             )

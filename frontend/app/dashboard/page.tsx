@@ -13,10 +13,45 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 interface FCLQuote {
   id: number;
   quote_number?: string;
+  // Route Details
+  origin_country: string;
+  origin_city: string;
+  origin_zip?: string;
   port_of_loading: string;
+  destination_country: string;
+  destination_city: string;
   port_of_discharge: string;
+  // Container Details
   container_type: string;
   number_of_containers: number;
+  cargo_ready_date: string;
+  // Cargo Details
+  commodity_type: string;
+  usage_type: string;
+  total_weight: string | number;
+  total_volume: string | number;
+  cargo_value: string | number;
+  is_dangerous: boolean;
+  un_number?: string;
+  dangerous_class?: string;
+  // Additional Services
+  pickup_required: boolean;
+  pickup_address?: string;
+  forklift_available: boolean;
+  eu_export_clearance: boolean;
+  cargo_insurance: boolean;
+  on_carriage: boolean;
+  // Customer Details
+  full_name: string;
+  company_name?: string;
+  country: string;
+  phone: string;
+  email: string;
+  preferred_contact: string;
+  // Files
+  packing_list?: string;
+  photos?: string;
+  // Status
   total_price: number | null;
   price_per_container: number | null;
   is_processed: boolean;
@@ -29,6 +64,9 @@ export default function DashboardPage() {
   const router = useRouter();
   const [fclQuotes, setFclQuotes] = useState<FCLQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
+  const [expandedQuotes, setExpandedQuotes] = useState<Set<number>>(new Set());
+  const [editingQuote, setEditingQuote] = useState<FCLQuote | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   const translations = useMemo(
     () => ({
@@ -66,6 +104,37 @@ export default function DashboardPage() {
         pending: "قيد الانتظار",
         processed: "تمت المعالجة",
         viewDetails: "عرض التفاصيل",
+        edit: "تعديل",
+        delete: "حذف",
+        expand: "عرض التفاصيل",
+        collapse: "إخفاء التفاصيل",
+        origin: "من",
+        destination: "إلى",
+        cargoReadyDate: "تاريخ جاهزية الشحنة",
+        commodityType: "نوع البضاعة",
+        usageType: "نوع الاستخدام",
+        totalWeight: "الوزن الإجمالي (كجم)",
+        totalVolume: "الحجم الإجمالي (م³)",
+        cargoValue: "قيمة الشحنة (يورو)",
+        dangerousGoods: "بضائع خطرة",
+        unNumber: "رقم UN",
+        dangerousClass: "فئة الخطورة",
+        pickupRequired: "مطلوب استلام",
+        pickupAddress: "عنوان الاستلام",
+        forkliftAvailable: "رافعة شوكية متاحة",
+        euExportClearance: "إخلاء تصدير الاتحاد الأوروبي",
+        cargoInsurance: "تأمين الشحنة",
+        onCarriage: "نقل داخلي",
+        customerDetails: "تفاصيل العميل",
+        fullName: "الاسم الكامل",
+        companyName: "اسم الشركة",
+        phone: "الهاتف",
+        preferredContact: "طريقة الاتصال المفضلة",
+        deleteConfirm: "هل أنت متأكد من حذف هذا الطلب؟",
+        deleteSuccess: "تم حذف الطلب بنجاح",
+        updateSuccess: "تم تحديث الطلب بنجاح",
+        error: "حدث خطأ",
+        actions: "الإجراءات",
       },
       en: {
         dashboard: "Dashboard",
@@ -101,6 +170,37 @@ export default function DashboardPage() {
         pending: "Pending",
         processed: "Processed",
         viewDetails: "View Details",
+        edit: "Edit",
+        delete: "Delete",
+        expand: "View Details",
+        collapse: "Hide Details",
+        origin: "From",
+        destination: "To",
+        cargoReadyDate: "Cargo Ready Date",
+        commodityType: "Commodity Type",
+        usageType: "Usage Type",
+        totalWeight: "Total Weight (KG)",
+        totalVolume: "Total Volume (CBM)",
+        cargoValue: "Cargo Value (EUR)",
+        dangerousGoods: "Dangerous Goods",
+        unNumber: "UN Number",
+        dangerousClass: "Dangerous Class",
+        pickupRequired: "Pickup Required",
+        pickupAddress: "Pickup Address",
+        forkliftAvailable: "Forklift Available",
+        euExportClearance: "EU Export Clearance",
+        cargoInsurance: "Cargo Insurance",
+        onCarriage: "On-carriage",
+        customerDetails: "Customer Details",
+        fullName: "Full Name",
+        companyName: "Company Name",
+        phone: "Phone",
+        preferredContact: "Preferred Contact",
+        deleteConfirm: "Are you sure you want to delete this quote?",
+        deleteSuccess: "Quote deleted successfully",
+        updateSuccess: "Quote updated successfully",
+        error: "An error occurred",
+        actions: "Actions",
       },
     }),
     []
@@ -138,6 +238,122 @@ export default function DashboardPage() {
 
     fetchFCLQuotes();
   }, [isAuthenticated, mounted, router]);
+
+  // Toggle quote expansion
+  const toggleQuote = (quoteId: number) => {
+    setExpandedQuotes((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(quoteId)) {
+        newSet.delete(quoteId);
+      } else {
+        newSet.add(quoteId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle delete
+  const handleDelete = async (quoteId: number) => {
+    try {
+      await apiService.deleteFCLQuote(quoteId);
+      setFclQuotes((prev) => prev.filter((q) => q.id !== quoteId));
+      setDeleteConfirm(null);
+      alert(t.deleteSuccess);
+    } catch (error: any) {
+      console.error("Error deleting quote:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // Handle edit - open edit modal
+  const handleEdit = (quote: FCLQuote) => {
+    setEditingQuote(quote);
+  };
+
+  // Handle save edit
+  const handleSaveEdit = async () => {
+    if (!editingQuote) return;
+
+    try {
+      const formData = new FormData();
+
+      // Route Details
+      formData.append("origin_country", editingQuote.origin_country);
+      formData.append("origin_city", editingQuote.origin_city);
+      if (editingQuote.origin_zip)
+        formData.append("origin_zip", editingQuote.origin_zip);
+      formData.append("port_of_loading", editingQuote.port_of_loading);
+      formData.append("destination_country", editingQuote.destination_country);
+      formData.append("destination_city", editingQuote.destination_city);
+      formData.append("port_of_discharge", editingQuote.port_of_discharge);
+
+      // Container Details
+      formData.append("container_type", editingQuote.container_type);
+      formData.append(
+        "number_of_containers",
+        editingQuote.number_of_containers.toString()
+      );
+      formData.append("cargo_ready_date", editingQuote.cargo_ready_date);
+
+      // Cargo Details
+      formData.append("commodity_type", editingQuote.commodity_type);
+      formData.append("usage_type", editingQuote.usage_type);
+      formData.append("total_weight", editingQuote.total_weight.toString());
+      formData.append("total_volume", editingQuote.total_volume.toString());
+      formData.append("cargo_value", editingQuote.cargo_value.toString());
+      formData.append("is_dangerous", editingQuote.is_dangerous.toString());
+      if (editingQuote.un_number)
+        formData.append("un_number", editingQuote.un_number);
+      if (editingQuote.dangerous_class)
+        formData.append("dangerous_class", editingQuote.dangerous_class);
+
+      // Additional Services
+      formData.append(
+        "pickup_required",
+        editingQuote.pickup_required.toString()
+      );
+      if (editingQuote.pickup_address)
+        formData.append("pickup_address", editingQuote.pickup_address);
+      formData.append(
+        "forklift_available",
+        editingQuote.forklift_available.toString()
+      );
+      formData.append(
+        "eu_export_clearance",
+        editingQuote.eu_export_clearance.toString()
+      );
+      formData.append(
+        "cargo_insurance",
+        editingQuote.cargo_insurance.toString()
+      );
+      formData.append("on_carriage", editingQuote.on_carriage.toString());
+
+      // Customer Details
+      formData.append("full_name", editingQuote.full_name);
+      if (editingQuote.company_name)
+        formData.append("company_name", editingQuote.company_name);
+      formData.append("country", editingQuote.country);
+      formData.append("phone", editingQuote.phone);
+      formData.append("email", editingQuote.email);
+      formData.append("preferred_contact", editingQuote.preferred_contact);
+
+      const response = await apiService.updateFCLQuote(
+        editingQuote.id,
+        formData
+      );
+
+      // Refresh quotes list to get updated data
+      const quotesResponse = await apiService.getFCLQuotes();
+      const quotes = quotesResponse.data?.results || quotesResponse.data || [];
+      setFclQuotes(Array.isArray(quotes) ? quotes : []);
+
+      setEditingQuote(null);
+      alert(t.updateSuccess);
+    } catch (error: any) {
+      console.error("Error updating quote:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    }
+  };
 
   // Early return with static text to prevent hydration mismatch
   if (!mounted || loading) {
@@ -442,101 +658,920 @@ export default function DashboardPage() {
                   </Link>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {t.quoteNumber}
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {t.route}
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {t.containerType}
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {t.containers}
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {t.price}
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {t.status}
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {t.date}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {fclQuotes.map((quote) => (
-                          <tr
-                            key={quote.id}
-                            className="hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm font-medium text-primary-dark">
-                                {quote.quote_number ||
-                                  `FCL-${quote.id.toString().padStart(6, "0")}`}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-gray-900">
-                                {quote.port_of_loading} →{" "}
-                                {quote.port_of_discharge}
+                <div className="space-y-4">
+                  {fclQuotes.map((quote) => {
+                    const isExpanded = expandedQuotes.has(quote.id);
+                    return (
+                      <div
+                        key={quote.id}
+                        className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-100 hover:border-primary-yellow transition-all"
+                      >
+                        {/* Summary Row */}
+                        <div className="p-6">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  {t.quoteNumber}
+                                </p>
+                                <p className="font-semibold text-primary-dark">
+                                  {quote.quote_number ||
+                                    `FCL-${quote.id
+                                      .toString()
+                                      .padStart(6, "0")}`}
+                                </p>
                               </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-gray-700">
-                                {quote.container_type}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-gray-700">
-                                {quote.number_of_containers}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {quote.total_price ? (
-                                <span className="text-sm font-semibold text-primary-dark">
-                                  €
-                                  {parseFloat(
-                                    quote.total_price.toString()
-                                  ).toFixed(2)}
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  {t.route}
+                                </p>
+                                <p className="text-sm text-gray-900">
+                                  {quote.port_of_loading} →{" "}
+                                  {quote.port_of_discharge}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  {t.containerType}
+                                </p>
+                                <p className="text-sm text-gray-700">
+                                  {quote.container_type} (
+                                  {quote.number_of_containers} {t.containers})
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  {t.status}
+                                </p>
+                                <span
+                                  className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                                    quote.is_processed
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-yellow-100 text-yellow-800"
+                                  }`}
+                                >
+                                  {quote.is_processed ? t.processed : t.pending}
                                 </span>
-                              ) : (
-                                <span className="text-sm text-gray-400 italic">
-                                  {language === "ar" ? "قيد الحساب" : "Pending"}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                                  quote.is_processed
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-yellow-100 text-yellow-800"
-                                }`}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleQuote(quote.id)}
+                                className="px-4 py-2 text-sm font-medium text-primary-dark bg-primary-yellow/10 hover:bg-primary-yellow/20 rounded-lg transition-colors"
                               >
-                                {quote.is_processed ? t.processed : t.pending}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(quote.created_at).toLocaleDateString(
-                                language === "ar" ? "ar-SA" : "en-US",
-                                {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
+                                {isExpanded ? t.collapse : t.expand}
+                              </button>
+                              <button
+                                onClick={() => handleEdit(quote)}
+                                className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                              >
+                                {t.edit}
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(quote.id)}
+                                className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                              >
+                                {t.delete}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expanded Details */}
+                        {isExpanded && (
+                          <div className="border-t border-gray-200 p-6 bg-gray-50">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {/* Route Details */}
+                              <div className="space-y-3">
+                                <h4 className="font-bold text-primary-dark text-lg mb-3">
+                                  {t.route}
+                                </h4>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.origin}
+                                  </p>
+                                  <p className="text-sm text-gray-900">
+                                    {quote.origin_city}, {quote.origin_country}
+                                    {quote.origin_zip &&
+                                      ` (${quote.origin_zip})`}
+                                  </p>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    POL: {quote.port_of_loading}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.destination}
+                                  </p>
+                                  <p className="text-sm text-gray-900">
+                                    {quote.destination_city},{" "}
+                                    {quote.destination_country}
+                                  </p>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    POD: {quote.port_of_discharge}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Cargo Details */}
+                              <div className="space-y-3">
+                                <h4 className="font-bold text-primary-dark text-lg mb-3">
+                                  {language === "ar"
+                                    ? "تفاصيل الشحنة"
+                                    : "Cargo Details"}
+                                </h4>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.commodityType}
+                                  </p>
+                                  <p className="text-sm text-gray-900">
+                                    {quote.commodity_type}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.usageType}
+                                  </p>
+                                  <p className="text-sm text-gray-900 capitalize">
+                                    {quote.usage_type}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.cargoReadyDate}
+                                  </p>
+                                  <p className="text-sm text-gray-900">
+                                    {new Date(
+                                      quote.cargo_ready_date
+                                    ).toLocaleDateString(
+                                      language === "ar" ? "ar-SA" : "en-US"
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">
+                                      {t.totalWeight}
+                                    </p>
+                                    <p className="text-sm text-gray-900">
+                                      {quote.total_weight} kg
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">
+                                      {t.totalVolume}
+                                    </p>
+                                    <p className="text-sm text-gray-900">
+                                      {quote.total_volume} m³
+                                    </p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.cargoValue}
+                                  </p>
+                                  <p className="text-sm text-gray-900">
+                                    €{quote.cargo_value}
+                                  </p>
+                                </div>
+                                {quote.is_dangerous && (
+                                  <div className="bg-red-50 p-3 rounded-lg">
+                                    <p className="text-xs font-semibold text-red-800 mb-1">
+                                      {t.dangerousGoods}
+                                    </p>
+                                    {quote.un_number && (
+                                      <p className="text-xs text-red-700">
+                                        {t.unNumber}: {quote.un_number}
+                                      </p>
+                                    )}
+                                    {quote.dangerous_class && (
+                                      <p className="text-xs text-red-700">
+                                        {t.dangerousClass}:{" "}
+                                        {quote.dangerous_class}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Customer & Services */}
+                              <div className="space-y-3">
+                                <h4 className="font-bold text-primary-dark text-lg mb-3">
+                                  {t.customerDetails}
+                                </h4>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.fullName}
+                                  </p>
+                                  <p className="text-sm text-gray-900">
+                                    {quote.full_name}
+                                  </p>
+                                </div>
+                                {quote.company_name && (
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">
+                                      {t.companyName}
+                                    </p>
+                                    <p className="text-sm text-gray-900">
+                                      {quote.company_name}
+                                    </p>
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.email}
+                                  </p>
+                                  <p className="text-sm text-gray-900">
+                                    {quote.email}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.phone}
+                                  </p>
+                                  <p className="text-sm text-gray-900">
+                                    {quote.phone}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.preferredContact}
+                                  </p>
+                                  <p className="text-sm text-gray-900 capitalize">
+                                    {quote.preferred_contact}
+                                  </p>
+                                </div>
+
+                                {/* Additional Services */}
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                  <p className="text-xs font-semibold text-gray-700 mb-2">
+                                    {language === "ar"
+                                      ? "خدمات إضافية"
+                                      : "Additional Services"}
+                                  </p>
+                                  <div className="space-y-1 text-xs text-gray-600">
+                                    {quote.pickup_required && (
+                                      <p>✓ {t.pickupRequired}</p>
+                                    )}
+                                    {quote.forklift_available && (
+                                      <p>✓ {t.forkliftAvailable}</p>
+                                    )}
+                                    {quote.eu_export_clearance && (
+                                      <p>✓ {t.euExportClearance}</p>
+                                    )}
+                                    {quote.cargo_insurance && (
+                                      <p>✓ {t.cargoInsurance}</p>
+                                    )}
+                                    {quote.on_carriage && (
+                                      <p>✓ {t.onCarriage}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Price Info */}
+                            {quote.total_price && (
+                              <div className="mt-6 pt-6 border-t border-gray-200">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-semibold text-gray-700">
+                                    {t.price}:
+                                  </span>
+                                  <span className="text-lg font-bold text-primary-dark">
+                                    €
+                                    {parseFloat(
+                                      quote.total_price.toString()
+                                    ).toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Edit Modal */}
+              {editingQuote && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                  <div className="bg-white rounded-xl p-6 max-w-4xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-2xl font-bold text-primary-dark">
+                        {t.edit} {t.quoteNumber}:{" "}
+                        {editingQuote.quote_number ||
+                          `FCL-${editingQuote.id.toString().padStart(6, "0")}`}
+                      </h3>
+                      <button
+                        onClick={() => setEditingQuote(null)}
+                        className="text-gray-500 hover:text-gray-700 text-2xl"
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* Route Details */}
+                      <div className="border-b pb-4">
+                        <h4 className="font-bold text-primary-dark mb-4">
+                          {t.route}
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.origin}{" "}
+                              {language === "ar" ? "البلد" : "Country"}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.origin_country}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  origin_country: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.origin}{" "}
+                              {language === "ar" ? "المدينة" : "City"}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.origin_city}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  origin_city: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {language === "ar" ? "رمز بريدي" : "ZIP Code"}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.origin_zip || ""}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  origin_zip: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {language === "ar"
+                                ? "ميناء التحميل"
+                                : "Port of Loading"}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.port_of_loading}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  port_of_loading: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.destination}{" "}
+                              {language === "ar" ? "البلد" : "Country"}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.destination_country}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  destination_country: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.destination}{" "}
+                              {language === "ar" ? "المدينة" : "City"}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.destination_city}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  destination_city: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {language === "ar"
+                                ? "ميناء التفريغ"
+                                : "Port of Discharge"}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.port_of_discharge}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  port_of_discharge: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Container & Cargo Details */}
+                      <div className="border-b pb-4">
+                        <h4 className="font-bold text-primary-dark mb-4">
+                          {language === "ar"
+                            ? "تفاصيل الحاوية والشحنة"
+                            : "Container & Cargo Details"}
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.containerType}
+                            </label>
+                            <select
+                              value={editingQuote.container_type}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  container_type: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            >
+                              <option value="20DV">20DV - 20ft Dry Van</option>
+                              <option value="40DV">40DV - 40ft Dry Van</option>
+                              <option value="40HC">
+                                40HC - 40ft High Cube
+                              </option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.containers}
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={editingQuote.number_of_containers}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  number_of_containers:
+                                    parseInt(e.target.value) || 1,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.cargoReadyDate}
+                            </label>
+                            <input
+                              type="date"
+                              value={editingQuote.cargo_ready_date}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  cargo_ready_date: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.commodityType}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.commodity_type}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  commodity_type: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.usageType}
+                            </label>
+                            <select
+                              value={editingQuote.usage_type}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  usage_type: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            >
+                              <option value="commercial">
+                                {language === "ar" ? "تجاري" : "Commercial"}
+                              </option>
+                              <option value="personal">
+                                {language === "ar" ? "شخصي" : "Personal"}
+                              </option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.totalWeight}
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editingQuote.total_weight}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  total_weight: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.totalVolume}
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editingQuote.total_volume}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  total_volume: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.cargoValue}
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editingQuote.cargo_value}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  cargo_value: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={editingQuote.is_dangerous}
+                                onChange={(e) =>
+                                  setEditingQuote({
+                                    ...editingQuote,
+                                    is_dangerous: e.target.checked,
+                                  })
                                 }
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                                className="w-4 h-4 text-primary-yellow border-gray-300 rounded focus:ring-primary-yellow"
+                              />
+                              <span className="text-sm font-medium text-gray-700">
+                                {t.dangerousGoods}
+                              </span>
+                            </label>
+                            {editingQuote.is_dangerous && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {t.unNumber}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editingQuote.un_number || ""}
+                                    onChange={(e) =>
+                                      setEditingQuote({
+                                        ...editingQuote,
+                                        un_number: e.target.value,
+                                      })
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {t.dangerousClass}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editingQuote.dangerous_class || ""}
+                                    onChange={(e) =>
+                                      setEditingQuote({
+                                        ...editingQuote,
+                                        dangerous_class: e.target.value,
+                                      })
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Customer Details */}
+                      <div className="border-b pb-4">
+                        <h4 className="font-bold text-primary-dark mb-4">
+                          {t.customerDetails}
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.fullName}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.full_name}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  full_name: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.companyName}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.company_name || ""}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  company_name: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.email}
+                            </label>
+                            <input
+                              type="email"
+                              value={editingQuote.email}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  email: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.phone}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.phone}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  phone: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {language === "ar" ? "البلد" : "Country"}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingQuote.country}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  country: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              {t.preferredContact}
+                            </label>
+                            <select
+                              value={editingQuote.preferred_contact}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  preferred_contact: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            >
+                              <option value="whatsapp">WhatsApp</option>
+                              <option value="email">Email</option>
+                              <option value="phone">
+                                {language === "ar" ? "هاتف" : "Phone"}
+                              </option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional Services */}
+                      <div className="border-b pb-4">
+                        <h4 className="font-bold text-primary-dark mb-4">
+                          {language === "ar"
+                            ? "خدمات إضافية"
+                            : "Additional Services"}
+                        </h4>
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={editingQuote.pickup_required}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  pickup_required: e.target.checked,
+                                })
+                              }
+                              className="w-4 h-4 text-primary-yellow border-gray-300 rounded focus:ring-primary-yellow"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              {t.pickupRequired}
+                            </span>
+                          </label>
+                          {editingQuote.pickup_required && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {t.pickupAddress}
+                              </label>
+                              <textarea
+                                value={editingQuote.pickup_address || ""}
+                                onChange={(e) =>
+                                  setEditingQuote({
+                                    ...editingQuote,
+                                    pickup_address: e.target.value,
+                                  })
+                                }
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                              />
+                            </div>
+                          )}
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={editingQuote.forklift_available}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  forklift_available: e.target.checked,
+                                })
+                              }
+                              className="w-4 h-4 text-primary-yellow border-gray-300 rounded focus:ring-primary-yellow"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              {t.forkliftAvailable}
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={editingQuote.eu_export_clearance}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  eu_export_clearance: e.target.checked,
+                                })
+                              }
+                              className="w-4 h-4 text-primary-yellow border-gray-300 rounded focus:ring-primary-yellow"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              {t.euExportClearance}
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={editingQuote.cargo_insurance}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  cargo_insurance: e.target.checked,
+                                })
+                              }
+                              className="w-4 h-4 text-primary-yellow border-gray-300 rounded focus:ring-primary-yellow"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              {t.cargoInsurance}
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={editingQuote.on_carriage}
+                              onChange={(e) =>
+                                setEditingQuote({
+                                  ...editingQuote,
+                                  on_carriage: e.target.checked,
+                                })
+                              }
+                              className="w-4 h-4 text-primary-yellow border-gray-300 rounded focus:ring-primary-yellow"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              {t.onCarriage}
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 justify-end pt-4">
+                        <button
+                          onClick={() => setEditingQuote(null)}
+                          className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                        >
+                          {language === "ar" ? "إلغاء" : "Cancel"}
+                        </button>
+                        <button
+                          onClick={handleSaveEdit}
+                          className="px-6 py-2 text-sm font-medium text-white bg-primary-yellow hover:bg-primary-yellow/90 rounded-lg transition-colors"
+                        >
+                          {language === "ar" ? "حفظ" : "Save"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Delete Confirmation Modal */}
+              {deleteConfirm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+                    <h3 className="text-lg font-bold text-primary-dark mb-4">
+                      {t.delete}
+                    </h3>
+                    <p className="text-gray-700 mb-6">{t.deleteConfirm}</p>
+                    <div className="flex gap-3 justify-end">
+                      <button
+                        onClick={() => setDeleteConfirm(null)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                      >
+                        {language === "ar" ? "إلغاء" : "Cancel"}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(deleteConfirm)}
+                        className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                      >
+                        {t.delete}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

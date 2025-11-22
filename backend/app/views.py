@@ -233,6 +233,53 @@ class FCLQuoteListView(generics.ListAPIView):
         return queryset
 
 
+class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """API endpoint to retrieve, update, or delete a specific FCL quote"""
+
+    serializer_class = FCLQuoteSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        """Return only quotes for the authenticated user"""
+        if not self.request.user.is_authenticated:
+            return FCLQuote.objects.none()
+        return FCLQuote.objects.filter(user=self.request.user)
+
+    def get_serializer_context(self):
+        """Add request to serializer context"""
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
+    def update(self, request, *args, **kwargs):
+        """Update FCL quote"""
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(
+            {
+                "success": True,
+                "message": "FCL quote updated successfully.",
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """Delete FCL quote"""
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"success": True, "message": "FCL quote deleted successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])  # Allow anyone to calculate CBM
 def calculate_cbm_view(request):
