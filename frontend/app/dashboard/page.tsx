@@ -599,22 +599,41 @@ export default function DashboardPage() {
   // Get status color based on status value
   const getStatusColor = (status: string) => {
     const statusColors: { [key: string]: string } = {
-      CREATED: "bg-gray-100 text-gray-800",
-      PENDING_PAYMENT: "bg-yellow-100 text-yellow-800",
-      PENDING_PICKUP: "bg-blue-100 text-blue-800",
-      IN_TRANSIT_TO_AXEL: "bg-indigo-100 text-indigo-800",
-      ARRIVED_AXEL: "bg-purple-100 text-purple-800",
-      SORTING_AXEL: "bg-pink-100 text-pink-800",
-      READY_FOR_EXPORT: "bg-cyan-100 text-cyan-800",
-      IN_TRANSIT_TO_SYRIA: "bg-teal-100 text-teal-800",
-      ARRIVED_SYRIA: "bg-emerald-100 text-emerald-800",
-      SYRIA_SORTING: "bg-lime-100 text-lime-800",
-      READY_FOR_DELIVERY: "bg-amber-100 text-amber-800",
-      OUT_FOR_DELIVERY: "bg-orange-100 text-orange-800",
-      DELIVERED: "bg-green-100 text-green-800",
-      CANCELLED: "bg-red-100 text-red-800",
+      CREATED:
+        "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300",
+      OFFER_SENT:
+        "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300",
+      PENDING_PAYMENT:
+        "bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300",
+      PENDING_PICKUP:
+        "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300",
+      IN_TRANSIT_TO_AXEL:
+        "bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-800 border border-indigo-300",
+      ARRIVED_AXEL:
+        "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300",
+      SORTING_AXEL:
+        "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800 border border-pink-300",
+      READY_FOR_EXPORT:
+        "bg-gradient-to-r from-cyan-100 to-cyan-200 text-cyan-800 border border-cyan-300",
+      IN_TRANSIT_TO_SYRIA:
+        "bg-gradient-to-r from-teal-100 to-teal-200 text-teal-800 border border-teal-300",
+      ARRIVED_SYRIA:
+        "bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border border-emerald-300",
+      SYRIA_SORTING:
+        "bg-gradient-to-r from-lime-100 to-lime-200 text-lime-800 border border-lime-300",
+      READY_FOR_DELIVERY:
+        "bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border border-amber-300",
+      OUT_FOR_DELIVERY:
+        "bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-300",
+      DELIVERED:
+        "bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300",
+      CANCELLED:
+        "bg-gradient-to-r from-red-100 to-red-200 text-red-800 border border-red-300",
     };
-    return statusColors[status] || "bg-gray-100 text-gray-800";
+    return (
+      statusColors[status] ||
+      "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300"
+    );
   };
 
   // Get status display name
@@ -1095,18 +1114,22 @@ export default function DashboardPage() {
                     return (
                       <div
                         key={quote.id}
-                        className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-100 hover:border-primary-yellow transition-all"
+                        className="group bg-white rounded-2xl shadow-md hover:shadow-xl border border-gray-200 hover:border-primary-yellow/50 transition-all duration-300 overflow-hidden"
                       >
                         {/* Summary Row */}
-                        <div className="p-6">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div className="p-6 bg-gradient-to-br from-white to-gray-50/50">
+                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+                              {/* Quote Number */}
                               <div className="sm:col-span-2 lg:col-span-2 min-w-0">
-                                <p className="text-xs text-gray-500 mb-1">
-                                  {t.quoteNumber}
-                                </p>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    {t.quoteNumber}
+                                  </p>
+                                </div>
                                 <p
-                                  className="font-semibold text-primary-dark text-sm sm:text-base font-mono whitespace-nowrap overflow-hidden text-ellipsis"
+                                  className="font-bold text-primary-dark text-base sm:text-lg font-mono whitespace-nowrap overflow-hidden text-ellipsis"
                                   title={
                                     quote.quote_number ||
                                     `FCL-${quote.id
@@ -1120,68 +1143,81 @@ export default function DashboardPage() {
                                       .padStart(6, "0")}`}
                                 </p>
                                 {isAdmin && quote.user && (
-                                  <div className="mt-2">
+                                  <div className="mt-3 pt-3 border-t border-gray-200">
                                     <p className="text-xs text-gray-500">
-                                      {t.submittedBy}:{" "}
-                                      <span className="text-gray-700 font-medium">
-                                        {quote.user.username}
-                                      </span>
+                                      {t.submittedBy}
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                                      {quote.user.username}
                                     </p>
                                   </div>
                                 )}
                               </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
+
+                              {/* Route */}
+                              <div className="space-y-1">
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                   {t.route}
                                 </p>
-                                <p className="text-sm text-gray-900">
-                                  {quote.port_of_loading} →{" "}
-                                  {quote.port_of_discharge}
+                                <p className="text-sm font-semibold text-gray-900 flex items-center gap-1">
+                                  <span className="text-primary-dark">
+                                    {quote.port_of_loading}
+                                  </span>
+                                  <span className="text-gray-400">→</span>
+                                  <span className="text-primary-dark">
+                                    {quote.port_of_discharge}
+                                  </span>
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
+
+                              {/* Container Type */}
+                              <div className="space-y-1">
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                   {t.containerType}
                                 </p>
-                                <p className="text-sm text-gray-700">
-                                  {quote.container_type} (
-                                  {quote.number_of_containers} {t.containers})
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {quote.container_type}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                  {quote.number_of_containers} {t.containers}
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
+
+                              {/* Status */}
+                              <div className="space-y-2">
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                   {t.status}
                                 </p>
                                 <span
-                                  className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                                  className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm ${getStatusColor(
                                     quote.status || "CREATED"
                                   )}`}
                                 >
                                   {getStatusDisplay(quote.status || "CREATED")}
                                 </span>
                               </div>
+
+                              {/* Payment Progress */}
                               {quote.status === "PENDING_PAYMENT" && (
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     {t.paymentProgress}
                                   </p>
-                                  <div className="space-y-1">
-                                    <div className="flex justify-between text-xs text-gray-700">
-                                      <span>
-                                        {t.amountPaid}: €
-                                        {quote.amount_paid || 0}
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between items-center text-xs">
+                                      <span className="text-gray-600 font-medium">
+                                        {t.amountPaid}
                                       </span>
-                                      <span>
-                                        {t.totalPrice}: €
-                                        {quote.total_price || 0}
+                                      <span className="font-bold text-primary-dark">
+                                        €{quote.amount_paid || 0}
                                       </span>
                                     </div>
                                     {quote.total_price &&
                                       quote.total_price > 0 && (
                                         <>
-                                          <div className="w-full bg-gray-200 rounded-full h-2">
+                                          <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                                             <div
-                                              className="bg-green-600 h-2 rounded-full transition-all"
+                                              className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
                                               style={{
                                                 width: `${Math.min(
                                                   100,
@@ -1192,14 +1228,19 @@ export default function DashboardPage() {
                                               }}
                                             ></div>
                                           </div>
-                                          <p className="text-xs text-gray-600">
-                                            {Math.round(
-                                              ((quote.amount_paid || 0) /
-                                                quote.total_price) *
-                                                100
-                                            )}
-                                            %
-                                          </p>
+                                          <div className="flex justify-between items-center">
+                                            <p className="text-xs font-bold text-gray-700">
+                                              {Math.round(
+                                                ((quote.amount_paid || 0) /
+                                                  quote.total_price) *
+                                                  100
+                                              )}
+                                              %
+                                            </p>
+                                            <p className="text-xs text-gray-600">
+                                              €{quote.total_price || 0}
+                                            </p>
+                                          </div>
                                         </>
                                       )}
                                     {isAdmin && (
@@ -1207,7 +1248,7 @@ export default function DashboardPage() {
                                         onClick={() =>
                                           handleUpdatePaidAmount(quote.id)
                                         }
-                                        className="mt-2 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                                        className="mt-2 w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                       >
                                         {t.updatePaidAmount}
                                       </button>
@@ -1215,10 +1256,15 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                               )}
+
+                              {/* User Response */}
                               {quote.user_response &&
                                 quote.user_response !== "PENDING" && (
-                                  <div>
-                                    <p className="text-xs text-gray-700">
+                                  <div className="sm:col-span-2 lg:col-span-1">
+                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                      {t.userResponse}
+                                    </p>
+                                    <p className="text-xs text-gray-700 leading-relaxed">
                                       {quote.user_response ===
                                         "EDIT_REQUESTED" &&
                                       quote.edit_request_message
@@ -1230,10 +1276,12 @@ export default function DashboardPage() {
                                   </div>
                                 )}
                             </div>
-                            <div className="flex items-center gap-2 flex-wrap">
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2 flex-wrap lg:flex-col lg:items-stretch">
                               <button
                                 onClick={() => toggleQuote(quote.id)}
-                                className="px-4 py-2 text-sm font-medium text-primary-dark bg-primary-yellow/10 hover:bg-primary-yellow/20 rounded-lg transition-colors"
+                                className="px-5 py-2.5 text-sm font-semibold text-primary-dark bg-gradient-to-r from-primary-yellow/20 to-primary-yellow/30 hover:from-primary-yellow/30 hover:to-primary-yellow/40 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-primary-yellow/30"
                               >
                                 {isExpanded ? t.collapse : t.expand}
                               </button>
@@ -1248,7 +1296,7 @@ export default function DashboardPage() {
                                         e.target.value
                                       )
                                     }
-                                    className="px-4 py-2 text-sm font-medium text-primary-dark bg-white border-2 border-gray-300 rounded-lg hover:border-primary-yellow focus:border-primary-yellow focus:outline-none transition-colors"
+                                    className="px-4 py-2.5 text-sm font-semibold text-primary-dark bg-white border-2 border-gray-300 rounded-xl hover:border-primary-yellow focus:border-primary-yellow focus:outline-none focus:ring-2 focus:ring-primary-yellow/20 transition-all duration-200 shadow-sm"
                                   >
                                     <option value="CREATED">
                                       {getStatusDisplay("CREATED")}
@@ -1299,7 +1347,7 @@ export default function DashboardPage() {
                                   {/* Admin: Delete button */}
                                   <button
                                     onClick={() => setDeleteConfirm(quote.id)}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                    className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                   >
                                     {t.delete}
                                   </button>
@@ -1309,13 +1357,13 @@ export default function DashboardPage() {
                                   {/* Regular user: Edit and Delete */}
                                   <button
                                     onClick={() => handleEdit(quote)}
-                                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                    className="px-5 py-2.5 text-sm font-semibold text-blue-700 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-blue-200"
                                   >
                                     {t.edit}
                                   </button>
                                   <button
                                     onClick={() => setDeleteConfirm(quote.id)}
-                                    className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                    className="px-5 py-2.5 text-sm font-semibold text-red-700 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-red-200"
                                   >
                                     {t.delete}
                                   </button>
@@ -1327,68 +1375,76 @@ export default function DashboardPage() {
 
                         {/* Expanded Details */}
                         {isExpanded && (
-                          <div className="border-t border-gray-200 p-6 bg-gray-50">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          <div className="border-t-2 border-gray-200 bg-gradient-to-br from-gray-50 to-white p-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                               {/* Route Details */}
-                              <div className="space-y-3">
-                                <h4 className="font-bold text-primary-dark text-lg mb-3">
-                                  {t.route}
-                                </h4>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                              <div className="space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <h4 className="font-bold text-primary-dark text-lg">
+                                    {t.route}
+                                  </h4>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.origin}
                                   </p>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900">
                                     {quote.origin_city}, {quote.origin_country}
                                     {quote.origin_zip &&
                                       ` (${quote.origin_zip})`}
                                   </p>
-                                  <p className="text-xs text-gray-600 mt-1">
-                                    POL: {quote.port_of_loading}
+                                  <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+                                    <span className="font-medium">POL:</span>
+                                    <span>{quote.port_of_loading}</span>
                                   </p>
                                 </div>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                                <div className="space-y-1 pt-3 border-t border-gray-100">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.destination}
                                   </p>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900">
                                     {quote.destination_city},{" "}
                                     {quote.destination_country}
                                   </p>
-                                  <p className="text-xs text-gray-600 mt-1">
-                                    POD: {quote.port_of_discharge}
+                                  <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+                                    <span className="font-medium">POD:</span>
+                                    <span>{quote.port_of_discharge}</span>
                                   </p>
                                 </div>
                               </div>
 
                               {/* Cargo Details */}
-                              <div className="space-y-3">
-                                <h4 className="font-bold text-primary-dark text-lg mb-3">
-                                  {language === "ar"
-                                    ? "تفاصيل الشحنة"
-                                    : "Cargo Details"}
-                                </h4>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                              <div className="space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <h4 className="font-bold text-primary-dark text-lg">
+                                    {language === "ar"
+                                      ? "تفاصيل الشحنة"
+                                      : "Cargo Details"}
+                                  </h4>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.commodityType}
                                   </p>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900">
                                     {quote.commodity_type}
                                   </p>
                                 </div>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                                <div className="space-y-1 pt-3 border-t border-gray-100">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.usageType}
                                   </p>
-                                  <p className="text-sm text-gray-900 capitalize">
+                                  <p className="text-sm font-semibold text-gray-900 capitalize">
                                     {quote.usage_type}
                                   </p>
                                 </div>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                                <div className="space-y-1 pt-3 border-t border-gray-100">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.cargoReadyDate}
                                   </p>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900">
                                     {new Date(
                                       quote.cargo_ready_date
                                     ).toLocaleDateString(
@@ -1396,44 +1452,44 @@ export default function DashboardPage() {
                                     )}
                                   </p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <p className="text-xs text-gray-500 mb-1">
+                                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                                  <div className="bg-gray-50 rounded-lg p-3">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                                       {t.totalWeight}
                                     </p>
-                                    <p className="text-sm text-gray-900">
+                                    <p className="text-sm font-bold text-primary-dark">
                                       {quote.total_weight} kg
                                     </p>
                                   </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500 mb-1">
+                                  <div className="bg-gray-50 rounded-lg p-3">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                                       {t.totalVolume}
                                     </p>
-                                    <p className="text-sm text-gray-900">
+                                    <p className="text-sm font-bold text-primary-dark">
                                       {quote.total_volume} m³
                                     </p>
                                   </div>
                                 </div>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                                <div className="space-y-1 pt-3 border-t border-gray-100">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.cargoValue}
                                   </p>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-lg font-bold text-primary-dark">
                                     €{quote.cargo_value}
                                   </p>
                                 </div>
                                 {quote.is_dangerous && (
-                                  <div className="bg-red-50 p-3 rounded-lg">
-                                    <p className="text-xs font-semibold text-red-800 mb-1">
+                                  <div className="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 p-4 rounded-lg mt-3">
+                                    <p className="text-xs font-bold text-red-800 mb-2 uppercase tracking-wide">
                                       {t.dangerousGoods}
                                     </p>
                                     {quote.un_number && (
-                                      <p className="text-xs text-red-700">
+                                      <p className="text-xs text-red-700 font-medium">
                                         {t.unNumber}: {quote.un_number}
                                       </p>
                                     )}
                                     {quote.dangerous_class && (
-                                      <p className="text-xs text-red-700">
+                                      <p className="text-xs text-red-700 font-medium">
                                         {t.dangerousClass}:{" "}
                                         {quote.dangerous_class}
                                       </p>
@@ -1446,13 +1502,16 @@ export default function DashboardPage() {
                               {!isAdmin &&
                                 quote.status === "OFFER_SENT" &&
                                 quote.offer_message && (
-                                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-4">
-                                    <h4 className="font-bold text-blue-900 mb-2">
-                                      {language === "ar"
-                                        ? "رسالة العرض"
-                                        : "Offer Message"}
-                                    </h4>
-                                    <p className="text-sm text-blue-800 mb-4 whitespace-pre-wrap">
+                                  <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 p-6 rounded-xl shadow-sm mb-4">
+                                    <div className="flex items-center gap-2 mb-4">
+                                      <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                                      <h4 className="font-bold text-blue-900 text-lg">
+                                        {language === "ar"
+                                          ? "رسالة العرض"
+                                          : "Offer Message"}
+                                      </h4>
+                                    </div>
+                                    <p className="text-sm text-blue-900 mb-4 whitespace-pre-wrap leading-relaxed font-medium">
                                       {quote.offer_message}
                                     </p>
                                     {quote.user_response === "PENDING" && (
@@ -1476,7 +1535,7 @@ export default function DashboardPage() {
                                                   ? "اكتب طلب التعديل هنا..."
                                                   : "Type your edit request here..."
                                               }
-                                              className="w-full px-4 py-2 border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
+                                              className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none transition-all"
                                               rows={4}
                                             />
                                             <div className="flex gap-3">
@@ -1491,7 +1550,7 @@ export default function DashboardPage() {
                                                 disabled={
                                                   !editRequestMessage.trim()
                                                 }
-                                                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:transform-none"
                                               >
                                                 {language === "ar"
                                                   ? "إرسال طلب التعديل"
@@ -1502,7 +1561,7 @@ export default function DashboardPage() {
                                                   setShowEditRequest(null);
                                                   setEditRequestMessage("");
                                                 }}
-                                                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                                                className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                               >
                                                 {language === "ar"
                                                   ? "إلغاء"
@@ -1519,7 +1578,7 @@ export default function DashboardPage() {
                                                   "ACCEPTED"
                                                 )
                                               }
-                                              className="px-6 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                                              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                             >
                                               {language === "ar"
                                                 ? "قبول"
@@ -1532,7 +1591,7 @@ export default function DashboardPage() {
                                                   "REJECTED"
                                                 )
                                               }
-                                              className="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                             >
                                               {language === "ar"
                                                 ? "رفض"
@@ -1543,7 +1602,7 @@ export default function DashboardPage() {
                                                 setShowEditRequest(quote.id);
                                                 setEditRequestMessage("");
                                               }}
-                                              className="px-6 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
+                                              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                             >
                                               {language === "ar"
                                                 ? "طلب تعديل"
@@ -1593,76 +1652,125 @@ export default function DashboardPage() {
                                 )}
 
                               {/* Customer & Services */}
-                              <div className="space-y-3">
-                                <h4 className="font-bold text-primary-dark text-lg mb-3">
-                                  {t.customerDetails}
-                                </h4>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                              <div className="space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <h4 className="font-bold text-primary-dark text-lg">
+                                    {t.customerDetails}
+                                  </h4>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.fullName}
                                   </p>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900">
                                     {quote.full_name}
                                   </p>
                                 </div>
                                 {quote.company_name && (
-                                  <div>
-                                    <p className="text-xs text-gray-500 mb-1">
+                                  <div className="space-y-1 pt-3 border-t border-gray-100">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                       {t.companyName}
                                     </p>
-                                    <p className="text-sm text-gray-900">
+                                    <p className="text-sm font-semibold text-gray-900">
                                       {quote.company_name}
                                     </p>
                                   </div>
                                 )}
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                                <div className="space-y-1 pt-3 border-t border-gray-100">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.email}
                                   </p>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900 break-all">
                                     {quote.email}
                                   </p>
                                 </div>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                                <div className="space-y-1 pt-3 border-t border-gray-100">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.phone}
                                   </p>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900">
                                     {quote.phone}
                                   </p>
                                 </div>
-                                <div>
-                                  <p className="text-xs text-gray-500 mb-1">
+                                <div className="space-y-1 pt-3 border-t border-gray-100">
+                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                     {t.preferredContact}
                                   </p>
-                                  <p className="text-sm text-gray-900 capitalize">
+                                  <p className="text-sm font-semibold text-gray-900 capitalize">
                                     {quote.preferred_contact}
                                   </p>
                                 </div>
 
                                 {/* Additional Services */}
-                                <div className="mt-4 pt-4 border-t border-gray-200">
-                                  <p className="text-xs font-semibold text-gray-700 mb-2">
+                                <div className="mt-4 pt-4 border-t-2 border-gray-200">
+                                  <p className="text-xs font-bold text-primary-dark uppercase tracking-wide mb-3">
                                     {language === "ar"
                                       ? "خدمات إضافية"
                                       : "Additional Services"}
                                   </p>
-                                  <div className="space-y-1 text-xs text-gray-600">
+                                  <div className="space-y-2">
                                     {quote.pickup_required && (
-                                      <p>✓ {t.pickupRequired}</p>
+                                      <div className="flex items-center gap-2 text-xs text-gray-700 bg-green-50 px-3 py-2 rounded-lg">
+                                        <span className="text-green-600 font-bold">
+                                          ✓
+                                        </span>
+                                        <span className="font-medium">
+                                          {t.pickupRequired}
+                                        </span>
+                                      </div>
                                     )}
                                     {quote.forklift_available && (
-                                      <p>✓ {t.forkliftAvailable}</p>
+                                      <div className="flex items-center gap-2 text-xs text-gray-700 bg-green-50 px-3 py-2 rounded-lg">
+                                        <span className="text-green-600 font-bold">
+                                          ✓
+                                        </span>
+                                        <span className="font-medium">
+                                          {t.forkliftAvailable}
+                                        </span>
+                                      </div>
                                     )}
                                     {quote.eu_export_clearance && (
-                                      <p>✓ {t.euExportClearance}</p>
+                                      <div className="flex items-center gap-2 text-xs text-gray-700 bg-green-50 px-3 py-2 rounded-lg">
+                                        <span className="text-green-600 font-bold">
+                                          ✓
+                                        </span>
+                                        <span className="font-medium">
+                                          {t.euExportClearance}
+                                        </span>
+                                      </div>
                                     )}
                                     {quote.cargo_insurance && (
-                                      <p>✓ {t.cargoInsurance}</p>
+                                      <div className="flex items-center gap-2 text-xs text-gray-700 bg-green-50 px-3 py-2 rounded-lg">
+                                        <span className="text-green-600 font-bold">
+                                          ✓
+                                        </span>
+                                        <span className="font-medium">
+                                          {t.cargoInsurance}
+                                        </span>
+                                      </div>
                                     )}
                                     {quote.on_carriage && (
-                                      <p>✓ {t.onCarriage}</p>
+                                      <div className="flex items-center gap-2 text-xs text-gray-700 bg-green-50 px-3 py-2 rounded-lg">
+                                        <span className="text-green-600 font-bold">
+                                          ✓
+                                        </span>
+                                        <span className="font-medium">
+                                          {t.onCarriage}
+                                        </span>
+                                      </div>
                                     )}
+                                    {!quote.pickup_required &&
+                                      !quote.forklift_available &&
+                                      !quote.eu_export_clearance &&
+                                      !quote.cargo_insurance &&
+                                      !quote.on_carriage && (
+                                        <p className="text-xs text-gray-500 italic">
+                                          {language === "ar"
+                                            ? "لا توجد خدمات إضافية"
+                                            : "No additional services"}
+                                        </p>
+                                      )}
                                   </div>
                                 </div>
                               </div>
@@ -1670,17 +1778,19 @@ export default function DashboardPage() {
 
                             {/* Price Info */}
                             {quote.total_price && (
-                              <div className="mt-6 pt-6 border-t border-gray-200">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm font-semibold text-gray-700">
-                                    {t.price}:
-                                  </span>
-                                  <span className="text-lg font-bold text-primary-dark">
-                                    €
-                                    {parseFloat(
-                                      quote.total_price.toString()
-                                    ).toFixed(2)}
-                                  </span>
+                              <div className="mt-8 pt-6 border-t-2 border-gray-200">
+                                <div className="bg-gradient-to-r from-primary-yellow/10 to-primary-dark/10 rounded-xl p-5 border border-primary-yellow/20">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                                      {t.price}:
+                                    </span>
+                                    <span className="text-2xl font-bold text-primary-dark">
+                                      €
+                                      {parseFloat(
+                                        quote.total_price.toString()
+                                      ).toFixed(2)}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             )}
