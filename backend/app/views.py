@@ -363,8 +363,35 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         """Update FCL quote"""
-        partial = kwargs.pop("partial", False)
         instance = self.get_object()
+        
+        # Check if user is not admin and quote status is PENDING_PAYMENT or later
+        if not request.user.is_superuser:
+            locked_statuses = [
+                "PENDING_PAYMENT",
+                "PENDING_PICKUP",
+                "IN_TRANSIT_TO_WATTWEG_5",
+                "ARRIVED_WATTWEG_5",
+                "SORTING_WATTWEG_5",
+                "READY_FOR_EXPORT",
+                "IN_TRANSIT_TO_SYRIA",
+                "ARRIVED_SYRIA",
+                "SYRIA_SORTING",
+                "READY_FOR_DELIVERY",
+                "OUT_FOR_DELIVERY",
+                "DELIVERED",
+                "CANCELLED",
+            ]
+            if instance.status in locked_statuses:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Cannot edit quote after payment process has started. Only admins can edit quotes in this status.",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        
+        partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -381,6 +408,33 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
     def destroy(self, request, *args, **kwargs):
         """Delete FCL quote"""
         instance = self.get_object()
+        
+        # Check if user is not admin and quote status is PENDING_PAYMENT or later
+        if not request.user.is_superuser:
+            locked_statuses = [
+                "PENDING_PAYMENT",
+                "PENDING_PICKUP",
+                "IN_TRANSIT_TO_WATTWEG_5",
+                "ARRIVED_WATTWEG_5",
+                "SORTING_WATTWEG_5",
+                "READY_FOR_EXPORT",
+                "IN_TRANSIT_TO_SYRIA",
+                "ARRIVED_SYRIA",
+                "SYRIA_SORTING",
+                "READY_FOR_DELIVERY",
+                "OUT_FOR_DELIVERY",
+                "DELIVERED",
+                "CANCELLED",
+            ]
+            if instance.status in locked_statuses:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Cannot delete quote after payment process has started. Only admins can delete quotes in this status.",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        
         self.perform_destroy(instance)
         return Response(
             {"success": True, "message": "FCL quote deleted successfully."},

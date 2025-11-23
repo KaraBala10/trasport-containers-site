@@ -352,6 +352,18 @@ export default function DashboardPage() {
     });
   };
 
+  // Check if quote can be edited/deleted
+  // Admins can always edit/delete, regular users can only edit/delete before PENDING_PAYMENT
+  const canEditOrDelete = (status: string): boolean => {
+    // Admins can always edit/delete
+    if (user?.is_superuser) {
+      return true;
+    }
+    // Regular users can only edit/delete quotes with these statuses
+    const statusesBeforePayment = ["CREATED", "OFFER_SENT"];
+    return statusesBeforePayment.includes(status);
+  };
+
   // Handle delete
   const handleDelete = async (quoteId: number) => {
     try {
@@ -367,6 +379,14 @@ export default function DashboardPage() {
 
   // Handle edit - open edit modal
   const handleEdit = (quote: FCLQuote) => {
+    if (!canEditOrDelete(quote.status)) {
+      alert(
+        language === "ar"
+          ? "لا يمكن تعديل أو حذف الطلب بعد بدء عملية الدفع"
+          : "Cannot edit or delete quote after payment process has started"
+      );
+      return;
+    }
     setEditingQuote(quote);
   };
 
@@ -1360,8 +1380,23 @@ export default function DashboardPage() {
                                   </select>
                                   {/* Admin: Delete button */}
                                   <button
-                                    onClick={() => setDeleteConfirm(quote.id)}
-                                    className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                    onClick={() => {
+                                      if (!canEditOrDelete(quote.status)) {
+                                        alert(
+                                          language === "ar"
+                                            ? "لا يمكن حذف الطلب بعد بدء عملية الدفع"
+                                            : "Cannot delete quote after payment process has started"
+                                        );
+                                        return;
+                                      }
+                                      setDeleteConfirm(quote.id);
+                                    }}
+                                    disabled={!canEditOrDelete(quote.status)}
+                                    className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                                      canEditOrDelete(quote.status)
+                                        ? "text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 cursor-pointer"
+                                        : "text-gray-400 bg-gray-200 cursor-not-allowed opacity-60"
+                                    }`}
                                   >
                                     {t.delete}
                                   </button>
@@ -1371,13 +1406,33 @@ export default function DashboardPage() {
                                   {/* Regular user: Edit and Delete */}
                                   <button
                                     onClick={() => handleEdit(quote)}
-                                    className="px-5 py-2.5 text-sm font-semibold text-blue-700 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-blue-200"
+                                    disabled={!canEditOrDelete(quote.status)}
+                                    className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 border ${
+                                      canEditOrDelete(quote.status)
+                                        ? "text-blue-700 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 cursor-pointer"
+                                        : "text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed opacity-60"
+                                    }`}
                                   >
                                     {t.edit}
                                   </button>
                                   <button
-                                    onClick={() => setDeleteConfirm(quote.id)}
-                                    className="px-5 py-2.5 text-sm font-semibold text-red-700 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-red-200"
+                                    onClick={() => {
+                                      if (!canEditOrDelete(quote.status)) {
+                                        alert(
+                                          language === "ar"
+                                            ? "لا يمكن حذف الطلب بعد بدء عملية الدفع"
+                                            : "Cannot delete quote after payment process has started"
+                                        );
+                                        return;
+                                      }
+                                      setDeleteConfirm(quote.id);
+                                    }}
+                                    disabled={!canEditOrDelete(quote.status)}
+                                    className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 border ${
+                                      canEditOrDelete(quote.status)
+                                        ? "text-red-700 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 cursor-pointer"
+                                        : "text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed opacity-60"
+                                    }`}
                                   >
                                     {t.delete}
                                   </button>
