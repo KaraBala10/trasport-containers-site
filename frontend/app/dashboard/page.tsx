@@ -1102,12 +1102,14 @@ export default function DashboardPage() {
                     />
                   </svg>
                   <p className="text-gray-600 text-lg">{t.noQuotes}</p>
-                  <Link
-                    href="/fcl-quote"
-                    className="mt-4 inline-block px-6 py-3 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-all"
-                  >
-                    {t.fclQuote}
-                  </Link>
+                  {!isAdmin && (
+                    <Link
+                      href="/fcl-quote"
+                      className="mt-4 inline-block px-6 py-3 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-all"
+                    >
+                      {t.fclQuote}
+                    </Link>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">

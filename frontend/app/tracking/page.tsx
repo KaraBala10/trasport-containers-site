@@ -38,24 +38,27 @@ export default function TrackingPage() {
   const router = useRouter();
   const quoteId = searchParams.get("id");
 
-  const [quote, setQuote] = useState<FCLQuote | null>(null);
+  const [quotes, setQuotes] = useState<FCLQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedQuotes, setExpandedQuotes] = useState<Set<number>>(new Set());
 
   const translations = useMemo(
     () => ({
       ar: {
         title: "تتبع الشحنة",
-        description: "تتبع شحنتك في الوقت الفعلي",
+        description: "تتبع شحناتك في الوقت الفعلي",
         loading: "جاري التحميل...",
         error: "حدث خطأ",
         notFound: "لم يتم العثور على الشحنة",
+        noQuotes: "لا توجد شحنات حتى الآن",
         quoteNumber: "رقم العرض",
         status: "الحالة",
         origin: "المنشأ",
         destination: "الوجهة",
         backToDashboard: "العودة إلى لوحة التحكم",
         trackAnother: "تتبع شحنة أخرى",
+        shipmentStatus: "حالة الشحنة",
         // Status steps
         created: "تم الإنشاء",
         offerSent: "تم إرسال العرض",
@@ -78,16 +81,18 @@ export default function TrackingPage() {
       },
       en: {
         title: "Track Shipment",
-        description: "Track your shipment in real-time",
+        description: "Track your shipments in real-time",
         loading: "Loading...",
         error: "An error occurred",
         notFound: "Quote not found",
+        noQuotes: "No shipments yet",
         quoteNumber: "Quote Number",
         status: "Status",
         origin: "Origin",
         destination: "Destination",
         backToDashboard: "Back to Dashboard",
         trackAnother: "Track Another Quote",
+        shipmentStatus: "Shipment Status",
         // Status steps
         created: "Created",
         offerSent: "Offer Sent",
@@ -115,76 +120,8 @@ export default function TrackingPage() {
   // Prevent hydration mismatch by using static text during SSR
   const t = mounted ? translations[language] : translations.en;
 
-  useEffect(() => {
-    if (!mounted) return;
-
-    if (!quoteId) {
-      setError(mounted ? t.notFound : "Quote not found");
-      setLoading(false);
-      return;
-    }
-
-    const fetchQuote = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const quoteIdNum = parseInt(quoteId || "0");
-
-        if (isNaN(quoteIdNum) || quoteIdNum <= 0) {
-          setError(t.notFound);
-          setLoading(false);
-          return;
-        }
-
-        console.log("Fetching quote with ID:", quoteIdNum);
-        const response = await apiService.getFCLQuote(quoteIdNum);
-        console.log("Quote response:", response);
-        console.log("Quote data:", response.data);
-
-        // DRF RetrieveUpdateDestroyAPIView returns data directly in response.data
-        if (response.data && response.data.id) {
-          setQuote(response.data);
-        } else {
-          console.error("No valid data in response:", response);
-          setError(t.notFound);
-        }
-      } catch (err: any) {
-        console.error("Error fetching quote:", err);
-        console.error("Error status:", err.response?.status);
-        console.error("Error response:", err.response?.data);
-
-        if (err.response?.status === 404) {
-          setError(t.notFound);
-        } else if (err.response?.status === 403) {
-          setError(
-            language === "ar"
-              ? "ليس لديك صلاحية لعرض هذا العرض"
-              : "You don't have permission to view this quote"
-          );
-        } else if (err.response?.status === 401) {
-          setError(
-            language === "ar"
-              ? "يرجى تسجيل الدخول لعرض هذا العرض"
-              : "Please log in to view this quote"
-          );
-        } else {
-          setError(
-            err.response?.data?.error ||
-              err.response?.data?.detail ||
-              err.message ||
-              t.error
-          );
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQuote();
-  }, [quoteId, language, mounted, isAuthenticated, t.notFound, t.error]);
-
-  // Define all tracking steps in order
-  const allSteps: TrackingStep[] = useMemo(() => {
+  // Function to get tracking steps for a quote
+  const getTrackingSteps = (quote: FCLQuote): TrackingStep[] => {
     const steps = [
       { key: "CREATED", label: { ar: t.created, en: t.created } },
       { key: "OFFER_SENT", label: { ar: t.offerSent, en: t.offerSent } },
@@ -254,7 +191,69 @@ export default function TrackingPage() {
         status,
       };
     });
-  }, [quote?.status, t]);
+  };
+
+  // Fetch all quotes
+  useEffect(() => {
+    if (!mounted || !isAuthenticated) return;
+
+    const fetchQuotes = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await apiService.getFCLQuotes();
+        const quotesData = response.data?.results || response.data || [];
+        setQuotes(Array.isArray(quotesData) ? quotesData : []);
+
+        // If there's a quoteId in URL, expand it
+        if (quoteId) {
+          const quoteIdNum = parseInt(quoteId);
+          if (!isNaN(quoteIdNum) && quoteIdNum > 0) {
+            setExpandedQuotes(new Set([quoteIdNum]));
+            // Scroll to the quote after a short delay
+            setTimeout(() => {
+              const element = document.getElementById(`quote-${quoteIdNum}`);
+              if (element) {
+                element.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }, 300);
+          }
+        }
+      } catch (err: any) {
+        console.error("Error fetching quotes:", err);
+        if (err.response?.status === 401) {
+          setError(
+            language === "ar"
+              ? "يرجى تسجيل الدخول لعرض الشحنات"
+              : "Please log in to view shipments"
+          );
+        } else {
+          setError(
+            err.response?.data?.error ||
+              err.response?.data?.detail ||
+              err.message ||
+              t.error
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuotes();
+  }, [mounted, isAuthenticated, quoteId, language, t.error]);
+
+  const toggleQuote = (quoteId: number) => {
+    setExpandedQuotes((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(quoteId)) {
+        newSet.delete(quoteId);
+      } else {
+        newSet.add(quoteId);
+      }
+      return newSet;
+    });
+  };
 
   if (!mounted || loading) {
     return (
@@ -263,30 +262,10 @@ export default function TrackingPage() {
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-dark mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+            <p className="mt-4 text-gray-600">{t.loading}</p>
           </div>
         </main>
         <Footer language={mounted ? language : "en"} />
-      </div>
-    );
-  }
-
-  if (error || !quote) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-red-600 text-lg mb-4">{error || t.notFound}</p>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="px-6 py-2 bg-primary-dark text-white rounded-lg hover:bg-primary-yellow hover:text-primary-dark transition-colors"
-            >
-              {t.backToDashboard}
-            </button>
-          </div>
-        </main>
-        <Footer language={language} />
       </div>
     );
   }
@@ -296,6 +275,9 @@ export default function TrackingPage() {
       <Header />
 
       <main className="flex-grow">
+        {/* Spacer for fixed header */}
+        <div className="h-20" aria-hidden="true" />
+        
         {/* Header Section */}
         <div className="bg-gradient-to-r from-primary-dark via-primary-dark to-primary-yellow py-12">
           <div className="container mx-auto px-4">
@@ -307,155 +289,199 @@ export default function TrackingPage() {
         </div>
 
         <div className="container mx-auto px-4 py-8">
-          {/* Quote Info Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  {t.quoteNumber}
-                </p>
-                <p className="text-lg font-bold text-primary-dark font-mono">
-                  {quote.quote_number ||
-                    `FCL-${quote.id.toString().padStart(6, "0")}`}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  {t.origin}
-                </p>
-                <p className="text-sm font-semibold text-gray-900">
-                  {quote.origin_city}, {quote.origin_country}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  POL: {quote.port_of_loading}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  {t.destination}
-                </p>
-                <p className="text-sm font-semibold text-gray-900">
-                  {quote.destination_city}, {quote.destination_country}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  POD: {quote.port_of_discharge}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Tracking Stepper */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
-            <h2 className="text-2xl font-bold text-primary-dark mb-8">
-              {language === "ar" ? "حالة الشحنة" : "Shipment Status"}
-            </h2>
-
-            <div className="relative">
-              {/* Vertical Line */}
-              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-
-              {/* Steps */}
-              <div className="space-y-8">
-                {allSteps.map((step, index) => (
-                  <div
-                    key={step.key}
-                    className="relative flex items-start gap-6"
-                  >
-                    {/* Step Icon */}
-                    <div className="relative z-10 flex-shrink-0">
-                      {step.status === "completed" ? (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center shadow-lg">
-                          <svg
-                            className="w-6 h-6 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                      ) : step.status === "current" ? (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-primary-yellow to-primary-dark flex items-center justify-center shadow-lg animate-pulse">
-                          <div className="w-4 h-4 rounded-full bg-white"></div>
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gray-200 border-4 border-white flex items-center justify-center shadow">
-                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Step Content */}
-                    <div className="flex-1 pt-2">
-                      <div
-                        className={`p-4 rounded-xl ${
-                          step.status === "completed"
-                            ? "bg-green-50 border-2 border-green-200"
-                            : step.status === "current"
-                            ? "bg-gradient-to-r from-primary-yellow/20 to-primary-dark/20 border-2 border-primary-yellow"
-                            : "bg-gray-50 border-2 border-gray-200"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3
-                              className={`text-lg font-bold ${
-                                step.status === "completed"
-                                  ? "text-green-800"
-                                  : step.status === "current"
-                                  ? "text-primary-dark"
-                                  : "text-gray-500"
-                              }`}
-                            >
-                              {step.label[language]}
-                            </h3>
-                            {step.status === "current" && (
-                              <p className="text-sm text-primary-dark mt-1 font-medium">
-                                {t.current}
-                              </p>
-                            )}
-                            {step.status === "completed" && (
-                              <p className="text-sm text-green-700 mt-1 font-medium">
-                                {t.completed}
-                              </p>
-                            )}
-                          </div>
-                          {step.status === "current" && (
-                            <span className="px-3 py-1 text-xs font-bold text-white bg-gradient-to-r from-primary-yellow to-primary-dark rounded-full">
-                              {t.current}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-8 flex flex-wrap gap-4 justify-center">
+          {/* Back to Dashboard Button */}
+          <div className="mb-6">
             <button
               onClick={() => router.push("/dashboard")}
-              className="px-6 py-3 bg-gradient-to-r from-primary-dark to-primary-dark hover:from-primary-yellow hover:to-primary-yellow text-white hover:text-primary-dark font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="px-6 py-3 bg-gradient-to-r from-primary-dark to-primary-dark hover:from-primary-yellow hover:to-primary-yellow text-white hover:text-primary-dark font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
             >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                />
+              </svg>
               {t.backToDashboard}
             </button>
-            {isAuthenticated && (
-              <button
-                onClick={() => router.push("/dashboard")}
-                className="px-6 py-3 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-800 font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                {t.trackAnother}
-              </button>
-            )}
           </div>
+
+          {error ? (
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+              <p className="text-red-600 text-lg mb-4">{error}</p>
+            </div>
+          ) : quotes.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+              <p className="text-gray-600 text-lg">{t.noQuotes}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {quotes.map((quote) => {
+                const isExpanded = expandedQuotes.has(quote.id);
+                const steps = getTrackingSteps(quote);
+
+                return (
+                  <div
+                    key={quote.id}
+                    id={`quote-${quote.id}`}
+                    className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden"
+                  >
+                    {/* Quote Header */}
+                    <button
+                      onClick={() => toggleQuote(quote.id)}
+                      className="w-full p-6 hover:bg-gray-50 transition-colors flex items-center justify-between text-left"
+                      type="button"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-2">
+                          <p className="text-lg font-bold text-primary-dark font-mono">
+                            {quote.quote_number ||
+                              `FCL-${quote.id.toString().padStart(6, "0")}`}
+                          </p>
+                          <span
+                            className={`px-3 py-1 text-xs font-bold rounded-full ${
+                              quote.status === "DELIVERED"
+                                ? "bg-green-100 text-green-800"
+                                : quote.status === "CANCELLED"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {quote.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {quote.port_of_loading} → {quote.port_of_discharge}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {quote.origin_city}, {quote.origin_country} →{" "}
+                          {quote.destination_city}, {quote.destination_country}
+                        </p>
+                      </div>
+                      <svg
+                        className={`w-6 h-6 text-gray-400 transition-transform ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Tracking Steps */}
+                    {isExpanded && (
+                      <div className="px-6 pb-6 border-t border-gray-200">
+                        <h3 className="text-xl font-bold text-primary-dark mb-6 mt-6">
+                          {t.shipmentStatus}
+                        </h3>
+
+                        <div className="relative">
+                          {/* Vertical Line */}
+                          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+
+                          {/* Steps */}
+                          <div className="space-y-6">
+                            {steps.map((step, index) => (
+                              <div
+                                key={step.key}
+                                className="relative flex items-start gap-6"
+                              >
+                                {/* Step Icon */}
+                                <div className="relative z-10 flex-shrink-0">
+                                  {step.status === "completed" ? (
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center shadow-lg">
+                                      <svg
+                                        className="w-6 h-6 text-white"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={3}
+                                          d="M5 13l4 4L19 7"
+                                        />
+                                      </svg>
+                                    </div>
+                                  ) : step.status === "current" ? (
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-primary-yellow to-primary-dark flex items-center justify-center shadow-lg animate-pulse">
+                                      <div className="w-4 h-4 rounded-full bg-white"></div>
+                                    </div>
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-full bg-gray-200 border-4 border-white flex items-center justify-center shadow">
+                                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Step Content */}
+                                <div className="flex-1 pt-2">
+                                  <div
+                                    className={`p-4 rounded-xl ${
+                                      step.status === "completed"
+                                        ? "bg-green-50 border-2 border-green-200"
+                                        : step.status === "current"
+                                        ? "bg-gradient-to-r from-primary-yellow/20 to-primary-dark/20 border-2 border-primary-yellow"
+                                        : "bg-gray-50 border-2 border-gray-200"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <h3
+                                          className={`text-lg font-bold ${
+                                            step.status === "completed"
+                                              ? "text-green-800"
+                                              : step.status === "current"
+                                              ? "text-primary-dark"
+                                              : "text-gray-500"
+                                          }`}
+                                        >
+                                          {step.label[language]}
+                                        </h3>
+                                        {step.status === "current" && (
+                                          <p className="text-sm text-primary-dark mt-1 font-medium">
+                                            {t.current}
+                                          </p>
+                                        )}
+                                        {step.status === "completed" && (
+                                          <p className="text-sm text-green-700 mt-1 font-medium">
+                                            {t.completed}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {step.status === "current" && (
+                                        <span className="px-3 py-1 text-xs font-bold text-white bg-gradient-to-r from-primary-yellow to-primary-dark rounded-full">
+                                          {t.current}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
 
