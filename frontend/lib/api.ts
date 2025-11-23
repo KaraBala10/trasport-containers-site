@@ -43,19 +43,19 @@ apiClient.interceptors.response.use(
         if (refreshToken) {
           try {
             const response = await axios.post(`${API_BASE_URL}/token/refresh/`, {
-              refresh: refreshToken,
-            });
+            refresh: refreshToken,
+          });
 
-            const { access } = response.data;
-            localStorage.setItem('access_token', access);
+          const { access } = response.data;
+          localStorage.setItem('access_token', access);
 
             // Retry original request with new token
-            originalRequest.headers.Authorization = `Bearer ${access}`;
+          originalRequest.headers.Authorization = `Bearer ${access}`;
             return apiClient(originalRequest);
-          } catch (refreshError) {
+      } catch (refreshError) {
             // Refresh token failed, logout user
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
             window.location.href = '/auth';
             return Promise.reject(refreshError);
           }

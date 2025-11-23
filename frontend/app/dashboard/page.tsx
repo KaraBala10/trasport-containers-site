@@ -104,6 +104,7 @@ export default function DashboardPage() {
         createLCLShipmentDesc: "إنشاء طلب شحنة LCL جديد إلى سوريا",
         trackShipment: "تتبع الشحنة",
         trackShipmentDesc: "تتبع شحناتك الحالية",
+        track: "تتبع",
         fclQuote: "طلب عرض سعر FCL",
         fclQuoteDesc: "طلب عرض سعر لحاوية كاملة (FCL)",
         getQuote: "الحصول على عرض سعر",
@@ -187,9 +188,9 @@ export default function DashboardPage() {
         CREATED: "تم الإنشاء",
         PENDING_PAYMENT: "في انتظار الدفع",
         PENDING_PICKUP: "في انتظار الاستلام",
-        IN_TRANSIT_TO_AXEL: "في الطريق إلى أكسل",
-        ARRIVED_AXEL: "وصل إلى أكسل",
-        SORTING_AXEL: "فرز في أكسل",
+        IN_TRANSIT_TO_WATTWEG_5: "في الطريق إلى واتفيج 5",
+        ARRIVED_WATTWEG_5: "وصل إلى واتفيج 5",
+        SORTING_WATTWEG_5: "فرز في واتفيج 5",
         READY_FOR_EXPORT: "جاهز للتصدير",
         IN_TRANSIT_TO_SYRIA: "في الطريق إلى سوريا",
         ARRIVED_SYRIA: "وصل إلى سوريا",
@@ -211,6 +212,7 @@ export default function DashboardPage() {
         createLCLShipmentDesc: "Create a new LCL shipment request to Syria",
         trackShipment: "Track Shipment",
         trackShipmentDesc: "Track your existing shipments",
+        track: "Track",
         fclQuote: "Request FCL Quote",
         fclQuoteDesc: "Request a quote for a full container load (FCL)",
         getQuote: "Get Quote",
@@ -288,9 +290,9 @@ export default function DashboardPage() {
         OFFER_SENT: "Offer Sent",
         PENDING_PAYMENT: "Pending Payment",
         PENDING_PICKUP: "Pending Pickup",
-        IN_TRANSIT_TO_AXEL: "In Transit to Axel",
-        ARRIVED_AXEL: "Arrived Axel",
-        SORTING_AXEL: "Sorting Axel",
+        IN_TRANSIT_TO_WATTWEG_5: "In Transit to Wattweg 5",
+        ARRIVED_WATTWEG_5: "Arrived Wattweg 5",
+        SORTING_WATTWEG_5: "Sorting Wattweg 5",
         READY_FOR_EXPORT: "Ready for Export",
         IN_TRANSIT_TO_SYRIA: "In Transit to Syria",
         ARRIVED_SYRIA: "Arrived Syria",
@@ -607,11 +609,11 @@ export default function DashboardPage() {
         "bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300",
       PENDING_PICKUP:
         "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300",
-      IN_TRANSIT_TO_AXEL:
+      IN_TRANSIT_TO_WATTWEG_5:
         "bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-800 border border-indigo-300",
-      ARRIVED_AXEL:
+      ARRIVED_WATTWEG_5:
         "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300",
-      SORTING_AXEL:
+      SORTING_WATTWEG_5:
         "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800 border border-pink-300",
       READY_FOR_EXPORT:
         "bg-gradient-to-r from-cyan-100 to-cyan-200 text-cyan-800 border border-cyan-300",
@@ -1285,6 +1287,14 @@ export default function DashboardPage() {
                               >
                                 {isExpanded ? t.collapse : t.expand}
                               </button>
+                              <button
+                                onClick={() =>
+                                  router.push(`/tracking?id=${quote.id}`)
+                                }
+                                className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                              >
+                                {t.track}
+                              </button>
                               {isAdmin ? (
                                 <>
                                   {/* Admin: Status dropdown */}
@@ -1310,14 +1320,16 @@ export default function DashboardPage() {
                                     <option value="PENDING_PICKUP">
                                       {getStatusDisplay("PENDING_PICKUP")}
                                     </option>
-                                    <option value="IN_TRANSIT_TO_AXEL">
-                                      {getStatusDisplay("IN_TRANSIT_TO_AXEL")}
+                                    <option value="IN_TRANSIT_TO_WATTWEG_5">
+                                      {getStatusDisplay(
+                                        "IN_TRANSIT_TO_WATTWEG_5"
+                                      )}
                                     </option>
-                                    <option value="ARRIVED_AXEL">
-                                      {getStatusDisplay("ARRIVED_AXEL")}
+                                    <option value="ARRIVED_WATTWEG_5">
+                                      {getStatusDisplay("ARRIVED_WATTWEG_5")}
                                     </option>
-                                    <option value="SORTING_AXEL">
-                                      {getStatusDisplay("SORTING_AXEL")}
+                                    <option value="SORTING_WATTWEG_5">
+                                      {getStatusDisplay("SORTING_WATTWEG_5")}
                                     </option>
                                     <option value="READY_FOR_EXPORT">
                                       {getStatusDisplay("READY_FOR_EXPORT")}

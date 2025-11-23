@@ -20,7 +20,6 @@ export default function Header() {
   const translations = {
     ar: {
       home: "الرئيسية",
-      tracking: "التتبع",
       about: "من نحن",
       contact: "اتصل بنا",
       faq: "الأسئلة الشائعة",
@@ -32,7 +31,6 @@ export default function Header() {
     },
     en: {
       home: "Home",
-      tracking: "Tracking",
       about: "About",
       contact: "Contact",
       faq: "FAQ",
@@ -76,7 +74,6 @@ export default function Header() {
 
   const navLinks = [
     { href: "/", label: t.home },
-    { href: "/tracking", label: t.tracking },
     { href: "/about", label: t.about },
     { href: "/contact", label: t.contact },
     { href: "/faq", label: t.faq },
