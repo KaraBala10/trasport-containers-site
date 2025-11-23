@@ -14,6 +14,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .email_service import send_status_update_email
 from .models import ContactMessage, FCLQuote
 from .serializers import (
     ChangePasswordSerializer,
@@ -22,7 +23,6 @@ from .serializers import (
     RegisterSerializer,
     UserSerializer,
 )
-from .email_service import send_status_update_email
 
 
 class RegisterView(generics.CreateAPIView):
@@ -110,7 +110,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         """Override update to allow partial updates"""
-        partial = kwargs.pop('partial', True)
+        partial = kwargs.pop("partial", True)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -534,6 +534,62 @@ def update_fcl_quote_status_view(request, pk):
                 "PENDING"  # Reset user response when new offer is sent
             )
 
+        # If status is PENDING_PAYMENT (or already is), allow setting/updating total_price and amount_paid
+        if new_status == "PENDING_PAYMENT" or quote.status == "PENDING_PAYMENT":
+            # Allow setting/updating total_price
+            total_price = request.data.get("total_price")
+            if total_price is not None:
+                try:
+                    total_price_decimal = float(total_price)
+                    if total_price_decimal < 0:
+                        return Response(
+                            {
+                                "success": False,
+                                "error": "Total price cannot be negative.",
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    quote.total_price = total_price_decimal
+                except (ValueError, TypeError):
+                    return Response(
+                        {
+                            "success": False,
+                            "error": "Invalid total_price value.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            # Allow setting/updating amount_paid
+            amount_paid = request.data.get("amount_paid")
+            if amount_paid is not None:
+                try:
+                    amount_paid_decimal = float(amount_paid)
+                    if amount_paid_decimal < 0:
+                        return Response(
+                            {
+                                "success": False,
+                                "error": "Amount paid cannot be negative.",
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    if quote.total_price and amount_paid_decimal > quote.total_price:
+                        return Response(
+                            {
+                                "success": False,
+                                "error": "Amount paid cannot be greater than total price.",
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    quote.amount_paid = amount_paid_decimal
+                except (ValueError, TypeError):
+                    return Response(
+                        {
+                            "success": False,
+                            "error": "Invalid amount_paid value.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
         quote.save()
 
         # Send email notification to user
@@ -602,22 +658,45 @@ def respond_to_offer_view(request, pk):
             )
 
         user_response = request.data.get("user_response")
+        edit_request_message = request.data.get("edit_request_message", "")
 
-        if user_response not in ["ACCEPTED", "REJECTED"]:
+        if user_response not in ["ACCEPTED", "REJECTED", "EDIT_REQUESTED"]:
             return Response(
                 {
                     "success": False,
-                    "error": "Invalid response. Must be 'ACCEPTED' or 'REJECTED'.",
+                    "error": "Invalid response. Must be 'ACCEPTED', 'REJECTED', or 'EDIT_REQUESTED'.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Validate edit request message if requesting edit
+        if user_response == "EDIT_REQUESTED":
+            if not edit_request_message or not edit_request_message.strip():
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Edit request message is required when requesting edits.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            quote.edit_request_message = edit_request_message.strip()
+            # Keep status as OFFER_SENT and notify admin
+            from .email_service import send_edit_request_notification
+
+            try:
+                send_edit_request_notification(quote, edit_request_message.strip())
+            except Exception as email_error:
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Failed to send edit request notification: {str(email_error)}"
+                )
 
         quote.user_response = user_response
 
         # If user accepts, change status to PENDING_PAYMENT
         if user_response == "ACCEPTED":
             quote.status = "PENDING_PAYMENT"
-        # If user rejects, keep status as OFFER_SENT but mark as rejected
+        # If user rejects or requests edit, keep status as OFFER_SENT but mark response
 
         quote.save()
 

@@ -95,7 +95,7 @@ Please log in to your dashboard to view the full offer details and respond.
         elif new_status == "OFFER_SENT":
             email_body += "\n\nAn offer has been sent. Please log in to your dashboard to view the offer details.\n"
 
-        email_body += f"""
+        email_body += """
 
 You can view and manage your quote requests by logging into your dashboard.
 
@@ -122,18 +122,18 @@ contact@medo-freight.eu
             error_msg = str(smtp_error)
             if "Network is unreachable" in error_msg:
                 logger.warning(
-                    f"Cannot send email: SMTP server unreachable. Check network connection and EMAIL_HOST setting."
+                    "Cannot send email: SMTP server unreachable. Check network connection and EMAIL_HOST setting."
                 )
             elif (
                 "Username and Password not accepted" in error_msg
                 or "BadCredentials" in error_msg
             ):
                 logger.warning(
-                    f"Cannot send email: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD. For Gmail, you may need to use an App Password."
+                    "Cannot send email: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD. For Gmail, you may need to use an App Password."
                 )
             elif "535" in error_msg:
                 logger.warning(
-                    f"Cannot send email: SMTP authentication failed. Check your email credentials."
+                    "Cannot send email: SMTP authentication failed. Check your email credentials."
                 )
             else:
                 logger.warning(f"Cannot send email: {error_msg}")
@@ -143,5 +143,92 @@ contact@medo-freight.eu
         # Catch any other unexpected errors
         logger.error(
             f"Unexpected error sending status update email: {str(e)}", exc_info=True
+        )
+        return False
+
+
+def send_edit_request_notification(quote, edit_message):
+    """
+    Send email notification to admin when user requests edit to an offer
+
+    Args:
+        quote: FCLQuote instance
+        edit_message: Message from user requesting changes
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping edit request notification.")
+        return False
+
+    try:
+        # Get admin email (you can configure this in settings or use DEFAULT_FROM_EMAIL)
+        admin_email = settings.DEFAULT_FROM_EMAIL
+
+        # Get user info
+        user_name = (
+            quote.user.get_full_name() or quote.user.username
+            if quote.user
+            else "Unknown"
+        )
+        user_email = quote.user.email if quote.user else "Unknown"
+
+        # Prepare email content
+        subject = f"Edit Request for FCL Quote #{quote.quote_number or quote.id}"
+
+        # Build email body
+        email_body = f"""
+A user has requested edits to their FCL Quote offer.
+
+Quote Number: {quote.quote_number or f'#{quote.id}'}
+User: {user_name} ({user_email})
+Route: {quote.origin_city}, {quote.origin_country} → {quote.destination_city}, {quote.destination_country}
+Container Type: {quote.get_container_type_display()}
+Number of Containers: {quote.number_of_containers}
+
+User's Edit Request:
+{edit_message}
+
+Please review the request and send a new offer to the user.
+
+You can manage this quote in the admin dashboard.
+"""
+
+        # Send email with fail_silently=True to prevent exceptions
+        try:
+            send_mail(
+                subject=subject,
+                message=strip_tags(email_body),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[admin_email],
+                fail_silently=True,
+            )
+            logger.info(
+                f"Edit request notification sent successfully to {admin_email} for quote {quote.id}"
+            )
+            return True
+        except (smtplib.SMTPException, gaierror, OSError) as smtp_error:
+            error_msg = str(smtp_error)
+            if "Network is unreachable" in error_msg:
+                logger.warning(
+                    "Cannot send edit request notification: SMTP server unreachable."
+                )
+            elif (
+                "Username and Password not accepted" in error_msg
+                or "BadCredentials" in error_msg
+            ):
+                logger.warning(
+                    "Cannot send edit request notification: SMTP authentication failed."
+                )
+            else:
+                logger.warning(f"Cannot send edit request notification: {error_msg}")
+            return False
+
+    except Exception as e:
+        logger.error(
+            f"Unexpected error sending edit request notification: {str(e)}",
+            exc_info=True,
         )
         return False

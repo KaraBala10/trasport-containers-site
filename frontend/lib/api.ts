@@ -94,22 +94,11 @@ export const apiService = {
   },
 
   updateProfile: (data: {
-    email?: string;
     first_name?: string;
     last_name?: string;
+    email?: string;
   }) => {
-    // Filter out empty strings and send only provided fields
-    const filteredData: any = {};
-    if (data.email !== undefined && data.email !== null && data.email !== '') {
-      filteredData.email = data.email;
-    }
-    if (data.first_name !== undefined && data.first_name !== null) {
-      filteredData.first_name = data.first_name;
-    }
-    if (data.last_name !== undefined && data.last_name !== null) {
-      filteredData.last_name = data.last_name;
-    }
-    return apiClient.patch('/user/profile/', filteredData);
+    return apiClient.put('/user/profile/', data);
   },
 
   refreshToken: (refreshToken: string) => {
@@ -179,21 +168,32 @@ export const apiService = {
     return apiClient.put(`/fcl/quotes/${id}/`, formData);
   },
 
-  updateFCLQuoteStatus: (id: number, status: string, offerMessage?: string) => {
-    return apiClient.patch(`/fcl/quotes/${id}/status/`, {
+  updateFCLQuoteStatus: (id: number, status: string, offerMessage?: string, amountPaid?: number, totalPrice?: number) => {
+    const payload: any = {
       status: status,
       offer_message: offerMessage || '',
-    });
+    };
+    if (amountPaid !== undefined) {
+      payload.amount_paid = amountPaid;
+    }
+    if (totalPrice !== undefined) {
+      payload.total_price = totalPrice;
+    }
+    return apiClient.patch(`/fcl/quotes/${id}/status/`, payload);
   },
 
   deleteFCLQuote: (id: number) => {
     return apiClient.delete(`/fcl/quotes/${id}/`);
   },
 
-  respondToOffer: (id: number, response: "ACCEPTED" | "REJECTED") => {
-    return apiClient.patch(`/fcl/quotes/${id}/respond/`, {
+  respondToOffer: (id: number, response: "ACCEPTED" | "REJECTED" | "EDIT_REQUESTED", editMessage?: string) => {
+    const payload: any = {
       user_response: response,
-    });
+    };
+    if (response === "EDIT_REQUESTED" && editMessage) {
+      payload.edit_request_message = editMessage;
+    }
+    return apiClient.patch(`/fcl/quotes/${id}/respond/`, payload);
   },
 
   // Document endpoints

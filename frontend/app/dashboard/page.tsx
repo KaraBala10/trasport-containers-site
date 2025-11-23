@@ -54,10 +54,12 @@ interface FCLQuote {
   // Status
   total_price: number | null;
   price_per_container: number | null;
+  amount_paid?: number | null;
   status: string;
   offer_message?: string;
   offer_sent_at?: string;
   user_response?: string;
+  edit_request_message?: string;
   created_at: string;
   // User info (for admin view)
   user?: {
@@ -85,6 +87,8 @@ export default function DashboardPage() {
     email: "",
   });
   const [profileSaving, setProfileSaving] = useState(false);
+  const [editRequestMessage, setEditRequestMessage] = useState("");
+  const [showEditRequest, setShowEditRequest] = useState<number | null>(null);
 
   const translations = useMemo(
     () => ({
@@ -171,6 +175,14 @@ export default function DashboardPage() {
         statusUpdated: "تم تحديث الحالة بنجاح",
         customer: "العميل",
         submittedBy: "مقدم من",
+        userResponse: "رد المستخدم",
+        accepted: "مقبول",
+        editRequested: "تم طلب التعديل",
+        userRequestToEdit: "طلب المستخدم تعديل العرض بهذه الرسالة:",
+        amountPaid: "المبلغ المدفوع",
+        totalPrice: "السعر الإجمالي",
+        paymentProgress: "تقدم الدفع",
+        updatePaidAmount: "تحديث المبلغ المدفوع",
         // Status translations
         CREATED: "تم الإنشاء",
         PENDING_PAYMENT: "في انتظار الدفع",
@@ -263,6 +275,14 @@ export default function DashboardPage() {
         statusUpdated: "Status updated successfully",
         customer: "Customer",
         submittedBy: "Submitted by",
+        userResponse: "User Response",
+        accepted: "Accepted",
+        editRequested: "Edit Requested",
+        userRequestToEdit: "Edit request message:",
+        amountPaid: "Amount Paid",
+        totalPrice: "Total Price",
+        paymentProgress: "Payment Progress",
+        updatePaidAmount: "Update Paid Amount",
         // Status translations
         CREATED: "Created",
         OFFER_SENT: "Offer Sent",
@@ -365,56 +385,14 @@ export default function DashboardPage() {
   const handleSaveProfile = async () => {
     try {
       setProfileSaving(true);
-      
-      // Prepare data - ensure email is not empty
-      const dataToSend: {
-        email?: string;
-        first_name?: string;
-        last_name?: string;
-      } = {};
-      
-      if (profileData.email && profileData.email.trim()) {
-        dataToSend.email = profileData.email.trim();
-      }
-      if (profileData.first_name !== undefined) {
-        dataToSend.first_name = profileData.first_name.trim();
-      }
-      if (profileData.last_name !== undefined) {
-        dataToSend.last_name = profileData.last_name.trim();
-      }
-      
-      await apiService.updateProfile(dataToSend);
+      await apiService.updateProfile(profileData);
 
       // Refresh user data by reloading the page
       alert(t.profileUpdated);
       window.location.reload();
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      const errorData = error.response?.data;
-      let errorMessage = t.error;
-      
-      if (errorData) {
-        // Handle validation errors
-        if (errorData.email) {
-          errorMessage = Array.isArray(errorData.email) 
-            ? errorData.email[0] 
-            : errorData.email;
-        } else if (errorData.detail) {
-          errorMessage = errorData.detail;
-        } else if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (typeof errorData === 'object') {
-          // Get first error message from validation errors
-          const firstError = Object.values(errorData)[0];
-          errorMessage = Array.isArray(firstError) 
-            ? firstError[0] 
-            : String(firstError);
-        }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      alert(errorMessage);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
     } finally {
       setProfileSaving(false);
     }
@@ -431,6 +409,76 @@ export default function DashboardPage() {
       });
     }
     setEditingProfile(false);
+  };
+
+  // Handle update paid amount (admin only)
+  const handleUpdatePaidAmount = async (quoteId: number) => {
+    try {
+      const quote = fclQuotes.find((q) => q.id === quoteId);
+      if (!quote) return;
+
+      const currentAmountPaid = quote.amount_paid || 0;
+      const totalPrice = quote.total_price || 0;
+
+      const amountPaidInput = prompt(
+        language === "ar"
+          ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR):`
+          : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR):`
+      );
+      if (amountPaidInput === null) {
+        // User cancelled
+        return;
+      }
+      const parsedAmount = parseFloat(amountPaidInput || "0");
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        alert(
+          language === "ar"
+            ? "يرجى إدخال مبلغ صحيح"
+            : "Please enter a valid amount"
+        );
+        return;
+      }
+      if (totalPrice > 0 && parsedAmount > totalPrice) {
+        alert(
+          language === "ar"
+            ? "المبلغ المدفوع لا يمكن أن يكون أكبر من السعر الإجمالي"
+            : "Amount paid cannot be greater than total price"
+        );
+        return;
+      }
+
+      // Update amount_paid by calling status update with same status
+      const response = await apiService.updateFCLQuoteStatus(
+        quoteId,
+        quote.status,
+        undefined,
+        parsedAmount,
+        undefined
+      );
+
+      // Update the quote in the list immediately
+      if (response.data?.data) {
+        setFclQuotes((prevQuotes) =>
+          prevQuotes.map((q) =>
+            q.id === quoteId ? { ...q, ...response.data.data } : q
+          )
+        );
+      }
+
+      // Refresh quotes list to ensure consistency
+      const quotesResponse = await apiService.getFCLQuotes();
+      const quotes = quotesResponse.data?.results || quotesResponse.data || [];
+      setFclQuotes(Array.isArray(quotes) ? quotes : []);
+
+      alert(
+        language === "ar"
+          ? "تم تحديث المبلغ المدفوع بنجاح"
+          : "Amount paid updated successfully"
+      );
+    } catch (error: any) {
+      console.error("Error updating paid amount:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    }
   };
 
   // Handle status change (admin only)
@@ -457,8 +505,76 @@ export default function DashboardPage() {
         }
       }
 
-      const response = await apiService.updateFCLQuoteStatus(quoteId, newStatus, offerMessage);
-      
+      // If changing to PENDING_PAYMENT, always prompt for total price and amount paid
+      let amountPaid: number | undefined = undefined;
+      let totalPrice: number | undefined = undefined;
+      if (newStatus === "PENDING_PAYMENT") {
+        const quote = fclQuotes.find((q) => q.id === quoteId);
+        const currentTotalPrice = quote?.total_price || 0;
+
+        // Always prompt for total price
+        const totalPriceInput = prompt(
+          language === "ar"
+            ? `أدخل السعر الإجمالي (EUR)${
+                currentTotalPrice > 0 ? ` (الحالي: ${currentTotalPrice})` : ""
+              }:`
+            : `Enter total price (EUR)${
+                currentTotalPrice > 0 ? ` (Current: ${currentTotalPrice})` : ""
+              }:`
+        );
+        if (totalPriceInput === null) {
+          // User cancelled, don't update status
+          return;
+        }
+        const parsedTotalPrice = parseFloat(totalPriceInput || "0");
+        if (isNaN(parsedTotalPrice) || parsedTotalPrice <= 0) {
+          alert(
+            language === "ar"
+              ? "يرجى إدخال سعر إجمالي صحيح"
+              : "Please enter a valid total price"
+          );
+          return;
+        }
+        totalPrice = parsedTotalPrice;
+
+        // Prompt for amount paid
+        const amountPaidInput = prompt(
+          language === "ar"
+            ? `أدخل المبلغ المدفوع (السعر الإجمالي: ${totalPrice} EUR):`
+            : `Enter amount paid (Total Price: ${totalPrice} EUR):`
+        );
+        if (amountPaidInput === null) {
+          // User cancelled, don't update status
+          return;
+        }
+        const parsedAmount = parseFloat(amountPaidInput || "0");
+        if (isNaN(parsedAmount) || parsedAmount < 0) {
+          alert(
+            language === "ar"
+              ? "يرجى إدخال مبلغ صحيح"
+              : "Please enter a valid amount"
+          );
+          return;
+        }
+        if (parsedAmount > totalPrice) {
+          alert(
+            language === "ar"
+              ? "المبلغ المدفوع لا يمكن أن يكون أكبر من السعر الإجمالي"
+              : "Amount paid cannot be greater than total price"
+          );
+          return;
+        }
+        amountPaid = parsedAmount;
+      }
+
+      const response = await apiService.updateFCLQuoteStatus(
+        quoteId,
+        newStatus,
+        offerMessage,
+        amountPaid,
+        totalPrice
+      );
+
       // Update the quote in the list immediately with the response data
       if (response.data?.data) {
         setFclQuotes((prevQuotes) =>
@@ -506,6 +622,21 @@ export default function DashboardPage() {
     return (t as any)[status] || status.replace(/_/g, " ");
   };
 
+  // Get user response display text
+  const getUserResponseText = (userResponse: string | undefined) => {
+    if (!userResponse) return null;
+
+    const tAny = t as any;
+    const responseMap: { [key: string]: string } = {
+      PENDING: tAny.pending || "Pending",
+      ACCEPTED: tAny.accepted || "Accepted",
+      REJECTED: tAny.rejected || "Rejected",
+      EDIT_REQUESTED: tAny.editRequested || "Edit Requested",
+    };
+
+    return responseMap[userResponse] || null;
+  };
+
   // Get simplified status for regular users
   const getUserStatus = (quote: FCLQuote) => {
     if (quote.user_response === "ACCEPTED") {
@@ -524,25 +655,39 @@ export default function DashboardPage() {
   // Handle user response to offer
   const handleRespondToOffer = async (
     quoteId: number,
-    response: "ACCEPTED" | "REJECTED"
+    response: "ACCEPTED" | "REJECTED" | "EDIT_REQUESTED",
+    editMessage?: string
   ) => {
     try {
-      await apiService.respondToOffer(quoteId, response);
+      await apiService.respondToOffer(quoteId, response, editMessage);
 
       // Refresh quotes list
       const quotesResponse = await apiService.getFCLQuotes();
       const quotes = quotesResponse.data?.results || quotesResponse.data || [];
       setFclQuotes(Array.isArray(quotes) ? quotes : []);
 
-      alert(
-        response === "ACCEPTED"
-          ? language === "ar"
+      // Reset edit request UI
+      setShowEditRequest(null);
+      setEditRequestMessage("");
+
+      let message = "";
+      if (response === "ACCEPTED") {
+        message =
+          language === "ar"
             ? "تم قبول العرض بنجاح"
-            : "Offer accepted successfully"
-          : language === "ar"
-          ? "تم رفض العرض بنجاح"
-          : "Offer rejected successfully"
-      );
+            : "Offer accepted successfully";
+      } else if (response === "REJECTED") {
+        message =
+          language === "ar"
+            ? "تم رفض العرض بنجاح"
+            : "Offer rejected successfully";
+      } else if (response === "EDIT_REQUESTED") {
+        message =
+          language === "ar"
+            ? "تم إرسال طلب التعديل بنجاح"
+            : "Edit request sent successfully";
+      }
+      alert(message);
     } catch (error: any) {
       console.error("Error responding to offer:", error);
       alert(t.error + ": " + (error.response?.data?.message || error.message));
@@ -1015,6 +1160,75 @@ export default function DashboardPage() {
                                   {getStatusDisplay(quote.status || "CREATED")}
                                 </span>
                               </div>
+                              {quote.status === "PENDING_PAYMENT" && (
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    {t.paymentProgress}
+                                  </p>
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between text-xs text-gray-700">
+                                      <span>
+                                        {t.amountPaid}: €
+                                        {quote.amount_paid || 0}
+                                      </span>
+                                      <span>
+                                        {t.totalPrice}: €
+                                        {quote.total_price || 0}
+                                      </span>
+                                    </div>
+                                    {quote.total_price &&
+                                      quote.total_price > 0 && (
+                                        <>
+                                          <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div
+                                              className="bg-green-600 h-2 rounded-full transition-all"
+                                              style={{
+                                                width: `${Math.min(
+                                                  100,
+                                                  ((quote.amount_paid || 0) /
+                                                    quote.total_price) *
+                                                    100
+                                                )}%`,
+                                              }}
+                                            ></div>
+                                          </div>
+                                          <p className="text-xs text-gray-600">
+                                            {Math.round(
+                                              ((quote.amount_paid || 0) /
+                                                quote.total_price) *
+                                                100
+                                            )}
+                                            %
+                                          </p>
+                                        </>
+                                      )}
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() =>
+                                          handleUpdatePaidAmount(quote.id)
+                                        }
+                                        className="mt-2 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                                      >
+                                        {t.updatePaidAmount}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {quote.user_response &&
+                                quote.user_response !== "PENDING" && (
+                                  <div>
+                                    <p className="text-xs text-gray-700">
+                                      {quote.user_response ===
+                                        "EDIT_REQUESTED" &&
+                                      quote.edit_request_message
+                                        ? `${t.userRequestToEdit} ${quote.edit_request_message}`
+                                        : getUserResponseText(
+                                            quote.user_response
+                                          )}
+                                    </p>
+                                  </div>
+                                )}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <button
@@ -1242,31 +1456,101 @@ export default function DashboardPage() {
                                       {quote.offer_message}
                                     </p>
                                     {quote.user_response === "PENDING" && (
-                                      <div className="flex gap-3">
-                                        <button
-                                          onClick={() =>
-                                            handleRespondToOffer(
-                                              quote.id,
-                                              "ACCEPTED"
-                                            )
-                                          }
-                                          className="px-6 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                                        >
-                                          {language === "ar"
-                                            ? "قبول"
-                                            : "Accept"}
-                                        </button>
-                                        <button
-                                          onClick={() =>
-                                            handleRespondToOffer(
-                                              quote.id,
-                                              "REJECTED"
-                                            )
-                                          }
-                                          className="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-                                        >
-                                          {language === "ar" ? "رفض" : "Reject"}
-                                        </button>
+                                      <div className="space-y-4">
+                                        {showEditRequest === quote.id ? (
+                                          <div className="space-y-3">
+                                            <label className="block text-sm font-medium text-blue-900">
+                                              {language === "ar"
+                                                ? "أدخل طلب التعديل"
+                                                : "Enter your edit request"}
+                                            </label>
+                                            <textarea
+                                              value={editRequestMessage}
+                                              onChange={(e) =>
+                                                setEditRequestMessage(
+                                                  e.target.value
+                                                )
+                                              }
+                                              placeholder={
+                                                language === "ar"
+                                                  ? "اكتب طلب التعديل هنا..."
+                                                  : "Type your edit request here..."
+                                              }
+                                              className="w-full px-4 py-2 border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
+                                              rows={4}
+                                            />
+                                            <div className="flex gap-3">
+                                              <button
+                                                onClick={() =>
+                                                  handleRespondToOffer(
+                                                    quote.id,
+                                                    "EDIT_REQUESTED",
+                                                    editRequestMessage
+                                                  )
+                                                }
+                                                disabled={
+                                                  !editRequestMessage.trim()
+                                                }
+                                                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                              >
+                                                {language === "ar"
+                                                  ? "إرسال طلب التعديل"
+                                                  : "Send Edit Request"}
+                                              </button>
+                                              <button
+                                                onClick={() => {
+                                                  setShowEditRequest(null);
+                                                  setEditRequestMessage("");
+                                                }}
+                                                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                                              >
+                                                {language === "ar"
+                                                  ? "إلغاء"
+                                                  : "Cancel"}
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="flex flex-wrap gap-3">
+                                            <button
+                                              onClick={() =>
+                                                handleRespondToOffer(
+                                                  quote.id,
+                                                  "ACCEPTED"
+                                                )
+                                              }
+                                              className="px-6 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                                            >
+                                              {language === "ar"
+                                                ? "قبول"
+                                                : "Accept"}
+                                            </button>
+                                            <button
+                                              onClick={() =>
+                                                handleRespondToOffer(
+                                                  quote.id,
+                                                  "REJECTED"
+                                                )
+                                              }
+                                              className="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                            >
+                                              {language === "ar"
+                                                ? "رفض"
+                                                : "Decline"}
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                setShowEditRequest(quote.id);
+                                                setEditRequestMessage("");
+                                              }}
+                                              className="px-6 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
+                                            >
+                                              {language === "ar"
+                                                ? "طلب تعديل"
+                                                : "Request Edit"}
+                                            </button>
+                                          </div>
+                                        )}
                                       </div>
                                     )}
                                     {quote.user_response === "ACCEPTED" && (
@@ -1282,6 +1566,28 @@ export default function DashboardPage() {
                                           ? "✗ تم رفض العرض"
                                           : "✗ Offer Rejected"}
                                       </p>
+                                    )}
+                                    {quote.user_response ===
+                                      "EDIT_REQUESTED" && (
+                                      <div className="space-y-2">
+                                        <p className="text-sm font-semibold text-orange-700">
+                                          {language === "ar"
+                                            ? "✓ تم إرسال طلب التعديل"
+                                            : "✓ Edit Request Sent"}
+                                        </p>
+                                        {quote.edit_request_message && (
+                                          <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded-lg">
+                                            <p className="text-xs font-semibold text-orange-900 mb-1">
+                                              {language === "ar"
+                                                ? "طلبك:"
+                                                : "Your Request:"}
+                                            </p>
+                                            <p className="text-sm text-orange-800 whitespace-pre-wrap">
+                                              {quote.edit_request_message}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
                                 )}

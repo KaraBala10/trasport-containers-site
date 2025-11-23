@@ -160,6 +160,15 @@ class FCLQuote(models.Model):
         null=True,
         verbose_name="Total Price (EUR)",
     )
+    amount_paid = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        default=0,
+        verbose_name="Amount Paid (EUR)",
+        help_text="Amount paid by the user",
+    )
 
     # Status
     STATUS_CHOICES = [
@@ -193,6 +202,7 @@ class FCLQuote(models.Model):
         ("PENDING", "Pending"),
         ("ACCEPTED", "Accepted"),
         ("REJECTED", "Rejected"),
+        ("EDIT_REQUESTED", "Edit Requested"),
     ]
 
     offer_message = models.TextField(
@@ -211,6 +221,12 @@ class FCLQuote(models.Model):
         choices=USER_RESPONSE_CHOICES,
         default="PENDING",
         verbose_name="User Response",
+    )
+    edit_request_message = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Edit Request Message",
+        help_text="Message from user requesting changes to the offer",
     )
 
     class Meta:
