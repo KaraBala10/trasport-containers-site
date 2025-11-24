@@ -186,15 +186,52 @@ export default function Step4ParcelDetails({
             className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-primary-dark">
-                {language === "ar"
-                  ? `طرد #${index + 1}${
-                      parcel.repeatCount > 1 ? ` × ${parcel.repeatCount}` : ""
-                    }`
-                  : `Parcel #${index + 1}${
-                      parcel.repeatCount > 1 ? ` × ${parcel.repeatCount}` : ""
-                    }`}
-              </h3>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h3 className="text-xl font-bold text-primary-dark">
+                  {language === "ar"
+                    ? `طرد #${index + 1}`
+                    : `Parcel #${index + 1}`}
+                </h3>
+                {/* Repeat Count Badge */}
+                <div className="flex items-center gap-2 bg-gradient-to-r from-primary-yellow/20 to-primary-yellow/10 px-4 py-2 rounded-lg border-2 border-primary-yellow/30 shadow-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-primary-yellow"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  <label className="text-xs font-semibold text-gray-600 whitespace-nowrap">
+                    {language === "ar" ? "عدد التكرار:" : "Repeat:"}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={parcel.repeatCount || 1}
+                    onChange={(e) =>
+                      updateParcel(
+                        parcel.id,
+                        "repeatCount",
+                        Math.max(1, parseInt(e.target.value) || 1)
+                      )
+                    }
+                    className="w-16 px-2 py-1 text-center font-bold text-primary-dark bg-white rounded-md border-2 border-primary-yellow/50 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow transition-all"
+                  />
+                  {parcel.repeatCount > 1 && (
+                    <span className="text-sm font-bold text-primary-yellow">
+                      × {parcel.repeatCount}
+                    </span>
+                  )}
+                </div>
+              </div>
               <motion.button
                 onClick={() => removeParcel(parcel.id)}
                 className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
@@ -342,31 +379,6 @@ export default function Step4ParcelDetails({
                   }
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
                 />
-              </div>
-
-              {/* Repeat Count */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.repeatCount}
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={parcel.repeatCount || 1}
-                  onChange={(e) =>
-                    updateParcel(
-                      parcel.id,
-                      "repeatCount",
-                      Math.max(1, parseInt(e.target.value) || 1)
-                    )
-                  }
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                  placeholder="1"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  {t.repeatCountHint}
-                </p>
               </div>
 
               {/* Photos */}
