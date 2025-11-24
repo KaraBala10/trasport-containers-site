@@ -113,13 +113,6 @@ export default function Step10Review({
   const t = translations[language];
   const isEUtoSY = direction === 'eu-sy';
 
-  const shipmentTypeNames = {
-    'parcel-lcl': t.parcelLCL,
-    'electronics': t.electronics,
-    'large-items': t.largeItems,
-    'business-lcl': t.businessLCL,
-  };
-
   const totalWeight = parcels.reduce((sum, p) => sum + (p.weight || 0), 0);
   const totalCBM = parcels.reduce((sum, p) => sum + (p.cbm || 0), 0);
 
@@ -138,16 +131,6 @@ export default function Step10Review({
             <div>
               <span className="text-sm font-semibold text-gray-700">{t.direction}:</span>
               <p className="text-gray-900 font-bold">{isEUtoSY ? t.euToSy : t.syToEu}</p>
-            </div>
-            <div>
-              <span className="text-sm font-semibold text-gray-700">{t.shipmentTypes}:</span>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {shipmentTypes.map(type => (
-                  <span key={type} className="px-3 py-1 bg-primary-yellow/20 text-primary-dark text-xs rounded-full font-semibold">
-                    {shipmentTypeNames[type]}
-                  </span>
-                ))}
-              </div>
             </div>
             <div>
               <span className="text-sm font-semibold text-gray-700">{t.parcelsCount}:</span>

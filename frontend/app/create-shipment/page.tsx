@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useMemo } from "react";
 import Step1Direction from "@/components/ShipmentForm/Step1Direction";
-import Step2ShipmentType from "@/components/ShipmentForm/Step2ShipmentType";
 import Step3SenderReceiver from "@/components/ShipmentForm/Step3SenderReceiver";
 import Step4ParcelDetails from "@/components/ShipmentForm/Step4ParcelDetails";
 import Step5Pricing from "@/components/ShipmentForm/Step5Pricing";
@@ -28,13 +27,13 @@ import { calculateTotalPricing } from "@/lib/pricing";
 import { PricingResult } from "@/types/pricing";
 import { apiService } from "@/lib/api";
 
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 10;
 
 export default function CreateShipmentPage() {
   const { language, setLanguage } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<ShippingDirection | null>(null);
-  const [shipmentTypes, setShipmentTypes] = useState<ShipmentType[]>([]);
+  const [shipmentTypes, setShipmentTypes] = useState<ShipmentType[]>(['parcel-lcl']);
   const [sender, setSender] = useState<PersonInfo | null>(null);
   const [receiver, setReceiver] = useState<PersonInfo | null>(null);
   const [parcels, setParcels] = useState<Parcel[]>([]);
@@ -61,22 +60,13 @@ export default function CreateShipmentPage() {
   const [shipmentId, setShipmentId] = useState<string | null>(null);
   const [pricing, setPricing] = useState<PricingResult | null>(null);
   const [pricingLoading, setPricingLoading] = useState<boolean>(false);
+  const [isCreatingShipment, setIsCreatingShipment] = useState<boolean>(false);
 
-  // Generate shipment ID
-  const generateShipmentId = (): string => {
-    const year = new Date().getFullYear();
-    const randomNum = Math.floor(Math.random() * 100000)
-      .toString()
-      .padStart(5, "0");
-    const prefix = direction === "eu-sy" ? "MF-EU" : "MF-SY";
-    return `${prefix}-${year}-${randomNum}`;
-  };
-
-  // Calculate pricing using API for base price - only when user reaches Step 5
+  // Calculate pricing using API for base price - only when user reaches Step 4
   useEffect(() => {
     const calculatePricing = async () => {
-      // Only calculate when user is on Step 5 (Pricing Summary)
-      if (currentStep !== 5) {
+      // Only calculate when user is on Step 4 (Pricing Summary)
+      if (currentStep !== 4) {
         return;
       }
 
@@ -221,7 +211,7 @@ export default function CreateShipmentPage() {
 
     calculatePricing();
   }, [
-    currentStep, // Trigger when user reaches Step 5
+    currentStep, // Trigger when user reaches Step 4
     parcels,
     shipmentTypes,
     initialPackaging,
@@ -384,20 +374,31 @@ export default function CreateShipmentPage() {
         {/* Step 2 Content */}
         {currentStep === 2 && (
           <motion.div
-            key="step2"
+            key="step3"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.4 }}
           >
             <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-              {t.step2Title}
+              {t.step3Title}
             </h2>
-            <Step2ShipmentType
-              selectedTypes={shipmentTypes}
-              onTypesChange={setShipmentTypes}
-              language={language}
-            />
+            {direction ? (
+              <Step3SenderReceiver
+                direction={direction}
+                sender={sender}
+                receiver={receiver}
+                onSenderChange={setSender}
+                onReceiverChange={setReceiver}
+                language={language}
+              />
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                {language === "ar"
+                  ? "يرجى اختيار اتجاه الشحن أولاً"
+                  : "Please select shipping direction first"}
+              </div>
+            )}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -473,24 +474,14 @@ export default function CreateShipmentPage() {
             transition={{ duration: 0.4 }}
           >
             <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-              {t.step3Title}
+              {t.step4Title}
             </h2>
-            {direction ? (
-              <Step3SenderReceiver
-                direction={direction}
-                sender={sender}
-                receiver={receiver}
-                onSenderChange={setSender}
-                onReceiverChange={setReceiver}
-                language={language}
-              />
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                {language === "ar"
-                  ? "يرجى اختيار اتجاه الشحن أولاً"
-                  : "Please select shipping direction first"}
-              </div>
-            )}
+            <Step4ParcelDetails
+              shipmentTypes={shipmentTypes}
+              parcels={parcels}
+              onParcelsChange={setParcels}
+              language={language}
+            />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -565,15 +556,24 @@ export default function CreateShipmentPage() {
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.4 }}
           >
-            <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-              {t.step4Title}
-            </h2>
-            <Step4ParcelDetails
-              shipmentTypes={shipmentTypes}
-              parcels={parcels}
-              onParcelsChange={setParcels}
-              language={language}
-            />
+            {pricingLoading ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-yellow mb-4"></div>
+                <p className="text-gray-600 text-lg">
+                  {language === "ar"
+                    ? "جاري حساب الأسعار..."
+                    : "Calculating prices..."}
+                </p>
+              </div>
+            ) : pricing ? (
+              <Step5Pricing pricing={pricing} language={language} />
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                {language === "ar"
+                  ? "يرجى إضافة الطرود أولاً في الخطوة السابقة"
+                  : "Please add parcels first in the previous step"}
+              </div>
+            )}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -582,7 +582,7 @@ export default function CreateShipmentPage() {
             >
               {/* Back Button */}
               <motion.button
-                onClick={() => setCurrentStep(2)}
+                onClick={() => setCurrentStep(3)}
                 className="relative px-8 py-5 bg-white border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-3xl shadow-lg hover:shadow-xl hover:border-primary-dark/30 transition-all duration-300 overflow-hidden group"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.96 }}
@@ -639,10 +639,10 @@ export default function CreateShipmentPage() {
           </motion.div>
         )}
 
-        {/* Step 6 Content */}
-        {currentStep === 6 && (
+        {/* Step 5 Content */}
+        {currentStep === 5 && (
           <motion.div
-            key="step6"
+            key="step5"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
@@ -657,6 +657,90 @@ export default function CreateShipmentPage() {
               onInitialPackagingChange={setInitialPackaging}
               onFinalPackagingChange={setFinalPackaging}
               language={language}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex justify-center items-center gap-4 mt-10"
+            >
+              {/* Back Button */}
+              <motion.button
+                onClick={() => setCurrentStep(4)}
+                className="relative px-8 py-5 bg-white border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-3xl shadow-lg hover:shadow-xl hover:border-primary-dark/30 transition-all duration-300 overflow-hidden group"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  <motion.svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    initial={{ x: 0 }}
+                    whileHover={{ x: language === "ar" ? 3 : -3 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
+                    />
+                  </motion.svg>
+                  {t.back}
+                </span>
+              </motion.button>
+
+              {/* Continue Button */}
+              <motion.button
+                onClick={() => setCurrentStep(6)}
+                className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  {t.continue}
+                  <motion.svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    initial={{ x: 0 }}
+                    whileHover={{ x: language === "ar" ? -5 : 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                    />
+                  </motion.svg>
+                </span>
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Step 6 Content */}
+        {currentStep === 6 && (
+          <motion.div
+            key="step6"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.4 }}
+          >
+            <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
+              {t.step7Title}
+            </h2>
+            <Step7Insurance
+              optionalInsuranceValue={optionalInsuranceValue}
+              onOptionalInsuranceChange={setOptionalInsuranceValue}
+              language={language}
+              hasElectronics={shipmentTypes.includes("electronics")}
+              electronicsDeclaredValue={electronicsDeclaredValue}
             />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -724,7 +808,7 @@ export default function CreateShipmentPage() {
         )}
 
         {/* Step 7 Content */}
-        {currentStep === 7 && (
+        {currentStep === 7 && direction && (
           <motion.div
             key="step7"
             initial={{ opacity: 0, x: -20 }}
@@ -733,14 +817,19 @@ export default function CreateShipmentPage() {
             transition={{ duration: 0.4 }}
           >
             <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-              {t.step7Title}
+              {t.step8Title}
             </h2>
-            <Step7Insurance
-              optionalInsuranceValue={optionalInsuranceValue}
-              onOptionalInsuranceChange={setOptionalInsuranceValue}
+            <Step8InternalTransport
+              direction={direction}
+              euPickupAddress={euPickupAddress}
+              euPickupWeight={euPickupWeight}
+              onEUPickupAddressChange={setEUPickupAddress}
+              onEUPickupWeightChange={setEUPickupWeight}
+              syriaProvince={syriaProvince}
+              syriaWeight={syriaWeight}
+              onSyriaProvinceChange={setSyriaProvince}
+              onSyriaWeightChange={setSyriaWeight}
               language={language}
-              hasElectronics={shipmentTypes.includes("electronics")}
-              electronicsDeclaredValue={electronicsDeclaredValue}
             />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -817,18 +906,23 @@ export default function CreateShipmentPage() {
             transition={{ duration: 0.4 }}
           >
             <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-              {t.step8Title}
+              {t.step9Title}
             </h2>
-            <Step8InternalTransport
+            <Step10Review
               direction={direction}
-              euPickupAddress={euPickupAddress}
-              euPickupWeight={euPickupWeight}
-              onEUPickupAddressChange={setEUPickupAddress}
-              onEUPickupWeightChange={setEUPickupWeight}
-              syriaProvince={syriaProvince}
-              syriaWeight={syriaWeight}
-              onSyriaProvinceChange={setSyriaProvince}
-              onSyriaWeightChange={setSyriaWeight}
+              shipmentTypes={shipmentTypes}
+              sender={sender}
+              receiver={receiver}
+              parcels={parcels}
+              pricing={pricing}
+              acceptedTerms={acceptedTerms}
+              acceptedPolicies={acceptedPolicies}
+              onAcceptedTermsChange={setAcceptedTerms}
+              onAcceptedPoliciesChange={setAcceptedPolicies}
+              onCreateShipment={() => {
+                // Move to payment step instead of creating shipment
+                setCurrentStep(9);
+              }}
               language={language}
             />
             <motion.div
@@ -906,23 +1000,18 @@ export default function CreateShipmentPage() {
             transition={{ duration: 0.4 }}
           >
             <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-              {t.step9Title}
+              {t.step10Title}
             </h2>
-            <Step10Review
+            <Step9Payment
               direction={direction}
-              shipmentTypes={shipmentTypes}
-              sender={sender}
-              receiver={receiver}
-              parcels={parcels}
-              pricing={pricing}
-              acceptedTerms={acceptedTerms}
-              acceptedPolicies={acceptedPolicies}
-              onAcceptedTermsChange={setAcceptedTerms}
-              onAcceptedPoliciesChange={setAcceptedPolicies}
-              onCreateShipment={() => {
-                // Move to payment step instead of creating shipment
-                setCurrentStep(10);
-              }}
+              paymentMethod={paymentMethod}
+              onPaymentMethodChange={setPaymentMethod}
+              transferSenderName={transferSenderName}
+              transferReference={transferReference}
+              transferSlip={transferSlip}
+              onTransferSenderNameChange={setTransferSenderName}
+              onTransferReferenceChange={setTransferReference}
+              onTransferSlipChange={setTransferSlip}
               language={language}
             />
             <motion.div
@@ -959,95 +1048,6 @@ export default function CreateShipmentPage() {
                 </span>
               </motion.button>
 
-              {/* Continue Button */}
-              <motion.button
-                onClick={() => setCurrentStep(10)}
-                className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                whileHover={{ scale: 1.08, y: -2 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                <span className="relative z-10 flex items-center gap-3">
-                  {t.continue}
-                  <motion.svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    initial={{ x: 0 }}
-                    whileHover={{ x: language === "ar" ? -5 : 5 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
-                    />
-                  </motion.svg>
-                </span>
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Step 10 Content */}
-        {currentStep === 10 && direction && (
-          <motion.div
-            key="step10"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.4 }}
-          >
-            <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-              {t.step10Title}
-            </h2>
-            <Step9Payment
-              direction={direction}
-              paymentMethod={paymentMethod}
-              onPaymentMethodChange={setPaymentMethod}
-              transferSenderName={transferSenderName}
-              transferReference={transferReference}
-              transferSlip={transferSlip}
-              onTransferSenderNameChange={setTransferSenderName}
-              onTransferReferenceChange={setTransferReference}
-              onTransferSlipChange={setTransferSlip}
-              language={language}
-            />
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex justify-center items-center gap-4 mt-10"
-            >
-              {/* Back Button */}
-              <motion.button
-                onClick={() => setCurrentStep(9)}
-                className="relative px-8 py-5 bg-white border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-3xl shadow-lg hover:shadow-xl hover:border-primary-dark/30 transition-all duration-300 overflow-hidden group"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  <motion.svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    initial={{ x: 0 }}
-                    whileHover={{ x: language === "ar" ? 3 : -3 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
-                    />
-                  </motion.svg>
-                  {t.back}
-                </span>
-              </motion.button>
-
               {/* Continue/Submit Button */}
               <motion.button
                 onClick={async () => {
@@ -1056,23 +1056,74 @@ export default function CreateShipmentPage() {
                     return;
                   }
 
-                  // Generate shipment ID
-                  const newShipmentId = generateShipmentId();
-                  setShipmentId(newShipmentId);
+                  setIsCreatingShipment(true);
+                  try {
+                    // Prepare shipment data
+                    const shipmentData = {
+                      direction: direction,
+                      shipment_types: shipmentTypes,
+                      sender: sender,
+                      receiver: receiver,
+                      parcels: parcels,
+                      initial_packaging: initialPackaging,
+                      final_packaging: finalPackaging,
+                      optional_insurance_value: optionalInsuranceValue,
+                      eu_pickup_address: euPickupAddress,
+                      eu_pickup_weight: euPickupWeight,
+                      syria_province: syriaProvince,
+                      syria_weight: syriaWeight,
+                      payment_method: paymentMethod,
+                      transfer_sender_name: transferSenderName,
+                      transfer_reference: transferReference,
+                      accepted_terms: acceptedTerms,
+                      accepted_policies: acceptedPolicies,
+                      pricing: pricing,
+                    };
 
-                  // TODO: Send data to backend API
-                  // This will be implemented with backend integration
-                  console.log("Creating shipment with ID:", newShipmentId);
+                    // Send data to backend API
+                    const response = await apiService.createShipment(shipmentData);
 
-                  // Move to confirmation step
-                  setCurrentStep(11);
+                    // Get shipment ID from backend response
+                    if (response.data && response.data.shipment_id) {
+                      setShipmentId(response.data.shipment_id);
+                      // Move to confirmation step
+                      setCurrentStep(10);
+                    } else if (response.data && response.data.id) {
+                      // Fallback: use id if shipment_id not available
+                      setShipmentId(response.data.id.toString());
+                      setCurrentStep(10);
+                    } else {
+                      console.error("No shipment ID received from backend");
+                      alert(language === "ar" ? "حدث خطأ أثناء إنشاء الشحنة" : "Error creating shipment");
+                    }
+                  } catch (error: any) {
+                    console.error("Error creating shipment:", error);
+                    alert(
+                      language === "ar"
+                        ? "حدث خطأ أثناء إنشاء الشحنة. يرجى المحاولة مرة أخرى."
+                        : "Error creating shipment. Please try again."
+                    );
+                  } finally {
+                    setIsCreatingShipment(false);
+                  }
                 }}
-                className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                whileHover={{ scale: 1.08, y: -2 }}
-                whileTap={{ scale: 0.96 }}
+                disabled={isCreatingShipment}
+                className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
+                  isCreatingShipment
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    : "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
+                }`}
+                whileHover={!isCreatingShipment ? { scale: 1.08, y: -2 } : {}}
+                whileTap={!isCreatingShipment ? { scale: 0.96 } : {}}
               >
                 <span className="relative z-10 flex items-center gap-3">
-                  {language === "ar" ? "إتمام الطلب" : "Complete Order"}
+                  {isCreatingShipment
+                    ? language === "ar"
+                      ? "جاري الإنشاء..."
+                      : "Creating..."
+                    : language === "ar"
+                    ? "إتمام الطلب"
+                    : "Complete Order"}
                   <motion.svg
                     className="w-6 h-6"
                     fill="none"
@@ -1095,102 +1146,10 @@ export default function CreateShipmentPage() {
           </motion.div>
         )}
 
-        {/* Step 5 Content */}
-        {currentStep === 5 && (
+        {/* Step 10 Content - Confirmation */}
+        {currentStep === 10 && direction && shipmentId && (
           <motion.div
-            key="step5"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.4 }}
-          >
-            {pricingLoading ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-yellow mb-4"></div>
-                <p className="text-gray-600 text-lg">
-                  {language === "ar"
-                    ? "جاري حساب الأسعار..."
-                    : "Calculating prices..."}
-                </p>
-              </div>
-            ) : pricing ? (
-              <Step5Pricing pricing={pricing} language={language} />
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                {language === "ar"
-                  ? "يرجى إضافة الطرود أولاً في الخطوة السابقة"
-                  : "Please add parcels first in the previous step"}
-              </div>
-            )}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex justify-center items-center gap-4 mt-10"
-            >
-              {/* Back Button */}
-              <motion.button
-                onClick={() => setCurrentStep(4)}
-                className="relative px-8 py-5 bg-white border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-3xl shadow-lg hover:shadow-xl hover:border-primary-dark/30 transition-all duration-300 overflow-hidden group"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  <motion.svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    initial={{ x: 0 }}
-                    whileHover={{ x: language === "ar" ? 3 : -3 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d={language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"}
-                    />
-                  </motion.svg>
-                  {t.back}
-                </span>
-              </motion.button>
-
-              {/* Continue Button */}
-              <motion.button
-                onClick={() => setCurrentStep(6)}
-                className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                whileHover={{ scale: 1.08, y: -2 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                <span className="relative z-10 flex items-center gap-3">
-                  {t.continue}
-                  <motion.svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    initial={{ x: 0 }}
-                    whileHover={{ x: language === "ar" ? -5 : 5 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
-                    />
-                  </motion.svg>
-                </span>
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Step 11 Content - Confirmation */}
-        {currentStep === 11 && direction && shipmentId && (
-          <motion.div
-            key="step11"
+            key="step10"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}

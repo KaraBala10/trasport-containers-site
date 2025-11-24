@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { ShippingDirection } from '@/app/create-shipment/page';
+import { ShippingDirection } from '@/types/shipment';
 
 interface Step1DirectionProps {
   direction: ShippingDirection;

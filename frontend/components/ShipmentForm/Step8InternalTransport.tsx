@@ -19,13 +19,17 @@ interface Step8InternalTransportProps {
 
 // Syrian provinces with pricing
 const syrianProvinces = [
+  { code: 'ALEPPO', name: 'حلب', nameEn: 'Aleppo', minPrice: 0, ratePerKg: 0 }, // Center location
   { code: 'LATAKIA', name: 'اللاذقية', nameEn: 'Latakia', minPrice: 6, ratePerKg: 0.05 },
   { code: 'TARTOUS', name: 'طرطوس', nameEn: 'Tartous', minPrice: 7, ratePerKg: 0.05 },
   { code: 'DAMASCUS', name: 'دمشق', nameEn: 'Damascus', minPrice: 10, ratePerKg: 0.07 },
+  { code: 'RIF_DIMASHQ', name: 'ريف دمشق', nameEn: 'Rif Dimashq', minPrice: 10, ratePerKg: 0.07 },
   { code: 'HOMS', name: 'حمص', nameEn: 'Homs', minPrice: 9, ratePerKg: 0.06 },
   { code: 'HAMA', name: 'حماة', nameEn: 'Hama', minPrice: 8, ratePerKg: 0.06 },
   { code: 'IDLIB', name: 'إدلب', nameEn: 'Idlib', minPrice: 7, ratePerKg: 0.06 },
   { code: 'SUWEIDA', name: 'السويداء', nameEn: 'Suweida', minPrice: 12, ratePerKg: 0.08 },
+  { code: 'DARAA', name: 'درعا', nameEn: 'Daraa', minPrice: 11, ratePerKg: 0.07 },
+  { code: 'QUNEITRA', name: 'القنيطرة', nameEn: 'Quneitra', minPrice: 10, ratePerKg: 0.07 },
   { code: 'RAQQA', name: 'الرقة', nameEn: 'Raqqa', minPrice: 13, ratePerKg: 0.08 },
   { code: 'DER_EZZOR', name: 'دير الزور', nameEn: 'Deir ez-Zor', minPrice: 14, ratePerKg: 0.09 },
   { code: 'HASAKA', name: 'الحسكة', nameEn: 'Hasaka', minPrice: 18, ratePerKg: 0.10 },
@@ -257,26 +261,28 @@ export default function Step8InternalTransport({
         </motion.div>
       )}
 
-      {/* Syria to EU - Only Syria Pickup */}
+      {/* Syria to EU - Syria Pickup and EU Delivery */}
       {!isEUtoSY && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
-        >
-          <div className="mb-4">
-            <h3 className="text-xl font-bold text-primary-dark mb-2">
-              {t.syriaTransport}
-            </h3>
-            <p className="text-sm text-gray-600 mb-2">
-              {language === 'ar' 
-                ? 'استلام من عنوانك في سورية إلى مركز حلب'
-                : 'Pickup from your address in Syria to Aleppo center'}
-            </p>
-            <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-              {t.optional}
-            </span>
-          </div>
+        <>
+          {/* Syria Internal Transport */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
+          >
+            <div className="mb-4">
+              <h3 className="text-xl font-bold text-primary-dark mb-2">
+                {t.syriaTransport}
+              </h3>
+              <p className="text-sm text-gray-600 mb-2">
+                {language === 'ar' 
+                  ? 'استلام من عنوانك في سورية إلى مركز حلب'
+                  : 'Pickup from your address in Syria to Aleppo center'}
+              </p>
+              <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                {t.optional}
+              </span>
+            </div>
 
           <div className="space-y-4">
             <div>
@@ -356,6 +362,73 @@ export default function Step8InternalTransport({
             )}
           </div>
         </motion.div>
+
+        {/* EU Internal Transport for Syria to EU */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100 mt-6"
+        >
+          <div className="mb-4">
+            <h3 className="text-xl font-bold text-primary-dark mb-2">
+              {t.euTransport}
+            </h3>
+            <p className="text-sm text-gray-600 mb-2">
+              {language === 'ar' 
+                ? 'توصيل من مركز Bergen op Zoom (هولندا) إلى عنوانك في أوروبا'
+                : 'Delivery from Bergen op Zoom center (Netherlands) to your address in Europe'}
+            </p>
+            <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+              {t.optional}
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.pickupAddress}
+              </label>
+              <input
+                type="text"
+                value={euPickupAddress}
+                onChange={(e) => onEUPickupAddressChange(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                placeholder={language === 'ar' ? 'أدخل عنوان التوصيل...' : 'Enter delivery address...'}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.approximateWeight}
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={euPickupWeight || ''}
+                onChange={(e) => onEUPickupWeightChange(parseFloat(e.target.value) || 0)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                placeholder={language === 'ar' ? 'أدخل الوزن...' : 'Enter weight...'}
+              />
+            </div>
+
+            <div className="bg-yellow-50 rounded-xl p-4 border-2 border-yellow-200">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-yellow-800 font-semibold">{t.sendcloudNote}</span>
+                <span className="px-3 py-1 bg-yellow-200 text-yellow-900 text-xs rounded-full font-bold">
+                  {t.comingSoon}
+                </span>
+              </div>
+              <p className="text-sm text-yellow-700">
+                {language === 'ar' 
+                  ? 'سيتم دمج Sendcloud API قريباً لحساب السعر الحقيقي وحجز السائق تلقائياً'
+                  : 'Sendcloud API integration coming soon for real-time pricing and automatic driver booking'}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+        </>
       )}
     </div>
   );
