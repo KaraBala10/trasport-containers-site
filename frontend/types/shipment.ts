@@ -23,6 +23,7 @@ export interface Parcel {
   cbm: number; // calculated automatically
   productCategory: string; // Product key (e.g., 'CLOTHES', 'MOBILE_PHONE')
   quantity: number; // Quantity of items
+  repeatCount: number; // Number of times this parcel is repeated (default: 1)
   photos: File[]; // Parcel photos (3 required)
   
   // Electronics specific fields

@@ -110,13 +110,13 @@ export default function CreateShipmentPage() {
           (p) => shipmentTypes.includes("large-items") && p.itemType
         );
 
-        // Calculate total weight and CBM for regular parcels
+        // Calculate total weight and CBM for regular parcels (accounting for repeatCount)
         const totalWeight = regularParcels.reduce(
-          (sum, p) => sum + (p.weight || 0),
+          (sum, p) => sum + (p.weight || 0) * (p.repeatCount || 1),
           0
         );
         const totalCBM = regularParcels.reduce(
-          (sum, p) => sum + (p.cbm || 0),
+          (sum, p) => sum + (p.cbm || 0) * (p.repeatCount || 1),
           0
         );
 

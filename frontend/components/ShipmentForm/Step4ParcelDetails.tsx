@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Parcel, ShipmentType } from "@/types/shipment";
 import { PER_KG_PRODUCTS, PER_PIECE_PRODUCTS } from "@/types/pricing";
-import { apiService } from "@/lib/api";
+import { calculateCBM } from "@/lib/pricing";
 
 interface Step4ParcelDetailsProps {
   shipmentTypes: ShipmentType[];
@@ -30,6 +30,8 @@ export default function Step4ParcelDetails({
       weight: "الوزن (كغ)",
       productCategory: "نوع المنتج",
       quantity: "الكمية",
+      repeatCount: "عدد التكرار",
+      repeatCountHint: "كم مرة تريد تكرار هذا الطرد؟",
       photos: "صور الطرد",
       photosRequired: "مطلوب: 3 صور",
       devicePhoto: "صورة المنتج الإلكتروني",
@@ -55,6 +57,8 @@ export default function Step4ParcelDetails({
       weight: "Weight (kg)",
       productCategory: "Product Category",
       quantity: "Quantity",
+      repeatCount: "Repeat Count",
+      repeatCountHint: "How many times to repeat this parcel?",
       photos: "Parcel Photos",
       photosRequired: "Required: 3 photos",
       devicePhoto: "Electronics Device Photo",
@@ -75,9 +79,6 @@ export default function Step4ParcelDetails({
   const t = translations[language];
   const hasElectronics = shipmentTypes.includes("electronics");
   const hasLargeItems = shipmentTypes.includes("large-items");
-  const [calculatingCBM, setCalculatingCBM] = useState<Record<string, boolean>>(
-    {}
-  );
 
   // Combine all product categories
   const allProducts = [...PER_KG_PRODUCTS, ...PER_PIECE_PRODUCTS];
@@ -92,6 +93,7 @@ export default function Step4ParcelDetails({
       cbm: 0,
       productCategory: "",
       quantity: 1,
+      repeatCount: 1,
       photos: [],
     };
     onParcelsChange([...parcels, newParcel]);
@@ -106,9 +108,12 @@ export default function Step4ParcelDetails({
       if (parcel.id === id) {
         const updatedParcel = { ...parcel, [field]: value };
 
-        // Clear CBM when any dimension changes to force recalculation
+        // Automatically calculate CBM when any dimension changes
         if (field === "length" || field === "width" || field === "height") {
-          updatedParcel.cbm = 0;
+          const length = field === "length" ? value : parcel.length || 0;
+          const width = field === "width" ? value : parcel.width || 0;
+          const height = field === "height" ? value : parcel.height || 0;
+          updatedParcel.cbm = calculateCBM(length, width, height);
         }
 
         return updatedParcel;
@@ -116,50 +121,6 @@ export default function Step4ParcelDetails({
       return parcel;
     });
     onParcelsChange(updatedParcels);
-  };
-
-  const calculateCBMFromAPI = async (parcelId: string) => {
-    const parcel = parcels.find((p) => p.id === parcelId);
-    if (!parcel) return;
-
-    const length = parcel.length || 0;
-    const width = parcel.width || 0;
-    const height = parcel.height || 0;
-
-    // Validate dimensions
-    if (length <= 0 || width <= 0 || height <= 0) {
-      alert(
-        language === "ar"
-          ? "يرجى إدخال الأبعاد (الطول والعرض والارتفاع) أولاً"
-          : "Please enter dimensions (length, width, height) first"
-      );
-      return;
-    }
-
-    setCalculatingCBM((prev) => ({ ...prev, [parcelId]: true }));
-
-    try {
-      const response = await apiService.calculateCBM(length, width, height);
-
-      if (response.success && response.cbm !== undefined) {
-        updateParcel(parcelId, "cbm", response.cbm);
-      } else {
-        alert(
-          language === "ar"
-            ? `خطأ في حساب الحجم: ${response.error || "خطأ غير معروف"}`
-            : `Error calculating volume: ${response.error || "Unknown error"}`
-        );
-      }
-    } catch (error: any) {
-      console.error("Error calculating CBM:", error);
-      alert(
-        language === "ar"
-          ? "حدث خطأ أثناء حساب الحجم. يرجى المحاولة مرة أخرى."
-          : "An error occurred while calculating volume. Please try again."
-      );
-    } finally {
-      setCalculatingCBM((prev) => ({ ...prev, [parcelId]: false }));
-    }
   };
 
   const handlePhotoUpload = (
@@ -227,8 +188,12 @@ export default function Step4ParcelDetails({
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-primary-dark">
                 {language === "ar"
-                  ? `طرد #${index + 1}`
-                  : `Parcel #${index + 1}`}
+                  ? `طرد #${index + 1}${
+                      parcel.repeatCount > 1 ? ` × ${parcel.repeatCount}` : ""
+                    }`
+                  : `Parcel #${index + 1}${
+                      parcel.repeatCount > 1 ? ` × ${parcel.repeatCount}` : ""
+                    }`}
               </h3>
               <motion.button
                 onClick={() => removeParcel(parcel.id)}
@@ -322,64 +287,17 @@ export default function Step4ParcelDetails({
                 />
               </div>
 
-              {/* CBM Display with Calculate Button */}
+              {/* CBM Display (Auto-calculated) */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   {t.cbm}
                 </label>
-                <div className="flex gap-2">
-                  <div className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 flex items-center">
-                    {parcel.cbm > 0
-                      ? `${parcel.cbm.toFixed(6)} m³`
-                      : language === "ar"
-                      ? "0.000000 m³"
-                      : "0.000000 m³"}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => calculateCBMFromAPI(parcel.id)}
-                    disabled={
-                      calculatingCBM[parcel.id] ||
-                      !parcel.length ||
-                      !parcel.width ||
-                      !parcel.height
-                    }
-                    className="px-4 py-3 bg-primary-yellow text-primary-dark font-semibold rounded-xl hover:bg-primary-yellow/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 min-w-[120px] justify-center"
-                  >
-                    {calculatingCBM[parcel.id] ? (
-                      <>
-                        <svg
-                          className="animate-spin h-5 w-5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        <span className="text-sm">
-                          {language === "ar"
-                            ? "جاري الحساب..."
-                            : "Calculating..."}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-sm">
-                        {language === "ar" ? "احسب" : "Calculate"}
-                      </span>
-                    )}
-                  </button>
+                <div className="px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 flex items-center">
+                  {parcel.cbm > 0
+                    ? `${parcel.cbm.toFixed(6)} m³`
+                    : language === "ar"
+                    ? "0.000000 m³"
+                    : "0.000000 m³"}
                 </div>
               </div>
 
@@ -424,6 +342,31 @@ export default function Step4ParcelDetails({
                   }
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
                 />
+              </div>
+
+              {/* Repeat Count */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.repeatCount}
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={parcel.repeatCount || 1}
+                  onChange={(e) =>
+                    updateParcel(
+                      parcel.id,
+                      "repeatCount",
+                      Math.max(1, parseInt(e.target.value) || 1)
+                    )
+                  }
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  placeholder="1"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {t.repeatCountHint}
+                </p>
               </div>
 
               {/* Photos */}
