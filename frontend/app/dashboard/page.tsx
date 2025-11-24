@@ -454,6 +454,21 @@ export default function DashboardPage() {
     setEditingProfile(false);
   };
 
+  // Handle send payment reminder (admin only)
+  const handleSendPaymentReminder = async (quoteId: number) => {
+    try {
+      await apiService.sendPaymentReminder(quoteId);
+      alert(
+        language === "ar"
+          ? "تم إرسال تذكير الدفع بنجاح"
+          : "Payment reminder sent successfully"
+      );
+    } catch (error: any) {
+      console.error("Error sending payment reminder:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    }
+  };
+
   // Handle update paid amount (admin only)
   const handleUpdatePaidAmount = async (quoteId: number) => {
     try {
@@ -527,6 +542,48 @@ export default function DashboardPage() {
   // Handle status change (admin only)
   const handleStatusChange = async (quoteId: number, newStatus: string) => {
     try {
+      const quote = fclQuotes.find((q) => q.id === quoteId);
+      if (!quote) return;
+
+      // Check if payment is 100% before allowing status updates to IN_TRANSIT_TO_SYRIA and beyond
+      const restrictedStatuses = [
+        "IN_TRANSIT_TO_SYRIA",
+        "ARRIVED_SYRIA",
+        "SYRIA_SORTING",
+        "READY_FOR_DELIVERY",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+      ];
+      if (restrictedStatuses.includes(newStatus)) {
+        if (quote.total_price && quote.total_price > 0) {
+          const paymentPercentage =
+            ((quote.amount_paid || 0) / quote.total_price) * 100;
+          if (paymentPercentage < 100) {
+            alert(
+              language === "ar"
+                ? `لا يمكن تحديث الحالة إلى ${getStatusDisplay(
+                    newStatus
+                  )}. يجب إكمال الدفع بنسبة 100%. الدفع الحالي: ${paymentPercentage.toFixed(
+                    1
+                  )}%`
+                : `Cannot update status to ${getStatusDisplay(
+                    newStatus
+                  )}. Payment must be 100% complete. Current payment: ${paymentPercentage.toFixed(
+                    1
+                  )}%`
+            );
+            return;
+          }
+        } else {
+          alert(
+            language === "ar"
+              ? "يجب تحديد السعر الإجمالي أولاً"
+              : "Total price must be set first"
+          );
+          return;
+        }
+      }
+
       let offerMessage = "";
 
       // If changing to OFFER_SENT, prompt for message
@@ -1308,65 +1365,121 @@ export default function DashboardPage() {
                                 </span>
                               </div>
 
-                              {/* Payment Progress */}
-                              {quote.status === "PENDING_PAYMENT" && (
-                                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                    {t.paymentProgress}
-                                  </p>
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-xs">
-                                      <span className="text-gray-600 font-medium">
-                                        {t.amountPaid}
-                                      </span>
-                                      <span className="font-bold text-primary-dark">
-                                        €{quote.amount_paid || 0}
-                                      </span>
-                                    </div>
-                                    {quote.total_price &&
-                                      quote.total_price > 0 && (
-                                        <>
-                                          <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                            <div
-                                              className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
-                                              style={{
-                                                width: `${Math.min(
-                                                  100,
-                                                  ((quote.amount_paid || 0) /
-                                                    quote.total_price) *
-                                                    100
-                                                )}%`,
-                                              }}
-                                            ></div>
-                                          </div>
-                                          <div className="flex justify-between items-center">
-                                            <p className="text-xs font-bold text-gray-700">
-                                              {Math.round(
-                                                ((quote.amount_paid || 0) /
-                                                  quote.total_price) *
-                                                  100
-                                              )}
-                                              %
-                                            </p>
-                                            <p className="text-xs text-gray-600">
-                                              €{quote.total_price || 0}
-                                            </p>
-                                          </div>
-                                        </>
+                              {/* Payment Progress - Show for all statuses after OFFER_SENT */}
+                              {quote.status !== "CREATED" &&
+                                quote.total_price &&
+                                quote.total_price > 0 && (
+                                  <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                      {t.paymentProgress}
+                                    </p>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-center text-xs">
+                                        <span className="text-gray-600 font-medium">
+                                          {t.amountPaid}
+                                        </span>
+                                        <span className="font-bold text-primary-dark">
+                                          €{quote.amount_paid || 0}
+                                        </span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                        <div
+                                          className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
+                                          style={{
+                                            width: `${Math.min(
+                                              100,
+                                              ((quote.amount_paid || 0) /
+                                                quote.total_price) *
+                                                100
+                                            )}%`,
+                                          }}
+                                        ></div>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <p className="text-xs font-bold text-gray-700">
+                                          {Math.round(
+                                            ((quote.amount_paid || 0) /
+                                              quote.total_price) *
+                                              100
+                                          )}
+                                          %
+                                        </p>
+                                        <p className="text-xs text-gray-600">
+                                          {t.totalPrice}: €
+                                          {quote.total_price || 0}
+                                        </p>
+                                      </div>
+                                      {/* Warning message if payment is not 100% */}
+                                      {((quote.amount_paid || 0) /
+                                        quote.total_price) *
+                                        100 <
+                                        100 && (
+                                        <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+                                          <p className="text-xs font-semibold text-yellow-800">
+                                            {language === "ar"
+                                              ? "⚠️ يرجى إكمال الدفع للمتابعة"
+                                              : "⚠️ Please complete payment to continue"}
+                                          </p>
+                                          <p className="text-xs text-yellow-700 mt-1">
+                                            {language === "ar"
+                                              ? `المبلغ المتبقي: €${(
+                                                  quote.total_price -
+                                                  (quote.amount_paid || 0)
+                                                ).toFixed(2)}`
+                                              : `Remaining amount: €${(
+                                                  quote.total_price -
+                                                  (quote.amount_paid || 0)
+                                                ).toFixed(2)}`}
+                                          </p>
+                                        </div>
                                       )}
+                                    </div>
                                     {isAdmin && (
-                                      <button
-                                        onClick={() =>
-                                          handleUpdatePaidAmount(quote.id)
-                                        }
-                                        className="mt-2 w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-                                      >
-                                        {t.updatePaidAmount}
-                                      </button>
+                                      <div className="mt-2 space-y-2">
+                                        <button
+                                          onClick={() =>
+                                            handleUpdatePaidAmount(quote.id)
+                                          }
+                                          className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                        >
+                                          {t.updatePaidAmount}
+                                        </button>
+                                        {((quote.amount_paid || 0) /
+                                          quote.total_price) *
+                                          100 <
+                                          100 && (
+                                          <button
+                                            onClick={() =>
+                                              handleSendPaymentReminder(
+                                                quote.id
+                                              )
+                                            }
+                                            className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                          >
+                                            <svg
+                                              className="w-4 h-4"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                              />
+                                            </svg>
+                                            <span>
+                                              {language === "ar"
+                                                ? "إرسال تذكير الدفع"
+                                                : "Send Payment Reminder"}
+                                            </span>
+                                          </button>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
-                                </div>
-                              )}
+                                )}
 
                               {/* User Response */}
                               {quote.user_response &&
@@ -1769,23 +1882,167 @@ export default function DashboardPage() {
                                     <option value="READY_FOR_EXPORT">
                                       {getStatusDisplay("READY_FOR_EXPORT")}
                                     </option>
-                                    <option value="IN_TRANSIT_TO_SYRIA">
+                                    <option
+                                      value="IN_TRANSIT_TO_SYRIA"
+                                      disabled={
+                                        !!(
+                                          quote.total_price &&
+                                          quote.total_price > 0 &&
+                                          ((quote.amount_paid || 0) /
+                                            quote.total_price) *
+                                            100 <
+                                            100
+                                        )
+                                      }
+                                    >
                                       {getStatusDisplay("IN_TRANSIT_TO_SYRIA")}
+                                      {quote.total_price &&
+                                      quote.total_price > 0 &&
+                                      ((quote.amount_paid || 0) /
+                                        quote.total_price) *
+                                        100 <
+                                        100
+                                        ? ` (${
+                                            language === "ar"
+                                              ? "يتطلب دفع 100%"
+                                              : "Requires 100% payment"
+                                          })`
+                                        : ""}
                                     </option>
-                                    <option value="ARRIVED_SYRIA">
+                                    <option
+                                      value="ARRIVED_SYRIA"
+                                      disabled={
+                                        !!(
+                                          quote.total_price &&
+                                          quote.total_price > 0 &&
+                                          ((quote.amount_paid || 0) /
+                                            quote.total_price) *
+                                            100 <
+                                            100
+                                        )
+                                      }
+                                    >
                                       {getStatusDisplay("ARRIVED_SYRIA")}
+                                      {quote.total_price &&
+                                      quote.total_price > 0 &&
+                                      ((quote.amount_paid || 0) /
+                                        quote.total_price) *
+                                        100 <
+                                        100
+                                        ? ` (${
+                                            language === "ar"
+                                              ? "يتطلب دفع 100%"
+                                              : "Requires 100% payment"
+                                          })`
+                                        : ""}
                                     </option>
-                                    <option value="SYRIA_SORTING">
+                                    <option
+                                      value="SYRIA_SORTING"
+                                      disabled={
+                                        !!(
+                                          quote.total_price &&
+                                          quote.total_price > 0 &&
+                                          ((quote.amount_paid || 0) /
+                                            quote.total_price) *
+                                            100 <
+                                            100
+                                        )
+                                      }
+                                    >
                                       {getStatusDisplay("SYRIA_SORTING")}
+                                      {quote.total_price &&
+                                      quote.total_price > 0 &&
+                                      ((quote.amount_paid || 0) /
+                                        quote.total_price) *
+                                        100 <
+                                        100
+                                        ? ` (${
+                                            language === "ar"
+                                              ? "يتطلب دفع 100%"
+                                              : "Requires 100% payment"
+                                          })`
+                                        : ""}
                                     </option>
-                                    <option value="READY_FOR_DELIVERY">
+                                    <option
+                                      value="READY_FOR_DELIVERY"
+                                      disabled={
+                                        !!(
+                                          quote.total_price &&
+                                          quote.total_price > 0 &&
+                                          ((quote.amount_paid || 0) /
+                                            quote.total_price) *
+                                            100 <
+                                            100
+                                        )
+                                      }
+                                    >
                                       {getStatusDisplay("READY_FOR_DELIVERY")}
+                                      {quote.total_price &&
+                                      quote.total_price > 0 &&
+                                      ((quote.amount_paid || 0) /
+                                        quote.total_price) *
+                                        100 <
+                                        100
+                                        ? ` (${
+                                            language === "ar"
+                                              ? "يتطلب دفع 100%"
+                                              : "Requires 100% payment"
+                                          })`
+                                        : ""}
                                     </option>
-                                    <option value="OUT_FOR_DELIVERY">
+                                    <option
+                                      value="OUT_FOR_DELIVERY"
+                                      disabled={
+                                        !!(
+                                          quote.total_price &&
+                                          quote.total_price > 0 &&
+                                          ((quote.amount_paid || 0) /
+                                            quote.total_price) *
+                                            100 <
+                                            100
+                                        )
+                                      }
+                                    >
                                       {getStatusDisplay("OUT_FOR_DELIVERY")}
+                                      {quote.total_price &&
+                                      quote.total_price > 0 &&
+                                      ((quote.amount_paid || 0) /
+                                        quote.total_price) *
+                                        100 <
+                                        100
+                                        ? ` (${
+                                            language === "ar"
+                                              ? "يتطلب دفع 100%"
+                                              : "Requires 100% payment"
+                                          })`
+                                        : ""}
                                     </option>
-                                    <option value="DELIVERED">
+                                    <option
+                                      value="DELIVERED"
+                                      disabled={
+                                        !!(
+                                          quote.total_price &&
+                                          quote.total_price > 0 &&
+                                          ((quote.amount_paid || 0) /
+                                            quote.total_price) *
+                                            100 <
+                                            100
+                                        )
+                                      }
+                                    >
                                       {getStatusDisplay("DELIVERED")}
+                                      {quote.total_price &&
+                                      quote.total_price > 0 &&
+                                      ((quote.amount_paid || 0) /
+                                        quote.total_price) *
+                                        100 <
+                                        100
+                                        ? ` (${
+                                            language === "ar"
+                                              ? "يتطلب دفع 100%"
+                                              : "Requires 100% payment"
+                                          })`
+                                        : ""}
                                     </option>
                                     <option value="CANCELLED">
                                       {getStatusDisplay("CANCELLED")}
@@ -2520,9 +2777,11 @@ export default function DashboardPage() {
                                     </span>
                                     <span className="text-2xl font-bold text-primary-dark">
                                       €
-                                      {parseFloat(
-                                        quote.total_price.toString()
-                                      ).toFixed(2)}
+                                      {quote.total_price
+                                        ? parseFloat(
+                                            quote.total_price.toString()
+                                          ).toFixed(2)
+                                        : "0.00"}
                                     </span>
                                   </div>
                                 </div>

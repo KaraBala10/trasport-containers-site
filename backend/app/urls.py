@@ -17,6 +17,7 @@ from .views import (
     logout_view,
     respond_to_offer_view,
     send_edit_request_reply_view,
+    send_payment_reminder_view,
     update_fcl_quote_status_view,
 )
 
@@ -56,6 +57,11 @@ urlpatterns = [
         "fcl/quotes/<int:pk>/edit-request/approve-decline/",
         approve_or_decline_edit_request_view,
         name="fcl_quote_edit_request_approve_decline",
+    ),
+    path(
+        "fcl/quotes/<int:pk>/send-payment-reminder/",
+        send_payment_reminder_view,
+        name="fcl_quote_send_payment_reminder",
     ),
     path("fcl/quotes/<int:pk>/", FCLQuoteDetailView.as_view(), name="fcl_quote_detail"),
     # Utility endpoints

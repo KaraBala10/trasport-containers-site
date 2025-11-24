@@ -14,7 +14,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .email_service import send_status_update_email
+from .email_service import (
+    send_contact_form_notification,
+    send_payment_reminder_email,
+    send_status_update_email,
+)
 from .models import ContactMessage, EditRequestMessage, FCLQuote
 from .serializers import (
     ChangePasswordSerializer,
@@ -153,6 +157,16 @@ class ContactMessageView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         contact_message = serializer.save()
+
+        # Send email notification to admin
+        try:
+            send_contact_form_notification(contact_message)
+        except Exception as email_error:
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Failed to send contact form notification: {str(email_error)}"
+            )
+            # Don't fail the request if email fails
 
         return Response(
             {
@@ -574,6 +588,31 @@ def update_fcl_quote_status_view(request, pk):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Check if payment is 100% before allowing status updates to IN_TRANSIT_TO_SYRIA and beyond
+        restricted_statuses = [
+            "IN_TRANSIT_TO_SYRIA",
+            "ARRIVED_SYRIA",
+            "SYRIA_SORTING",
+            "READY_FOR_DELIVERY",
+            "OUT_FOR_DELIVERY",
+            "DELIVERED",
+        ]
+        if new_status in restricted_statuses:
+            if quote.total_price and quote.total_price > 0:
+                payment_percentage = (
+                    (quote.amount_paid or 0) / quote.total_price * 100
+                    if quote.amount_paid
+                    else 0
+                )
+                if payment_percentage < 100:
+                    return Response(
+                        {
+                            "success": False,
+                            "error": f"Cannot update status to {new_status}. Payment must be 100% complete. Current payment: {payment_percentage:.1f}%",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
         # Store old status for email notification
         old_status = quote.status
 
@@ -938,6 +977,81 @@ def approve_or_decline_edit_request_view(request, pk):
     except Exception as e:
         logger = logging.getLogger(__name__)
         logger.error(f"Error approving/declining edit request: {str(e)}")
+        return Response(
+            {
+                "success": False,
+                "error": "An error occurred while processing the request.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def send_payment_reminder_view(request, pk):
+    """API endpoint for admin to send payment reminder email to user"""
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only admins can send payment reminders."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+
+        # Check if quote has total price set
+        if not quote.total_price or quote.total_price <= 0:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Cannot send payment reminder. Total price must be set first.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if payment is already 100%
+        if quote.total_price > 0:
+            payment_percentage = (
+                (quote.amount_paid or 0) / quote.total_price * 100
+                if quote.amount_paid
+                else 0
+            )
+            if payment_percentage >= 100:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Payment is already 100% complete. No reminder needed.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Send payment reminder email
+        email_sent = send_payment_reminder_email(quote)
+
+        if email_sent:
+            return Response(
+                {
+                    "success": True,
+                    "message": "Payment reminder email sent successfully.",
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Failed to send payment reminder email. Please check email configuration.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "FCL quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error sending payment reminder: {str(e)}")
         return Response(
             {
                 "success": False,

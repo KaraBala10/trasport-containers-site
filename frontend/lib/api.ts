@@ -208,6 +208,10 @@ export const apiService = {
     return apiClient.post(`/fcl/quotes/${id}/edit-request/approve-decline/`, payload);
   },
 
+  sendPaymentReminder: (id: number) => {
+    return apiClient.post(`/fcl/quotes/${id}/send-payment-reminder/`);
+  },
+
   // Document endpoints
   downloadPackingList: (shipmentId: string) => {
     return apiClient.get(`/shipments/${shipmentId}/packing-list/`, {
