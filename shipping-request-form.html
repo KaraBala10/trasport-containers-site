@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج طلب شحن - MEDO-FREIGHT.EU</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', 'Tahoma', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 4px solid #002E5D;
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #002E5D;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header .tagline {
+            color: #FFD200;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .section {
+            margin: 30px 0;
+            padding: 25px;
+            background: #f9f9f9;
+            border-right: 5px solid #FFD200;
+            border-radius: 8px;
+        }
+        
+        .section h2 {
+            color: #002E5D;
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #FFD200;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            color: #002E5D;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        
+        .form-group label .required {
+            color: #d63031;
+            font-size: 18px;
+        }
+        
+        .form-group label .english {
+            color: #666;
+            font-weight: normal;
+            font-size: 13px;
+            display: block;
+            margin-top: 3px;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #FFD200;
+            box-shadow: 0 0 10px rgba(255, 210, 0, 0.3);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-right: 5px solid #2196F3;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-right: 5px solid #ff6b6b;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box h4 {
+            color: #d63031;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-group {
+            margin: 20px 0;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            transition: all 0.3s;
+        }
+        
+        .checkbox-item:hover {
+            border-color: #FFD200;
+            background: #fffef5;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-left: 15px;
+            cursor: pointer;
+        }
+        
+        .checkbox-item label {
+            flex: 1;
+            cursor: pointer;
+            font-weight: normal;
+            margin: 0;
+        }
+        
+        .submit-section {
+            margin-top: 40px;
+            text-align: center;
+            padding: 30px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+        
+        .submit-btn {
+            background: #002E5D;
+            color: white;
+            padding: 15px 50px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 46, 93, 0.3);
+        }
+        
+        .submit-btn:hover {
+            background: #FFD200;
+            color: #002E5D;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 210, 0, 0.4);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding: 25px;
+            background: #002E5D;
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+        }
+        
+        .footer h3 {
+            color: #FFD200;
+            margin-bottom: 10px;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .shipment-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .calculator-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .calculator-box h3 {
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .calc-result {
+            background: white;
+            color: #002E5D;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- ============================================ -->
+<!-- HEADER -->
+<!-- ============================================ -->
+
+<div class="header">
+    <h1>🚢 نموذج طلب شحن</h1>
+    <div class="tagline">Shipping Request Form</div>
+    <p class="subtitle">يرجى ملء جميع الحقول بدقة / Please fill all fields accurately</p>
+</div>
+
+<!-- ============================================ -->
+<!-- CLIENT INFORMATION -->
+<!-- ============================================ -->
+
+<div class="section">
+    <h2>👤 بيانات العميل — Client Information</h2>
+    
+    <div class="form-group">
+        <label>
+            <span class="required">*</span> الاسم الكامل
+            <span class="english">Full Name (as per ID/Passport)</span>
+        </label>
+        <input type="text" name="fullName" required placeholder="أدخل الاسم الكامل">
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label>
+                <span class="required">*</span> رقم الجواز/الهوية
+                <span class="english">ID/Passport Number</span>
+            </label>
+            <input type="text" name="idNumber" required placeholder="رقم الوثيقة">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <span class="required">*</span> الجهة المصدرة
+                <span class="english">Issuing Authority</span>
+            </label>
+            <input type="text" name="issuingAuthority" required placeholder="مثال: سوريا / هولندا">
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label>
+            <span class="required">*</span> العنوان الكامل
+            <span class="english">Full Address</span>
+        </label>
+        <textarea name="address" required placeholder="الشارع، المدينة، الرمز البريدي، الدولة"></textarea>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label>
+                <span class="required">*</span> البريد الإلكتروني
+                <span class="english">Primary Email</span>
+            </label>
+            <input type="email" name="email" required placeholder="example@email.com">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <span class="required">*</span> رقم هاتف أوروبي
+                <span class="english">Valid EU Phone Number</span>
+            </label>
+            <input type="tel" name="phoneEU" required placeholder="+31 6 12345678">
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label>
+            جهة اتصال في سورية
+            <span class="english">Contact in Syria (Optional)</span>
+        </label>
+        <input type="text" name="syriaContact" placeholder="الاسم + رقم الهاتف">
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SHIPMENT DETAILS -->
+<!-- ============================================ -->
+
+<div class="section">
+    <h2>📦 تفاصيل الشحنة — Shipment Details</h2>
+    
+    <div class="form-group">
+        <label>
+            <span class="required">*</span> نوع الشحنة
+            <span class="english">Shipment Type</span>
+        </label>
+        <select name="shipmentType" required>
+            <option value="">-- اختر --</option>
+            <option value="LCL">LCL - شحن جزئي (Less than Container Load)</option>
+            <option value="FCL">FCL - حاوية كاملة (Full Container Load)</option>
+        </select>
+    </div>
+    
+    <div class="shipment-details">
+        <h3 style="color:#002E5D; margin-bottom:15px;">📏 القياسات والأوزان — Measurements & Weight</h3>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>
+                    <span class="required">*</span> عدد الطرود
+                    <span class="english">Number of Parcels</span>
+                </label>
+                <input type="number" name="parcelCount" required min="1" placeholder="مثال: 5">
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <span class="required">*</span> الوزن الإجمالي (كغ)
+                    <span class="english">Total Weight (KG)</span>
+                </label>
+                <input type="number" name="totalWeight" required min="1" step="0.1" placeholder="مثال: 150">
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>📐 لحساب الحجم (CBM):</strong><br>
+            الطول × العرض × الارتفاع ÷ 1,000,000 = CBM<br>
+            <strong>Length × Width × Height ÷ 1,000,000 = CBM</strong>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>
+                    <span class="required">*</span> الحجم الإجمالي (م³)
+                    <span class="english">Total Volume (CBM)</span>
+                </label>
+                <input type="number" name="totalCBM" required min="0.01" step="0.01" placeholder="مثال: 0.5">
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    طريقة القياس
+                    <span class="english">How did you calculate?</span>
+                </label>
+                <select name="measurementMethod">
+                    <option value="manual">قياس يدوي / Manual</option>
+                    <option value="estimated">تقدير / Estimated</option>
+                    <option value="professional">قياس احترافي / Professional</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="calculator-box">
+            <h3>💰 السعر التقديري — Estimated Price</h3>
+            <p>سيتم احتساب السعر على الأعلى بين:</p>
+            <ul style="margin:10px 0 10px 25px; line-height:2;">
+                <li>الوزن × €3.00</li>
+                <li>الحجم × €300</li>
+                <li>الحد الأدنى: €75</li>
+            </ul>
+            <div class="calc-result">
+                السعر النهائي سيتم تأكيده بعد التقييم<br>
+                Final price confirmed after evaluation
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label>
+            <span class="required">*</span> محتوى الشحنة
+            <span class="english">Shipment Contents</span>
+        </label>
+        <textarea name="contents" required placeholder="اذكر بالتفصيل محتوى الشحنة (أثاث، ملابس، أجهزة إلكترونية، إلخ)"></textarea>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label>
+                القيمة المصرح بها (€)
+                <span class="english">Declared Value (€)</span>
+            </label>
+            <input type="number" name="declaredValue" min="0" step="0.01" placeholder="القيمة الإجمالية للبضاعة">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                التأمين
+                <span class="english">Insurance</span>
+            </label>
+            <select name="insurance">
+                <option value="no">بدون تأمين / No Insurance</option>
+                <option value="yes">مع تأمين كامل / Full Insurance</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PICKUP & DELIVERY -->
+<!-- ============================================ -->
+
+<div class="section">
+    <h2>📍 الاستلام والتوصيل — Pickup & Delivery</h2>
+    
+    <div class="form-group">
+        <label>
+            <span class="required">*</span> عنوان الاستلام في أوروبا
+            <span class="english">Pickup Address in Europe</span>
+        </label>
+        <textarea name="pickupAddress" required placeholder="الشارع، المدينة، الرمز البريدي، الدولة"></textarea>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label>
+                <span class="required">*</span> مدينة الوجهة في سورية
+                <span class="english">Destination City in Syria</span>
+            </label>
+            <select name="destinationCity" required>
+                <option value="">-- اختر --</option>
+                <option value="aleppo-ramousa">حلب - الراموسة / Aleppo - Ramousa</option>
+                <option value="aleppo-sheikhNajjar">حلب - الشيخ نجار / Aleppo - Sheikh Najjar</option>
+                <option value="damascus">دمشق / Damascus</option>
+                <option value="homs">حمص / Homs</option>
+                <option value="latakia">اللاذقية / Latakia</option>
+                <option value="tartous">طرطوس / Tartous</option>
+                <option value="other">أخرى / Other</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                التوصيل الداخلي
+                <span class="english">Domestic Delivery (Optional)</span>
+            </label>
+            <select name="domesticDelivery">
+                <option value="no">استلام من المستودع / Warehouse Pickup</option>
+                <option value="yes">توصيل للعنوان / Door-to-Door Delivery</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label>
+            العنوان الكامل للتوصيل (إن وُجد)
+            <span class="english">Full Delivery Address (if applicable)</span>
+        </label>
+        <textarea name="deliveryAddress" placeholder="الحي، الشارع، نقطة مرجعية"></textarea>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PROHIBITED GOODS WARNING -->
+<!-- ============================================ -->
+
+<div class="warning-box">
+    <h4>🛑 تحذير: البضائع المحظورة — Prohibited Goods Warning</h4>
+    <p><strong>يُمنع شحن:</strong> أسلحة، ذخائر، مخدرات، نقود، ذهب، بطاريات ليثيوم كبيرة، مواد قابلة للاشتعال، مواد إباحية، وأي بضائع خاضعة للعقوبات الدولية.</p>
+    <p><strong>Prohibited:</strong> Weapons, drugs, cash, gold, large lithium batteries, flammables, obscene materials, and sanctioned goods.</p>
+    <p style="margin-top:10px;"><strong>⚠️ أي مخالفة ستؤدي إلى مصادرة الشحنة والملاحقة القانونية.</strong></p>
+</div>
+
+<!-- ============================================ -->
+<!-- TERMS ACCEPTANCE -->
+<!-- ============================================ -->
+
+<div class="section">
+    <h2>✅ الموافقة على الشروط — Terms Acceptance</h2>
+    
+    <div class="checkbox-group">
+        <div class="checkbox-item">
+            <input type="checkbox" id="term1" name="term1" required>
+            <label for="term1">
+                <strong>أقر بصحة جميع البيانات المقدمة وأتحمل المسؤولية القانونية الكاملة.</strong><br>
+                <span style="color:#666; font-size:13px;">I confirm the accuracy of all provided information and bear full legal responsibility.</span>
+            </label>
+        </div>
+        
+        <div class="checkbox-item">
+            <input type="checkbox" id="term2" name="term2" required>
+            <label for="term2">
+                <strong>أوافق على دفع 100% من أجرة الشحن مقدماً عبر التحويل البنكي للحساب الرسمي فقط.</strong><br>
+                <span style="color:#666; font-size:13px;">I agree to pay 100% freight charges in advance via bank transfer to the official account only.</span>
+            </label>
+        </div>
+        
+        <div class="checkbox-item">
+            <input type="checkbox" id="term3" name="term3" required>
+            <label for="term3">
+                <strong>أقر بأن الشحنة لا تحتوي على أي مواد محظورة وفقاً للملحق (ب).</strong><br>
+                <span style="color:#666; font-size:13px;">I declare that the shipment contains no prohibited goods as per Annex (B).</span>
+            </label>
+        </div>
+        
+        <div class="checkbox-item">
+            <input type="checkbox" id="term4" name="term4" required>
+            <label for="term4">
+                <strong>أوافق على شروط وأحكام عقد الشحن MEDO-SHIP-2025-001 بالكامل.</strong><br>
+                <span style="color:#666; font-size:13px;">I accept all terms and conditions of shipping contract MEDO-SHIP-2025-001.</span>
+            </label>
+        </div>
+        
+        <div class="checkbox-item">
+            <input type="checkbox" id="term5" name="term5" required>
+            <label for="term5">
+                <strong>أفهم أن التعويض بدون تأمين يقتصر على أجرة الشحن المدفوعة فقط.</strong><br>
+                <span style="color:#666; font-size:13px;">I understand that compensation without insurance is limited to freight paid only.</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ADDITIONAL NOTES -->
+<!-- ============================================ -->
+
+<div class="section">
+    <h2>📝 ملاحظات إضافية — Additional Notes</h2>
+    
+    <div class="form-group">
+        <label>
+            أي طلبات خاصة أو ملاحظات
+            <span class="english">Special Requests or Comments (Optional)</span>
+        </label>
+        <textarea name="notes" placeholder="مثال: تغليف خاص، تعليمات خاصة بالتسليم، إلخ"></textarea>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SUBMIT SECTION -->
+<!-- ============================================ -->
+
+<div class="submit-section">
+    <p style="color:#002E5D; margin-bottom:20px; font-size:16px;">
+        <strong>بعد إرسال النموذج، سيتم التواصل معك خلال 24 ساعة</strong><br>
+        <span style="font-size:14px; color:#666;">After submission, we will contact you within 24 hours</span>
+    </p>
+    
+    <button type="submit" class="submit-btn">
+        📤 إرسال الطلب
+        <br>
+        <span style="font-size:14px; font-weight:normal;">Submit Request</span>
+    </button>
+    
+    <p style="margin-top:20px; font-size:14px; color:#666;">
+        أو تواصل معنا مباشرة / Or contact us directly:<br>
+        📞 <strong>+31 6 83083916</strong> | ✉️ <strong>contact@medo-freight.eu</strong>
+    </p>
+</div>
+
+<!-- ============================================ -->
+<!-- FOOTER -->
+<!-- ============================================ -->
+
+<div class="footer">
+    <h3>🚢 MEDO-FREIGHT.EU</h3>
+    <p><strong>Ship. Route. Deliver.</strong></p>
+    <p style="margin-top:15px;">Titanlaan 1, 4624AX Bergen op Zoom, Netherlands</p>
+    <p>📞 +31 6 83083916 | ✉️ contact@medo-freight.eu | 🌐 www.medo-freight.eu</p>
+    <p style="margin-top:15px; font-size:12px;">KvK: 75251663 | VAT: NL002518102B41 | EORI: NL1320963189</p>
+    <p style="margin-top:15px; border-top:2px solid #FFD200; padding-top:15px;">
+        <strong>© 2025 MEDO-FREIGHT.EU — All Rights Reserved</strong>
+    </p>
+</div>
+
+</div>
+
+<script>
+// Simple form validation
+document.querySelector('.submit-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // Check all required checkboxes
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][required]');
+    let allChecked = true;
+    
+    checkboxes.forEach(checkbox => {
+        if (!checkbox.checked) {
+            allChecked = false;
+            checkbox.parentElement.style.border = '2px solid #d63031';
+            checkbox.parentElement.style.background = '#ffe0e0';
+        } else {
+            checkbox.parentElement.style.border = '2px solid #ddd';
+            checkbox.parentElement.style.background = 'white';
+        }
+    });
+    
+    if (!allChecked) {
+        alert('⚠️ يرجى الموافقة على جميع الشروط\nPlease accept all terms and conditions');
+        return;
+    }
+    
+    // Check all required inputs
+    const requiredInputs = document.querySelectorAll('input[required], textarea[required], select[required]');
+    let allFilled = true;
+    
+    requiredInputs.forEach(input => {
+        if (!input.value.trim()) {
+            allFilled = false;
+            input.style.borderColor = '#d63031';
+        } else {
+            input.style.borderColor = '#ddd';
+        }
+    });
+    
+    if (!allFilled) {
+        alert('⚠️ يرجى ملء جميع الحقول المطلوبة (المميزة بـ *)\nPlease fill all required fields (marked with *)');
+        return;
+    }
+    
+    // Success message
+    alert('✅ تم إرسال الطلب بنجاح!\n\nسيتم التواصل معك خلال 24 ساعة\n\n✅ Request submitted successfully!\n\nWe will contact you within 24 hours');
+    
+    // In a real application, you would send the form data to a server here
+    // For now, we just show a success message
+});
+
+// Auto-calculate estimated price
+document.querySelectorAll('input[name="totalWeight"], input[name="totalCBM"]').forEach(input => {
+    input.addEventListener('input', function() {
+        const weight = parseFloat(document.querySelector('input[name="totalWeight"]').value) || 0;
+        const cbm = parseFloat(document.querySelector('input[name="totalCBM"]').value) || 0;
+        
+        const priceByWeight = weight * 3;
+        const priceByCBM = cbm * 300;
+        const minimumPrice = 75;
+        
+        const finalPrice = Math.max(priceByWeight, priceByCBM, minimumPrice);
+        
+        if (weight > 0 || cbm > 0) {
+            document.querySelector('.calc-result').innerHTML = `
+                السعر التقديري: <span style="color:#d63031;">€${finalPrice.toFixed(2)}</span><br>
+                <span style="font-size:14px; font-weight:normal;">Estimated Price (subject to final measurement)</span>
+            `;
+        }
+    });
+});
+</script>
+
+</body>
+</html>
+
