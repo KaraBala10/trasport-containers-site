@@ -16,8 +16,13 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .email_service import (
     send_contact_form_notification,
+    send_edit_request_confirmation_to_user,
+    send_fcl_quote_confirmation_email,
+    send_fcl_quote_notification,
     send_payment_reminder_email,
+    send_payment_reminder_notification_to_admin,
     send_status_update_email,
+    send_status_update_notification_to_admin,
 )
 from .models import ContactMessage, EditRequestMessage, FCLQuote
 from .serializers import (
@@ -305,6 +310,20 @@ class FCLQuoteView(generics.CreateAPIView):
                         quote.save(update_fields=["quote_number"])
                     except Exception:
                         pass
+
+        # Send email notifications
+        if quote_id is not None:
+            try:
+                quote = FCLQuote.objects.get(id=quote_id)
+                # Send email to admin
+                send_fcl_quote_notification(quote)
+                # Send confirmation email to user
+                send_fcl_quote_confirmation_email(quote)
+            except Exception as email_error:
+                logger.error(
+                    f"Failed to send FCL quote email notifications: {str(email_error)}"
+                )
+                # Don't fail the request if email fails
 
         return Response(
             {
@@ -686,9 +705,17 @@ def update_fcl_quote_status_view(request, pk):
 
         quote.save()
 
-        # Send email notification to user
+        # Send email notifications
         try:
+            # Send email to user
             send_status_update_email(
+                quote=quote,
+                old_status=old_status,
+                new_status=new_status,
+                offer_message=offer_message if new_status == "OFFER_SENT" else None,
+            )
+            # Send email to admin
+            send_status_update_notification_to_admin(
                 quote=quote,
                 old_status=old_status,
                 new_status=new_status,
@@ -697,7 +724,7 @@ def update_fcl_quote_status_view(request, pk):
         except Exception as email_error:
             # Log email error but don't fail the request
             logger = logging.getLogger(__name__)
-            logger.error(f"Failed to send status update email: {str(email_error)}")
+            logger.error(f"Failed to send status update email notifications: {str(email_error)}")
 
         # Get status display name
         status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status, new_status)
@@ -782,15 +809,18 @@ def respond_to_offer_view(request, pk):
                 message=edit_request_message.strip(),
                 is_admin=False,
             )
-            # Keep status as OFFER_SENT and notify admin
+            # Keep status as OFFER_SENT and notify admin and user
             from .email_service import send_edit_request_notification
 
             try:
+                # Send email to admin
                 send_edit_request_notification(quote, edit_request_message.strip())
+                # Send confirmation email to user
+                send_edit_request_confirmation_to_user(quote, edit_request_message.strip())
             except Exception as email_error:
                 logger = logging.getLogger(__name__)
                 logger.error(
-                    f"Failed to send edit request notification: {str(email_error)}"
+                    f"Failed to send edit request email notifications: {str(email_error)}"
                 )
 
         quote.user_response = user_response
@@ -1025,8 +1055,10 @@ def send_payment_reminder_view(request, pk):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        # Send payment reminder email
+        # Send payment reminder emails
         email_sent = send_payment_reminder_email(quote)
+        # Also send notification to admin
+        send_payment_reminder_notification_to_admin(quote)
 
         if email_sent:
             return Response(
