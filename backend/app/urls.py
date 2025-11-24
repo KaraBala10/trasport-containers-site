@@ -10,11 +10,13 @@ from .views import (
     LoginView,
     RegisterView,
     UserProfileView,
+    approve_or_decline_edit_request_view,
     calculate_cbm_view,
     calculate_pricing_view,
     current_user_view,
     logout_view,
     respond_to_offer_view,
+    send_edit_request_reply_view,
     update_fcl_quote_status_view,
 )
 
@@ -44,6 +46,16 @@ urlpatterns = [
         "fcl/quotes/<int:pk>/respond/",
         respond_to_offer_view,
         name="fcl_quote_respond",
+    ),
+    path(
+        "fcl/quotes/<int:pk>/edit-request/reply/",
+        send_edit_request_reply_view,
+        name="fcl_quote_edit_request_reply",
+    ),
+    path(
+        "fcl/quotes/<int:pk>/edit-request/approve-decline/",
+        approve_or_decline_edit_request_view,
+        name="fcl_quote_edit_request_approve_decline",
     ),
     path("fcl/quotes/<int:pk>/", FCLQuoteDetailView.as_view(), name="fcl_quote_detail"),
     # Utility endpoints

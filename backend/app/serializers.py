@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import ContactMessage, FCLQuote
+from .models import ContactMessage, EditRequestMessage, FCLQuote
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -125,6 +125,8 @@ class ChangePasswordSerializer(serializers.Serializer):
 class FCLQuoteSerializer(serializers.ModelSerializer):
     """Serializer for FCL Quote requests"""
 
+    edit_request_messages = serializers.SerializerMethodField()
+
     class Meta:
         model = FCLQuote
         fields = "__all__"
@@ -135,6 +137,11 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
             "offer_sent_at",
         )
         depth = 1  # Include user details in nested format
+
+    def get_edit_request_messages(self, obj):
+        """Get all edit request messages for this quote"""
+        messages = obj.edit_request_messages.all()
+        return EditRequestMessageSerializer(messages, many=True).data
 
     def to_internal_value(self, data):
         """Convert string booleans to actual booleans for FormData"""
@@ -289,3 +296,42 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
             )
 
         return fcl_quote
+
+
+class EditRequestMessageSerializer(serializers.ModelSerializer):
+    """Serializer for Edit Request Messages"""
+
+    sender_name = serializers.SerializerMethodField()
+    sender_email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EditRequestMessage
+        fields = (
+            "id",
+            "quote",
+            "sender",
+            "sender_name",
+            "sender_email",
+            "message",
+            "is_admin",
+            "created_at",
+        )
+        read_only_fields = ("id", "sender", "is_admin", "created_at")
+
+    def get_sender_name(self, obj):
+        """Get sender's full name or username"""
+        if obj.sender:
+            return obj.sender.get_full_name() or obj.sender.username
+        return "Unknown"
+
+    def get_sender_email(self, obj):
+        """Get sender's email"""
+        return obj.sender.email if obj.sender else None
+
+    def create(self, validated_data):
+        """Create a new edit request message"""
+        request = self.context.get("request")
+        if request and request.user:
+            validated_data["sender"] = request.user
+            validated_data["is_admin"] = request.user.is_superuser
+        return super().create(validated_data)

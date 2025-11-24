@@ -196,6 +196,18 @@ export const apiService = {
     return apiClient.patch(`/fcl/quotes/${id}/respond/`, payload);
   },
 
+  sendEditRequestReply: (id: number, message: string) => {
+    return apiClient.post(`/fcl/quotes/${id}/edit-request/reply/`, { message });
+  },
+
+  approveOrDeclineEditRequest: (id: number, action: "approve" | "decline", message?: string) => {
+    const payload: any = { action };
+    if (message) {
+      payload.message = message;
+    }
+    return apiClient.post(`/fcl/quotes/${id}/edit-request/approve-decline/`, payload);
+  },
+
   // Document endpoints
   downloadPackingList: (shipmentId: string) => {
     return apiClient.get(`/shipments/${shipmentId}/packing-list/`, {

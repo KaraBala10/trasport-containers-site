@@ -60,6 +60,8 @@ interface FCLQuote {
   offer_sent_at?: string;
   user_response?: string;
   edit_request_message?: string;
+  edit_request_status?: string;
+  edit_request_messages?: EditRequestMessage[];
   created_at: string;
   // User info (for admin view)
   user?: {
@@ -69,6 +71,17 @@ interface FCLQuote {
     first_name?: string;
     last_name?: string;
   };
+}
+
+interface EditRequestMessage {
+  id: number;
+  quote: number;
+  sender: number;
+  sender_name: string;
+  sender_email: string;
+  message: string;
+  is_admin: boolean;
+  created_at: string;
 }
 
 export default function DashboardPage() {
@@ -89,6 +102,14 @@ export default function DashboardPage() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [editRequestMessage, setEditRequestMessage] = useState("");
   const [showEditRequest, setShowEditRequest] = useState<number | null>(null);
+  const [showConversation, setShowConversation] = useState<number | null>(null);
+  const [replyMessage, setReplyMessage] = useState<{ [key: number]: string }>(
+    {}
+  );
+  const [sendingReply, setSendingReply] = useState<number | null>(null);
+  const [approvingDeclining, setApprovingDeclining] = useState<number | null>(
+    null
+  );
 
   const translations = useMemo(
     () => ({
@@ -735,6 +756,72 @@ export default function DashboardPage() {
     }
   };
 
+  // Handle sending reply in edit request conversation
+  const handleSendReply = async (quoteId: number) => {
+    const message = replyMessage[quoteId]?.trim();
+    if (!message) {
+      alert(language === "ar" ? "يجب إدخال رسالة" : "Please enter a message");
+      return;
+    }
+
+    try {
+      setSendingReply(quoteId);
+      const response = await apiService.sendEditRequestReply(quoteId, message);
+
+      // Refresh quotes list to get updated messages
+      const quotesResponse = await apiService.getFCLQuotes();
+      const quotes = quotesResponse.data?.results || quotesResponse.data || [];
+      setFclQuotes(Array.isArray(quotes) ? quotes : []);
+
+      // Clear reply message
+      setReplyMessage((prev) => ({ ...prev, [quoteId]: "" }));
+
+      alert(
+        language === "ar" ? "تم إرسال الرد بنجاح" : "Reply sent successfully"
+      );
+    } catch (error: any) {
+      console.error("Error sending reply:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    } finally {
+      setSendingReply(null);
+    }
+  };
+
+  // Handle approve/decline edit request (admin only)
+  const handleApproveDeclineEditRequest = async (
+    quoteId: number,
+    action: "approve" | "decline",
+    message?: string
+  ) => {
+    try {
+      setApprovingDeclining(quoteId);
+      await apiService.approveOrDeclineEditRequest(quoteId, action, message);
+
+      // Refresh quotes list
+      const quotesResponse = await apiService.getFCLQuotes();
+      const quotes = quotesResponse.data?.results || quotesResponse.data || [];
+      setFclQuotes(Array.isArray(quotes) ? quotes : []);
+
+      // Close conversation
+      setShowConversation(null);
+
+      alert(
+        language === "ar"
+          ? action === "approve"
+            ? "تم الموافقة على طلب التعديل"
+            : "تم رفض طلب التعديل"
+          : action === "approve"
+          ? "Edit request approved"
+          : "Edit request declined"
+      );
+    } catch (error: any) {
+      console.error("Error approving/declining edit request:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    } finally {
+      setApprovingDeclining(null);
+    }
+  };
+
   // Handle save edit
   const handleSaveEdit = async () => {
     if (!editingQuote) return;
@@ -1289,14 +1376,340 @@ export default function DashboardPage() {
                                       {t.userResponse}
                                     </p>
                                     <p className="text-xs text-gray-700 leading-relaxed">
-                                      {quote.user_response ===
-                                        "EDIT_REQUESTED" &&
-                                      quote.edit_request_message
-                                        ? `${t.userRequestToEdit} ${quote.edit_request_message}`
+                                      {quote.user_response === "EDIT_REQUESTED"
+                                        ? language === "ar"
+                                          ? "طلب تعديل نشط"
+                                          : "Active Edit Request"
                                         : getUserResponseText(
                                             quote.user_response
                                           )}
                                     </p>
+                                  </div>
+                                )}
+                              {/* Admin: Offer Conversation (when offer is sent) */}
+                              {isAdmin &&
+                                quote.status === "OFFER_SENT" &&
+                                quote.offer_message && (
+                                  <div className="sm:col-span-2 lg:col-span-3 mt-4 space-y-3">
+                                    <button
+                                      onClick={() =>
+                                        setShowConversation(
+                                          showConversation === quote.id
+                                            ? null
+                                            : quote.id
+                                        )
+                                      }
+                                      className="w-full px-4 py-2.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
+                                    >
+                                      {showConversation === quote.id
+                                        ? language === "ar"
+                                          ? "إخفاء المحادثة"
+                                          : "Hide Conversation"
+                                        : language === "ar"
+                                        ? "عرض المحادثة"
+                                        : "View Conversation"}
+                                    </button>
+                                    {showConversation === quote.id && (
+                                      <div className="bg-white border-2 border-blue-300 rounded-2xl p-5 space-y-4 shadow-lg">
+                                        <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
+                                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                          <h5 className="text-sm font-bold text-blue-900">
+                                            {language === "ar"
+                                              ? "المحادثة"
+                                              : "Conversation"}
+                                          </h5>
+                                        </div>
+                                        {/* Conversation Messages */}
+                                        <div className="space-y-4 max-h-[400px] overflow-y-auto px-1 py-2">
+                                          {quote.edit_request_messages &&
+                                          quote.edit_request_messages.length >
+                                            0 ? (
+                                            quote.edit_request_messages.map(
+                                              (msg: EditRequestMessage) => (
+                                                <div
+                                                  key={msg.id}
+                                                  className={`flex items-start gap-3 ${
+                                                    msg.is_admin
+                                                      ? "flex-row-reverse"
+                                                      : "flex-row"
+                                                  }`}
+                                                >
+                                                  {/* Avatar */}
+                                                  <div
+                                                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md ${
+                                                      msg.is_admin
+                                                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+                                                        : "bg-gradient-to-br from-orange-500 to-orange-600 text-white"
+                                                    }`}
+                                                  >
+                                                    {msg.is_admin
+                                                      ? "A"
+                                                      : msg.sender_name
+                                                          .charAt(0)
+                                                          .toUpperCase()}
+                                                  </div>
+                                                  {/* Message Bubble */}
+                                                  <div
+                                                    className={`flex flex-col max-w-[75%] ${
+                                                      msg.is_admin
+                                                        ? "items-end"
+                                                        : "items-start"
+                                                    }`}
+                                                  >
+                                                    <div
+                                                      className={`rounded-2xl px-4 py-3 shadow-sm ${
+                                                        msg.is_admin
+                                                          ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-md"
+                                                          : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-900 rounded-bl-md"
+                                                      }`}
+                                                    >
+                                                      <div
+                                                        className={`flex items-center gap-2 mb-2 ${
+                                                          msg.is_admin
+                                                            ? "text-blue-100"
+                                                            : "text-gray-600"
+                                                        }`}
+                                                      >
+                                                        <span className="text-xs font-semibold">
+                                                          {msg.is_admin
+                                                            ? language === "ar"
+                                                              ? "أنت"
+                                                              : "You"
+                                                            : msg.sender_name}
+                                                        </span>
+                                                        <span className="text-[10px] opacity-75">
+                                                          {new Date(
+                                                            msg.created_at
+                                                          ).toLocaleString(
+                                                            language === "ar"
+                                                              ? "ar-SA"
+                                                              : "en-US",
+                                                            {
+                                                              month: "short",
+                                                              day: "numeric",
+                                                              hour: "2-digit",
+                                                              minute: "2-digit",
+                                                            }
+                                                          )}
+                                                        </span>
+                                                      </div>
+                                                      <p
+                                                        className={`text-sm whitespace-pre-wrap leading-relaxed ${
+                                                          msg.is_admin
+                                                            ? "text-white"
+                                                            : "text-gray-800"
+                                                        }`}
+                                                      >
+                                                        {msg.message}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )
+                                            )
+                                          ) : (
+                                            <div className="text-center py-8">
+                                              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
+                                                <svg
+                                                  className="w-8 h-8 text-gray-400"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                                  />
+                                                </svg>
+                                              </div>
+                                              <p className="text-sm text-gray-500">
+                                                {language === "ar"
+                                                  ? "لا توجد رسائل بعد"
+                                                  : "No messages yet"}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Admin Reply Input and Actions */}
+                                        {(quote.user_response === "PENDING" ||
+                                          (quote.user_response ===
+                                            "EDIT_REQUESTED" &&
+                                            quote.edit_request_status ===
+                                              "PENDING")) && (
+                                          <div className="border-t-2 border-gray-200 pt-4 space-y-3">
+                                            <div className="flex items-center gap-2">
+                                              <div className="flex-1 relative">
+                                                <textarea
+                                                  value={
+                                                    replyMessage[quote.id] || ""
+                                                  }
+                                                  onChange={(e) =>
+                                                    setReplyMessage((prev) => ({
+                                                      ...prev,
+                                                      [quote.id]:
+                                                        e.target.value,
+                                                    }))
+                                                  }
+                                                  placeholder={
+                                                    language === "ar"
+                                                      ? "اكتب ردك هنا..."
+                                                      : "Type your reply here..."
+                                                  }
+                                                  className="w-full px-4 py-3 pr-12 text-sm border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all shadow-sm"
+                                                  rows={3}
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="flex justify-between gap-2">
+                                              <button
+                                                onClick={() =>
+                                                  handleSendReply(quote.id)
+                                                }
+                                                disabled={
+                                                  sendingReply === quote.id ||
+                                                  !replyMessage[
+                                                    quote.id
+                                                  ]?.trim()
+                                                }
+                                                className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 disabled:transform-none flex items-center gap-2"
+                                              >
+                                                {sendingReply === quote.id ? (
+                                                  <>
+                                                    <svg
+                                                      className="animate-spin h-4 w-4"
+                                                      xmlns="http://www.w3.org/2000/svg"
+                                                      fill="none"
+                                                      viewBox="0 0 24 24"
+                                                    >
+                                                      <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        strokeWidth="4"
+                                                      ></circle>
+                                                      <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                      ></path>
+                                                    </svg>
+                                                    <span>
+                                                      {language === "ar"
+                                                        ? "جاري الإرسال..."
+                                                        : "Sending..."}
+                                                    </span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <span>
+                                                      {language === "ar"
+                                                        ? "إرسال رد"
+                                                        : "Send Reply"}
+                                                    </span>
+                                                  </>
+                                                )}
+                                              </button>
+                                              {/* Approve/Decline buttons - only show when edit request is pending */}
+                                              {quote.user_response ===
+                                                "EDIT_REQUESTED" &&
+                                                quote.edit_request_status ===
+                                                  "PENDING" && (
+                                                  <div className="flex gap-2">
+                                                    <button
+                                                      onClick={() => {
+                                                        const message = prompt(
+                                                          language === "ar"
+                                                            ? "رسالة اختيارية للموافقة:"
+                                                            : "Optional message for approval:"
+                                                        );
+                                                        handleApproveDeclineEditRequest(
+                                                          quote.id,
+                                                          "approve",
+                                                          message || undefined
+                                                        );
+                                                      }}
+                                                      disabled={
+                                                        approvingDeclining ===
+                                                        quote.id
+                                                      }
+                                                      className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 disabled:transform-none"
+                                                    >
+                                                      {approvingDeclining ===
+                                                      quote.id
+                                                        ? language === "ar"
+                                                          ? "جاري..."
+                                                          : "Processing..."
+                                                        : language === "ar"
+                                                        ? "موافقة"
+                                                        : "Approve"}
+                                                    </button>
+                                                    <button
+                                                      onClick={() => {
+                                                        const message = prompt(
+                                                          language === "ar"
+                                                            ? "رسالة اختيارية للرفض:"
+                                                            : "Optional message for decline:"
+                                                        );
+                                                        handleApproveDeclineEditRequest(
+                                                          quote.id,
+                                                          "decline",
+                                                          message || undefined
+                                                        );
+                                                      }}
+                                                      disabled={
+                                                        approvingDeclining ===
+                                                        quote.id
+                                                      }
+                                                      className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 disabled:transform-none"
+                                                    >
+                                                      {approvingDeclining ===
+                                                      quote.id
+                                                        ? language === "ar"
+                                                          ? "جاري..."
+                                                          : "Processing..."
+                                                        : language === "ar"
+                                                        ? "رفض"
+                                                        : "Decline"}
+                                                    </button>
+                                                  </div>
+                                                )}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* Status Badge for Edit Request */}
+                                        {quote.user_response ===
+                                          "EDIT_REQUESTED" &&
+                                          quote.edit_request_status &&
+                                          quote.edit_request_status !==
+                                            "PENDING" && (
+                                            <div
+                                              className={`text-center py-2 px-4 rounded-lg ${
+                                                quote.edit_request_status ===
+                                                "APPROVED"
+                                                  ? "bg-green-50 text-green-700 border border-green-200"
+                                                  : "bg-red-50 text-red-700 border border-red-200"
+                                              }`}
+                                            >
+                                              <p className="text-sm font-semibold">
+                                                {quote.edit_request_status ===
+                                                "APPROVED"
+                                                  ? language === "ar"
+                                                    ? "✓ تمت الموافقة على طلب التعديل"
+                                                    : "✓ Edit Request Approved"
+                                                  : language === "ar"
+                                                  ? "✗ تم رفض طلب التعديل"
+                                                  : "✗ Edit Request Declined"}
+                                              </p>
+                                            </div>
+                                          )}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                             </div>
@@ -1572,17 +1985,257 @@ export default function DashboardPage() {
                                 quote.status === "OFFER_SENT" &&
                                 quote.offer_message && (
                                   <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 p-6 rounded-xl shadow-sm mb-4">
-                                    <div className="flex items-center gap-2 mb-4">
-                                      <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
-                                      <h4 className="font-bold text-blue-900 text-lg">
-                                        {language === "ar"
-                                          ? "رسالة العرض"
-                                          : "Offer Message"}
-                                      </h4>
+                                    <div className="flex items-center justify-between mb-4">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                                        <h4 className="font-bold text-blue-900 text-lg">
+                                          {language === "ar"
+                                            ? "رسالة العرض"
+                                            : "Offer Message"}
+                                        </h4>
+                                      </div>
+                                      <button
+                                        onClick={() =>
+                                          setShowConversation(
+                                            showConversation === quote.id
+                                              ? null
+                                              : quote.id
+                                          )
+                                        }
+                                        className="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
+                                      >
+                                        {showConversation === quote.id
+                                          ? language === "ar"
+                                            ? "إخفاء المحادثة"
+                                            : "Hide Conversation"
+                                          : language === "ar"
+                                          ? "عرض المحادثة"
+                                          : "View Conversation"}
+                                      </button>
                                     </div>
                                     <p className="text-sm text-blue-900 mb-4 whitespace-pre-wrap leading-relaxed font-medium">
                                       {quote.offer_message}
                                     </p>
+                                    {/* Conversation Thread */}
+                                    {showConversation === quote.id && (
+                                      <div className="bg-white border-2 border-blue-300 rounded-2xl p-5 space-y-4 mt-4 shadow-lg">
+                                        <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
+                                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                          <h5 className="text-sm font-bold text-blue-900">
+                                            {language === "ar"
+                                              ? "المحادثة"
+                                              : "Conversation"}
+                                          </h5>
+                                        </div>
+                                        {/* Conversation Messages */}
+                                        <div className="space-y-4 max-h-[400px] overflow-y-auto px-1 py-2">
+                                          {quote.edit_request_messages &&
+                                          quote.edit_request_messages.length >
+                                            0 ? (
+                                            quote.edit_request_messages.map(
+                                              (msg: EditRequestMessage) => (
+                                                <div
+                                                  key={msg.id}
+                                                  className={`flex items-start gap-3 ${
+                                                    msg.is_admin
+                                                      ? "flex-row-reverse"
+                                                      : "flex-row"
+                                                  }`}
+                                                >
+                                                  {/* Avatar */}
+                                                  <div
+                                                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md ${
+                                                      msg.is_admin
+                                                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+                                                        : "bg-gradient-to-br from-orange-500 to-orange-600 text-white"
+                                                    }`}
+                                                  >
+                                                    {msg.is_admin
+                                                      ? "A"
+                                                      : msg.sender_name
+                                                          .charAt(0)
+                                                          .toUpperCase()}
+                                                  </div>
+                                                  {/* Message Bubble */}
+                                                  <div
+                                                    className={`flex flex-col max-w-[75%] ${
+                                                      msg.is_admin
+                                                        ? "items-end"
+                                                        : "items-start"
+                                                    }`}
+                                                  >
+                                                    <div
+                                                      className={`rounded-2xl px-4 py-3 shadow-sm ${
+                                                        msg.is_admin
+                                                          ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-md"
+                                                          : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-900 rounded-bl-md"
+                                                      }`}
+                                                    >
+                                                      <div
+                                                        className={`flex items-center gap-2 mb-2 ${
+                                                          msg.is_admin
+                                                            ? "text-blue-100"
+                                                            : "text-gray-600"
+                                                        }`}
+                                                      >
+                                                        <span className="text-xs font-semibold">
+                                                          {msg.is_admin
+                                                            ? language === "ar"
+                                                              ? "المسؤول"
+                                                              : "Admin"
+                                                            : msg.sender_name}
+                                                        </span>
+                                                        <span className="text-[10px] opacity-75">
+                                                          {new Date(
+                                                            msg.created_at
+                                                          ).toLocaleString(
+                                                            language === "ar"
+                                                              ? "ar-SA"
+                                                              : "en-US",
+                                                            {
+                                                              month: "short",
+                                                              day: "numeric",
+                                                              hour: "2-digit",
+                                                              minute: "2-digit",
+                                                            }
+                                                          )}
+                                                        </span>
+                                                      </div>
+                                                      <p
+                                                        className={`text-sm whitespace-pre-wrap leading-relaxed ${
+                                                          msg.is_admin
+                                                            ? "text-white"
+                                                            : "text-gray-800"
+                                                        }`}
+                                                      >
+                                                        {msg.message}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )
+                                            )
+                                          ) : (
+                                            <div className="text-center py-8">
+                                              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-3">
+                                                <svg
+                                                  className="w-8 h-8 text-gray-400"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                                  />
+                                                </svg>
+                                              </div>
+                                              <p className="text-sm text-gray-500">
+                                                {language === "ar"
+                                                  ? "لا توجد رسائل بعد"
+                                                  : "No messages yet"}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Reply Input */}
+                                        {quote.user_response === "PENDING" && (
+                                          <div className="border-t-2 border-gray-200 pt-4 space-y-3">
+                                            <div className="flex items-center gap-2">
+                                              <div className="flex-1 relative">
+                                                <textarea
+                                                  value={
+                                                    replyMessage[quote.id] || ""
+                                                  }
+                                                  onChange={(e) =>
+                                                    setReplyMessage((prev) => ({
+                                                      ...prev,
+                                                      [quote.id]:
+                                                        e.target.value,
+                                                    }))
+                                                  }
+                                                  placeholder={
+                                                    language === "ar"
+                                                      ? "اكتب ردك هنا..."
+                                                      : "Type your reply here..."
+                                                  }
+                                                  className="w-full px-4 py-3 pr-12 text-sm border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all shadow-sm"
+                                                  rows={3}
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="flex justify-end">
+                                              <button
+                                                onClick={() =>
+                                                  handleSendReply(quote.id)
+                                                }
+                                                disabled={
+                                                  sendingReply === quote.id ||
+                                                  !replyMessage[
+                                                    quote.id
+                                                  ]?.trim()
+                                                }
+                                                className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 disabled:transform-none flex items-center gap-2"
+                                              >
+                                                {sendingReply === quote.id ? (
+                                                  <>
+                                                    <svg
+                                                      className="animate-spin h-4 w-4"
+                                                      xmlns="http://www.w3.org/2000/svg"
+                                                      fill="none"
+                                                      viewBox="0 0 24 24"
+                                                    >
+                                                      <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        strokeWidth="4"
+                                                      ></circle>
+                                                      <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                      ></path>
+                                                    </svg>
+                                                    <span>
+                                                      {language === "ar"
+                                                        ? "جاري الإرسال..."
+                                                        : "Sending..."}
+                                                    </span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <span>
+                                                      {language === "ar"
+                                                        ? "إرسال"
+                                                        : "Send"}
+                                                    </span>
+                                                    <svg
+                                                      className="w-4 h-4"
+                                                      fill="none"
+                                                      stroke="currentColor"
+                                                      viewBox="0 0 24 24"
+                                                    >
+                                                      <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                                                      />
+                                                    </svg>
+                                                  </>
+                                                )}
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                     {quote.user_response === "PENDING" && (
                                       <div className="space-y-4">
                                         {showEditRequest === quote.id ? (
@@ -1703,18 +2356,30 @@ export default function DashboardPage() {
                                             ? "✓ تم إرسال طلب التعديل"
                                             : "✓ Edit Request Sent"}
                                         </p>
-                                        {quote.edit_request_message && (
-                                          <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded-lg">
-                                            <p className="text-xs font-semibold text-orange-900 mb-1">
-                                              {language === "ar"
-                                                ? "طلبك:"
-                                                : "Your Request:"}
-                                            </p>
-                                            <p className="text-sm text-orange-800 whitespace-pre-wrap">
-                                              {quote.edit_request_message}
-                                            </p>
-                                          </div>
-                                        )}
+                                        {/* Status Badge */}
+                                        {quote.edit_request_status &&
+                                          quote.edit_request_status !==
+                                            "PENDING" && (
+                                            <div
+                                              className={`text-center py-2 px-4 rounded-lg ${
+                                                quote.edit_request_status ===
+                                                "APPROVED"
+                                                  ? "bg-green-50 text-green-700 border border-green-200"
+                                                  : "bg-red-50 text-red-700 border border-red-200"
+                                              }`}
+                                            >
+                                              <p className="text-sm font-semibold">
+                                                {quote.edit_request_status ===
+                                                "APPROVED"
+                                                  ? language === "ar"
+                                                    ? "✓ تمت الموافقة على طلب التعديل"
+                                                    : "✓ Edit Request Approved"
+                                                  : language === "ar"
+                                                  ? "✗ تم رفض طلب التعديل"
+                                                  : "✗ Edit Request Declined"}
+                                              </p>
+                                            </div>
+                                          )}
                                       </div>
                                     )}
                                   </div>

@@ -15,10 +15,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .email_service import send_status_update_email
-from .models import ContactMessage, FCLQuote
+from .models import ContactMessage, EditRequestMessage, FCLQuote
 from .serializers import (
     ChangePasswordSerializer,
     ContactMessageSerializer,
+    EditRequestMessageSerializer,
     FCLQuoteSerializer,
     RegisterSerializer,
     UserSerializer,
@@ -364,7 +365,7 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         """Update FCL quote"""
         instance = self.get_object()
-        
+
         # Check if user is not admin and quote status is PENDING_PAYMENT or later
         if not request.user.is_superuser:
             locked_statuses = [
@@ -390,7 +391,7 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
-        
+
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -408,7 +409,7 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
     def destroy(self, request, *args, **kwargs):
         """Delete FCL quote"""
         instance = self.get_object()
-        
+
         # Check if user is not admin and quote status is PENDING_PAYMENT or later
         if not request.user.is_superuser:
             locked_statuses = [
@@ -434,7 +435,7 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
                     },
                     status=status.HTTP_403_FORBIDDEN,
                 )
-        
+
         self.perform_destroy(instance)
         return Response(
             {"success": True, "message": "FCL quote deleted successfully."},
@@ -734,6 +735,14 @@ def respond_to_offer_view(request, pk):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             quote.edit_request_message = edit_request_message.strip()
+            quote.edit_request_status = "PENDING"
+            # Create the first message in the conversation thread
+            EditRequestMessage.objects.create(
+                quote=quote,
+                sender=request.user,
+                message=edit_request_message.strip(),
+                is_admin=False,
+            )
             # Keep status as OFFER_SENT and notify admin
             from .email_service import send_edit_request_notification
 
@@ -770,6 +779,165 @@ def respond_to_offer_view(request, pk):
     except Exception as e:
         logger = logging.getLogger(__name__)
         logger.error(f"Error responding to offer: {str(e)}")
+        return Response(
+            {
+                "success": False,
+                "error": "An error occurred while processing the request.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def send_edit_request_reply_view(request, pk):
+    """API endpoint to send a reply in offer conversation (when offer is sent)"""
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+        message_text = request.data.get("message", "").strip()
+
+        if not message_text:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Message is required.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check permissions
+        is_admin = request.user.is_superuser
+        is_owner = quote.user == request.user
+
+        if not (is_admin or is_owner):
+            return Response(
+                {
+                    "success": False,
+                    "error": "You can only reply to conversations for your own quotes or as an admin.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Check if offer has been sent (conversation is only available when offer is sent)
+        if quote.status != "OFFER_SENT" or not quote.offer_message:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Conversation is only available when an offer has been sent.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Create the message
+        message = EditRequestMessage.objects.create(
+            quote=quote,
+            sender=request.user,
+            message=message_text,
+            is_admin=is_admin,
+        )
+
+        serializer = EditRequestMessageSerializer(message, context={"request": request})
+
+        return Response(
+            {
+                "success": True,
+                "message": "Reply sent successfully.",
+                "data": serializer.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "FCL quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error sending edit request reply: {str(e)}")
+        return Response(
+            {
+                "success": False,
+                "error": "An error occurred while processing the request.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def approve_or_decline_edit_request_view(request, pk):
+    """API endpoint for admin to approve or decline an edit request"""
+    if not request.user.is_superuser:
+        return Response(
+            {
+                "success": False,
+                "error": "Only admins can approve or decline edit requests.",
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+        action = request.data.get("action")  # "approve" or "decline"
+        message_text = request.data.get("message", "").strip()
+
+        if action not in ["approve", "decline"]:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Action must be 'approve' or 'decline'.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if quote.user_response != "EDIT_REQUESTED":
+            return Response(
+                {
+                    "success": False,
+                    "error": "This quote does not have an active edit request.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Update edit request status
+        if action == "approve":
+            quote.edit_request_status = "APPROVED"
+            # If approved, reset to CREATED status so admin can send a new offer
+            quote.status = "CREATED"
+            quote.user_response = "PENDING"
+            quote.edit_request_message = None
+        else:  # decline
+            quote.edit_request_status = "DECLINED"
+            # If declined, keep status as OFFER_SENT
+            quote.status = "OFFER_SENT"
+
+        # Create a message with the admin's decision
+        if message_text:
+            EditRequestMessage.objects.create(
+                quote=quote,
+                sender=request.user,
+                message=message_text,
+                is_admin=True,
+            )
+
+        quote.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Edit request {action}d successfully.",
+                "data": FCLQuoteSerializer(quote).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "FCL quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error approving/declining edit request: {str(e)}")
         return Response(
             {
                 "success": False,

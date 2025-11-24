@@ -228,6 +228,17 @@ class FCLQuote(models.Model):
         verbose_name="Edit Request Message",
         help_text="Message from user requesting changes to the offer",
     )
+    edit_request_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("PENDING", "Pending"),
+            ("APPROVED", "Approved"),
+            ("DECLINED", "Declined"),
+        ],
+        default="PENDING",
+        verbose_name="Edit Request Status",
+        help_text="Status of the edit request conversation",
+    )
 
     class Meta:
         verbose_name = "FCL Quote"
@@ -236,3 +247,36 @@ class FCLQuote(models.Model):
 
     def __str__(self):
         return f"FCL Quote - {self.full_name} ({self.port_of_loading} → {self.port_of_discharge}) - {self.created_at.strftime('%Y-%m-%d')}"
+
+
+class EditRequestMessage(models.Model):
+    """Model to store messages in edit request conversation threads"""
+
+    quote = models.ForeignKey(
+        FCLQuote,
+        on_delete=models.CASCADE,
+        related_name="edit_request_messages",
+        verbose_name="FCL Quote",
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="edit_request_messages_sent",
+        verbose_name="Sender",
+    )
+    message = models.TextField(verbose_name="Message")
+    is_admin = models.BooleanField(
+        default=False, verbose_name="Is Admin", help_text="Whether the sender is an admin"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+
+    class Meta:
+        verbose_name = "Edit Request Message"
+        verbose_name_plural = "Edit Request Messages"
+        ordering = ["created_at"]
+
+    def __str__(self):
+        sender_name = (
+            self.sender.get_full_name() or self.sender.username if self.sender else "Unknown"
+        )
+        return f"Message from {sender_name} on Quote #{self.quote.id} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
