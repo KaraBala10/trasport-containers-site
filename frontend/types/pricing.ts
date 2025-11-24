@@ -57,14 +57,14 @@ export const INITIAL_PACKAGING: PackagingOption[] = [
 ];
 
 export const FINAL_PACKAGING: PackagingOption[] = [
-  { key: 'smallBox', name: 'صندوق صغير', nameEn: 'Small Box', price: 1.5, type: 'final' },
-  { key: 'mediumBox', name: 'صندوق متوسط', nameEn: 'Medium Box', price: 2.5, type: 'final' },
-  { key: 'largeBox', name: 'صندوق كبير', nameEn: 'Large Box', price: 3.5, type: 'final' },
-  { key: 'bubbleWrap', name: 'بلاستيك فقاعي', nameEn: 'Bubble Wrap', price: 2, type: 'final' },
-  { key: 'foam', name: 'حماية فوم', nameEn: 'Foam Protection', price: 3, type: 'final' },
-  { key: 'euroPallet', name: 'باليت أوروبي', nameEn: 'Euro Pallet', price: 25, type: 'final' },
-  { key: 'palletBoxXL', name: 'صندوق باليت XL', nameEn: 'Pallet Box XL', price: 29, type: 'final' },
-  { key: 'woodenCrate', name: 'صندوق خشبي', nameEn: 'Wooden Crate', price: 75, type: 'final' },
+  { key: 'smallBox', name: 'صندوق كرتون صغير (20×20×20 cm)', nameEn: 'Small Box (20×20×20 cm)', price: 1.5, type: 'final' },
+  { key: 'mediumBox', name: 'صندوق كرتون متوسط (40×30×30 cm)', nameEn: 'Medium Box (40×30×30 cm)', price: 2.5, type: 'final' },
+  { key: 'largeBox', name: 'صندوق كرتون كبير (60×40×40 cm)', nameEn: 'Large Box (60×40×40 cm)', price: 3.5, type: 'final' },
+  { key: 'bubbleWrap', name: 'حماية إضافية (Bubble Wrap)', nameEn: 'Additional Protection (Bubble Wrap)', price: 2, type: 'final' },
+  { key: 'foam', name: 'حماية فوم (Foam Protection)', nameEn: 'Foam Protection', price: 3, type: 'final' },
+  { key: 'euroPallet', name: 'باليت خشبي – Euro Pallet (120×80 cm)', nameEn: 'Euro Pallet (120×80 cm)', price: 25, type: 'final' },
+  { key: 'woodenCrate', name: 'صندوق خشبي تقوية – Wooden Crate', nameEn: 'Wooden Crate', price: 75, type: 'final' },
+  { key: 'palletBoxXL', name: 'صندوق باليت كبير – Pallet Box XL (1185×985×870 mm)', nameEn: 'Pallet Box XL (1185×985×870 mm)', price: 29, type: 'final' },
 ];
 
 // Pricing Result

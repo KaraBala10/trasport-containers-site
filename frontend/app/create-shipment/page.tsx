@@ -652,11 +652,10 @@ export default function CreateShipmentPage() {
               {t.step6Title}
             </h2>
             <Step6Packaging
-              initialPackaging={initialPackaging}
               finalPackaging={finalPackaging}
-              onInitialPackagingChange={setInitialPackaging}
               onFinalPackagingChange={setFinalPackaging}
               language={language}
+              direction={direction}
             />
             <motion.div
               initial={{ opacity: 0, y: 20 }}

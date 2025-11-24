@@ -1,31 +1,28 @@
 "use client";
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { INITIAL_PACKAGING, FINAL_PACKAGING, PackagingOption } from '@/types/pricing';
+import { FINAL_PACKAGING, PackagingOption } from '@/types/pricing';
+import { ShippingDirection } from '@/types/shipment';
 
 interface Step6PackagingProps {
-  initialPackaging: { key: string; quantity: number }[];
   finalPackaging: { key: string; quantity: number }[];
-  onInitialPackagingChange: (packaging: { key: string; quantity: number }[]) => void;
   onFinalPackagingChange: (packaging: { key: string; quantity: number }[]) => void;
   language: 'ar' | 'en';
+  direction: ShippingDirection | null;
 }
 
 export default function Step6Packaging({
-  initialPackaging,
   finalPackaging,
-  onInitialPackagingChange,
   onFinalPackagingChange,
   language,
+  direction,
 }: Step6PackagingProps) {
   const translations = {
     ar: {
       title: 'خيارات التغليف',
-      initialPackaging: 'التغليف المبدئي (عند الاستلام)',
-      initialPackagingDesc: 'حماية أولية للطرود عند الاستلام من عنوانك',
-      finalPackaging: 'التغليف النهائي (في المراكز)',
-      finalPackagingDesc: 'تغليف نهائي في مركز Bergen op Zoom أو حلب قبل الشحن',
+      finalPackaging: 'التغليف النهائي',
+      finalPackagingDescEu: 'التغليف النهائي في أوروبا - Bergen op Zoom',
+      finalPackagingDescSy: 'التغليف النهائي في سورية - حلب',
       selectPackaging: 'اختر نوع التغليف',
       quantity: 'الكمية',
       add: 'إضافة',
@@ -35,10 +32,9 @@ export default function Step6Packaging({
     },
     en: {
       title: 'Packaging Options',
-      initialPackaging: 'Initial Packaging (at Pickup)',
-      initialPackagingDesc: 'Initial protection for parcels at pickup from your address',
-      finalPackaging: 'Final Packaging (at Centers)',
-      finalPackagingDesc: 'Final packaging at Bergen op Zoom or Aleppo center before shipping',
+      finalPackaging: 'Final Packaging',
+      finalPackagingDescEu: 'Final packaging in Europe - Bergen op Zoom',
+      finalPackagingDescSy: 'Final packaging in Syria - Aleppo',
       selectPackaging: 'Select Packaging Type',
       quantity: 'Quantity',
       add: 'Add',
@@ -49,23 +45,13 @@ export default function Step6Packaging({
   };
 
   const t = translations[language];
-
-  const addInitialPackaging = () => {
-    onInitialPackagingChange([
-      ...initialPackaging,
-      { key: '', quantity: 1 },
-    ]);
-  };
-
-  const removeInitialPackaging = (index: number) => {
-    onInitialPackagingChange(initialPackaging.filter((_, i) => i !== index));
-  };
-
-  const updateInitialPackaging = (index: number, field: 'key' | 'quantity', value: string | number) => {
-    const updated = [...initialPackaging];
-    updated[index] = { ...updated[index], [field]: value };
-    onInitialPackagingChange(updated);
-  };
+  
+  // تحديد النص حسب الاتجاه
+  const finalPackagingDesc = direction === 'eu-sy' 
+    ? t.finalPackagingDescEu 
+    : direction === 'sy-eu' 
+    ? t.finalPackagingDescSy 
+    : language === 'ar' ? 'التغليف في مكان الانطلاق' : 'Packaging at departure location';
 
   const addFinalPackaging = () => {
     onFinalPackagingChange([
@@ -91,96 +77,10 @@ export default function Step6Packaging({
     }, 0);
   };
 
-  const initialTotal = calculateTotal(initialPackaging, INITIAL_PACKAGING);
   const finalTotal = calculateTotal(finalPackaging, FINAL_PACKAGING);
-  const grandTotal = initialTotal + finalTotal;
 
   return (
     <div className="space-y-8">
-      {/* Initial Packaging */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
-      >
-        <div className="mb-4">
-          <h3 className="text-xl font-bold text-primary-dark mb-2">
-            {t.initialPackaging}
-          </h3>
-          <p className="text-sm text-gray-600">{t.initialPackagingDesc}</p>
-          <span className="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-            {t.optional}
-          </span>
-        </div>
-
-        <div className="space-y-4">
-          {initialPackaging.map((item, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex gap-4 items-end"
-            >
-              <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.selectPackaging}
-                </label>
-                <select
-                  value={item.key}
-                  onChange={(e) => updateInitialPackaging(index, 'key', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
-                >
-                  <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
-                  {INITIAL_PACKAGING.map(option => (
-                    <option key={option.key} value={option.key}>
-                      {language === 'ar' ? option.name : option.nameEn} - {option.price}€
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="w-32">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.quantity}
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) => updateInitialPackaging(index, 'quantity', parseInt(e.target.value) || 1)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                />
-              </div>
-              <motion.button
-                onClick={() => removeInitialPackaging(index)}
-                className="px-4 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {t.remove}
-              </motion.button>
-            </motion.div>
-          ))}
-
-          <motion.button
-            onClick={addInitialPackaging}
-            className="w-full px-6 py-3 bg-primary-yellow text-primary-dark font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            + {t.add} {t.initialPackaging}
-          </motion.button>
-
-          {initialTotal > 0 && (
-            <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
-              <span className="font-bold text-gray-800">{t.total}</span>
-              <span className="text-xl font-bold text-primary-dark">
-                {initialTotal.toFixed(2)} €
-              </span>
-            </div>
-          )}
-        </div>
-      </motion.div>
-
       {/* Final Packaging */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -192,7 +92,7 @@ export default function Step6Packaging({
           <h3 className="text-xl font-bold text-primary-dark mb-2">
             {t.finalPackaging}
           </h3>
-          <p className="text-sm text-gray-600">{t.finalPackagingDesc}</p>
+          <p className="text-sm text-gray-600">{finalPackagingDesc}</p>
           <span className="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
             {t.optional}
           </span>
@@ -218,7 +118,7 @@ export default function Step6Packaging({
                   <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
                   {FINAL_PACKAGING.map(option => (
                     <option key={option.key} value={option.key}>
-                      {language === 'ar' ? option.name : option.nameEn} - {option.price}€
+                      {language === 'ar' ? option.name : option.nameEn}
                     </option>
                   ))}
                 </select>
@@ -267,7 +167,7 @@ export default function Step6Packaging({
       </motion.div>
 
       {/* Grand Total */}
-      {grandTotal > 0 && (
+      {finalTotal > 0 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -276,7 +176,7 @@ export default function Step6Packaging({
           <div className="flex justify-between items-center">
             <span className="text-2xl font-bold text-primary-dark">{t.total}</span>
             <span className="text-3xl font-black text-primary-dark">
-              {grandTotal.toFixed(2)} €
+              {finalTotal.toFixed(2)} €
             </span>
           </div>
         </motion.div>
