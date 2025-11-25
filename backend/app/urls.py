@@ -14,6 +14,8 @@ from .views import (
     calculate_cbm_view,
     calculate_pricing_view,
     current_user_view,
+    get_packaging_prices_view,
+    get_prices_view,
     logout_view,
     respond_to_offer_view,
     send_edit_request_reply_view,
@@ -67,4 +69,6 @@ urlpatterns = [
     # Utility endpoints
     path("calculate-cbm/", calculate_cbm_view, name="calculate_cbm"),
     path("calculate-pricing/", calculate_pricing_view, name="calculate_pricing"),
+    path("prices/", get_prices_view, name="get_prices"),
+    path("packaging-prices/", get_packaging_prices_view, name="get_packaging_prices"),
 ]

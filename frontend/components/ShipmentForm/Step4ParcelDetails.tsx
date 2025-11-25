@@ -1,16 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Parcel, ShipmentType } from "@/types/shipment";
-import { PER_KG_PRODUCTS, PER_PIECE_PRODUCTS } from "@/types/pricing";
 import { calculateCBM } from "@/lib/pricing";
+import { apiService } from "@/lib/api";
+
+interface Price {
+  id: number;
+  ar_item: string;
+  en_item: string;
+  price_per_kg: number;
+  minimum_shipping_weight: number;
+  minimum_shipping_unit: "per_kg" | "per_piece";
+  minimum_shipping_unit_display: string;
+  one_cbm: number;
+}
+
+interface PackagingPrice {
+  id: number;
+  ar_option: string;
+  en_option: string;
+  dimension: string;
+  price: number;
+}
 
 interface Step4ParcelDetailsProps {
   shipmentTypes: ShipmentType[];
   parcels: Parcel[];
   onParcelsChange: (parcels: Parcel[]) => void;
   language: "ar" | "en";
+  onValidationChange?: (isValid: boolean) => void;
+  wantsInsurance?: boolean;
+  onWantsInsuranceChange?: (value: boolean) => void;
+  declaredShipmentValue?: number;
+  onDeclaredShipmentValueChange?: (value: number) => void;
 }
 
 export default function Step4ParcelDetails({
@@ -18,7 +42,94 @@ export default function Step4ParcelDetails({
   parcels,
   onParcelsChange,
   language,
+  onValidationChange,
 }: Step4ParcelDetailsProps) {
+  const [prices, setPrices] = useState<Price[]>([]);
+  const [packagingPrices, setPackagingPrices] = useState<PackagingPrice[]>([]);
+  const [loadingPrices, setLoadingPrices] = useState(true);
+  const [loadingPackagingPrices, setLoadingPackagingPrices] = useState(true);
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: string;
+  }>({});
+
+  // Fetch prices from API
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        setLoadingPrices(true);
+        const response = await apiService.getPrices();
+        if (response.data.success && response.data.prices) {
+          setPrices(response.data.prices);
+        }
+      } catch (error) {
+        console.error("Error fetching prices:", error);
+      } finally {
+        setLoadingPrices(false);
+      }
+    };
+    fetchPrices();
+  }, []);
+
+  // Fetch packaging prices from API
+  useEffect(() => {
+    const fetchPackagingPrices = async () => {
+      try {
+        setLoadingPackagingPrices(true);
+        const response = await apiService.getPackagingPrices();
+        if (response.data.success && response.data.data) {
+          setPackagingPrices(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching packaging prices:", error);
+      } finally {
+        setLoadingPackagingPrices(false);
+      }
+    };
+    fetchPackagingPrices();
+  }, []);
+
+  // Validate parcels against minimum shipping weight
+  useEffect(() => {
+    const errors: { [key: string]: string } = {};
+    let isValid = true;
+
+    parcels.forEach((parcel) => {
+      if (!parcel.productCategory) return;
+
+      const price = prices.find(
+        (p) => p.id.toString() === parcel.productCategory
+      );
+      if (!price) return;
+
+      const minWeight = parseFloat(price.minimum_shipping_weight.toString());
+      const parcelWeight = parcel.weight || 0;
+      const parcelQuantity = parcel.quantity || 1;
+
+      if (price.minimum_shipping_unit === "per_kg") {
+        if (parcelWeight < minWeight) {
+          errors[parcel.id] =
+            language === "ar"
+              ? `الوزن الأدنى المطلوب: ${minWeight} كغ`
+              : `Minimum weight required: ${minWeight} kg`;
+          isValid = false;
+        }
+      } else if (price.minimum_shipping_unit === "per_piece") {
+        if (parcelQuantity < minWeight) {
+          errors[parcel.id] =
+            language === "ar"
+              ? `الكمية الأدنى المطلوبة: ${minWeight} قطعة`
+              : `Minimum quantity required: ${minWeight} piece(s)`;
+          isValid = false;
+        }
+      }
+    });
+
+    setValidationErrors(errors);
+    if (onValidationChange) {
+      onValidationChange(isValid && parcels.length > 0);
+    }
+  }, [parcels, prices, language, onValidationChange]);
+
   const translations = {
     ar: {
       title: "تفاصيل الطرود",
@@ -29,6 +140,8 @@ export default function Step4ParcelDetails({
       height: "الارتفاع (سم)",
       weight: "الوزن (كغ)",
       productCategory: "نوع المنتج",
+      packagingType: "نوع التغليف",
+      packagingTypeOptional: "اختياري",
       quantity: "الكمية",
       repeatCount: "عدد التكرار",
       repeatCountHint: "كم مرة تريد تكرار هذا الطرد؟",
@@ -46,6 +159,12 @@ export default function Step4ParcelDetails({
       notes: "ملاحظات",
       electronicsInfo: "معلومات الإلكترونيات",
       largeItemInfo: "معلومات القطعة الكبيرة",
+      insurance: "التأمين",
+      insuranceCheckbox: "أريد التأمين على الشحنة",
+      insuranceDesc:
+        "يمكنك اختيار تأمين إضافي على قيمة الشحنة (1.5% من القيمة المعلنة + حساب الشحنة)",
+      declaredValueShipment: "القيمة المعلنة للشحنة (€)",
+      note: "ملاحظة: التأمين اختياري. سيتم حساب التأمين في صفحة ملخص التسعير.",
     },
     en: {
       title: "Parcel Details",
@@ -56,6 +175,8 @@ export default function Step4ParcelDetails({
       height: "Height (cm)",
       weight: "Weight (kg)",
       productCategory: "Product Category",
+      packagingType: "Packaging Type",
+      packagingTypeOptional: "Optional",
       quantity: "Quantity",
       repeatCount: "Repeat Count",
       repeatCountHint: "How many times to repeat this parcel?",
@@ -73,6 +194,12 @@ export default function Step4ParcelDetails({
       notes: "Notes",
       electronicsInfo: "Electronics Information",
       largeItemInfo: "Large Item Information",
+      insurance: "Insurance",
+      insuranceCheckbox: "I want insurance for the shipment",
+      insuranceDesc:
+        "You can choose additional insurance on shipment value (1.5% of declared value + calculation)",
+      declaredValueShipment: "Declared Shipment Value (€)",
+      note: "Note: Insurance is optional. Insurance will be calculated in the Pricing Summary page.",
     },
   };
 
@@ -80,8 +207,21 @@ export default function Step4ParcelDetails({
   const hasElectronics = shipmentTypes.includes("electronics");
   const hasLargeItems = shipmentTypes.includes("large-items");
 
-  // Combine all product categories
-  const allProducts = [...PER_KG_PRODUCTS, ...PER_PIECE_PRODUCTS];
+  // Helper function to check if product is phone or laptop
+  const isPhoneOrLaptop = (productCategory: string): boolean => {
+    if (!productCategory) return false;
+    const selectedPrice = prices.find(
+      (p) => p.id.toString() === productCategory
+    );
+    return !!(
+      productCategory === "MOBILE_PHONE" ||
+      productCategory === "LAPTOP" ||
+      selectedPrice?.en_item?.toLowerCase().includes("mobile") ||
+      selectedPrice?.en_item?.toLowerCase().includes("laptop") ||
+      selectedPrice?.ar_item?.includes("موبايل") ||
+      selectedPrice?.ar_item?.includes("لابتوب")
+    );
+  };
 
   const addParcel = () => {
     const newParcel: Parcel = {
@@ -95,6 +235,8 @@ export default function Step4ParcelDetails({
       quantity: 1,
       repeatCount: 1,
       photos: [],
+      wantsInsurance: false as boolean,
+      declaredShipmentValue: 0 as number,
     };
     onParcelsChange([...parcels, newParcel]);
   };
@@ -114,6 +256,30 @@ export default function Step4ParcelDetails({
           const width = field === "width" ? value : parcel.width || 0;
           const height = field === "height" ? value : parcel.height || 0;
           updatedParcel.cbm = calculateCBM(length, width, height);
+        }
+
+        // Force enable insurance for MOBILE_PHONE and LAPTOP
+        if (field === "productCategory") {
+          const isPhoneOrLaptop =
+            value === "MOBILE_PHONE" ||
+            value === "LAPTOP" ||
+            prices
+              .find((p) => p.id.toString() === value)
+              ?.en_item?.toLowerCase()
+              .includes("mobile") ||
+            prices
+              .find((p) => p.id.toString() === value)
+              ?.en_item?.toLowerCase()
+              .includes("laptop");
+
+          if (isPhoneOrLaptop) {
+            updatedParcel.wantsInsurance = true;
+            // If no declared value set, set a default or keep existing
+            if (!updatedParcel.declaredShipmentValue) {
+              updatedParcel.declaredShipmentValue =
+                updatedParcel.declaredValue || 0;
+            }
+          }
         }
 
         return updatedParcel;
@@ -348,17 +514,117 @@ export default function Step4ParcelDetails({
                   onChange={(e) =>
                     updateParcel(parcel.id, "productCategory", e.target.value)
                   }
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                  disabled={loadingPrices}
+                  className={`w-full px-4 py-3 rounded-xl border-2 ${
+                    validationErrors[parcel.id]
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   <option value="">
-                    {language === "ar" ? "اختر..." : "Select..."}
+                    {loadingPrices
+                      ? language === "ar"
+                        ? "جاري التحميل..."
+                        : "Loading..."
+                      : language === "ar"
+                      ? "اختر..."
+                      : "Select..."}
                   </option>
-                  {allProducts.map((product) => (
-                    <option key={product.key} value={product.key}>
-                      {language === "ar" ? product.name : product.nameEn}
+                  {prices.map((price) => (
+                    <option key={price.id} value={price.id.toString()}>
+                      {language === "ar" ? price.ar_item : price.en_item}
                     </option>
                   ))}
                 </select>
+                {validationErrors[parcel.id] && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {validationErrors[parcel.id]}
+                  </p>
+                )}
+                {parcel.productCategory &&
+                  !validationErrors[parcel.id] &&
+                  (() => {
+                    const selectedPrice = prices.find(
+                      (p) => p.id.toString() === parcel.productCategory
+                    );
+                    if (selectedPrice) {
+                      const minWeight = parseFloat(
+                        selectedPrice.minimum_shipping_weight.toString()
+                      );
+                      const unit =
+                        selectedPrice.minimum_shipping_unit === "per_kg"
+                          ? language === "ar"
+                            ? "كغ"
+                            : "kg"
+                          : language === "ar"
+                          ? "قطعة"
+                          : "piece(s)";
+                      return (
+                        <p className="mt-1 text-xs text-gray-500">
+                          {language === "ar"
+                            ? `الوزن/الكمية الأدنى: ${minWeight} ${unit}`
+                            : `Minimum: ${minWeight} ${unit}`}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
+              </div>
+
+              {/* Packaging Type */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.packagingType}{" "}
+                  <span className="text-gray-400 text-xs">
+                    ({t.packagingTypeOptional})
+                  </span>
+                </label>
+                <select
+                  value={parcel.packagingType || ""}
+                  onChange={(e) =>
+                    updateParcel(
+                      parcel.id,
+                      "packagingType",
+                      e.target.value || undefined
+                    )
+                  }
+                  disabled={loadingPackagingPrices}
+                  className={`w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <option value="">
+                    {loadingPackagingPrices
+                      ? language === "ar"
+                        ? "جاري التحميل..."
+                        : "Loading..."
+                      : language === "ar"
+                      ? "بدون تغليف"
+                      : "No Packaging"}
+                  </option>
+                  {packagingPrices.map((packaging) => (
+                    <option key={packaging.id} value={packaging.id.toString()}>
+                      {language === "ar"
+                        ? packaging.ar_option
+                        : packaging.en_option}{" "}
+                      ({packaging.dimension}) - €{packaging.price}
+                    </option>
+                  ))}
+                </select>
+                {parcel.packagingType &&
+                  (() => {
+                    const selectedPackaging = packagingPrices.find(
+                      (p) => p.id.toString() === parcel.packagingType
+                    );
+                    if (selectedPackaging) {
+                      return (
+                        <p className="mt-1 text-xs text-gray-500">
+                          {language === "ar"
+                            ? `السعر: €${selectedPackaging.price}`
+                            : `Price: €${selectedPackaging.price}`}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
               </div>
 
               {/* Quantity */}
@@ -564,6 +830,88 @@ export default function Step4ParcelDetails({
                   </div>
                 </motion.div>
               )}
+
+              {/* Insurance Section - Inside Parcel Card */}
+              <div className="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-lg font-bold text-primary-dark">
+                        {t.insurance}
+                      </h4>
+                      {isPhoneOrLaptop(parcel.productCategory) && (
+                        <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                          {language === "ar" ? "إلزامي" : "Required"}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600">{t.insuranceDesc}</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Checkbox */}
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id={`insurance-checkbox-${parcel.id}`}
+                        checked={parcel.wantsInsurance || false}
+                        disabled={isPhoneOrLaptop(parcel.productCategory)}
+                        onChange={(e) => {
+                          updateParcel(
+                            parcel.id,
+                            "wantsInsurance",
+                            e.target.checked
+                          );
+                          if (!e.target.checked) {
+                            updateParcel(parcel.id, "declaredShipmentValue", 0);
+                          }
+                        }}
+                        className="w-5 h-5 text-primary-yellow border-gray-300 rounded focus:ring-2 focus:ring-primary-yellow focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <label
+                        htmlFor={`insurance-checkbox-${parcel.id}`}
+                        className="text-sm font-semibold text-gray-700 cursor-pointer"
+                      >
+                        {t.insuranceCheckbox}
+                      </label>
+                    </div>
+
+                    {/* Declared Shipment Value Field - Only shown when checkbox is checked or required */}
+                    {(parcel.wantsInsurance ||
+                      isPhoneOrLaptop(parcel.productCategory)) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-2"
+                      >
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          {t.declaredValueShipment} *
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={parcel.declaredShipmentValue || ""}
+                          onChange={(e) =>
+                            updateParcel(
+                              parcel.id,
+                              "declaredShipmentValue",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                          placeholder={
+                            language === "ar"
+                              ? "أدخل القيمة..."
+                              : "Enter value..."
+                          }
+                        />
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         ))}

@@ -22,6 +22,7 @@ export interface Parcel {
   weight: number; // kg
   cbm: number; // calculated automatically
   productCategory: string; // Product key (e.g., 'CLOTHES', 'MOBILE_PHONE')
+  packagingType?: string; // Packaging Price ID
   quantity: number; // Quantity of items
   repeatCount: number; // Number of times this parcel is repeated (default: 1)
   photos: File[]; // Parcel photos (3 required)
@@ -37,6 +38,10 @@ export interface Parcel {
   itemType?: string;
   unknownDimensions?: boolean;
   notes?: string;
+  
+  // Insurance fields
+  wantsInsurance?: boolean;
+  declaredShipmentValue?: number; // € - Declared shipment value for insurance
 }
 
 export interface ShipmentFormData {

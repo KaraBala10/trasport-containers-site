@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ContactMessage, FCLQuote
+from .models import ContactMessage, FCLQuote, PackagingPrice, Price
 
 
 @admin.register(ContactMessage)
@@ -110,4 +110,86 @@ class FCLQuoteAdmin(admin.ModelAdmin):
             },
         ),
         ("Terms", {"fields": ("accepted_terms",)}),
+    )
+
+
+@admin.register(Price)
+class PriceAdmin(admin.ModelAdmin):
+    list_display = (
+        "ar_item",
+        "en_item",
+        "price_per_kg",
+        "minimum_shipping_weight",
+        "minimum_shipping_unit",
+        "one_cbm",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = ("minimum_shipping_unit", "created_at", "updated_at")
+    search_fields = ("ar_item", "en_item")
+    readonly_fields = ("created_at", "updated_at")
+    list_editable = ("price_per_kg", "minimum_shipping_weight", "one_cbm")
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        (
+            "Item Information",
+            {
+                "fields": ("ar_item", "en_item"),
+            },
+        ),
+        (
+            "Pricing",
+            {
+                "fields": (
+                    "price_per_kg",
+                    ("minimum_shipping_weight", "minimum_shipping_unit"),
+                    "one_cbm",
+                ),
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+            },
+        ),
+    )
+
+
+@admin.register(PackagingPrice)
+class PackagingPriceAdmin(admin.ModelAdmin):
+    list_display = (
+        "ar_option",
+        "en_option",
+        "dimension",
+        "price",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = ("created_at", "updated_at")
+    search_fields = ("ar_option", "en_option", "dimension")
+    readonly_fields = ("created_at", "updated_at")
+    list_editable = ("price",)
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        (
+            "Packaging Information",
+            {
+                "fields": ("ar_option", "en_option", "dimension"),
+            },
+        ),
+        (
+            "Pricing",
+            {
+                "fields": ("price",),
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+            },
+        ),
     )

@@ -24,12 +24,14 @@ from .email_service import (
     send_status_update_email,
     send_status_update_notification_to_admin,
 )
-from .models import ContactMessage, EditRequestMessage, FCLQuote
+from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price
 from .serializers import (
     ChangePasswordSerializer,
     ContactMessageSerializer,
     EditRequestMessageSerializer,
     FCLQuoteSerializer,
+    PackagingPriceSerializer,
+    PriceSerializer,
     RegisterSerializer,
     UserSerializer,
 )
@@ -524,51 +526,166 @@ def calculate_cbm_view(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])  # Allow anyone to calculate pricing
 def calculate_pricing_view(request):
-    """API endpoint to calculate pricing based on weight and CBM"""
+    """API endpoint to calculate pricing based on parcels and Price table"""
     try:
-        total_weight_kg = float(request.data.get("total_weight_kg", 0))
-        total_cbm = float(request.data.get("total_cbm", 0))
+        parcels_data = request.data.get("parcels", [])
 
-        # Validate inputs
-        if total_weight_kg < 0 or total_cbm < 0:
+        if not parcels_data or len(parcels_data) == 0:
             return Response(
                 {
                     "success": False,
-                    "error": "Weight and CBM must be non-negative numbers",
+                    "error": "No parcels provided",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Calculate pricing according to the formula:
-        # priceByWeight = total_weight_kg * 3
-        # priceByCBM = total_cbm * 300
-        # basePrice = max(priceByWeight, priceByCBM, 75)
-        price_by_weight = total_weight_kg * 3
-        price_by_cbm = total_cbm * 300
-        base_price = max(price_by_weight, price_by_cbm, 75)
+        total_price_by_weight = 0
+        total_price_by_cbm = 0
+        total_packaging_cost = 0
+        calculations = []
+        packaging_calculations = []
+
+        # Calculate pricing for each parcel using Price table
+        for parcel_data in parcels_data:
+            product_id = parcel_data.get("productCategory")
+            packaging_id = parcel_data.get("packagingType")
+            weight = float(parcel_data.get("weight", 0))
+            cbm = float(parcel_data.get("cbm", 0))
+            repeat_count = int(parcel_data.get("repeatCount", 1))
+
+            # Calculate packaging cost even if no product category
+            if packaging_id:
+                try:
+                    packaging = PackagingPrice.objects.get(id=int(packaging_id))
+                    # Packaging cost is multiplied by repeat count
+                    packaging_cost = float(packaging.price) * repeat_count
+                    total_packaging_cost += packaging_cost
+
+                    packaging_calculations.append(
+                        {
+                            "packaging_id": packaging_id,
+                            "packaging_name": (
+                                packaging.ar_option
+                                if request.data.get("language") == "ar"
+                                else packaging.en_option
+                            ),
+                            "dimension": packaging.dimension,
+                            "price_per_unit": float(packaging.price),
+                            "repeat_count": repeat_count,
+                            "total_cost": round(packaging_cost, 2),
+                        }
+                    )
+                except PackagingPrice.DoesNotExist:
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"PackagingPrice with id {packaging_id} not found")
+                except (ValueError, TypeError) as e:
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Invalid packaging data: {str(e)}")
+
+            # Skip product pricing if no product category
+            if not product_id:
+                continue
+
+            try:
+                # Get price from Price table
+                price = Price.objects.get(id=int(product_id))
+
+                # Calculate for this parcel (accounting for repeat count)
+                parcel_weight = weight * repeat_count
+                parcel_cbm = cbm * repeat_count
+
+                # Calculate: Weight * price_per_kg, CBM * one_cbm
+                price_by_weight = parcel_weight * float(price.price_per_kg)
+                price_by_cbm = parcel_cbm * float(price.one_cbm)
+
+                total_price_by_weight += price_by_weight
+                total_price_by_cbm += price_by_cbm
+
+                calculations.append(
+                    {
+                        "product_id": product_id,
+                        "product_name": (
+                            price.ar_item
+                            if request.data.get("language") == "ar"
+                            else price.en_item
+                        ),
+                        "weight": parcel_weight,
+                        "cbm": parcel_cbm,
+                        "price_per_kg": float(price.price_per_kg),
+                        "one_cbm": float(price.one_cbm),
+                        "price_by_weight": round(price_by_weight, 2),
+                        "price_by_cbm": round(price_by_cbm, 2),
+                    }
+                )
+            except Price.DoesNotExist:
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Price with id {product_id} not found")
+                continue
+            except (ValueError, TypeError) as e:
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Invalid data for parcel: {str(e)}")
+                continue
+
+        # Calculate final price: max(priceByWeight, priceByCBM, 75) + packaging costs
+        base_price = max(total_price_by_weight, total_price_by_cbm, 75)
+        calculation_total = base_price + total_packaging_cost
+
+        # Calculate insurance if declaredShipmentValue is provided
+        declared_shipment_value = float(
+            request.data.get("declaredShipmentValue", 0) or 0
+        )
+        insurance_cost = 0
+        if declared_shipment_value > 0:
+            # Insurance: (Calculation + Declared Shipment Value) * 1.5%
+            insurance_cost = (calculation_total + declared_shipment_value) * 0.015
+
+        total_price = calculation_total + insurance_cost
+
+        formula_dict = {
+            "priceByWeight": f"Total Weight × Price per KG = {total_price_by_weight:.2f}",
+            "priceByCBM": f"Total CBM × One CBM Price = {total_price_by_cbm:.2f}",
+            "basePrice": f"max({total_price_by_weight:.2f}, {total_price_by_cbm:.2f}, 75) = {base_price:.2f}",
+            "packagingCost": f"Total Packaging Cost = {total_packaging_cost:.2f}",
+            "calculation": f"{base_price:.2f} + {total_packaging_cost:.2f} = {calculation_total:.2f}",
+        }
+
+        if insurance_cost > 0:
+            formula_dict["insurance"] = (
+                f"({calculation_total:.2f} + {declared_shipment_value:.2f}) × 1.5% = {insurance_cost:.2f}"
+            )
+            formula_dict["totalPrice"] = (
+                f"{calculation_total:.2f} + {insurance_cost:.2f} = {total_price:.2f}"
+            )
+        else:
+            formula_dict["totalPrice"] = f"{calculation_total:.2f} = {total_price:.2f}"
 
         return Response(
             {
                 "success": True,
-                "priceByWeight": round(price_by_weight, 2),
-                "priceByCBM": round(price_by_cbm, 2),
+                "priceByWeight": round(total_price_by_weight, 2),
+                "priceByCBM": round(total_price_by_cbm, 2),
                 "basePrice": round(base_price, 2),
-                "formula": {
-                    "priceByWeight": f"{total_weight_kg} × 3 = {price_by_weight:.2f}",
-                    "priceByCBM": f"{total_cbm} × 300 = {price_by_cbm:.2f}",
-                    "basePrice": f"max({price_by_weight:.2f}, {price_by_cbm:.2f}, 75) = {base_price:.2f}",
-                },
+                "packagingCost": round(total_packaging_cost, 2),
+                "calculation": round(calculation_total, 2),
+                "insuranceCost": round(insurance_cost, 2),
+                "declaredShipmentValue": round(declared_shipment_value, 2),
+                "totalPrice": round(total_price, 2),
+                "calculations": calculations,
+                "packagingCalculations": packaging_calculations,
+                "formula": formula_dict,
             },
             status=status.HTTP_200_OK,
         )
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error calculating pricing: {str(e)}")
         return Response(
-            {"success": False, "error": "Invalid input. Please provide valid numbers."},
+            {"success": False, "error": f"Invalid input: {str(e)}"},
             status=status.HTTP_400_BAD_REQUEST,
         )
     except Exception as e:
         logger = logging.getLogger(__name__)
-        logger.error(f"Error calculating pricing: {str(e)}")
+        logger.error(f"Error calculating pricing: {str(e)}", exc_info=True)
         return Response(
             {"success": False, "error": "An error occurred while calculating pricing."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -724,7 +841,9 @@ def update_fcl_quote_status_view(request, pk):
         except Exception as email_error:
             # Log email error but don't fail the request
             logger = logging.getLogger(__name__)
-            logger.error(f"Failed to send status update email notifications: {str(email_error)}")
+            logger.error(
+                f"Failed to send status update email notifications: {str(email_error)}"
+            )
 
         # Get status display name
         status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status, new_status)
@@ -816,7 +935,9 @@ def respond_to_offer_view(request, pk):
                 # Send email to admin
                 send_edit_request_notification(quote, edit_request_message.strip())
                 # Send confirmation email to user
-                send_edit_request_confirmation_to_user(quote, edit_request_message.strip())
+                send_edit_request_confirmation_to_user(
+                    quote, edit_request_message.strip()
+                )
             except Exception as email_error:
                 logger = logging.getLogger(__name__)
                 logger.error(
@@ -1088,6 +1209,51 @@ def send_payment_reminder_view(request, pk):
             {
                 "success": False,
                 "error": "An error occurred while processing the request.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_prices_view(request):
+    """API endpoint to get all prices"""
+    try:
+        prices = Price.objects.all().order_by("ar_item", "en_item")
+        serializer = PriceSerializer(prices, many=True)
+        return Response(
+            {"success": True, "prices": serializer.data},
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching prices: {str(e)}")
+        return Response(
+            {"success": False, "error": "An error occurred while fetching prices."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_packaging_prices_view(request):
+    """API endpoint to get all packaging prices"""
+    try:
+        packaging_prices = PackagingPrice.objects.all().order_by(
+            "ar_option", "en_option"
+        )
+        serializer = PackagingPriceSerializer(packaging_prices, many=True)
+        return Response(
+            {"success": True, "data": serializer.data},
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching packaging prices: {str(e)}")
+        return Response(
+            {
+                "success": False,
+                "error": "An error occurred while fetching packaging prices.",
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import ContactMessage, EditRequestMessage, FCLQuote
+from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -335,3 +335,44 @@ class EditRequestMessageSerializer(serializers.ModelSerializer):
             validated_data["sender"] = request.user
             validated_data["is_admin"] = request.user.is_superuser
         return super().create(validated_data)
+
+
+class PriceSerializer(serializers.ModelSerializer):
+    """Serializer for Price model"""
+
+    minimum_shipping_unit_display = serializers.CharField(
+        source="get_minimum_shipping_unit_display", read_only=True
+    )
+
+    class Meta:
+        model = Price
+        fields = (
+            "id",
+            "ar_item",
+            "en_item",
+            "price_per_kg",
+            "minimum_shipping_weight",
+            "minimum_shipping_unit",
+            "minimum_shipping_unit_display",
+            "one_cbm",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+
+class PackagingPriceSerializer(serializers.ModelSerializer):
+    """Serializer for PackagingPrice model"""
+
+    class Meta:
+        model = PackagingPrice
+        fields = (
+            "id",
+            "ar_option",
+            "en_option",
+            "dimension",
+            "price",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")

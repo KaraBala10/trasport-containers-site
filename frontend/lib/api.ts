@@ -212,6 +212,30 @@ export const apiService = {
     return apiClient.post(`/fcl/quotes/${id}/send-payment-reminder/`);
   },
 
+  // Price endpoints
+  getPrices: () => {
+    return apiClient.get('/prices/');
+  },
+
+  getPackagingPrices: () => {
+    return apiClient.get('/packaging-prices/');
+  },
+
+  // Calculate pricing
+  calculatePricing: (parcels: Array<{
+    weight: number;
+    cbm: number;
+    repeatCount?: number;
+    productCategory?: string;
+    packagingType?: string;
+  }>, language?: string, declaredShipmentValue?: number) => {
+    return apiClient.post('/calculate-pricing/', { 
+      parcels, 
+      language,
+      declaredShipmentValue: declaredShipmentValue || 0
+    });
+  },
+
   // Document endpoints
   downloadPackingList: (shipmentId: string) => {
     return apiClient.get(`/shipments/${shipmentId}/packing-list/`, {

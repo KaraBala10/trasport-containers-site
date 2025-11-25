@@ -266,7 +266,9 @@ class EditRequestMessage(models.Model):
     )
     message = models.TextField(verbose_name="Message")
     is_admin = models.BooleanField(
-        default=False, verbose_name="Is Admin", help_text="Whether the sender is an admin"
+        default=False,
+        verbose_name="Is Admin",
+        help_text="Whether the sender is an admin",
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
 
@@ -277,6 +279,99 @@ class EditRequestMessage(models.Model):
 
     def __str__(self):
         sender_name = (
-            self.sender.get_full_name() or self.sender.username if self.sender else "Unknown"
+            self.sender.get_full_name() or self.sender.username
+            if self.sender
+            else "Unknown"
         )
         return f"Message from {sender_name} on Quote #{self.quote.id} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class Price(models.Model):
+    """Model to store pricing information for items"""
+
+    PRICING_UNIT_CHOICES = [
+        ("per_kg", "Per Kilogram"),
+        ("per_piece", "Per Piece"),
+    ]
+
+    ar_item = models.CharField(
+        max_length=255,
+        verbose_name="Ar Item",
+        help_text="Name or description of the item",
+    )
+    en_item = models.CharField(
+        max_length=255,
+        verbose_name="En Item",
+        help_text="Name or description of the item",
+    )
+    price_per_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Price Per KG",
+        help_text="Price per kilogram in EUR",
+    )
+    minimum_shipping_weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Minimum Shipping Weight",
+        help_text="Minimum weight for shipping (can be per kg or per piece)",
+    )
+    minimum_shipping_unit = models.CharField(
+        max_length=20,
+        choices=PRICING_UNIT_CHOICES,
+        default="per_kg",
+        verbose_name="Minimum Shipping Unit",
+        help_text="Unit for minimum shipping weight (per kg or per piece)",
+    )
+    one_cbm = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="One CBM Price",
+        help_text="Price for one cubic meter (CBM) in EUR",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Price"
+        verbose_name_plural = "Prices"
+        ordering = ["ar_item", "en_item"]
+
+    def __str__(self):
+        return f"{self.ar_item} / {self.en_item} - €{self.price_per_kg}/kg (Min: {self.minimum_shipping_weight} {self.get_minimum_shipping_unit_display()})"
+
+
+class PackagingPrice(models.Model):
+    """Model to store packaging pricing information"""
+
+    ar_option = models.CharField(
+        max_length=255,
+        verbose_name="Arabic Option",
+        help_text="Arabic name/description of the packaging option",
+    )
+    en_option = models.CharField(
+        max_length=255,
+        verbose_name="English Option",
+        help_text="English name/description of the packaging option",
+    )
+    dimension = models.CharField(
+        max_length=255,
+        verbose_name="Dimension",
+        help_text="Dimensions or size specifications",
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Price",
+        help_text="Price in EUR",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Packaging Price"
+        verbose_name_plural = "Packaging Prices"
+        ordering = ["ar_option", "en_option"]
+
+    def __str__(self):
+        return f"{self.ar_option} / {self.en_option} - €{self.price}"

@@ -31,6 +31,7 @@ export default function Step5Pricing({
       packaging: 'التغليف',
       initialPackaging: 'تغليف مبدئي',
       finalPackaging: 'تغليف نهائي',
+      parcelPackaging: 'تغليف الطرود',
       insuranceOptional: 'تأمين اختياري',
       grandTotal: 'الإجمالي النهائي',
     },
@@ -52,6 +53,7 @@ export default function Step5Pricing({
       packaging: 'Packaging',
       initialPackaging: 'Initial Packaging',
       finalPackaging: 'Final Packaging',
+      parcelPackaging: 'Parcel Packaging',
       insuranceOptional: 'Optional Insurance',
       grandTotal: 'Grand Total',
     },
@@ -189,7 +191,7 @@ export default function Step5Pricing({
       )}
 
       {/* Packaging */}
-      {(pricing.packaging.initial > 0 || pricing.packaging.final > 0) && (
+      {(pricing.packaging.initial > 0 || pricing.packaging.final > 0 || (pricing as any).parcelPackagingCost > 0) && (
         <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-200">
           <h3 className="text-lg font-bold text-gray-800 mb-4">{t.packaging}</h3>
           <div className="space-y-2">
@@ -209,6 +211,14 @@ export default function Step5Pricing({
                 </span>
               </div>
             )}
+            {(pricing as any).parcelPackagingCost > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700">{t.parcelPackaging}</span>
+                <span className="font-semibold text-gray-800">
+                  {((pricing as any).parcelPackagingCost || 0).toFixed(2)} €
+                </span>
+              </div>
+            )}
             <div className="pt-3 border-t border-gray-300 flex justify-between items-center">
               <span className="font-bold text-gray-800">{t.packaging}</span>
               <span className="text-xl font-bold text-gray-800">
@@ -220,11 +230,19 @@ export default function Step5Pricing({
       )}
 
       {/* Insurance */}
-      {pricing.insurance.total > 0 && (
+      {((pricing as any).insuranceCostFromAPI > 0 || pricing.insurance.total > 0) && (
         <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-200">
           <h3 className="text-lg font-bold text-gray-800 mb-4">{t.insuranceOptional}</h3>
           <div className="space-y-2">
-            {pricing.insurance.optional > 0 && (
+            {(pricing as any).insuranceCostFromAPI > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700">{t.insuranceOptional}</span>
+                <span className="font-semibold text-gray-800">
+                  {((pricing as any).insuranceCostFromAPI || 0).toFixed(2)} €
+                </span>
+              </div>
+            )}
+            {pricing.insurance.optional > 0 && (pricing as any).insuranceCostFromAPI === 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">{t.insuranceOptional}</span>
                 <span className="font-semibold text-gray-800">
@@ -243,7 +261,7 @@ export default function Step5Pricing({
             <div className="pt-3 border-t border-gray-300 flex justify-between items-center">
               <span className="font-bold text-gray-800">{t.insuranceOptional}</span>
               <span className="text-xl font-bold text-gray-800">
-                {pricing.insurance.total.toFixed(2)} €
+                {((pricing as any).insuranceCostFromAPI || pricing.insurance.total || 0).toFixed(2)} €
               </span>
             </div>
           </div>
