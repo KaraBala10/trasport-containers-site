@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -25,6 +26,7 @@ from .email_service import (
     send_status_update_notification_to_admin,
 )
 from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from .serializers import (
     ChangePasswordSerializer,
     ContactMessageSerializer,

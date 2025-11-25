@@ -221,6 +221,58 @@ export const apiService = {
     return apiClient.get('/packaging-prices/');
   },
 
+  // Admin CRUD endpoints for Price
+  adminGetPrices: () => {
+    return apiClient.get('/admin/prices/');
+  },
+  adminCreatePrice: (data: {
+    ar_item: string;
+    en_item: string;
+    price_per_kg: number;
+    minimum_shipping_weight: number;
+    minimum_shipping_unit: 'per_kg' | 'per_piece';
+    one_cbm: number;
+  }) => {
+    return apiClient.post('/admin/prices/', data);
+  },
+  adminUpdatePrice: (id: number, data: Partial<{
+    ar_item: string;
+    en_item: string;
+    price_per_kg: number;
+    minimum_shipping_weight: number;
+    minimum_shipping_unit: 'per_kg' | 'per_piece';
+    one_cbm: number;
+  }>) => {
+    return apiClient.put(`/admin/prices/${id}/`, data);
+  },
+  adminDeletePrice: (id: number) => {
+    return apiClient.delete(`/admin/prices/${id}/`);
+  },
+
+  // Admin CRUD endpoints for PackagingPrice
+  adminGetPackagingPrices: () => {
+    return apiClient.get('/admin/packaging-prices/');
+  },
+  adminCreatePackagingPrice: (data: {
+    ar_option: string;
+    en_option: string;
+    dimension: string;
+    price: number;
+  }) => {
+    return apiClient.post('/admin/packaging-prices/', data);
+  },
+  adminUpdatePackagingPrice: (id: number, data: Partial<{
+    ar_option: string;
+    en_option: string;
+    dimension: string;
+    price: number;
+  }>) => {
+    return apiClient.put(`/admin/packaging-prices/${id}/`, data);
+  },
+  adminDeletePackagingPrice: (id: number) => {
+    return apiClient.delete(`/admin/packaging-prices/${id}/`);
+  },
+
   // Calculate pricing
   calculatePricing: (parcels: Array<{
     weight: number;

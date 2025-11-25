@@ -1,61 +1,59 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { PricingResult } from '@/types/pricing';
+import { motion } from "framer-motion";
+import { PricingResult } from "@/types/pricing";
 
 interface Step5PricingProps {
   pricing: PricingResult;
-  language: 'ar' | 'en';
+  language: "ar" | "en";
 }
 
-export default function Step5Pricing({
-  pricing,
-  language,
-}: Step5PricingProps) {
+export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
   const translations = {
     ar: {
-      title: 'ملخص التسعير',
-      basePrice: 'السعر الأساسي LCL',
-      priceByWeight: 'حسب الوزن',
-      priceByCBM: 'حسب الحجم (CBM)',
-      minimum: 'الحد الأدنى',
-      parcelPrice: 'حساب الطرود',
-      priceByProduct: 'حسب المنتج',
-      electronicsPrice: 'حساب الإلكترونيات',
-      piecePrice: 'سعر القطع',
-      insurance: 'تأمين إلزامي',
-      specialPackaging: 'تغليف خاص',
-      largeItemsPrice: 'حساب القطع الكبيرة',
-      approximate: 'سعر تقريبي',
-      largeItemsNote: 'ملاحظة: السعر النهائي سيتم حسابه بعد القياس في المركز',
-      packaging: 'التغليف',
-      initialPackaging: 'تغليف مبدئي',
-      finalPackaging: 'تغليف نهائي',
-      parcelPackaging: 'تغليف الطرود',
-      insuranceOptional: 'تأمين اختياري',
-      grandTotal: 'الإجمالي النهائي',
+      title: "ملخص التسعير",
+      basePrice: "السعر الأساسي LCL",
+      priceByWeight: "حسب الوزن",
+      priceByCBM: "حسب الحجم (CBM)",
+      minimum: "الحد الأدنى",
+      parcelPrice: "حساب الطرود",
+      priceByProduct: "حسب المنتج",
+      electronicsPrice: "حساب الإلكترونيات",
+      piecePrice: "سعر القطع",
+      insurance: "تأمين إلزامي",
+      specialPackaging: "تغليف خاص",
+      largeItemsPrice: "حساب القطع الكبيرة",
+      approximate: "سعر تقريبي",
+      largeItemsNote: "ملاحظة: السعر النهائي سيتم حسابه بعد القياس في المركز",
+      packaging: "التغليف",
+      initialPackaging: "تغليف مبدئي",
+      finalPackaging: "تغليف نهائي",
+      parcelPackaging: "تغليف الطرود",
+      insuranceOptional: "تأمين اختياري",
+      grandTotal: "الإجمالي النهائي",
     },
     en: {
-      title: 'Pricing Summary',
-      basePrice: 'Base LCL Price',
-      priceByWeight: 'By Weight',
-      priceByCBM: 'By Volume (CBM)',
-      minimum: 'Minimum',
-      parcelPrice: 'Parcel Calculation',
-      priceByProduct: 'By Product',
-      electronicsPrice: 'Electronics Calculation',
-      piecePrice: 'Piece Price',
-      insurance: 'Mandatory Insurance',
-      specialPackaging: 'Special Packaging',
-      largeItemsPrice: 'Large Items Calculation',
-      approximate: 'Approximate Price',
-      largeItemsNote: 'Note: Final price will be calculated after measurement at center',
-      packaging: 'Packaging',
-      initialPackaging: 'Initial Packaging',
-      finalPackaging: 'Final Packaging',
-      parcelPackaging: 'Parcel Packaging',
-      insuranceOptional: 'Optional Insurance',
-      grandTotal: 'Grand Total',
+      title: "Pricing Summary",
+      basePrice: "Base LCL Price",
+      priceByWeight: "By Weight",
+      priceByCBM: "By Volume (CBM)",
+      minimum: "Minimum",
+      parcelPrice: "Parcel Calculation",
+      priceByProduct: "By Product",
+      electronicsPrice: "Electronics Calculation",
+      piecePrice: "Piece Price",
+      insurance: "Mandatory Insurance",
+      specialPackaging: "Special Packaging",
+      largeItemsPrice: "Large Items Calculation",
+      approximate: "Approximate Price",
+      largeItemsNote:
+        "Note: Final price will be calculated after measurement at center",
+      packaging: "Packaging",
+      initialPackaging: "Initial Packaging",
+      finalPackaging: "Final Packaging",
+      parcelPackaging: "Parcel Packaging",
+      insuranceOptional: "Optional Insurance",
+      grandTotal: "Grand Total",
     },
   };
 
@@ -102,7 +100,9 @@ export default function Step5Pricing({
 
       {/* Parcel Price */}
       <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 shadow-lg border-2 border-green-200">
-        <h3 className="text-lg font-bold text-green-900 mb-4">{t.parcelPrice}</h3>
+        <h3 className="text-lg font-bold text-green-900 mb-4">
+          {t.parcelPrice}
+        </h3>
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-gray-700">{t.priceByWeight}</span>
@@ -135,10 +135,12 @@ export default function Step5Pricing({
       {pricing.electronicsPrice && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
+          animate={{ opacity: 1, height: "auto" }}
           className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 shadow-lg border-2 border-purple-200"
         >
-          <h3 className="text-lg font-bold text-purple-900 mb-4">{t.electronicsPrice}</h3>
+          <h3 className="text-lg font-bold text-purple-900 mb-4">
+            {t.electronicsPrice}
+          </h3>
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-gray-700">{t.piecePrice}</span>
@@ -159,7 +161,9 @@ export default function Step5Pricing({
               </span>
             </div>
             <div className="pt-3 border-t border-purple-300 flex justify-between items-center">
-              <span className="font-bold text-purple-900">{t.electronicsPrice}</span>
+              <span className="font-bold text-purple-900">
+                {t.electronicsPrice}
+              </span>
               <span className="text-xl font-bold text-purple-900">
                 {pricing.electronicsPrice.total.toFixed(2)} €
               </span>
@@ -172,10 +176,12 @@ export default function Step5Pricing({
       {pricing.largeItemsPrice && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
+          animate={{ opacity: 1, height: "auto" }}
           className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 shadow-lg border-2 border-orange-200"
         >
-          <h3 className="text-lg font-bold text-orange-900 mb-4">{t.largeItemsPrice}</h3>
+          <h3 className="text-lg font-bold text-orange-900 mb-4">
+            {t.largeItemsPrice}
+          </h3>
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-gray-700">{t.approximate}</span>
@@ -191,9 +197,13 @@ export default function Step5Pricing({
       )}
 
       {/* Packaging */}
-      {(pricing.packaging.initial > 0 || pricing.packaging.final > 0 || (pricing as any).parcelPackagingCost > 0) && (
+      {(pricing.packaging.initial > 0 ||
+        pricing.packaging.final > 0 ||
+        (pricing as any).parcelPackagingCost > 0) && (
         <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">{t.packaging}</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-4">
+            {t.packaging}
+          </h3>
           <div className="space-y-2">
             {pricing.packaging.initial > 0 && (
               <div className="flex justify-between items-center">
@@ -230,9 +240,12 @@ export default function Step5Pricing({
       )}
 
       {/* Insurance */}
-      {((pricing as any).insuranceCostFromAPI > 0 || pricing.insurance.total > 0) && (
+      {((pricing as any).insuranceCostFromAPI > 0 ||
+        pricing.insurance.total > 0) && (
         <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">{t.insuranceOptional}</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-4">
+            {t.insuranceOptional}
+          </h3>
           <div className="space-y-2">
             {(pricing as any).insuranceCostFromAPI > 0 && (
               <div className="flex justify-between items-center">
@@ -242,14 +255,15 @@ export default function Step5Pricing({
                 </span>
               </div>
             )}
-            {pricing.insurance.optional > 0 && (pricing as any).insuranceCostFromAPI === 0 && (
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700">{t.insuranceOptional}</span>
-                <span className="font-semibold text-gray-800">
-                  {pricing.insurance.optional.toFixed(2)} €
-                </span>
-              </div>
-            )}
+            {pricing.insurance.optional > 0 &&
+              (pricing as any).insuranceCostFromAPI === 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">{t.insuranceOptional}</span>
+                  <span className="font-semibold text-gray-800">
+                    {pricing.insurance.optional.toFixed(2)} €
+                  </span>
+                </div>
+              )}
             {pricing.insurance.mandatory > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">{t.insurance} (إلزامي)</span>
@@ -259,9 +273,16 @@ export default function Step5Pricing({
               </div>
             )}
             <div className="pt-3 border-t border-gray-300 flex justify-between items-center">
-              <span className="font-bold text-gray-800">{t.insuranceOptional}</span>
+              <span className="font-bold text-gray-800">
+                {t.insuranceOptional}
+              </span>
               <span className="text-xl font-bold text-gray-800">
-                {((pricing as any).insuranceCostFromAPI || pricing.insurance.total || 0).toFixed(2)} €
+                {(
+                  (pricing as any).insuranceCostFromAPI ||
+                  pricing.insurance.total ||
+                  0
+                ).toFixed(2)}{" "}
+                €
               </span>
             </div>
           </div>
@@ -276,7 +297,9 @@ export default function Step5Pricing({
         className="bg-gradient-to-r from-primary-yellow to-primary-yellow/90 rounded-2xl p-8 shadow-2xl border-4 border-primary-dark"
       >
         <div className="flex justify-between items-center">
-          <span className="text-2xl font-bold text-primary-dark">{t.grandTotal}</span>
+          <span className="text-2xl font-bold text-primary-dark">
+            {t.grandTotal}
+          </span>
           <span className="text-4xl font-black text-primary-dark">
             {pricing.grandTotal.toFixed(2)} €
           </span>
@@ -285,4 +308,3 @@ export default function Step5Pricing({
     </motion.div>
   );
 }
-

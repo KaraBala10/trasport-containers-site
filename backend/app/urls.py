@@ -1,27 +1,17 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import (
-    ChangePasswordView,
-    ContactMessageView,
-    FCLQuoteDetailView,
-    FCLQuoteListView,
-    FCLQuoteView,
-    LoginView,
-    RegisterView,
-    UserProfileView,
-    approve_or_decline_edit_request_view,
-    calculate_cbm_view,
-    calculate_pricing_view,
-    current_user_view,
-    get_packaging_prices_view,
-    get_prices_view,
-    logout_view,
-    respond_to_offer_view,
-    send_edit_request_reply_view,
-    send_payment_reminder_view,
-    update_fcl_quote_status_view,
-)
+from .admin_views import (PackagingPriceDetailView,
+                          PackagingPriceListCreateView, PriceDetailView,
+                          PriceListCreateView)
+from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
+                    FCLQuoteListView, FCLQuoteView, LoginView, RegisterView,
+                    UserProfileView, approve_or_decline_edit_request_view,
+                    calculate_cbm_view, calculate_pricing_view,
+                    current_user_view, get_packaging_prices_view,
+                    get_prices_view, logout_view, respond_to_offer_view,
+                    send_edit_request_reply_view, send_payment_reminder_view,
+                    update_fcl_quote_status_view)
 
 app_name = "app"
 
@@ -71,4 +61,22 @@ urlpatterns = [
     path("calculate-pricing/", calculate_pricing_view, name="calculate_pricing"),
     path("prices/", get_prices_view, name="get_prices"),
     path("packaging-prices/", get_packaging_prices_view, name="get_packaging_prices"),
+    # Admin CRUD endpoints for Price
+    path(
+        "admin/prices/", PriceListCreateView.as_view(), name="admin_price_list_create"
+    ),
+    path(
+        "admin/prices/<int:pk>/", PriceDetailView.as_view(), name="admin_price_detail"
+    ),
+    # Admin CRUD endpoints for PackagingPrice
+    path(
+        "admin/packaging-prices/",
+        PackagingPriceListCreateView.as_view(),
+        name="admin_packaging_price_list_create",
+    ),
+    path(
+        "admin/packaging-prices/<int:pk>/",
+        PackagingPriceDetailView.as_view(),
+        name="admin_packaging_price_detail",
+    ),
 ]
