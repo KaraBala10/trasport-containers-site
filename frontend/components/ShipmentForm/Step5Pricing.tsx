@@ -105,21 +105,31 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-gray-700">{t.priceByWeight}</span>
+            <span className="text-gray-700">
+              {language === "ar" ? "الوزن المدخل" : "Entered Weight"}
+            </span>
             <span className="font-semibold text-green-900">
-              {pricing.parcelPrice.breakdown.priceByWeight.toFixed(2)} €
+              {((pricing as any).enteredWeight || 0).toFixed(2)} kg
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-700">{t.priceByCBM}</span>
+            <span className="text-gray-700">
+              {language === "ar"
+                ? "الوزن' (الحد الأدنى 20 كغ)"
+                : "Weight (Min 20 kg)"}
+            </span>
             <span className="font-semibold text-green-900">
-              {pricing.parcelPrice.breakdown.priceByCBM.toFixed(2)} €
+              {((pricing as any).weightPrime || 20).toFixed(2)} kg
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-700">{t.priceByProduct}</span>
+            <span className="text-gray-700">
+              {language === "ar"
+                ? "المنتج (الوزن' × 3)"
+                : "Product (Weight × 3)"}
+            </span>
             <span className="font-semibold text-green-900">
-              {pricing.parcelPrice.breakdown.priceByProduct.toFixed(2)} €
+              {pricing.parcelPrice.total.toFixed(2)} €
             </span>
           </div>
           <div className="pt-3 border-t border-green-300 flex justify-between items-center">

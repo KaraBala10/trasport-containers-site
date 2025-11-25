@@ -628,9 +628,20 @@ def calculate_pricing_view(request):
                 logger.warning(f"Invalid data for parcel: {str(e)}")
                 continue
 
-        # Calculate final price: max(priceByWeight, priceByCBM, 75) + packaging costs
-        base_price = max(total_price_by_weight, total_price_by_cbm, 75)
-        calculation_total = base_price + total_packaging_cost
+        # Calculate Base LCL Price: max(priceByWeight, priceByCBM, 75)
+        base_lcl_price = max(total_price_by_weight, total_price_by_cbm, 75)
+        
+        # Calculate Parcel Calculation: Weight' = max(entered Weight, 20 kg), Product = Weight' * 3
+        total_entered_weight = sum(
+            float(p.get("weight", 0)) * int(p.get("repeatCount", 1))
+            for p in parcels_data
+        )
+        weight_prime = max(total_entered_weight, 20.0)
+        parcel_calculation = weight_prime * 3
+        
+        # Grand Total = max(Base LCL Price, Parcel Calculation) + packaging + insurance
+        max_base_or_parcel = max(base_lcl_price, parcel_calculation)
+        calculation_total = max_base_or_parcel + total_packaging_cost
 
         # Calculate insurance if declaredShipmentValue is provided
         declared_shipment_value = float(
@@ -638,22 +649,24 @@ def calculate_pricing_view(request):
         )
         insurance_cost = 0
         if declared_shipment_value > 0:
-            # Insurance: (Calculation + Declared Shipment Value) * 1.5%
-            insurance_cost = (calculation_total + declared_shipment_value) * 0.015
+            # Insurance: (max(Base LCL Price, Parcel Calculation) + declared value) * 1.5%
+            insurance_cost = (max_base_or_parcel + declared_shipment_value) * 0.015
 
         total_price = calculation_total + insurance_cost
 
         formula_dict = {
             "priceByWeight": f"Total Weight × Price per KG = {total_price_by_weight:.2f}",
             "priceByCBM": f"Total CBM × One CBM Price = {total_price_by_cbm:.2f}",
-            "basePrice": f"max({total_price_by_weight:.2f}, {total_price_by_cbm:.2f}, 75) = {base_price:.2f}",
+            "baseLCLPrice": f"max({total_price_by_weight:.2f}, {total_price_by_cbm:.2f}, 75) = {base_lcl_price:.2f}",
+            "parcelCalculation": f"Weight' = max({total_entered_weight:.2f}, 20) = {weight_prime:.2f} kg, Product = {weight_prime:.2f} × 3 = {parcel_calculation:.2f}",
+            "maxBaseOrParcel": f"max({base_lcl_price:.2f}, {parcel_calculation:.2f}) = {max_base_or_parcel:.2f}",
             "packagingCost": f"Total Packaging Cost = {total_packaging_cost:.2f}",
-            "calculation": f"{base_price:.2f} + {total_packaging_cost:.2f} = {calculation_total:.2f}",
+            "calculation": f"{max_base_or_parcel:.2f} + {total_packaging_cost:.2f} = {calculation_total:.2f}",
         }
 
         if insurance_cost > 0:
             formula_dict["insurance"] = (
-                f"({calculation_total:.2f} + {declared_shipment_value:.2f}) × 1.5% = {insurance_cost:.2f}"
+                f"({max_base_or_parcel:.2f} + {declared_shipment_value:.2f}) × 1.5% = {insurance_cost:.2f}"
             )
             formula_dict["totalPrice"] = (
                 f"{calculation_total:.2f} + {insurance_cost:.2f} = {total_price:.2f}"
@@ -666,7 +679,10 @@ def calculate_pricing_view(request):
                 "success": True,
                 "priceByWeight": round(total_price_by_weight, 2),
                 "priceByCBM": round(total_price_by_cbm, 2),
-                "basePrice": round(base_price, 2),
+                "basePrice": round(base_lcl_price, 2),
+                "parcelCalculation": round(parcel_calculation, 2),
+                "weightPrime": round(weight_prime, 2),
+                "maxBaseOrParcel": round(max_base_or_parcel, 2),
                 "packagingCost": round(total_packaging_cost, 2),
                 "calculation": round(calculation_total, 2),
                 "insuranceCost": round(insurance_cost, 2),
