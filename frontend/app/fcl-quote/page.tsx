@@ -39,6 +39,7 @@ export default function FCLQuotePage() {
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
+  const [showContainerImages, setShowContainerImages] = useState(false);
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -1053,9 +1054,21 @@ export default function FCLQuotePage() {
       containerType: "نوع الحاوية",
       numberOfContainers: "عدد الحاويات",
       cargoReadyDate: "تاريخ جاهزية البضاعة",
-      container20DV: "20DV - 20ft Dry Van",
-      container40DV: "40DV - 40ft Dry Van",
-      container40HC: "40HC - 40ft High Cube",
+      viewContainerImages: "عرض صور الحاويات",
+      container_20ft_standard: "حاوية 20 قدم قياسية - للحمولات العامة",
+      container_40ft_standard: "حاوية 40 قدم قياسية - للبضائع العامة",
+      container_40ft_high_cube: "حاوية 40 قدم هاي كيوب - ارتفاع إضافي 30 سم",
+      container_reefer: "حاوية مبردة - للأغذية والأدوية",
+      container_open_top: "حاوية مفتوحة السقف - للبضائع الطويلة",
+      container_flat_rack: "حاوية فلات راك - للمعدات الثقيلة",
+      container_flat_bed: "حاوية منصة (فلات بيد) - للبضائع الكبيرة جداً",
+      container_iso_tank: "حاوية تانك - للسوائل والكيماويات",
+      container_bulk: "حاوية بضائع سائبة - للحبوب والمعادن",
+      container_ventilated: "حاوية مهواة - للأخشاب والقهوة",
+      container_insulated: "حاوية معزولة/حرارية - للحفاظ على درجة الحرارة",
+      container_car_carrier: "حاوية نقل سيارات",
+      container_double_door: "حاوية ببابين أمامي وخلفي",
+      container_side_door: "حاوية باب جانبي - فتح جانبي كامل",
 
       // Cargo Details
       commodityType: "نوع البضاعة",
@@ -1156,9 +1169,21 @@ export default function FCLQuotePage() {
       containerType: "Container Type",
       numberOfContainers: "Number of Containers",
       cargoReadyDate: "Cargo Ready Date",
-      container20DV: "20DV - 20ft Dry Van",
-      container40DV: "40DV - 40ft Dry Van",
-      container40HC: "40HC - 40ft High Cube",
+      viewContainerImages: "View Container Images",
+      container_20ft_standard: "20ft Standard Dry Container - Most commonly used worldwide",
+      container_40ft_standard: "40ft Standard Dry Container - Double capacity of 20ft",
+      container_40ft_high_cube: "40ft High Cube Container (HC) - Extra 30cm height",
+      container_reefer: "Reefer Container - For refrigerated/frozen goods",
+      container_open_top: "Open Top Container - For tall cargo loaded from top",
+      container_flat_rack: "Flat Rack Container - For heavy machinery and oversized cargo",
+      container_flat_bed: "Flat Bed / Flat Platform Container - For very long/large cargo",
+      container_iso_tank: "ISO Tank Container - For liquids: chemicals, oils, food liquids",
+      container_bulk: "Bulk Container - For bulk materials like grains and metals",
+      container_ventilated: "Ventilated Container - For wood, coffee, and items needing ventilation",
+      container_insulated: "Insulated / Thermal Container - Temperature maintenance without mechanical cooling",
+      container_car_carrier: "Car Carrier Container - For vehicle transportation",
+      container_double_door: "Double Door Container - Doors on both ends for easy loading",
+      container_side_door: "Side Door Container - Full side opening for quick loading",
 
       // Cargo Details
       commodityType: "Commodity Type",
@@ -2366,10 +2391,35 @@ export default function FCLQuotePage() {
                         }`}
                       >
                         <option value="">{t.containerType}</option>
-                        <option value="20DV">{t.container20DV}</option>
-                        <option value="40DV">{t.container40DV}</option>
-                        <option value="40HC">{t.container40HC}</option>
+                        <option value="20ft_standard">{t.container_20ft_standard}</option>
+                        <option value="40ft_standard">{t.container_40ft_standard}</option>
+                        <option value="40ft_high_cube">{t.container_40ft_high_cube}</option>
+                        <option value="reefer">{t.container_reefer}</option>
+                        <option value="open_top">{t.container_open_top}</option>
+                        <option value="flat_rack">{t.container_flat_rack}</option>
+                        <option value="flat_bed">{t.container_flat_bed}</option>
+                        <option value="iso_tank">{t.container_iso_tank}</option>
+                        <option value="bulk">{t.container_bulk}</option>
+                        <option value="ventilated">{t.container_ventilated}</option>
+                        <option value="insulated">{t.container_insulated}</option>
+                        <option value="car_carrier">{t.container_car_carrier}</option>
+                        <option value="double_door">{t.container_double_door}</option>
+                        <option value="side_door">{t.container_side_door}</option>
                       </select>
+                      
+                      {/* View Container Images Button */}
+                      <motion.button
+                        type="button"
+                        onClick={() => setShowContainerImages(true)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="mt-2 w-full px-4 py-2 text-sm font-semibold text-primary-dark bg-gradient-to-r from-primary-yellow/20 to-primary-yellow/30 hover:from-primary-yellow/30 hover:to-primary-yellow/40 rounded-xl transition-all duration-200 border border-primary-yellow/30 flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{t.viewContainerImages}</span>
+                      </motion.button>
                       {errors.container_type && (
                         <motion.p
                           initial={{ opacity: 0 }}
@@ -3534,6 +3584,72 @@ export default function FCLQuotePage() {
           </form>
         </div>
       </main>
+
+      {/* Container Images Modal */}
+      <AnimatePresence>
+        {showContainerImages && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary-dark to-primary-dark/90">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>{t.viewContainerImages}</span>
+                </h2>
+                <button
+                  onClick={() => setShowContainerImages(false)}
+                  className="text-white hover:text-primary-yellow transition-colors p-2"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Container Images */}
+                  {[
+                    { image: "photo_2025-11-25_21-08-11.jpg", name: language === "ar" ? "حاوية 20 قدم قياسية" : "20ft Standard Container" },
+                    { image: "photo_2025-11-25_21-08-12.jpg", name: language === "ar" ? "حاوية 40 قدم قياسية" : "40ft Standard Container" },
+                    { image: "photo_2025-11-25_21-08-12 (2).jpg", name: language === "ar" ? "حاوية 40 قدم هاي كيوب" : "40ft High Cube Container" },
+                    { image: "photo_2025-11-25_21-08-13.jpg", name: language === "ar" ? "حاوية مبردة" : "Reefer Container" },
+                    { image: "photo_2025-11-25_21-08-14.jpg", name: language === "ar" ? "حاوية مفتوحة السقف" : "Open Top Container" },
+                    { image: "photo_2025-11-25_21-08-15.jpg", name: language === "ar" ? "حاوية فلات راك" : "Flat Rack Container" },
+                  ].map((container, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-200 hover:border-primary-yellow transition-all"
+                    >
+                      <div className="relative aspect-video bg-gray-100">
+                        <img
+                          src={`/images/containers/${container.image}`}
+                          alt={container.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="text-sm font-semibold text-gray-800 text-center">
+                          {container.name}
+                        </h3>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <Footer language={language} />
     </div>

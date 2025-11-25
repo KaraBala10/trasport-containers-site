@@ -31,9 +31,20 @@ class FCLQuote(models.Model):
     ]
 
     CONTAINER_TYPES = [
-        ("20DV", "20DV - 20ft Dry Van"),
-        ("40DV", "40DV - 40ft Dry Van"),
-        ("40HC", "40HC - 40ft High Cube"),
+        ("20ft_standard", "20ft Standard Dry Container"),
+        ("40ft_standard", "40ft Standard Dry Container"),
+        ("40ft_high_cube", "40ft High Cube Container (HC)"),
+        ("reefer", "Reefer Container"),
+        ("open_top", "Open Top Container"),
+        ("flat_rack", "Flat Rack Container"),
+        ("flat_bed", "Flat Bed / Flat Platform Container"),
+        ("iso_tank", "ISO Tank Container"),
+        ("bulk", "Bulk Container"),
+        ("ventilated", "Ventilated Container"),
+        ("insulated", "Insulated / Thermal Container"),
+        ("car_carrier", "Car Carrier Container"),
+        ("double_door", "Double Door Container"),
+        ("side_door", "Side Door Container"),
     ]
 
     CONTACT_METHODS = [
@@ -60,7 +71,7 @@ class FCLQuote(models.Model):
 
     # Container Details
     container_type = models.CharField(
-        max_length=10, choices=CONTAINER_TYPES, verbose_name="Container Type"
+        max_length=50, choices=CONTAINER_TYPES, verbose_name="Container Type"
     )
     number_of_containers = models.PositiveIntegerField(
         default=1, verbose_name="Number of Containers"
