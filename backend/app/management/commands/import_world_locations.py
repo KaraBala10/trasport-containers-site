@@ -352,6 +352,10 @@ class Command(BaseCommand):
             
             {"country_code": "AR", "name_en": "Buenos Aires", "name_ar": "بوينس آيرس"},
             {"country_code": "AR", "name_en": "Cordoba", "name_ar": "قرطبة"},
+            {"country_code": "AR", "name_en": "Rosario", "name_ar": "روساريو"},
+            {"country_code": "AR", "name_en": "Mendoza", "name_ar": "ميندوزا"},
+            {"country_code": "AR", "name_en": "La Plata", "name_ar": "لا بلاتا"},
+            {"country_code": "AR", "name_en": "Mar del Plata", "name_ar": "مار ديل بلاتا"},
             
             {"country_code": "CL", "name_en": "Santiago", "name_ar": "سانتياغو"},
             {"country_code": "CL", "name_en": "Valparaiso", "name_ar": "فالبارايسو"},
