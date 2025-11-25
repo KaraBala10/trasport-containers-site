@@ -170,6 +170,53 @@ class FCLQuote(models.Model):
         help_text="Amount paid by the user",
     )
 
+    # Payment fields (Mollie)
+    payment_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Payment ID",
+        help_text="Mollie payment ID",
+    )
+    payment_status = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        choices=[
+            ("pending", "Pending"),
+            ("paid", "Paid"),
+            ("failed", "Failed"),
+            ("canceled", "Canceled"),
+            ("expired", "Expired"),
+        ],
+        verbose_name="Payment Status",
+        help_text="Current payment status from Mollie",
+    )
+    payment_method = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        choices=[
+            ("mollie", "Mollie"),
+            ("cash", "Cash"),
+            ("internal-transfer", "Internal Transfer"),
+        ],
+        verbose_name="Payment Method",
+        help_text="Method used for payment",
+    )
+    payment_created_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Payment Created At",
+        help_text="When the payment was initiated",
+    )
+    payment_updated_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Payment Updated At",
+        help_text="When the payment status was last updated",
+    )
+
     # Status
     STATUS_CHOICES = [
         ("CREATED", "Created"),

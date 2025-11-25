@@ -1,10 +1,12 @@
 import logging
 import traceback
 from datetime import datetime
+from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
@@ -14,6 +16,12 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+try:
+    from mollie.api.client import Client as MollieClient
+    MOLLIE_AVAILABLE = True
+except ImportError:
+    MOLLIE_AVAILABLE = False
 
 from .email_service import (
     send_contact_form_notification,
@@ -1272,6 +1280,308 @@ def get_packaging_prices_view(request):
             {
                 "success": False,
                 "error": "An error occurred while fetching packaging prices.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment_view(request, pk):
+    """API endpoint to initiate Mollie payment for an FCL quote"""
+    logger = logging.getLogger(__name__)
+
+    if not MOLLIE_AVAILABLE:
+        return Response(
+            {
+                "success": False,
+                "error": "Mollie payment service is not available. Please install mollie-api-python.",
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+
+        # Check if user owns this quote
+        if quote.user != request.user:
+            return Response(
+                {"success": False, "error": "You can only pay for your own quotes."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Check if quote is in PENDING_PAYMENT status
+        if quote.status != "PENDING_PAYMENT":
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Payment can only be initiated for quotes with PENDING_PAYMENT status. Current status: {quote.status}",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if total_price is set
+        if not quote.total_price or quote.total_price <= 0:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Total price must be set before initiating payment.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Calculate remaining amount
+        amount_paid = quote.amount_paid or Decimal("0")
+        remaining_amount = quote.total_price - amount_paid
+
+        if remaining_amount <= 0:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Payment is already complete. No remaining amount to pay.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Initialize Mollie client
+        api_key = (
+            settings.MOLLIE_API_KEY_TEST
+            if settings.MOLLIE_USE_TEST_MODE
+            else settings.MOLLIE_API_KEY
+        )
+
+        if not api_key:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Mollie API key is not configured. Please contact administrator.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        mollie_client = MollieClient()
+        mollie_client.set_api_key(api_key)
+
+        # Create payment description
+        description = f"FCL Quote Payment - {quote.quote_number or f'#{quote.id}'}"
+        if amount_paid > 0:
+            description += f" (Remaining: €{remaining_amount:.2f})"
+
+        # Create payment in Mollie
+        payment_data = {
+            "amount": {
+                "currency": "EUR",
+                "value": f"{remaining_amount:.2f}",
+            },
+            "description": description,
+            "redirectUrl": settings.MOLLIE_REDIRECT_SUCCESS_URL,
+            "webhookUrl": settings.MOLLIE_WEBHOOK_URL,
+            "metadata": {
+                "quote_id": str(quote.id),
+                "quote_number": quote.quote_number or f"#{quote.id}",
+                "user_id": str(request.user.id),
+            },
+        }
+
+        payment = mollie_client.payments.create(payment_data)
+
+        # Save payment information to quote
+        quote.payment_id = payment.id
+        quote.payment_status = payment.status
+        quote.payment_method = "mollie"
+        quote.payment_created_at = timezone.now()
+        quote.payment_updated_at = timezone.now()
+        quote.save()
+
+        logger.info(
+            f"Payment initiated for quote {quote.id}: Mollie payment ID {payment.id}"
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Payment initiated successfully.",
+                "checkout_url": payment.checkout_url,
+                "payment_id": payment.id,
+                "amount": {
+                    "value": float(remaining_amount),
+                    "currency": "EUR",
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "FCL quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error initiating payment: {str(e)}", exc_info=True)
+        return Response(
+            {
+                "success": False,
+                "error": f"An error occurred while initiating payment: {str(e)}",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Mollie webhook doesn't use JWT
+def mollie_webhook_view(request):
+    """API endpoint to receive webhook notifications from Mollie"""
+    logger = logging.getLogger(__name__)
+
+    if not MOLLIE_AVAILABLE:
+        logger.error("Mollie webhook received but Mollie API is not available")
+        return Response(
+            {"error": "Service unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+
+    try:
+        payment_id = request.data.get("id")
+        if not payment_id:
+            return Response(
+                {"error": "Payment ID is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Initialize Mollie client
+        api_key = (
+            settings.MOLLIE_API_KEY_TEST
+            if settings.MOLLIE_USE_TEST_MODE
+            else settings.MOLLIE_API_KEY
+        )
+
+        if not api_key:
+            logger.error("Mollie API key is not configured")
+            return Response(
+                {"error": "Configuration error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        mollie_client = MollieClient()
+        mollie_client.set_api_key(api_key)
+
+        # Retrieve payment from Mollie
+        payment = mollie_client.payments.get(payment_id)
+
+        # Find quote by payment_id
+        try:
+            quote = FCLQuote.objects.get(payment_id=payment_id)
+        except FCLQuote.DoesNotExist:
+            logger.warning(f"Quote not found for payment ID: {payment_id}")
+            return Response(
+                {"error": "Quote not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Update payment status
+        quote.payment_status = payment.status
+        quote.payment_updated_at = timezone.now()
+
+        # If payment is paid, update amount_paid
+        if payment.status == "paid" and payment.amount:
+            paid_amount = Decimal(str(payment.amount["value"]))
+            current_amount_paid = quote.amount_paid or Decimal("0")
+            quote.amount_paid = current_amount_paid + paid_amount
+            logger.info(
+                f"Payment received for quote {quote.id}: €{paid_amount:.2f}. Total paid: €{quote.amount_paid:.2f}"
+            )
+
+        quote.save()
+
+        logger.info(
+            f"Webhook processed for quote {quote.id}: Payment {payment_id} status updated to {payment.status}"
+        )
+
+        return Response({"success": True}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(f"Error processing Mollie webhook: {str(e)}", exc_info=True)
+        return Response(
+            {"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def payment_status_view(request, pk):
+    """API endpoint to check payment status for an FCL quote"""
+    logger = logging.getLogger(__name__)
+
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+
+        # Check if user owns this quote
+        if quote.user != request.user and not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "You can only check payment status for your own quotes."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # If there's a payment_id, try to get latest status from Mollie
+        payment_status_info = None
+        if quote.payment_id and MOLLIE_AVAILABLE:
+            try:
+                api_key = (
+                    settings.MOLLIE_API_KEY_TEST
+                    if settings.MOLLIE_USE_TEST_MODE
+                    else settings.MOLLIE_API_KEY
+                )
+                if api_key:
+                    mollie_client = MollieClient()
+                    mollie_client.set_api_key(api_key)
+                    payment = mollie_client.payments.get(quote.payment_id)
+                    payment_status_info = {
+                        "id": payment.id,
+                        "status": payment.status,
+                        "amount": payment.amount,
+                        "paid_at": payment.paid_at,
+                        "checkout_url": payment.checkout_url if hasattr(payment, "checkout_url") else None,
+                    }
+                    # Update local status if different
+                    if quote.payment_status != payment.status:
+                        quote.payment_status = payment.status
+                        quote.payment_updated_at = timezone.now()
+                        quote.save()
+            except Exception as e:
+                logger.warning(f"Could not fetch payment status from Mollie: {str(e)}")
+
+        # Calculate payment info
+        total_price = float(quote.total_price) if quote.total_price else 0
+        amount_paid = float(quote.amount_paid) if quote.amount_paid else 0
+        remaining_amount = total_price - amount_paid
+        payment_percentage = (amount_paid / total_price * 100) if total_price > 0 else 0
+
+        return Response(
+            {
+                "success": True,
+                "quote_id": quote.id,
+                "quote_number": quote.quote_number,
+                "total_price": total_price,
+                "amount_paid": amount_paid,
+                "remaining_amount": max(0, remaining_amount),
+                "payment_percentage": round(payment_percentage, 2),
+                "payment_status": quote.payment_status,
+                "payment_method": quote.payment_method,
+                "payment_id": quote.payment_id,
+                "payment_created_at": quote.payment_created_at.isoformat() if quote.payment_created_at else None,
+                "payment_updated_at": quote.payment_updated_at.isoformat() if quote.payment_updated_at else None,
+                "mollie_payment": payment_status_info,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "FCL quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error checking payment status: {str(e)}", exc_info=True)
+        return Response(
+            {
+                "success": False,
+                "error": "An error occurred while checking payment status.",
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

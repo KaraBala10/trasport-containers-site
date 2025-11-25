@@ -231,3 +231,20 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="contact@medo-freight.eu")
 SERVER_EMAIL = config("SERVER_EMAIL", default="contact@medo-freight.eu")
 ADMIN_EMAIL = config("ADMIN_EMAIL", default=None)
+
+# Mollie Payment Configuration
+MOLLIE_API_KEY = config("MOLLIE_API_KEY", default="")
+MOLLIE_API_KEY_TEST = config("MOLLIE_API_KEY_TEST", default="")
+MOLLIE_USE_TEST_MODE = config("MOLLIE_USE_TEST_MODE", default=True, cast=bool)
+MOLLIE_WEBHOOK_URL = config(
+    "MOLLIE_WEBHOOK_URL",
+    default="https://medo-freight.eu/api/mollie/webhook/",
+)
+MOLLIE_REDIRECT_SUCCESS_URL = config(
+    "MOLLIE_REDIRECT_SUCCESS_URL",
+    default="https://medo-freight.eu/dashboard?payment=success",
+)
+MOLLIE_REDIRECT_CANCEL_URL = config(
+    "MOLLIE_REDIRECT_CANCEL_URL",
+    default="https://medo-freight.eu/dashboard?payment=canceled",
+)

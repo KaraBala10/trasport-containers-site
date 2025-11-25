@@ -135,6 +135,11 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
             "created_at",
             "user",
             "offer_sent_at",
+            "payment_id",
+            "payment_status",
+            "payment_method",
+            "payment_created_at",
+            "payment_updated_at",
         )
         depth = 1  # Include user details in nested format
 
