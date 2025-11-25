@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price
+from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -381,3 +381,27 @@ class PackagingPriceSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = ("id", "created_at", "updated_at")
+
+
+class CountrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Country
+        fields = ("id", "code", "name_en", "name_ar")
+
+
+class CitySerializer(serializers.ModelSerializer):
+    country_name_en = serializers.CharField(source="country.name_en", read_only=True)
+    country_name_ar = serializers.CharField(source="country.name_ar", read_only=True)
+
+    class Meta:
+        model = City
+        fields = ("id", "name_en", "name_ar", "country", "country_name_en", "country_name_ar")
+
+
+class PortSerializer(serializers.ModelSerializer):
+    country_name_en = serializers.CharField(source="country.name_en", read_only=True)
+    country_name_ar = serializers.CharField(source="country.name_ar", read_only=True)
+
+    class Meta:
+        model = Port
+        fields = ("id", "name_en", "name_ar", "code", "country", "country_name_en", "country_name_ar")

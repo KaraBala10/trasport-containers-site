@@ -33,14 +33,17 @@ from .email_service import (
     send_status_update_email,
     send_status_update_notification_to_admin,
 )
-from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price
+from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from .serializers import (
     ChangePasswordSerializer,
+    CitySerializer,
     ContactMessageSerializer,
+    CountrySerializer,
     EditRequestMessageSerializer,
     FCLQuoteSerializer,
     PackagingPriceSerializer,
+    PortSerializer,
     PriceSerializer,
     RegisterSerializer,
     UserSerializer,
@@ -1585,3 +1588,47 @@ def payment_status_view(request, pk):
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+# ============================================================================
+# Location APIs (Countries, Cities, Ports)
+# ============================================================================
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def countries_list_view(request):
+    """Get list of all countries"""
+    countries = Country.objects.all()
+    serializer = CountrySerializer(countries, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def cities_list_view(request):
+    """Get list of cities, optionally filtered by country"""
+    country_code = request.query_params.get("country", None)
+    
+    if country_code:
+        cities = City.objects.filter(country__code=country_code)
+    else:
+        cities = City.objects.all()
+    
+    serializer = CitySerializer(cities, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def ports_list_view(request):
+    """Get list of ports, optionally filtered by country"""
+    country_code = request.query_params.get("country", None)
+    
+    if country_code:
+        ports = Port.objects.filter(country__code=country_code)
+    else:
+        ports = Port.objects.all()
+    
+    serializer = PortSerializer(ports, many=True)
+    return Response(serializer.data)

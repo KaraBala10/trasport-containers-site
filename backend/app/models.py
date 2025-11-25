@@ -22,6 +22,75 @@ class ContactMessage(models.Model):
         return f"{self.full_name} - {self.subject} ({self.created_at.strftime('%Y-%m-%d')})"
 
 
+class Country(models.Model):
+    """Model to store countries with bilingual support"""
+
+    code = models.CharField(
+        max_length=3, unique=True, verbose_name="Country Code (ISO 3166-1)"
+    )
+    name_en = models.CharField(max_length=255, verbose_name="Name (English)")
+    name_ar = models.CharField(
+        max_length=255, verbose_name="Name (Arabic)", blank=True, null=True
+    )
+
+    class Meta:
+        verbose_name = "Country"
+        verbose_name_plural = "Countries"
+        ordering = ["name_en"]
+
+    def __str__(self):
+        return f"{self.name_en} ({self.code})"
+
+
+class City(models.Model):
+    """Model to store cities with bilingual support"""
+
+    country = models.ForeignKey(
+        Country, on_delete=models.CASCADE, related_name="cities", verbose_name="Country"
+    )
+    name_en = models.CharField(max_length=255, verbose_name="Name (English)")
+    name_ar = models.CharField(
+        max_length=255, verbose_name="Name (Arabic)", blank=True, null=True
+    )
+
+    class Meta:
+        verbose_name = "City"
+        verbose_name_plural = "Cities"
+        ordering = ["name_en"]
+        indexes = [
+            models.Index(fields=["country"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name_en}, {self.country.name_en}"
+
+
+class Port(models.Model):
+    """Model to store ports with bilingual support"""
+
+    country = models.ForeignKey(
+        Country, on_delete=models.CASCADE, related_name="ports", verbose_name="Country"
+    )
+    name_en = models.CharField(max_length=255, verbose_name="Name (English)")
+    name_ar = models.CharField(
+        max_length=255, verbose_name="Name (Arabic)", blank=True, null=True
+    )
+    code = models.CharField(
+        max_length=10, verbose_name="Port Code (UN/LOCODE)", blank=True, null=True
+    )
+
+    class Meta:
+        verbose_name = "Port"
+        verbose_name_plural = "Ports"
+        ordering = ["name_en"]
+        indexes = [
+            models.Index(fields=["country"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name_en}, {self.country.name_en}"
+
+
 class FCLQuote(models.Model):
     """Model to store FCL quote requests"""
 

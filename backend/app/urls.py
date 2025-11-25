@@ -12,7 +12,8 @@ from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
                     get_prices_view, initiate_payment_view, logout_view,
                     mollie_webhook_view, payment_status_view,
                     respond_to_offer_view, send_edit_request_reply_view,
-                    send_payment_reminder_view, update_fcl_quote_status_view)
+                    send_payment_reminder_view, update_fcl_quote_status_view,
+                    countries_list_view, cities_list_view, ports_list_view)
 
 app_name = "app"
 
@@ -74,6 +75,10 @@ urlpatterns = [
     path("calculate-pricing/", calculate_pricing_view, name="calculate_pricing"),
     path("prices/", get_prices_view, name="get_prices"),
     path("packaging-prices/", get_packaging_prices_view, name="get_packaging_prices"),
+    # Location endpoints
+    path("countries/", countries_list_view, name="countries_list"),
+    path("cities/", cities_list_view, name="cities_list"),
+    path("ports/", ports_list_view, name="ports_list"),
     # Admin CRUD endpoints for Price
     path(
         "admin/prices/", PriceListCreateView.as_view(), name="admin_price_list_create"

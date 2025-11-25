@@ -41,6 +41,13 @@ export default function FCLQuotePage() {
   >("idle");
   const [showContainerImages, setShowContainerImages] = useState(false);
 
+  // Location data states
+  const [countries, setCountries] = useState<any[]>([]);
+  const [originCities, setOriginCities] = useState<any[]>([]);
+  const [originPorts, setOriginPorts] = useState<any[]>([]);
+  const [destinationCities, setDestinationCities] = useState<any[]>([]);
+  const [destinationPorts, setDestinationPorts] = useState<any[]>([]);
+
   // Form data state
   const [formData, setFormData] = useState({
     // Route Details
@@ -1265,6 +1272,63 @@ export default function FCLQuotePage() {
 
   const t = translations[language];
 
+  // Load countries on component mount
+  useEffect(() => {
+    const loadCountries = async () => {
+      try {
+        const response = await apiService.getCountries();
+        setCountries(response.data);
+      } catch (error) {
+        console.error("Error loading countries:", error);
+      }
+    };
+    loadCountries();
+  }, []);
+
+  // Load cities and ports when origin country changes
+  useEffect(() => {
+    if (formData.origin_country) {
+      const loadOriginLocations = async () => {
+        try {
+          const [citiesRes, portsRes] = await Promise.all([
+            apiService.getCities(formData.origin_country),
+            apiService.getPorts(formData.origin_country),
+          ]);
+          setOriginCities(citiesRes.data);
+          setOriginPorts(portsRes.data);
+        } catch (error) {
+          console.error("Error loading origin locations:", error);
+        }
+      };
+      loadOriginLocations();
+    } else {
+      setOriginCities([]);
+      setOriginPorts([]);
+    }
+  }, [formData.origin_country]);
+
+  // Load cities and ports when destination country changes
+  useEffect(() => {
+    if (formData.destination_country) {
+      const loadDestinationLocations = async () => {
+        try {
+          const [citiesRes, portsRes] = await Promise.all([
+            apiService.getCities(formData.destination_country),
+            apiService.getPorts(formData.destination_country),
+          ]);
+          setDestinationCities(citiesRes.data);
+          setDestinationPorts(portsRes.data);
+        } catch (error) {
+          console.error("Error loading destination locations:", error);
+        }
+      };
+      loadDestinationLocations();
+    } else {
+      setDestinationCities([]);
+      setDestinationPorts([]);
+    }
+  }, [formData.destination_country]);
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -1919,7 +1983,7 @@ export default function FCLQuotePage() {
                         value={formData.origin_country}
                         onChange={(e) => {
                           handleChange(e);
-                          setFormData((prev) => ({ ...prev, origin_city: "" })); // Reset city when country changes
+                          setFormData((prev) => ({ ...prev, origin_city: "", port_of_loading: "" })); // Reset city and port when country changes
                         }}
                         className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
                           errors.origin_country
@@ -1930,13 +1994,9 @@ export default function FCLQuotePage() {
                         <option value="">
                           {language === "ar" ? "اختر البلد" : "Select Country"}
                         </option>
-                        {Object.keys(europeanCountries).map((country) => (
-                          <option key={country} value={country}>
-                            {language === "ar"
-                              ? europeanCountries[
-                                  country as keyof typeof europeanCountries
-                                ].ar.name
-                              : country}
+                        {countries.map((country) => (
+                          <option key={country.code} value={country.code}>
+                            {language === "ar" ? country.name_ar || country.name_en : country.name_en}
                           </option>
                         ))}
                       </select>
@@ -1997,18 +2057,11 @@ export default function FCLQuotePage() {
                             ? "اختر البلد أولاً"
                             : "Select Country First"}
                         </option>
-                        {formData.origin_country &&
-                          europeanCountries[
-                            formData.origin_country as keyof typeof europeanCountries
-                          ]?.cities.map((city, index) => (
-                            <option key={city} value={city}>
-                              {language === "ar"
-                                ? europeanCountries[
-                                    formData.origin_country as keyof typeof europeanCountries
-                                  ].ar.cities[index]
-                                : city}
-                            </option>
-                          ))}
+                        {originCities.map((city) => (
+                          <option key={city.id} value={city.name_en}>
+                            {language === "ar" ? city.name_ar || city.name_en : city.name_en}
+                          </option>
+                        ))}
                       </select>
                       {errors.origin_city && (
                         <motion.p
@@ -2061,28 +2114,36 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <input
-                        type="text"
+                      <select
                         name="port_of_loading"
                         value={formData.port_of_loading}
                         onChange={handleChange}
-                        list="ports-list"
+                        disabled={!formData.origin_country}
                         className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
                           errors.port_of_loading
                             ? "border-red-500 bg-red-50"
                             : "border-gray-300 hover:border-primary-yellow/50"
+                        } ${
+                          !formData.origin_country
+                            ? "bg-gray-100 cursor-not-allowed opacity-60"
+                            : ""
                         }`}
-                        placeholder={
-                          language === "ar"
-                            ? "اختر أو اكتب الميناء"
-                            : "Select or type port"
-                        }
-                      />
-                      <datalist id="ports-list">
-                        {commonPorts.map((port) => (
-                          <option key={port} value={port} />
+                      >
+                        <option value="">
+                          {formData.origin_country
+                            ? language === "ar"
+                              ? "اختر الميناء (اختياري)"
+                              : "Select Port (Optional)"
+                            : language === "ar"
+                            ? "اختر البلد أولاً"
+                            : "Select Country First"}
+                        </option>
+                        {originPorts.map((port) => (
+                          <option key={port.id} value={port.name_en}>
+                            {language === "ar" ? port.name_ar || port.name_en : port.name_en}
+                          </option>
                         ))}
-                      </datalist>
+                      </select>
                       {errors.port_of_loading && (
                         <motion.p
                           initial={{ opacity: 0 }}
@@ -2124,7 +2185,8 @@ export default function FCLQuotePage() {
                           setFormData((prev) => ({
                             ...prev,
                             destination_city: "",
-                          })); // Reset city when country changes
+                            port_of_discharge: "",
+                          })); // Reset city and port when country changes
                         }}
                         className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
                           errors.destination_country
@@ -2135,23 +2197,11 @@ export default function FCLQuotePage() {
                         <option value="">
                           {language === "ar" ? "اختر البلد" : "Select Country"}
                         </option>
-                        {/* Show Syria first for destination */}
-                        <option value="Syria">
-                          {language === "ar"
-                            ? europeanCountries.Syria.ar.name
-                            : "Syria"}
-                        </option>
-                        {Object.keys(europeanCountries)
-                          .filter((c) => c !== "Syria")
-                          .map((country) => (
-                            <option key={country} value={country}>
-                              {language === "ar"
-                                ? europeanCountries[
-                                    country as keyof typeof europeanCountries
-                                  ].ar.name
-                                : country}
-                            </option>
-                          ))}
+                        {countries.map((country) => (
+                          <option key={country.code} value={country.code}>
+                            {language === "ar" ? country.name_ar || country.name_en : country.name_en}
+                          </option>
+                        ))}
                       </select>
                       {errors.destination_country && (
                         <motion.p
@@ -2210,18 +2260,11 @@ export default function FCLQuotePage() {
                             ? "اختر البلد أولاً"
                             : "Select Country First"}
                         </option>
-                        {formData.destination_country &&
-                          europeanCountries[
-                            formData.destination_country as keyof typeof europeanCountries
-                          ]?.cities.map((city, index) => (
-                            <option key={city} value={city}>
-                              {language === "ar"
-                                ? europeanCountries[
-                                    formData.destination_country as keyof typeof europeanCountries
-                                  ].ar.cities[index]
-                                : city}
-                            </option>
-                          ))}
+                        {destinationCities.map((city) => (
+                          <option key={city.id} value={city.name_en}>
+                            {language === "ar" ? city.name_ar || city.name_en : city.name_en}
+                          </option>
+                        ))}
                       </select>
                       {errors.destination_city && (
                         <motion.p
@@ -2257,23 +2300,36 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <input
-                        type="text"
+                      <select
                         name="port_of_discharge"
                         value={formData.port_of_discharge}
                         onChange={handleChange}
-                        list="ports-list"
+                        disabled={!formData.destination_country}
                         className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
                           errors.port_of_discharge
                             ? "border-red-500 bg-red-50"
                             : "border-gray-300 hover:border-primary-yellow/50"
+                        } ${
+                          !formData.destination_country
+                            ? "bg-gray-100 cursor-not-allowed opacity-60"
+                            : ""
                         }`}
-                        placeholder={
-                          language === "ar"
-                            ? "اختر أو اكتب الميناء"
-                            : "Select or type port"
-                        }
-                      />
+                      >
+                        <option value="">
+                          {formData.destination_country
+                            ? language === "ar"
+                              ? "اختر الميناء (اختياري)"
+                              : "Select Port (Optional)"
+                            : language === "ar"
+                            ? "اختر البلد أولاً"
+                            : "Select Country First"}
+                        </option>
+                        {destinationPorts.map((port) => (
+                          <option key={port.id} value={port.name_en}>
+                            {language === "ar" ? port.name_ar || port.name_en : port.name_en}
+                          </option>
+                        ))}
+                      </select>
                       {errors.port_of_discharge && (
                         <motion.p
                           initial={{ opacity: 0 }}

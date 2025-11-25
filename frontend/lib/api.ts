@@ -308,6 +308,21 @@ export const apiService = {
       responseType: 'blob',
     });
   },
+
+  // Location endpoints
+  getCountries: () => {
+    return apiClient.get('/countries/');
+  },
+  getCities: (countryCode?: string) => {
+    return apiClient.get('/cities/', {
+      params: countryCode ? { country: countryCode } : {},
+    });
+  },
+  getPorts: (countryCode?: string) => {
+    return apiClient.get('/ports/', {
+      params: countryCode ? { country: countryCode } : {},
+    });
+  },
 };
 
 export default apiClient;
