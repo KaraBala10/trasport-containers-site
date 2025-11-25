@@ -73,6 +73,8 @@ export default function FCLQuotePage() {
     eu_export_clearance: false,
     cargo_insurance: false,
     on_carriage: false,
+    certificate_of_origin_type: "none",
+    destination_customs_clearance: false,
 
     // Customer Details
     full_name: "",
@@ -1077,6 +1079,22 @@ export default function FCLQuotePage() {
       euExportClearance: "تخليص جمركي EU Export Clearance",
       cargoInsurance: "تأمين الشحنة Cargo Insurance",
       onCarriage: "نقل داخلي في بلد الوصول (On-carriage)",
+      certificateOfOrigin: "شهادة المنشأ",
+      certificateOfOriginSelect: "اختر نوع شهادة المنشأ",
+      destinationCustomsClearance: "تخليص جمركي في الوجهة",
+      
+      // Certificate of Origin Types
+      cert_none: "بدون شهادة",
+      cert_non_preferential: "شهادة منشأ غير تفضيلية",
+      cert_preferential: "شهادة منشأ تفضيلية",
+      cert_chamber_of_commerce: "شهادة منشأ من الغرفة التجارية",
+      cert_manufacturer: "شهادة منشأ من المصنع (MCO)",
+      cert_electronic: "شهادة منشأ إلكترونية (e-CO)",
+      cert_eur1: "شهادة منشأ EUR.1",
+      cert_eur_med: "شهادة منشأ EUR-MED",
+      cert_gsp_form_a: "شهادة منشأ بنظام GSP – نموذج A",
+      cert_consular: "شهادة منشأ موثّقة قنصليًا",
+      cert_product_specific: "شهادات منشأ خاصة حسب نوع البضاعة",
 
       // Customer Details
       fullName: "الاسم الكامل",
@@ -1164,6 +1182,22 @@ export default function FCLQuotePage() {
       euExportClearance: "EU Export Clearance",
       cargoInsurance: "Cargo Insurance",
       onCarriage: "On-carriage in destination country",
+      certificateOfOrigin: "Certificate of Origin",
+      certificateOfOriginSelect: "Select Certificate of Origin Type",
+      destinationCustomsClearance: "Destination Customs Clearance",
+      
+      // Certificate of Origin Types
+      cert_none: "None",
+      cert_non_preferential: "Non-Preferential Certificate of Origin",
+      cert_preferential: "Preferential Certificate of Origin",
+      cert_chamber_of_commerce: "Chamber of Commerce Certificate of Origin",
+      cert_manufacturer: "Manufacturer Certificate of Origin (MCO)",
+      cert_electronic: "Electronic Certificate of Origin (e-CO)",
+      cert_eur1: "EUR.1 Movement Certificate",
+      cert_eur_med: "EUR-MED Movement Certificate",
+      cert_gsp_form_a: "GSP Certificate of Origin – Form A",
+      cert_consular: "Consular Certificate of Origin",
+      cert_product_specific: "Special Certificates of Origin (Product-Specific)",
 
       // Customer Details
       fullName: "Full Name",
@@ -1428,7 +1462,8 @@ export default function FCLQuotePage() {
           key === "forklift_available" ||
           key === "eu_export_clearance" ||
           key === "cargo_insurance" ||
-          key === "on_carriage"
+          key === "on_carriage" ||
+          key === "destination_customs_clearance"
         ) {
           // Boolean fields - always send
           formDataToSend.append(key, value ? "true" : "false");
@@ -2929,6 +2964,45 @@ export default function FCLQuotePage() {
                           className="mr-2"
                         />
                         <span>{t.onCarriage}</span>
+                      </label>
+                    </div>
+
+                    {/* Certificate of Origin */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        {t.certificateOfOrigin}
+                      </label>
+                      <select
+                        name="certificate_of_origin_type"
+                        value={formData.certificate_of_origin_type}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-primary-yellow focus:ring focus:ring-primary-yellow/20 transition-all duration-300"
+                      >
+                        <option value="none">{t.cert_none}</option>
+                        <option value="non_preferential">{t.cert_non_preferential}</option>
+                        <option value="preferential">{t.cert_preferential}</option>
+                        <option value="chamber_of_commerce">{t.cert_chamber_of_commerce}</option>
+                        <option value="manufacturer">{t.cert_manufacturer}</option>
+                        <option value="electronic">{t.cert_electronic}</option>
+                        <option value="eur1">{t.cert_eur1}</option>
+                        <option value="eur_med">{t.cert_eur_med}</option>
+                        <option value="gsp_form_a">{t.cert_gsp_form_a}</option>
+                        <option value="consular">{t.cert_consular}</option>
+                        <option value="product_specific">{t.cert_product_specific}</option>
+                      </select>
+                    </div>
+
+                    {/* Destination Customs Clearance */}
+                    <div>
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="destination_customs_clearance"
+                          checked={formData.destination_customs_clearance}
+                          onChange={handleChange}
+                          className="mr-2"
+                        />
+                        <span>{t.destinationCustomsClearance}</span>
                       </label>
                     </div>
                   </div>

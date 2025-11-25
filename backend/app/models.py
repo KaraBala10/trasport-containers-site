@@ -99,6 +99,34 @@ class FCLQuote(models.Model):
     )
     cargo_insurance = models.BooleanField(default=False, verbose_name="Cargo Insurance")
     on_carriage = models.BooleanField(default=False, verbose_name="On-carriage")
+    
+    # Certificate of Origin
+    CERTIFICATE_OF_ORIGIN_CHOICES = [
+        ("none", "None"),
+        ("non_preferential", "Non-Preferential Certificate of Origin"),
+        ("preferential", "Preferential Certificate of Origin"),
+        ("chamber_of_commerce", "Chamber of Commerce Certificate of Origin"),
+        ("manufacturer", "Manufacturer Certificate of Origin (MCO)"),
+        ("electronic", "Electronic Certificate of Origin (e-CO)"),
+        ("eur1", "EUR.1 Movement Certificate"),
+        ("eur_med", "EUR-MED Movement Certificate"),
+        ("gsp_form_a", "GSP Certificate of Origin – Form A"),
+        ("consular", "Consular Certificate of Origin"),
+        ("product_specific", "Special Certificates of Origin (Product-Specific)"),
+    ]
+    certificate_of_origin_type = models.CharField(
+        max_length=50,
+        choices=CERTIFICATE_OF_ORIGIN_CHOICES,
+        default="none",
+        blank=True,
+        verbose_name="Certificate of Origin Type"
+    )
+    
+    # Destination Customs Clearance
+    destination_customs_clearance = models.BooleanField(
+        default=False, 
+        verbose_name="Destination Customs Clearance"
+    )
 
     # Customer Details
     full_name = models.CharField(max_length=255, verbose_name="Full Name")

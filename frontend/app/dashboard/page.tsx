@@ -41,6 +41,8 @@ interface FCLQuote {
   eu_export_clearance: boolean;
   cargo_insurance: boolean;
   on_carriage: boolean;
+  certificate_of_origin_type?: string;
+  destination_customs_clearance: boolean;
   // Customer Details
   full_name: string;
   company_name?: string;
