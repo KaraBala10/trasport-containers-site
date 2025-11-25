@@ -110,6 +110,9 @@ export default function DashboardPage() {
   const [approvingDeclining, setApprovingDeclining] = useState<number | null>(
     null
   );
+  const [processingPayment, setProcessingPayment] = useState<number | null>(
+    null
+  );
 
   const translations = useMemo(
     () => ({
@@ -333,6 +336,43 @@ export default function DashboardPage() {
     }
   }, [mounted, loading, isAuthenticated, router]);
 
+  // Handle payment return from Mollie
+  useEffect(() => {
+    if (typeof window !== "undefined" && mounted) {
+      const params = new URLSearchParams(window.location.search);
+      const paymentStatus = params.get("payment");
+      
+      if (paymentStatus === "success") {
+        alert(
+          language === "ar"
+            ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
+            : "Payment received successfully! The paid amount will be updated shortly."
+        );
+        // Refresh quotes to get updated payment status
+        const fetchQuotes = async () => {
+          try {
+            const response = await apiService.getFCLQuotes();
+            const quotes = response.data?.results || response.data || [];
+            setFclQuotes(Array.isArray(quotes) ? quotes : []);
+          } catch (error) {
+            console.error("Error refreshing quotes:", error);
+          }
+        };
+        fetchQuotes();
+        // Remove query param from URL
+        window.history.replaceState({}, "", window.location.pathname);
+      } else if (paymentStatus === "canceled") {
+        alert(
+          language === "ar"
+            ? "تم إلغاء عملية الدفع."
+            : "Payment was canceled."
+        );
+        // Remove query param from URL
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+  }, [mounted, language]);
+
   // Fetch user's FCL quotes
   useEffect(() => {
     const fetchFCLQuotes = async () => {
@@ -466,6 +506,25 @@ export default function DashboardPage() {
     } catch (error: any) {
       console.error("Error sending payment reminder:", error);
       alert(t.error + ": " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // Handle initiate payment (for users)
+  const handleInitiatePayment = async (quoteId: number) => {
+    try {
+      setProcessingPayment(quoteId);
+      const response = await apiService.initiatePayment(quoteId);
+      
+      if (response.data?.success && response.data?.checkout_url) {
+        // Redirect to Mollie checkout
+        window.location.href = response.data.checkout_url;
+      } else {
+        throw new Error(response.data?.error || "Failed to initiate payment");
+      }
+    } catch (error: any) {
+      console.error("Error initiating payment:", error);
+      alert(t.error + ": " + (error.response?.data?.error || error.response?.data?.message || error.message));
+      setProcessingPayment(null);
     }
   };
 
@@ -1479,6 +1538,74 @@ export default function DashboardPage() {
                                           </p>
                                         </div>
                                       )}
+                                      {/* Payment button for users when status is PENDING_PAYMENT */}
+                                      {!isAdmin &&
+                                        quote.status === "PENDING_PAYMENT" &&
+                                        ((quote.amount_paid || 0) /
+                                          quote.total_price) *
+                                          100 <
+                                          100 && (
+                                          <button
+                                            onClick={() =>
+                                              handleInitiatePayment(quote.id)
+                                            }
+                                            disabled={
+                                              processingPayment === quote.id
+                                            }
+                                            className="mt-3 w-full px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                                          >
+                                            {processingPayment === quote.id ? (
+                                              <>
+                                                <svg
+                                                  className="animate-spin h-4 w-4 text-white"
+                                                  xmlns="http://www.w3.org/2000/svg"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                  ></circle>
+                                                  <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                  ></path>
+                                                </svg>
+                                                <span>
+                                                  {language === "ar"
+                                                    ? "جاري التوجيه..."
+                                                    : "Redirecting..."}
+                                                </span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <svg
+                                                  className="w-5 h-5"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                                                  />
+                                                </svg>
+                                                <span>
+                                                  {language === "ar"
+                                                    ? "دفع إلكتروني"
+                                                    : "Pay Online"}
+                                                </span>
+                                              </>
+                                            )}
+                                          </button>
+                                        )}
                                     </div>
                                     {isAdmin && (
                                       <div className="mt-2 space-y-2">

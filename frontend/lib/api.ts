@@ -212,6 +212,14 @@ export const apiService = {
     return apiClient.post(`/fcl/quotes/${id}/send-payment-reminder/`);
   },
 
+  initiatePayment: (id: number) => {
+    return apiClient.post(`/fcl/quotes/${id}/initiate-payment/`);
+  },
+
+  getPaymentStatus: (id: number) => {
+    return apiClient.get(`/fcl/quotes/${id}/payment-status/`);
+  },
+
   // Price endpoints
   getPrices: () => {
     return apiClient.get('/prices/');
