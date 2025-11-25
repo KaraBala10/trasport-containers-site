@@ -6,6 +6,7 @@ import Script from "next/script";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Autocomplete from "@/components/Autocomplete";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/lib/api";
@@ -1978,48 +1979,27 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <select
+                      <Autocomplete
                         name="origin_country"
                         value={formData.origin_country}
-                        onChange={(e) => {
-                          handleChange(e);
-                          setFormData((prev) => ({ ...prev, origin_city: "", port_of_loading: "" })); // Reset city and port when country changes
+                        onChange={(value) => {
+                          setFormData((prev) => ({ 
+                            ...prev, 
+                            origin_country: value,
+                            origin_city: "", 
+                            port_of_loading: "" 
+                          }));
                         }}
-                        className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
-                          errors.origin_country
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-300 hover:border-primary-yellow/50"
-                        }`}
-                      >
-                        <option value="">
-                          {language === "ar" ? "اختر البلد" : "Select Country"}
-                        </option>
-                        {countries.map((country) => (
-                          <option key={country.code} value={country.code}>
-                            {language === "ar" ? country.name_ar || country.name_en : country.name_en}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.origin_country && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-red-600 text-sm mt-1 flex items-center gap-1"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {errors.origin_country}
-                        </motion.p>
-                      )}
+                        options={countries.map((country) => ({
+                          value: country.code,
+                          label: country.name_en,
+                          labelAr: country.name_ar,
+                        }))}
+                        placeholder={language === "ar" ? "ابحث أو اختر البلد" : "Search or select country"}
+                        error={errors.origin_country}
+                        language={language}
+                        required
+                      />
                     </motion.div>
 
                     <motion.div
@@ -2033,56 +2013,31 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <select
+                      <Autocomplete
                         name="origin_city"
                         value={formData.origin_city}
-                        onChange={handleChange}
-                        disabled={!formData.origin_country}
-                        className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
-                          errors.origin_city
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-300 hover:border-primary-yellow/50"
-                        } ${
-                          !formData.origin_country
-                            ? "bg-gray-100 cursor-not-allowed opacity-60"
-                            : ""
-                        }`}
-                      >
-                        <option value="">
-                          {formData.origin_country
+                        onChange={(value) => {
+                          setFormData((prev) => ({ ...prev, origin_city: value }));
+                        }}
+                        options={originCities.map((city) => ({
+                          value: city.name_en,
+                          label: city.name_en,
+                          labelAr: city.name_ar,
+                        }))}
+                        placeholder={
+                          formData.origin_country
                             ? language === "ar"
-                              ? "اختر المدينة"
-                              : "Select City"
+                              ? "ابحث أو اختر المدينة"
+                              : "Search or select city"
                             : language === "ar"
                             ? "اختر البلد أولاً"
-                            : "Select Country First"}
-                        </option>
-                        {originCities.map((city) => (
-                          <option key={city.id} value={city.name_en}>
-                            {language === "ar" ? city.name_ar || city.name_en : city.name_en}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.origin_city && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-red-600 text-sm mt-1 flex items-center gap-1"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {errors.origin_city}
-                        </motion.p>
-                      )}
+                            : "Select country first"
+                        }
+                        disabled={!formData.origin_country}
+                        error={errors.origin_city}
+                        language={language}
+                        required
+                      />
                     </motion.div>
 
                     <motion.div
@@ -2114,56 +2069,31 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <select
+                      <Autocomplete
                         name="port_of_loading"
                         value={formData.port_of_loading}
-                        onChange={handleChange}
-                        disabled={!formData.origin_country}
-                        className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
-                          errors.port_of_loading
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-300 hover:border-primary-yellow/50"
-                        } ${
-                          !formData.origin_country
-                            ? "bg-gray-100 cursor-not-allowed opacity-60"
-                            : ""
-                        }`}
-                      >
-                        <option value="">
-                          {formData.origin_country
+                        onChange={(value) => {
+                          setFormData((prev) => ({ ...prev, port_of_loading: value }));
+                        }}
+                        options={originPorts.map((port) => ({
+                          value: port.name_en,
+                          label: port.name_en,
+                          labelAr: port.name_ar,
+                        }))}
+                        placeholder={
+                          formData.origin_country
                             ? language === "ar"
-                              ? "اختر الميناء (اختياري)"
-                              : "Select Port (Optional)"
+                              ? "ابحث أو اختر الميناء"
+                              : "Search or select port"
                             : language === "ar"
                             ? "اختر البلد أولاً"
-                            : "Select Country First"}
-                        </option>
-                        {originPorts.map((port) => (
-                          <option key={port.id} value={port.name_en}>
-                            {language === "ar" ? port.name_ar || port.name_en : port.name_en}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.port_of_loading && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-red-600 text-sm mt-1 flex items-center gap-1"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {errors.port_of_loading}
-                        </motion.p>
-                      )}
+                            : "Select country first"
+                        }
+                        disabled={!formData.origin_country}
+                        error={errors.port_of_loading}
+                        language={language}
+                        required
+                      />
                     </motion.div>
 
                     <motion.div
@@ -2177,52 +2107,27 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <select
+                      <Autocomplete
                         name="destination_country"
                         value={formData.destination_country}
-                        onChange={(e) => {
-                          handleChange(e);
+                        onChange={(value) => {
                           setFormData((prev) => ({
                             ...prev,
+                            destination_country: value,
                             destination_city: "",
                             port_of_discharge: "",
-                          })); // Reset city and port when country changes
+                          }));
                         }}
-                        className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
-                          errors.destination_country
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-300 hover:border-primary-yellow/50"
-                        }`}
-                      >
-                        <option value="">
-                          {language === "ar" ? "اختر البلد" : "Select Country"}
-                        </option>
-                        {countries.map((country) => (
-                          <option key={country.code} value={country.code}>
-                            {language === "ar" ? country.name_ar || country.name_en : country.name_en}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.destination_country && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-red-600 text-sm mt-1 flex items-center gap-1"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {errors.destination_country}
-                        </motion.p>
-                      )}
+                        options={countries.map((country) => ({
+                          value: country.code,
+                          label: country.name_en,
+                          labelAr: country.name_ar,
+                        }))}
+                        placeholder={language === "ar" ? "ابحث أو اختر البلد" : "Search or select country"}
+                        error={errors.destination_country}
+                        language={language}
+                        required
+                      />
                     </motion.div>
 
                     <motion.div
@@ -2236,56 +2141,31 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <select
+                      <Autocomplete
                         name="destination_city"
                         value={formData.destination_city}
-                        onChange={handleChange}
-                        disabled={!formData.destination_country}
-                        className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
-                          errors.destination_city
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-300 hover:border-primary-yellow/50"
-                        } ${
-                          !formData.destination_country
-                            ? "bg-gray-100 cursor-not-allowed opacity-60"
-                            : ""
-                        }`}
-                      >
-                        <option value="">
-                          {formData.destination_country
+                        onChange={(value) => {
+                          setFormData((prev) => ({ ...prev, destination_city: value }));
+                        }}
+                        options={destinationCities.map((city) => ({
+                          value: city.name_en,
+                          label: city.name_en,
+                          labelAr: city.name_ar,
+                        }))}
+                        placeholder={
+                          formData.destination_country
                             ? language === "ar"
-                              ? "اختر المدينة"
-                              : "Select City"
+                              ? "ابحث أو اختر المدينة"
+                              : "Search or select city"
                             : language === "ar"
                             ? "اختر البلد أولاً"
-                            : "Select Country First"}
-                        </option>
-                        {destinationCities.map((city) => (
-                          <option key={city.id} value={city.name_en}>
-                            {language === "ar" ? city.name_ar || city.name_en : city.name_en}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.destination_city && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-red-600 text-sm mt-1 flex items-center gap-1"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {errors.destination_city}
-                        </motion.p>
-                      )}
+                            : "Select country first"
+                        }
+                        disabled={!formData.destination_country}
+                        error={errors.destination_city}
+                        language={language}
+                        required
+                      />
                     </motion.div>
 
                     <motion.div
@@ -2300,56 +2180,31 @@ export default function FCLQuotePage() {
                           <span className="text-red-500">*</span>
                         )}
                       </label>
-                      <select
+                      <Autocomplete
                         name="port_of_discharge"
                         value={formData.port_of_discharge}
-                        onChange={handleChange}
-                        disabled={!formData.destination_country}
-                        className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow ${
-                          errors.port_of_discharge
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-300 hover:border-primary-yellow/50"
-                        } ${
-                          !formData.destination_country
-                            ? "bg-gray-100 cursor-not-allowed opacity-60"
-                            : ""
-                        }`}
-                      >
-                        <option value="">
-                          {formData.destination_country
+                        onChange={(value) => {
+                          setFormData((prev) => ({ ...prev, port_of_discharge: value }));
+                        }}
+                        options={destinationPorts.map((port) => ({
+                          value: port.name_en,
+                          label: port.name_en,
+                          labelAr: port.name_ar,
+                        }))}
+                        placeholder={
+                          formData.destination_country
                             ? language === "ar"
-                              ? "اختر الميناء (اختياري)"
-                              : "Select Port (Optional)"
+                              ? "ابحث أو اختر الميناء"
+                              : "Search or select port"
                             : language === "ar"
                             ? "اختر البلد أولاً"
-                            : "Select Country First"}
-                        </option>
-                        {destinationPorts.map((port) => (
-                          <option key={port.id} value={port.name_en}>
-                            {language === "ar" ? port.name_ar || port.name_en : port.name_en}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.port_of_discharge && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-red-600 text-sm mt-1 flex items-center gap-1"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {errors.port_of_discharge}
-                        </motion.p>
-                      )}
+                            : "Select country first"
+                        }
+                        disabled={!formData.destination_country}
+                        error={errors.port_of_discharge}
+                        language={language}
+                        required
+                      />
                     </motion.div>
                   </div>
 
@@ -3674,13 +3529,13 @@ export default function FCLQuotePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Container Images */}
                   {[
-                    { image: "photo_2025-11-25_21-08-11.jpg", name: language === "ar" ? "حاوية 20 قدم قياسية" : "20ft Standard Container" },
-                    { image: "photo_2025-11-25_21-08-12.jpg", name: language === "ar" ? "حاوية 40 قدم قياسية" : "40ft Standard Container" },
-                    { image: "photo_2025-11-25_21-08-12 (2).jpg", name: language === "ar" ? "حاوية 40 قدم هاي كيوب" : "40ft High Cube Container" },
-                    { image: "photo_2025-11-25_21-08-13.jpg", name: language === "ar" ? "حاوية مبردة" : "Reefer Container" },
-                    { image: "photo_2025-11-25_21-08-14.jpg", name: language === "ar" ? "حاوية مفتوحة السقف" : "Open Top Container" },
-                    { image: "photo_2025-11-25_21-08-15.jpg", name: language === "ar" ? "حاوية فلات راك" : "Flat Rack Container" },
-                  ].map((container, index) => (
+                    "photo_2025-11-25_21-08-11.jpg",
+                    "photo_2025-11-25_21-08-12.jpg",
+                    "photo_2025-11-25_21-08-12 (2).jpg",
+                    "photo_2025-11-25_21-08-13.jpg",
+                    "photo_2025-11-25_21-08-14.jpg",
+                    "photo_2025-11-25_21-08-15.jpg",
+                  ].map((image, index) => (
                     <motion.div
                       key={index}
                       whileHover={{ scale: 1.05 }}
@@ -3688,15 +3543,10 @@ export default function FCLQuotePage() {
                     >
                       <div className="relative aspect-video bg-gray-100">
                         <img
-                          src={`/images/containers/${container.image}`}
-                          alt={container.name}
+                          src={`/images/containers/${image}`}
+                          alt="Container"
                           className="w-full h-full object-cover"
                         />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="text-sm font-semibold text-gray-800 text-center">
-                          {container.name}
-                        </h3>
                       </div>
                     </motion.div>
                   ))}
