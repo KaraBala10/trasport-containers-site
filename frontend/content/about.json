@@ -3,7 +3,102 @@
     "pageTitle": "من نحن",
     "pageDescription": "تعرف على MEDO-FREIGHT ومكاتبنا في أوروبا وسوريا",
     "mainTitle": "من نحن",
-    "intro": "نحن شركة رائدة في مجال الشحن الدولي بين أوروبا والشرق الأوسط، نوفر خدمات شحن احترافية وموثوقة.",
+    "intro": "نحن شركة شحن أوروبية مقرّها هولندا، متخصصة في تجميع وشحن الطرود LCL إلى سورية من جميع دول أوروبا، إضافة إلى خدمات الشحن البحري FCL إلى الشرق الأوسط والعالم. نقدم خدمات لوجستية متكاملة بتركيز كامل على الدقة، الأمان، والالتزام بالمواعيد.",
+    "description": "نحن نعرف تمامًا تحديات الشحن إلى سورية: القيود، الفحوصات، اختلاف الأنظمة، وتأخّر الإمدادات. لذلك بنينا نظام شحن متكامل بعملية واضحة وبسيطة، تبدأ من استلام الطرد في أوروبا… وتنتهي بوصوله إلى يد العميل داخل سورية بكل شفافية.",
+    "vision": {
+      "title": "رؤيتنا",
+      "text": "أن نكون الشركة الأكثر ثقة وكفاءة للشحن من أوروبا إلى سورية، وأن نقدّم للعملاء تجربة شحن سهلة، سريعة، وواضحة من البداية إلى النهاية."
+    },
+    "mission": {
+      "title": "مهمتنا",
+      "text": "أن نوفر لعملائنا تجربة شحن تستحق الثقة: وضوح، التزام، جودة في الخدمة، وسهولة في المتابعة… بدون تعقيد أو وعود غير واقعية."
+    },
+    "services": {
+      "title": "ماذا نقدّم؟",
+      "items": [
+        {
+          "title": "شحن LCL إلى سورية",
+          "description": "تجميع طرود من جميع أنحاء أوروبا داخل مركزنا في هولندا، ثم شحنها في حاويتنا الخاصة إلى سورية. خدمة مثالية للأفراد والشركات والطلبيات الصغيرة.",
+          "icon": "📦"
+        },
+        {
+          "title": "شحن FCL (حاويات كاملة)",
+          "description": "توفير حاويات 20 قدم، 40 قدم، و40 HC للمواد الصناعية والتجارية والبضائع العامة إلى الشرق الأوسط والعالم.",
+          "icon": "🚢"
+        },
+        {
+          "title": "إصدار الوثائق الرسمية",
+          "description": "نقوم بإصدار شهادة منشأ، فاتورة تجارية، قائمة تعبئة، ووثائق التصدير الأوروبية بشكل رسمي وموثّق ومطابق لمتطلبات الجمارك.",
+          "icon": "📋"
+        },
+        {
+          "title": "خدمات التخزين والمعاينة",
+          "description": "استلام، فرز، معاينة، وزن، تصوير، وتغليف الطرود داخل مركزنا في هولندا.",
+          "icon": "📸"
+        },
+        {
+          "title": "توصيل داخل سورية",
+          "description": "نوفّر شبكة توصيل داخل أغلب المحافظات عبر شركائنا المحليين.",
+          "icon": "🚚"
+        }
+      ]
+    },
+    "whyUs": {
+      "title": "لماذا نحن؟",
+      "items": [
+        {
+          "title": "مسار شحن واضح",
+          "description": "من لحظة استلام الطرد حتى تسليمه"
+        },
+        {
+          "title": "أسعار شفافة",
+          "description": "تحسب تلقائيًا عبر الموقع دون مفاجآت"
+        },
+        {
+          "title": "دعم عربي بالكامل",
+          "description": "عبر الهاتف والواتساب والبريد الإلكتروني"
+        },
+        {
+          "title": "مواعيد دقيقة",
+          "description": "للحاويات، وخدمة متابعة مستمرة"
+        },
+        {
+          "title": "خبرة 15 سنة",
+          "description": "في الشحن البحري والتجارة الدولية"
+        },
+        {
+          "title": "مركز تجميع ثابت",
+          "description": "في هولندا مع ساعات عمل واضحة واستقبال يومي"
+        }
+      ]
+    },
+    "stats": [
+      {
+        "number": 15,
+        "suffix": "+",
+        "label": "سنة خبرة"
+      },
+      {
+        "number": 5000,
+        "suffix": "+",
+        "label": "شحنة سنوياً"
+      },
+      {
+        "number": 27,
+        "suffix": "",
+        "label": "دولة أوروبية"
+      },
+      {
+        "number": 99,
+        "suffix": "%",
+        "label": "رضا العملاء"
+      }
+    ],
+    "cta": {
+      "title": "نحن هنا لنخفّف عنك رحلة الشحن كلها",
+      "subtitle": "من أوروبا إلى سورية… طريق طويل، لكن مع MEDO-FREIGHT.EU تصبح العملية أبسط، أسرع، وأكثر أمانًا.",
+      "button": "ابدأ الشحن الآن"
+    },
     
     "offices": {
       "title": "مكاتبنا",
@@ -40,7 +135,102 @@
     "pageTitle": "About Us",
     "pageDescription": "Learn about MEDO-FREIGHT and our offices in Europe and Syria",
     "mainTitle": "About Us",
-    "intro": "We are a leading company in international freight between Europe and the Middle East, providing professional and reliable shipping services.",
+    "intro": "We are a European shipping company based in the Netherlands, specialized in consolidating and shipping LCL parcels to Syria from all European countries, in addition to FCL sea freight services to the Middle East and worldwide. We provide integrated logistics services with full focus on accuracy, security, and punctuality.",
+    "description": "We fully understand the challenges of shipping to Syria: restrictions, inspections, different systems, and supply delays. That's why we built an integrated shipping system with a clear and simple process, starting from receiving the parcel in Europe... and ending with its arrival to the customer's hand inside Syria with complete transparency.",
+    "vision": {
+      "title": "Our Vision",
+      "text": "To be the most trusted and efficient company for shipping from Europe to Syria, and to provide customers with an easy, fast, and clear shipping experience from start to finish."
+    },
+    "mission": {
+      "title": "Our Mission",
+      "text": "To provide our customers with a shipping experience that deserves trust: clarity, commitment, quality service, and ease of follow-up... without complexity or unrealistic promises."
+    },
+    "services": {
+      "title": "What We Offer?",
+      "items": [
+        {
+          "title": "LCL Shipping to Syria",
+          "description": "Consolidating parcels from all over Europe inside our center in the Netherlands, then shipping them in our own container to Syria. Perfect service for individuals, companies, and small orders.",
+          "icon": "📦"
+        },
+        {
+          "title": "FCL Shipping (Full Containers)",
+          "description": "Providing 20ft, 40ft, and 40 HC containers for industrial, commercial materials and general cargo to the Middle East and worldwide.",
+          "icon": "🚢"
+        },
+        {
+          "title": "Official Documentation",
+          "description": "We issue certificate of origin, commercial invoice, packing list, and European export documents officially and documented in compliance with customs requirements.",
+          "icon": "📋"
+        },
+        {
+          "title": "Storage and Inspection Services",
+          "description": "Receiving, sorting, inspection, weighing, photographing, and packaging parcels inside our center in the Netherlands.",
+          "icon": "📸"
+        },
+        {
+          "title": "Delivery Inside Syria",
+          "description": "We provide a delivery network inside most governorates through our local partners.",
+          "icon": "🚚"
+        }
+      ]
+    },
+    "whyUs": {
+      "title": "Why Us?",
+      "items": [
+        {
+          "title": "Clear Shipping Path",
+          "description": "From the moment of receiving the parcel until delivery"
+        },
+        {
+          "title": "Transparent Prices",
+          "description": "Calculated automatically via the website without surprises"
+        },
+        {
+          "title": "Full Arabic Support",
+          "description": "Via phone, WhatsApp, and email"
+        },
+        {
+          "title": "Accurate Schedules",
+          "description": "For containers, and continuous tracking service"
+        },
+        {
+          "title": "15 Years Experience",
+          "description": "In sea freight and international trade"
+        },
+        {
+          "title": "Fixed Consolidation Center",
+          "description": "In the Netherlands with clear working hours and daily reception"
+        }
+      ]
+    },
+    "stats": [
+      {
+        "number": 15,
+        "suffix": "+",
+        "label": "Years Experience"
+      },
+      {
+        "number": 5000,
+        "suffix": "+",
+        "label": "Shipments Yearly"
+      },
+      {
+        "number": 27,
+        "suffix": "",
+        "label": "European Countries"
+      },
+      {
+        "number": 99,
+        "suffix": "%",
+        "label": "Customer Satisfaction"
+      }
+    ],
+    "cta": {
+      "title": "We Are Here to Make Your Shipping Journey Easier",
+      "subtitle": "From Europe to Syria... a long road, but with MEDO-FREIGHT.EU the process becomes simpler, faster, and safer.",
+      "button": "Start Shipping Now"
+    },
     
     "offices": {
       "title": "Our Offices",
