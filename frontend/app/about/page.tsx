@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
-import { motion, useInView, useScroll, useTransform, useSpring } from "framer-motion";
+import {
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+  useSpring,
+} from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import aboutContent from "@/content/about.json";
@@ -12,7 +18,15 @@ import Image from "next/image";
 export const dynamic = "force-dynamic";
 
 // Animated Counter Component
-function AnimatedCounter({ end, suffix = "", duration = 2 }: { end: number; suffix?: string; duration?: number }) {
+function AnimatedCounter({
+  end,
+  suffix = "",
+  duration = 2,
+}: {
+  end: number;
+  suffix?: string;
+  duration?: number;
+}) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
@@ -75,7 +89,13 @@ function FloatingParticles() {
 }
 
 // 3D Flip Card Component
-function FlipCard({ front, back }: { front: React.ReactNode; back: React.ReactNode }) {
+function FlipCard({
+  front,
+  back,
+}: {
+  front: React.ReactNode;
+  back: React.ReactNode;
+}) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
@@ -91,11 +111,12 @@ function FlipCard({ front, back }: { front: React.ReactNode; back: React.ReactNo
         style={{ transformStyle: "preserve-3d" }}
       >
         {/* Front */}
-        <div className="absolute w-full h-full backface-hidden">
-          {front}
-        </div>
+        <div className="absolute w-full h-full backface-hidden">{front}</div>
         {/* Back */}
-        <div className="absolute w-full h-full backface-hidden" style={{ transform: "rotateY(180deg)" }}>
+        <div
+          className="absolute w-full h-full backface-hidden"
+          style={{ transform: "rotateY(180deg)" }}
+        >
           {back}
         </div>
       </motion.div>
@@ -109,9 +130,9 @@ export default function AboutPage() {
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
-    restDelta: 0.001
+    restDelta: 0.001,
   });
-  
+
   const heroY = useTransform(scrollYProgress, [0, 0.3], [0, 100]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
@@ -124,25 +145,28 @@ export default function AboutPage() {
     {
       name: language === "ar" ? "أحمد محمد" : "Ahmad Mohammad",
       company: language === "ar" ? "شركة النور للتجارة" : "Al Nour Trading",
-      text: language === "ar" 
-        ? "خدمة ممتازة وسريعة. وصلت شحنتي في الوقت المحدد والتعامل كان احترافي جداً."
-        : "Excellent and fast service. My shipment arrived on time and the service was very professional.",
+      text:
+        language === "ar"
+          ? "خدمة ممتازة وسريعة. وصلت شحنتي في الوقت المحدد والتعامل كان احترافي جداً."
+          : "Excellent and fast service. My shipment arrived on time and the service was very professional.",
       rating: 5,
     },
     {
       name: language === "ar" ? "فاطمة علي" : "Fatima Ali",
       company: language === "ar" ? "متجر الإلكترونيات" : "Electronics Store",
-      text: language === "ar"
-        ? "أفضل شركة شحن تعاملت معها. الأسعار واضحة والمتابعة مستمرة."
-        : "The best shipping company I've dealt with. Clear prices and continuous follow-up.",
+      text:
+        language === "ar"
+          ? "أفضل شركة شحن تعاملت معها. الأسعار واضحة والمتابعة مستمرة."
+          : "The best shipping company I've dealt with. Clear prices and continuous follow-up.",
       rating: 5,
     },
     {
       name: language === "ar" ? "محمود حسن" : "Mahmoud Hassan",
       company: language === "ar" ? "مكتب الأثاث" : "Furniture Office",
-      text: language === "ar"
-        ? "شحنت أثاث كامل إلى سوريا، وصل كل شيء سليم. شكراً لفريق العمل المحترف."
-        : "I shipped complete furniture to Syria, everything arrived safely. Thanks to the professional team.",
+      text:
+        language === "ar"
+          ? "شحنت أثاث كامل إلى سوريا، وصل كل شيء سليم. شكراً لفريق العمل المحترف."
+          : "I shipped complete furniture to Syria, everything arrived safely. Thanks to the professional team.",
       rating: 5,
     },
   ];
@@ -152,37 +176,42 @@ export default function AboutPage() {
     {
       year: "2010",
       title: language === "ar" ? "البداية" : "The Beginning",
-      description: language === "ar" 
-        ? "تأسيس الشركة في هولندا"
-        : "Company establishment in Netherlands",
+      description:
+        language === "ar"
+          ? "تأسيس الشركة في هولندا"
+          : "Company establishment in Netherlands",
     },
     {
       year: "2015",
       title: language === "ar" ? "التوسع" : "Expansion",
-      description: language === "ar"
-        ? "افتتاح مركز التجميع الرئيسي"
-        : "Opening of main consolidation center",
+      description:
+        language === "ar"
+          ? "افتتاح مركز التجميع الرئيسي"
+          : "Opening of main consolidation center",
     },
     {
       year: "2018",
       title: language === "ar" ? "الشراكة" : "Partnership",
-      description: language === "ar"
-        ? "شراكة استراتيجية مع الإكرام التجارية"
-        : "Strategic partnership with Al Ikram Trading",
+      description:
+        language === "ar"
+          ? "شراكة استراتيجية مع الإكرام التجارية"
+          : "Strategic partnership with Al Ikram Trading",
     },
     {
       year: "2020",
       title: language === "ar" ? "التطوير" : "Development",
-      description: language === "ar"
-        ? "إطلاق المنصة الإلكترونية"
-        : "Launch of digital platform",
+      description:
+        language === "ar"
+          ? "إطلاق المنصة الإلكترونية"
+          : "Launch of digital platform",
     },
     {
       year: "2025",
       title: language === "ar" ? "الريادة" : "Leadership",
-      description: language === "ar"
-        ? "الشركة الأولى للشحن إلى سوريا"
-        : "Leading company for shipping to Syria",
+      description:
+        language === "ar"
+          ? "الشركة الأولى للشحن إلى سوريا"
+          : "Leading company for shipping to Syria",
     },
   ];
 
@@ -212,9 +241,18 @@ export default function AboutPage() {
 
   // Achievement Badges
   const achievements = [
-    { icon: "🏆", label: language === "ar" ? "ISO 9001" : "ISO 9001 Certified" },
-    { icon: "✅", label: language === "ar" ? "مصرّح أوروبياً" : "EU Authorized" },
-    { icon: "🌟", label: language === "ar" ? "جودة مضمونة" : "Quality Assured" },
+    {
+      icon: "🏆",
+      label: language === "ar" ? "ISO 9001" : "ISO 9001 Certified",
+    },
+    {
+      icon: "✅",
+      label: language === "ar" ? "مصرّح أوروبياً" : "EU Authorized",
+    },
+    {
+      icon: "🌟",
+      label: language === "ar" ? "جودة مضمونة" : "Quality Assured",
+    },
     { icon: "🔒", label: language === "ar" ? "آمن 100%" : "100% Secure" },
   ];
 
@@ -244,7 +282,7 @@ export default function AboutPage() {
           className="relative bg-gradient-to-br from-primary-dark via-primary-dark/95 to-primary-dark/90 text-white py-32 md:py-40 overflow-hidden"
         >
           <FloatingParticles />
-          
+
           {/* Animated Background Shapes */}
           <div className="absolute inset-0 opacity-10">
             <motion.div
@@ -280,7 +318,7 @@ export default function AboutPage() {
             >
               🚢
             </motion.div>
-            
+
             <motion.h1
               initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -289,7 +327,7 @@ export default function AboutPage() {
             >
               {content.mainTitle}
             </motion.h1>
-            
+
             <motion.div
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
@@ -298,7 +336,7 @@ export default function AboutPage() {
             >
               <div className="w-32 h-1.5 bg-primary-yellow rounded-full" />
             </motion.div>
-            
+
             <motion.p
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -322,7 +360,9 @@ export default function AboutPage() {
                   className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20"
                 >
                   <span className="text-2xl mr-2">{achievement.icon}</span>
-                  <span className="text-sm font-semibold">{achievement.label}</span>
+                  <span className="text-sm font-semibold">
+                    {achievement.label}
+                  </span>
                 </motion.div>
               ))}
             </motion.div>
@@ -354,11 +394,14 @@ export default function AboutPage() {
         {/* Stats Section with Enhanced Animations */}
         <div className="bg-gradient-to-r from-primary-dark via-primary-dark/95 to-primary-dark py-24 relative overflow-hidden">
           <div className="absolute inset-0 opacity-5">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }} />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              }}
+            />
           </div>
-          
+
           <div className="container mx-auto px-4 relative z-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {content.stats.map((stat, index) => (
@@ -374,7 +417,9 @@ export default function AboutPage() {
                   <div className="text-5xl md:text-7xl font-bold text-primary-yellow mb-2">
                     <AnimatedCounter end={stat.number} suffix={stat.suffix} />
                   </div>
-                  <div className="text-white text-lg font-semibold">{stat.label}</div>
+                  <div className="text-white text-lg font-semibold">
+                    {stat.label}
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -456,7 +501,7 @@ export default function AboutPage() {
             <div className="max-w-6xl mx-auto relative">
               {/* Timeline Line */}
               <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-primary-yellow/30" />
-              
+
               {timeline.map((item, index) => (
                 <motion.div
                   key={index}
@@ -464,26 +509,36 @@ export default function AboutPage() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className={`flex items-center mb-12 ${index % 2 === 0 ? "flex-row" : "flex-row-reverse"}`}
+                  className={`flex items-center mb-12 ${
+                    index % 2 === 0 ? "flex-row" : "flex-row-reverse"
+                  }`}
                 >
-                  <div className={`w-1/2 ${index % 2 === 0 ? "text-right pr-12" : "text-left pl-12"}`}>
+                  <div
+                    className={`w-1/2 ${
+                      index % 2 === 0 ? "text-right pr-12" : "text-left pl-12"
+                    }`}
+                  >
                     <motion.div
                       whileHover={{ scale: 1.05 }}
                       className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-primary-yellow"
                     >
-                      <div className="text-3xl font-bold text-primary-yellow mb-2">{item.year}</div>
-                      <h3 className="text-2xl font-bold text-primary-dark mb-2">{item.title}</h3>
+                      <div className="text-3xl font-bold text-primary-yellow mb-2">
+                        {item.year}
+                      </div>
+                      <h3 className="text-2xl font-bold text-primary-dark mb-2">
+                        {item.title}
+                      </h3>
                       <p className="text-gray-600">{item.description}</p>
                     </motion.div>
                   </div>
-                  
+
                   <div className="relative z-10">
                     <motion.div
                       whileHover={{ scale: 1.3, rotate: 180 }}
                       className="w-6 h-6 bg-primary-yellow rounded-full border-4 border-white shadow-lg"
                     />
                   </div>
-                  
+
                   <div className="w-1/2" />
                 </motion.div>
               ))}
@@ -516,7 +571,7 @@ export default function AboutPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ 
+                  whileHover={{
                     scale: 1.05,
                     rotateY: 5,
                     rotateX: 5,
@@ -525,7 +580,7 @@ export default function AboutPage() {
                 >
                   {/* Hover Effect Background */}
                   <div className="absolute inset-0 bg-gradient-to-br from-primary-yellow/0 to-primary-yellow/0 group-hover:from-primary-yellow/10 group-hover:to-primary-yellow/5 transition-all duration-300" />
-                  
+
                   <motion.div
                     whileHover={{ scale: 1.2, rotate: 360 }}
                     transition={{ duration: 0.6 }}
@@ -533,7 +588,7 @@ export default function AboutPage() {
                   >
                     {service.icon}
                   </motion.div>
-                  
+
                   <h3 className="text-2xl font-bold text-primary-dark mb-4 relative z-10">
                     {service.title}
                   </h3>
@@ -691,7 +746,7 @@ export default function AboutPage() {
                   <div className="absolute top-4 right-4 text-6xl text-primary-yellow/20">
                     "
                   </div>
-                  
+
                   {/* Rating Stars */}
                   <div className="flex gap-1 mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
@@ -706,11 +761,11 @@ export default function AboutPage() {
                       </motion.span>
                     ))}
                   </div>
-                  
+
                   <p className="text-gray-700 mb-6 leading-relaxed italic">
                     "{testimonial.text}"
                   </p>
-                  
+
                   <div className="border-t border-gray-200 pt-4">
                     <p className="font-bold text-primary-dark text-lg">
                       {testimonial.name}
@@ -753,16 +808,16 @@ export default function AboutPage() {
                 className="bg-white rounded-3xl shadow-2xl p-10 border-t-4 border-primary-yellow hover:shadow-3xl transition-all duration-300"
               >
                 <motion.div
-                  animate={{ 
+                  animate={{
                     rotate: [0, 10, -10, 10, 0],
-                    scale: [1, 1.1, 1, 1.1, 1]
+                    scale: [1, 1.1, 1, 1.1, 1],
                   }}
                   transition={{ duration: 5, repeat: Infinity }}
                   className="text-7xl mb-6 text-center"
                 >
                   🇪🇺
                 </motion.div>
-                
+
                 <div className="mb-8">
                   <h3 className="text-3xl font-bold text-primary-dark mb-3 text-center">
                     {content.offices.europe.title}
@@ -776,45 +831,115 @@ export default function AboutPage() {
                 </div>
 
                 <div className="space-y-6">
-                  <motion.div whileHover={{ x: 10 }} className="flex items-start gap-4">
+                  <motion.div
+                    whileHover={{ x: 10 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <svg
+                        className="w-6 h-6 text-primary-dark"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
                       </svg>
                     </div>
-                    <p className="text-gray-700 text-lg">{content.offices.europe.address}</p>
+                    <p className="text-gray-700 text-lg">
+                      {content.offices.europe.address}
+                    </p>
                   </motion.div>
 
-                  <motion.div whileHover={{ x: 10 }} className="flex items-center gap-4">
+                  <motion.div
+                    whileHover={{ x: 10 }}
+                    className="flex items-center gap-4"
+                  >
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      <svg
+                        className="w-6 h-6 text-primary-dark"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
                       </svg>
                     </div>
-                    <a href={`tel:${content.offices.europe.phone}`} className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold">
+                    <a
+                      href={`tel:${content.offices.europe.phone}`}
+                      className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
+                    >
                       {content.offices.europe.phone}
                     </a>
                   </motion.div>
 
-                  <motion.div whileHover={{ x: 10 }} className="flex items-center gap-4">
+                  <motion.div
+                    whileHover={{ x: 10 }}
+                    className="flex items-center gap-4"
+                  >
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <svg
+                        className="w-6 h-6 text-primary-dark"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
-                    <a href={`mailto:${content.offices.europe.email}`} className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold">
+                    <a
+                      href={`mailto:${content.offices.europe.email}`}
+                      className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
+                    >
                       {content.offices.europe.email}
                     </a>
                   </motion.div>
 
-                  <motion.div whileHover={{ x: 10 }} className="flex items-center gap-4">
+                  <motion.div
+                    whileHover={{ x: 10 }}
+                    className="flex items-center gap-4"
+                  >
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      <svg
+                        className="w-6 h-6 text-primary-dark"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                        />
                       </svg>
                     </div>
-                    <a href={`https://${content.offices.europe.website}`} target="_blank" rel="noopener noreferrer" className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold">
+                    <a
+                      href={`https://${content.offices.europe.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
+                    >
                       {content.offices.europe.website}
                     </a>
                   </motion.div>
@@ -831,16 +956,16 @@ export default function AboutPage() {
                 className="bg-white rounded-3xl shadow-2xl p-10 border-t-4 border-primary-dark hover:shadow-3xl transition-all duration-300"
               >
                 <motion.div
-                  animate={{ 
+                  animate={{
                     rotate: [0, -10, 10, -10, 0],
-                    scale: [1, 1.1, 1, 1.1, 1]
+                    scale: [1, 1.1, 1, 1.1, 1],
                   }}
                   transition={{ duration: 5, repeat: Infinity }}
                   className="text-7xl mb-6 text-center"
                 >
                   🇸🇾
                 </motion.div>
-                
+
                 <div className="mb-8">
                   <h3 className="text-3xl font-bold text-primary-dark mb-3 text-center">
                     {content.offices.syria.title}
@@ -855,15 +980,30 @@ export default function AboutPage() {
 
                 <div className="space-y-6">
                   {content.offices.syria.locations.map((location, index) => (
-                    <motion.div 
+                    <motion.div
                       key={index}
                       whileHover={{ x: 10 }}
                       className="flex items-start gap-4"
                     >
                       <div className="flex-shrink-0 w-12 h-12 bg-primary-dark/10 rounded-full flex items-center justify-center">
-                        <svg className="w-6 h-6 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <svg
+                          className="w-6 h-6 text-primary-dark"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
                         </svg>
                       </div>
                       <div>
@@ -875,24 +1015,56 @@ export default function AboutPage() {
                     </motion.div>
                   ))}
 
-                  <motion.div whileHover={{ x: 10 }} className="flex items-center gap-4">
+                  <motion.div
+                    whileHover={{ x: 10 }}
+                    className="flex items-center gap-4"
+                  >
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-dark/10 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      <svg
+                        className="w-6 h-6 text-primary-dark"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
                       </svg>
                     </div>
-                    <a href={`tel:${content.offices.syria.phone}`} className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold">
+                    <a
+                      href={`tel:${content.offices.syria.phone}`}
+                      className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
+                    >
                       {content.offices.syria.phone}
                     </a>
                   </motion.div>
 
-                  <motion.div whileHover={{ x: 10 }} className="flex items-center gap-4">
+                  <motion.div
+                    whileHover={{ x: 10 }}
+                    className="flex items-center gap-4"
+                  >
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-dark/10 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <svg
+                        className="w-6 h-6 text-primary-dark"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
-                    <a href={`mailto:${content.offices.syria.email}`} className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold">
+                    <a
+                      href={`mailto:${content.offices.syria.email}`}
+                      className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
+                    >
                       {content.offices.syria.email}
                     </a>
                   </motion.div>
@@ -959,7 +1131,7 @@ export default function AboutPage() {
               >
                 {content.cta.title}
               </motion.h2>
-              
+
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -969,17 +1141,14 @@ export default function AboutPage() {
               >
                 {content.cta.subtitle}
               </motion.p>
-              
+
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
-                <Link
-                  href="/create-shipment"
-                  className="inline-block"
-                >
+                <Link href="/create-shipment" className="inline-block">
                   <motion.div
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
@@ -1000,7 +1169,7 @@ export default function AboutPage() {
         </motion.div>
       </main>
 
-      <Footer language={language} />
+      <Footer />
 
       <style jsx global>{`
         .perspective-1000 {

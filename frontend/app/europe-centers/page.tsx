@@ -12,7 +12,7 @@ export default function EuropeCentersPage() {
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
       <Header />
-      
+
       <main className="flex-grow" role="main">
         {/* Hero Section */}
         <div className="bg-primary-dark text-white py-16">
@@ -79,8 +79,8 @@ export default function EuropeCentersPage() {
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
                           {location.services.map((service, idx) => (
-                            <span 
-                              key={idx} 
+                            <span
+                              key={idx}
                               className="bg-primary-yellow text-primary-dark px-3 py-1 rounded-full text-sm font-bold"
                             >
                               {service}
@@ -120,22 +120,22 @@ export default function EuropeCentersPage() {
                       <div className="text-gray-600">{location.city}</div>
                     </div>
                   </div>
-                  
+
                   <div className="mb-4">
                     <div className="text-sm text-gray-500 mb-1">
                       {content.tableHeaders.address}
                     </div>
                     <div className="text-gray-700">{location.address}</div>
                   </div>
-                  
+
                   <div>
                     <div className="text-sm text-gray-500 mb-2">
                       {content.tableHeaders.service}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {location.services.map((service, idx) => (
-                        <span 
-                          key={idx} 
+                        <span
+                          key={idx}
                           className="bg-primary-yellow text-primary-dark px-3 py-1 rounded-full text-sm font-bold"
                         >
                           {service}
@@ -155,7 +155,7 @@ export default function EuropeCentersPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-primary-dark text-center mb-12">
               {content.servicesInfo.title}
             </h2>
-            
+
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* LCL Card */}
               <div className="bg-white rounded-lg shadow-lg p-8 border-t-4 border-primary-yellow">
@@ -211,7 +211,7 @@ export default function EuropeCentersPage() {
         </div>
       </main>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('app', '0008_fclquote_payment_fields'),
+        ('app', '0008_add_offer_fields'),
     ]
 
     operations = [

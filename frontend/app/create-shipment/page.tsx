@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useMemo } from "react";
 import Step1Direction from "@/components/ShipmentForm/Step1Direction";
 import Step3SenderReceiver from "@/components/ShipmentForm/Step3SenderReceiver";
@@ -27,7 +29,9 @@ import { apiService } from "@/lib/api";
 const TOTAL_STEPS = 7;
 
 export default function CreateShipmentPage() {
+  const router = useRouter();
   const { language, setLanguage } = useLanguage();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<ShippingDirection | null>(null);
   const [shipmentTypes, setShipmentTypes] = useState<ShipmentType[]>([
@@ -56,6 +60,37 @@ export default function CreateShipmentPage() {
   const [isCreatingShipment, setIsCreatingShipment] = useState<boolean>(false);
   const [isParcelDetailsValid, setIsParcelDetailsValid] =
     useState<boolean>(false);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  // Show loading spinner while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+        <Header />
+        <div className="h-20" aria-hidden="true" />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-yellow"></div>
+            <p className="mt-4 text-gray-600">
+              {language === "ar" ? "جاري التحميل..." : "Loading..."}
+            </p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Don't render the form if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   // Calculate pricing using API for base price - only when user reaches Step 4
   useEffect(() => {
@@ -1328,7 +1363,7 @@ export default function CreateShipmentPage() {
         </div>
       </div>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

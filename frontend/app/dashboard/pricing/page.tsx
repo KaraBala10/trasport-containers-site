@@ -868,7 +868,7 @@ export default function AdminPricingPage() {
         )}
       </AnimatePresence>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

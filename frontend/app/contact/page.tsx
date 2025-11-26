@@ -96,19 +96,19 @@ export default function ContactPage() {
 
       if (response.data.success) {
         setSubmitStatus("success");
-      setFormData({
+        setFormData({
           fullName: "",
           email: "",
           phone: "",
           subject: "",
           message: "",
-      });
-      setErrors({});
+        });
+        setErrors({});
 
         // Hide success message after 5 seconds
-      setTimeout(() => {
+        setTimeout(() => {
           setSubmitStatus("idle");
-      }, 5000);
+        }, 5000);
       } else {
         throw new Error(response.data.message || "Failed to send message");
       }
@@ -176,7 +176,7 @@ export default function ContactPage() {
       dir={isRTL ? "rtl" : "ltr"}
     >
       <Header />
-      
+
       {/* Spacer for fixed header */}
       <div className="h-20" aria-hidden="true" />
 
@@ -709,7 +709,7 @@ export default function ContactPage() {
         </div>
       </main>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

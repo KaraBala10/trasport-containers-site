@@ -335,7 +335,7 @@ export default function ProhibitedGoodsPage() {
         </div>
       </main>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

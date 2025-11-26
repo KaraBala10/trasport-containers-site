@@ -3741,7 +3741,7 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

@@ -31,97 +31,120 @@ export default function FAQPage() {
       fcl: [
         {
           question: "ما هو الشحن FCL؟",
-          answer: "الشحن FCL يعني استئجار حاوية كاملة لشحنتك فقط، سواء كانت 20 قدم، 40 قدم، أو 40 HC، بدون مشاركة مع أي عميل آخر.",
+          answer:
+            "الشحن FCL يعني استئجار حاوية كاملة لشحنتك فقط، سواء كانت 20 قدم، 40 قدم، أو 40 HC، بدون مشاركة مع أي عميل آخر.",
         },
         {
           question: "ما أنواع الحاويات المتاحة؟",
-          answer: "نوفر عدة أنواع من الحاويات:\n• 20ft Standard\n• 40ft Standard\n• 40ft High Cube\n• Reefer (مبردة)\n• Open Top (مفتوحة السقف)\n• Flat Rack\n• Tank\n(حسب توفر الخط البحري)",
+          answer:
+            "نوفر عدة أنواع من الحاويات:\n• 20ft Standard\n• 40ft Standard\n• 40ft High Cube\n• Reefer (مبردة)\n• Open Top (مفتوحة السقف)\n• Flat Rack\n• Tank\n(حسب توفر الخط البحري)",
         },
         {
           question: "كم تستغرق رحلة الشحن FCL؟",
-          answer: "يعتمد على خط الملاحة والوجهة، عادة بين 20–45 يومًا، إضافة إلى الوقت اللازم للتخليص الجمركي في بلد الوصول.",
+          answer:
+            "يعتمد على خط الملاحة والوجهة، عادة بين 20–45 يومًا، إضافة إلى الوقت اللازم للتخليص الجمركي في بلد الوصول.",
         },
         {
           question: "ماذا يشمل سعر الشحن FCL؟",
-          answer: "غالبًا يشمل:\n• الشحن البحري\n• رسوم التحميل\n• رسوم التوثيق\n\nوقد لا يشمل:\n• التخليص الجمركي\n• رسوم الميناء\n• النقل الداخلي\n• الفحص أو التخزين\n\n(حسب عرض السعر المتفق عليه)",
+          answer:
+            "غالبًا يشمل:\n• الشحن البحري\n• رسوم التحميل\n• رسوم التوثيق\n\nوقد لا يشمل:\n• التخليص الجمركي\n• رسوم الميناء\n• النقل الداخلي\n• الفحص أو التخزين\n\n(حسب عرض السعر المتفق عليه)",
         },
         {
           question: "هل أستطيع تحميل الحاوية عند عنواني؟",
-          answer: "نعم، يمكن إرسال الحاوية إلى عنوان الشاحن لتحميلها (Door Loading)، وتتوفر مدة سماح للتحميل (Free Time) عادة 2 إلى 4 ساعات.",
+          answer:
+            "نعم، يمكن إرسال الحاوية إلى عنوان الشاحن لتحميلها (Door Loading)، وتتوفر مدة سماح للتحميل (Free Time) عادة 2 إلى 4 ساعات.",
         },
         {
           question: "هل يوجد وقت سماح للحاوية داخل ميناء الوصول؟",
-          answer: "نعم، معظم الخطوط توفر 5–7 أيام Free Time داخل ميناء الوصول، وبعدها يتم احتساب غرامات (Demurrage + Detention).",
+          answer:
+            "نعم، معظم الخطوط توفر 5–7 أيام Free Time داخل ميناء الوصول، وبعدها يتم احتساب غرامات (Demurrage + Detention).",
         },
         {
           question: "هل أحتاج إلى وثائق معينة؟",
-          answer: "الوثائق الأساسية لأي شحنة FCL:\n• الفاتورة التجارية\n• قائمة التعبئة\n• بوليصة الشحن\n• شهادة المنشأ (إن لزم)\n• أي تراخيص إضافية للبضائع الخاصة",
+          answer:
+            "الوثائق الأساسية لأي شحنة FCL:\n• الفاتورة التجارية\n• قائمة التعبئة\n• بوليصة الشحن\n• شهادة المنشأ (إن لزم)\n• أي تراخيص إضافية للبضائع الخاصة",
         },
         {
           question: "هل يمكن شحن مواد خطرة؟",
-          answer: "نعم، بشرط الحصول على موافقة مسبقة وتقديم بطاقة MSDS والالتزام بمتطلبات IMO حسب تصنيف المادة.",
+          answer:
+            "نعم، بشرط الحصول على موافقة مسبقة وتقديم بطاقة MSDS والالتزام بمتطلبات IMO حسب تصنيف المادة.",
         },
         {
           question: "هل يمكن تغيير وجهة الحاوية أثناء الرحلة؟",
-          answer: "يمكن لبعض الخطوط البحرية قبول تعديل الوجهة (Change of Destination)، لكن ذلك يخضع لرسوم إضافية عالية.",
+          answer:
+            "يمكن لبعض الخطوط البحرية قبول تعديل الوجهة (Change of Destination)، لكن ذلك يخضع لرسوم إضافية عالية.",
         },
         {
           question: "كيف يتم الدفع؟",
-          answer: "حسب الشركة قد يتوفر:\n• تحويل بنكي\n• اعتماد مستندي LC\n• دفع نقدي\n• دفع إلكتروني\n\nويتم الاتفاق على الدفع مسبقًا قبل إصدار بوليصة الشحن.",
+          answer:
+            "حسب الشركة قد يتوفر:\n• تحويل بنكي\n• اعتماد مستندي LC\n• دفع نقدي\n• دفع إلكتروني\n\nويتم الاتفاق على الدفع مسبقًا قبل إصدار بوليصة الشحن.",
         },
         {
           question: "هل يمكن التأمين على الحاوية والبضاعة؟",
-          answer: "نعم، توفر معظم شركات الشحن تأمينًا اختياريًا عبر بوليصة Cargo Insurance ضد التلف والضياع.",
+          answer:
+            "نعم، توفر معظم شركات الشحن تأمينًا اختياريًا عبر بوليصة Cargo Insurance ضد التلف والضياع.",
         },
         {
           question: "ماذا أفعل إذا تأخرت الحاوية؟",
-          answer: "التأخير غالبًا ناتج عن:\n• ازدحام موانئ\n• ظروف جوية\n• فحص جمركي\n• تغيير خط ملاحي\n\nيجب متابعة الشحنة مع فريق خدمة العملاء عبر رقم الحاوية أو بوليصة الشحن.",
+          answer:
+            "التأخير غالبًا ناتج عن:\n• ازدحام موانئ\n• ظروف جوية\n• فحص جمركي\n• تغيير خط ملاحي\n\nيجب متابعة الشحنة مع فريق خدمة العملاء عبر رقم الحاوية أو بوليصة الشحن.",
         },
       ],
       lcl: [
         {
           question: "ما هو الشحن LCL إلى سورية؟",
-          answer: "الشحن LCL يعني تجميع عدة طرود أو شحنات صغيرة من عدة عملاء داخل حاوية واحدة متجهة إلى سورية. أنت لا تحجز حاوية كاملة، بل تدفع فقط وزن أو حجم شحنتك.",
+          answer:
+            "الشحن LCL يعني تجميع عدة طرود أو شحنات صغيرة من عدة عملاء داخل حاوية واحدة متجهة إلى سورية. أنت لا تحجز حاوية كاملة، بل تدفع فقط وزن أو حجم شحنتك.",
         },
         {
           question: "من أين يتم تجميع الطرود داخل أوروبا؟",
-          answer: "يتم جمع جميع الطرود في مركز التجميع المعتمد الخاص بنا في هولندا:\nWattweg 5, 4622RA Bergen op Zoom, Netherlands.",
+          answer:
+            "يتم جمع جميع الطرود في مركز التجميع المعتمد الخاص بنا في هولندا:\nWattweg 5, 4622RA Bergen op Zoom, Netherlands.",
         },
         {
           question: "ما هو موعد خروج الحاوية إلى سورية؟",
-          answer: "تغادر الحاوية عند اكتمالها عادة بين 20–25 من كل شهر، أو حسب خطة الشحن المعلنة على الموقع. عند اكتمال الحاوية يتم إغلاق الحجوزات فورًا.",
+          answer:
+            "تغادر الحاوية عند اكتمالها عادة بين 20–25 من كل شهر، أو حسب خطة الشحن المعلنة على الموقع. عند اكتمال الحاوية يتم إغلاق الحجوزات فورًا.",
         },
         {
           question: "كم يستغرق وصول الشحنة إلى سورية؟",
-          answer: "يستغرق الوصول بين 25 إلى 40 يومًا حسب خط الملاحة، التفتيش، والظروف التشغيلية بالموانئ.",
+          answer:
+            "يستغرق الوصول بين 25 إلى 40 يومًا حسب خط الملاحة، التفتيش، والظروف التشغيلية بالموانئ.",
         },
         {
           question: "هل يمكنني شحن أي نوع من الطرود؟",
-          answer: "يمكن شحن معظم أنواع الطرود والبضائع المسموح بها قانونيًا.\n\nالممنوعات تشمل: المواد القابلة للاشتعال، البطاريات المنفصلة، المواد الخطرة، النقود، المعادن الثمينة، الأجهزة غير المصرح بها، الأدوية، المواد المحظورة بحسب قوانين الموانئ.",
+          answer:
+            "يمكن شحن معظم أنواع الطرود والبضائع المسموح بها قانونيًا.\n\nالممنوعات تشمل: المواد القابلة للاشتعال، البطاريات المنفصلة، المواد الخطرة، النقود، المعادن الثمينة، الأجهزة غير المصرح بها، الأدوية، المواد المحظورة بحسب قوانين الموانئ.",
         },
         {
           question: "كيف يتم احتساب سعر الشحن LCL؟",
-          answer: "يتم احتساب السعر بناءً على:\n• الوزن (Kg)\nأو\n• الحجم (CBM)\n\nويُحسب السعر على الأساس الأعلى بين الاثنين.",
+          answer:
+            "يتم احتساب السعر بناءً على:\n• الوزن (Kg)\nأو\n• الحجم (CBM)\n\nويُحسب السعر على الأساس الأعلى بين الاثنين.",
         },
         {
           question: "كيف أعرف وزن أو حجم طردي؟",
-          answer: "بعد إدخال أبعاد الطرد (الطول × العرض × الارتفاع) ووزنه في النموذج داخل الموقع، يقوم النظام تلقائيًا بحساب الحجم (CBM) ومقارنته بالوزن، ثم يظهر لك السعر النهائي مباشرة بدون الحاجة لأي حساب يدوي.",
+          answer:
+            "بعد إدخال أبعاد الطرد (الطول × العرض × الارتفاع) ووزنه في النموذج داخل الموقع، يقوم النظام تلقائيًا بحساب الحجم (CBM) ومقارنته بالوزن، ثم يظهر لك السعر النهائي مباشرة بدون الحاجة لأي حساب يدوي.",
         },
         {
           question: "هل أحتاج إلى تغليف خاص؟",
-          answer: "نعم، يجب أن تكون الطرود مغلّفة بإحكام.\n\nالتغليف غير الجيد قد يؤدي لرفض الطرد أو تلفه، ولا تتحمل الشركة مسؤولية التغليف الخاطئ.",
+          answer:
+            "نعم، يجب أن تكون الطرود مغلّفة بإحكام.\n\nالتغليف غير الجيد قد يؤدي لرفض الطرد أو تلفه، ولا تتحمل الشركة مسؤولية التغليف الخاطئ.",
         },
         {
           question: "هل تقومون باستلام الطرود من عنواني في أوروبا؟",
-          answer: "نعم، يتوفر الاستلام من الباب Door Pickup في معظم الدول الأوروبية مقابل رسوم إضافية بحسب الدولة والرمز البريدي.",
+          answer:
+            "نعم، يتوفر الاستلام من الباب Door Pickup في معظم الدول الأوروبية مقابل رسوم إضافية بحسب الدولة والرمز البريدي.",
         },
         {
           question: "هل يمكن تتبع الشحنة؟",
-          answer: "نعم، يتم تزويد العميل بــ رقم تتبع داخلي + إشعارات بوقت الشحن، التحميل، والوصول إلى سورية.",
+          answer:
+            "نعم، يتم تزويد العميل بــ رقم تتبع داخلي + إشعارات بوقت الشحن، التحميل، والوصول إلى سورية.",
         },
         {
           question: "كيف يتم التسليم داخل سورية؟",
-          answer: "يتم التسليم عبر مستودعنا وشركائنا في سورية، مع إمكانية التوصيل داخل المحافظات حسب أسعار التوصيل المتاحة لكل محافظة.",
+          answer:
+            "يتم التسليم عبر مستودعنا وشركائنا في سورية، مع إمكانية التوصيل داخل المحافظات حسب أسعار التوصيل المتاحة لكل محافظة.",
         },
         {
           question: "هل يوجد حد أدنى للوزن؟",
@@ -129,7 +152,8 @@ export default function FAQPage() {
         },
         {
           question: "كيف يمكنني الدفع؟",
-          answer: "يتم الدفع عبر الخيارات التالية:\n\n• الدفع الإلكتروني داخل أوروبا عبر بوابة الدفع Mollie (بطاقات بنكية – iDEAL – SEPA – Bancontact)\n\n• الدفع النقدي (كاش) داخل سورية في مراكزنا المعتمدة\n\n• الدفع عبر مكاتب الصرافة المعتمدة (تحويل محلي داخل سورية حسب التعليمات الظاهرة عند إتمام الطلب)",
+          answer:
+            "يتم الدفع عبر الخيارات التالية:\n\n• الدفع الإلكتروني داخل أوروبا عبر بوابة الدفع Mollie (بطاقات بنكية – iDEAL – SEPA – Bancontact)\n\n• الدفع النقدي (كاش) داخل سورية في مراكزنا المعتمدة\n\n• الدفع عبر مكاتب الصرافة المعتمدة (تحويل محلي داخل سورية حسب التعليمات الظاهرة عند إتمام الطلب)",
         },
       ],
     },
@@ -137,105 +161,131 @@ export default function FAQPage() {
       fcl: [
         {
           question: "What is FCL Shipping?",
-          answer: "FCL shipping means renting a full container for your shipment only, whether 20ft, 40ft, or 40 HC, without sharing with any other customer.",
+          answer:
+            "FCL shipping means renting a full container for your shipment only, whether 20ft, 40ft, or 40 HC, without sharing with any other customer.",
         },
         {
           question: "What types of containers are available?",
-          answer: "We offer several container types:\n• 20ft Standard\n• 40ft Standard\n• 40ft High Cube\n• Reefer\n• Open Top\n• Flat Rack\n• Tank\n(Subject to shipping line availability)",
+          answer:
+            "We offer several container types:\n• 20ft Standard\n• 40ft Standard\n• 40ft High Cube\n• Reefer\n• Open Top\n• Flat Rack\n• Tank\n(Subject to shipping line availability)",
         },
         {
           question: "How long does FCL shipping take?",
-          answer: "It depends on the shipping line and destination, usually between 20–45 days, plus the time needed for customs clearance in the destination country.",
+          answer:
+            "It depends on the shipping line and destination, usually between 20–45 days, plus the time needed for customs clearance in the destination country.",
         },
         {
           question: "What does the FCL shipping price include?",
-          answer: "Usually includes:\n• Ocean freight\n• Loading charges\n• Documentation fees\n\nMay not include:\n• Customs clearance\n• Port charges\n• Inland transportation\n• Inspection or storage\n\n(According to the agreed quotation)",
+          answer:
+            "Usually includes:\n• Ocean freight\n• Loading charges\n• Documentation fees\n\nMay not include:\n• Customs clearance\n• Port charges\n• Inland transportation\n• Inspection or storage\n\n(According to the agreed quotation)",
         },
         {
           question: "Can I load the container at my address?",
-          answer: "Yes, the container can be sent to the shipper's address for loading (Door Loading), with free time usually 2 to 4 hours.",
+          answer:
+            "Yes, the container can be sent to the shipper's address for loading (Door Loading), with free time usually 2 to 4 hours.",
         },
         {
           question: "Is there free time at the destination port?",
-          answer: "Yes, most lines provide 5–7 days free time at the destination port, after which demurrage and detention charges apply.",
+          answer:
+            "Yes, most lines provide 5–7 days free time at the destination port, after which demurrage and detention charges apply.",
         },
         {
           question: "Do I need specific documents?",
-          answer: "Essential documents for FCL shipment:\n• Commercial invoice\n• Packing list\n• Bill of lading\n• Certificate of origin (if required)\n• Any additional licenses for special goods",
+          answer:
+            "Essential documents for FCL shipment:\n• Commercial invoice\n• Packing list\n• Bill of lading\n• Certificate of origin (if required)\n• Any additional licenses for special goods",
         },
         {
           question: "Can dangerous goods be shipped?",
-          answer: "Yes, subject to prior approval and submission of MSDS sheet and compliance with IMO requirements according to material classification.",
+          answer:
+            "Yes, subject to prior approval and submission of MSDS sheet and compliance with IMO requirements according to material classification.",
         },
         {
           question: "Can the container destination be changed during transit?",
-          answer: "Some shipping lines accept change of destination, but this is subject to high additional fees.",
+          answer:
+            "Some shipping lines accept change of destination, but this is subject to high additional fees.",
         },
         {
           question: "How is payment made?",
-          answer: "Depending on the company, options may include:\n• Bank transfer\n• Letter of credit (LC)\n• Cash payment\n• Electronic payment\n\nPayment is agreed upon in advance before issuing the bill of lading.",
+          answer:
+            "Depending on the company, options may include:\n• Bank transfer\n• Letter of credit (LC)\n• Cash payment\n• Electronic payment\n\nPayment is agreed upon in advance before issuing the bill of lading.",
         },
         {
           question: "Can the container and cargo be insured?",
-          answer: "Yes, most shipping companies offer optional insurance via cargo insurance policy against damage and loss.",
+          answer:
+            "Yes, most shipping companies offer optional insurance via cargo insurance policy against damage and loss.",
         },
         {
           question: "What should I do if the container is delayed?",
-          answer: "Delays are usually due to:\n• Port congestion\n• Weather conditions\n• Customs inspection\n• Shipping line change\n\nThe shipment should be tracked with customer service via container number or bill of lading.",
+          answer:
+            "Delays are usually due to:\n• Port congestion\n• Weather conditions\n• Customs inspection\n• Shipping line change\n\nThe shipment should be tracked with customer service via container number or bill of lading.",
         },
       ],
       lcl: [
         {
           question: "What is LCL Shipping to Syria?",
-          answer: "LCL shipping means consolidating several parcels or small shipments from multiple customers into one container headed to Syria. You don't book a full container, you only pay for your shipment's weight or volume.",
+          answer:
+            "LCL shipping means consolidating several parcels or small shipments from multiple customers into one container headed to Syria. You don't book a full container, you only pay for your shipment's weight or volume.",
         },
         {
           question: "Where are parcels consolidated in Europe?",
-          answer: "All parcels are collected at our authorized consolidation center in the Netherlands:\nWattweg 5, 4622RA Bergen op Zoom, Netherlands.",
+          answer:
+            "All parcels are collected at our authorized consolidation center in the Netherlands:\nWattweg 5, 4622RA Bergen op Zoom, Netherlands.",
         },
         {
           question: "When does the container depart to Syria?",
-          answer: "The container departs when full, usually between the 20th–25th of each month, or according to the shipping schedule announced on the website. When the container is full, bookings close immediately.",
+          answer:
+            "The container departs when full, usually between the 20th–25th of each month, or according to the shipping schedule announced on the website. When the container is full, bookings close immediately.",
         },
         {
-          question: "How long does it take for the shipment to arrive in Syria?",
-          answer: "Arrival takes between 25 to 40 days depending on shipping line, inspection, and operational conditions at ports.",
+          question:
+            "How long does it take for the shipment to arrive in Syria?",
+          answer:
+            "Arrival takes between 25 to 40 days depending on shipping line, inspection, and operational conditions at ports.",
         },
         {
           question: "Can I ship any type of parcel?",
-          answer: "Most types of legally permitted parcels and goods can be shipped.\n\nProhibited items include: flammable materials, separate batteries, dangerous goods, cash, precious metals, unauthorized devices, medicines, prohibited materials according to port laws.",
+          answer:
+            "Most types of legally permitted parcels and goods can be shipped.\n\nProhibited items include: flammable materials, separate batteries, dangerous goods, cash, precious metals, unauthorized devices, medicines, prohibited materials according to port laws.",
         },
         {
           question: "How is the LCL shipping price calculated?",
-          answer: "The price is calculated based on:\n• Weight (Kg)\nor\n• Volume (CBM)\n\nThe price is calculated on the higher basis of the two.",
+          answer:
+            "The price is calculated based on:\n• Weight (Kg)\nor\n• Volume (CBM)\n\nThe price is calculated on the higher basis of the two.",
         },
         {
           question: "How do I know my parcel's weight or volume?",
-          answer: "After entering the parcel dimensions (length × width × height) and weight in the form on the website, the system automatically calculates the volume (CBM) and compares it with the weight, then shows you the final price directly without any manual calculation.",
+          answer:
+            "After entering the parcel dimensions (length × width × height) and weight in the form on the website, the system automatically calculates the volume (CBM) and compares it with the weight, then shows you the final price directly without any manual calculation.",
         },
         {
           question: "Do I need special packaging?",
-          answer: "Yes, parcels must be tightly packaged.\n\nPoor packaging may lead to parcel rejection or damage, and the company is not responsible for incorrect packaging.",
+          answer:
+            "Yes, parcels must be tightly packaged.\n\nPoor packaging may lead to parcel rejection or damage, and the company is not responsible for incorrect packaging.",
         },
         {
           question: "Do you pick up parcels from my address in Europe?",
-          answer: "Yes, door pickup is available in most European countries for additional fees according to country and postal code.",
+          answer:
+            "Yes, door pickup is available in most European countries for additional fees according to country and postal code.",
         },
         {
           question: "Can the shipment be tracked?",
-          answer: "Yes, the customer is provided with an internal tracking number + notifications of shipping time, loading, and arrival in Syria.",
+          answer:
+            "Yes, the customer is provided with an internal tracking number + notifications of shipping time, loading, and arrival in Syria.",
         },
         {
           question: "How is delivery done within Syria?",
-          answer: "Delivery is done through our warehouse and partners in Syria, with the possibility of delivery within governorates according to available delivery prices for each governorate.",
+          answer:
+            "Delivery is done through our warehouse and partners in Syria, with the possibility of delivery within governorates according to available delivery prices for each governorate.",
         },
         {
           question: "Is there a minimum weight?",
-          answer: "Yes, the minimum is usually 20 kg per shipment (varies depending on parcel type).",
+          answer:
+            "Yes, the minimum is usually 20 kg per shipment (varies depending on parcel type).",
         },
         {
           question: "How can I pay?",
-          answer: "Payment is made through the following options:\n\n• Electronic payment within Europe via Mollie payment gateway (bank cards – iDEAL – SEPA – Bancontact)\n\n• Cash payment inside Syria at our authorized centers\n\n• Payment through authorized exchange offices (local transfer within Syria according to instructions shown when completing the order)",
+          answer:
+            "Payment is made through the following options:\n\n• Electronic payment within Europe via Mollie payment gateway (bank cards – iDEAL – SEPA – Bancontact)\n\n• Cash payment inside Syria at our authorized centers\n\n• Payment through authorized exchange offices (local transfer within Syria according to instructions shown when completing the order)",
         },
       ],
     },
@@ -265,7 +315,9 @@ export default function FAQPage() {
           className="text-center mb-12"
         >
           <h1 className="text-4xl md:text-5xl font-bold text-primary-dark mb-4">
-            {language === "ar" ? "الأسئلة الشائعة" : "Frequently Asked Questions"}
+            {language === "ar"
+              ? "الأسئلة الشائعة"
+              : "Frequently Asked Questions"}
           </h1>
           <p className="text-gray-600 text-lg">
             {language === "ar"
@@ -346,9 +398,7 @@ export default function FAQPage() {
           {filteredFAQs.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 text-lg">
-                {language === "ar"
-                  ? "لا توجد نتائج للبحث"
-                  : "No results found"}
+                {language === "ar" ? "لا توجد نتائج للبحث" : "No results found"}
               </p>
             </div>
           ) : (
@@ -437,7 +487,7 @@ export default function FAQPage() {
         </motion.div>
       </main>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

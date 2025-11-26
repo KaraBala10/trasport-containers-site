@@ -265,7 +265,7 @@ export default function TrackingPage() {
             <p className="mt-4 text-gray-600">{t.loading}</p>
           </div>
         </main>
-        <Footer language={mounted ? language : "en"} />
+        <Footer />
       </div>
     );
   }
@@ -485,7 +485,7 @@ export default function TrackingPage() {
         </div>
       </main>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

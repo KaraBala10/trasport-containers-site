@@ -3557,7 +3557,7 @@ export default function FCLQuotePage() {
         )}
       </AnimatePresence>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

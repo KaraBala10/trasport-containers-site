@@ -2,14 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-type Language = "ar" | "en";
-
-interface FooterProps {
-  language: Language;
-}
-
-export default function Footer({ language }: FooterProps) {
+export default function Footer() {
+  const { language } = useLanguage();
   const [isMounted, setIsMounted] = useState(false);
   const isRTL = language === "ar";
 
