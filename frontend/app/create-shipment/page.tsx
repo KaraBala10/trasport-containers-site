@@ -22,7 +22,6 @@ import {
   Parcel,
   PersonInfo,
 } from "@/types/shipment";
-import { calculateTotalPricing } from "@/lib/pricing";
 import { PricingResult } from "@/types/pricing";
 import { apiService } from "@/lib/api";
 
@@ -249,25 +248,13 @@ export default function CreateShipmentPage() {
           };
         }
 
-        // Calculate other pricing components (large items)
-        // We'll use the existing calculateTotalPricing but replace basePrice
-        const fullPricing = calculateTotalPricing(
-          regularParcels,
-          [], // Electronics handled separately above
-          largeItemsParcels,
-          [], // initialPackaging - removed
-          [], // finalPackaging - removed (packaging now in parcel cards)
-          0 // Insurance is now calculated in backend
-        );
-
-        // Replace the basePrice with API-calculated value and add packaging + insurance costs
-        // Grand Total = Base LCL Price + Electronics + packaging + insurance
+        // Calculate Grand Total using Backend API data only
         const electronicsTotal = electronicsPricing
           ? electronicsPricing.total
           : 0;
 
-        const pricingWithPackaging = {
-          ...fullPricing,
+        // Build pricing result directly from Backend API
+        const pricingResult = {
           basePrice:
             regularParcels.length > 0
               ? {
@@ -280,52 +267,59 @@ export default function CreateShipmentPage() {
                   priceByCBM: 0,
                   final: 0,
                 },
-          // Add electronics pricing
+          // Electronics pricing from Backend
           electronicsPrice: electronicsPricing,
-          // Add packaging cost from API to final packaging total
+          // Packaging cost from Backend API
           packaging: {
-            ...fullPricing.packaging,
-            total: fullPricing.packaging.total + packagingCostFromAPI,
+            initial: 0,
+            final: packagingCostFromAPI,
+            total: packagingCostFromAPI,
           },
-          // Add insurance cost from API
+          // Insurance cost from Backend API
           insurance: {
-            ...fullPricing.insurance,
             optional: insuranceCostFromAPI,
+            mandatory: 0,
             total: insuranceCostFromAPI,
           },
-          // Update grand total: Base LCL Price + Electronics + packaging + insurance
+          // Grand Total: Base LCL Price + Electronics + packaging + insurance (all from Backend)
           grandTotal:
             (regularParcels.length > 0 ? basePrice.final : 0) +
             electronicsTotal +
             packagingCostFromAPI +
             insuranceCostFromAPI,
         };
-        // Store parcel packaging cost and insurance cost for display
-        (pricingWithPackaging as any).parcelPackagingCost =
-          packagingCostFromAPI;
-        (pricingWithPackaging as any).insuranceCostFromAPI =
-          insuranceCostFromAPI;
-        setPricing(pricingWithPackaging);
+        // Store additional info for display
+        (pricingResult as any).parcelPackagingCost = packagingCostFromAPI;
+        (pricingResult as any).insuranceCostFromAPI = insuranceCostFromAPI;
+        
+        console.log('✅ All pricing calculated from Backend API:', pricingResult);
+        setPricing(pricingResult);
       } catch (error) {
-        console.error("Error calculating pricing:", error);
-        // Fallback to local calculation on error
-        const electronicsParcels = parcels.filter(
-          (p) => p.isElectronicsShipment === true
-        );
-        const largeItemsParcels = parcels.filter((p) => p.itemType);
-        const regularParcels = parcels.filter(
-          (p) => !p.isElectronicsShipment && !p.itemType
-        );
-
-        setPricing(
-          calculateTotalPricing(
-            regularParcels,
-            electronicsParcels,
-            largeItemsParcels,
-            [], // initialPackaging - removed
-            [], // finalPackaging - removed (packaging now in parcel cards)
-            0 // Insurance is now calculated in backend
-          )
+        console.error("❌ Error calculating pricing from Backend:", error);
+        // Set minimal fallback pricing (Backend required)
+        setPricing({
+          basePrice: {
+            priceByWeight: 0,
+            priceByCBM: 0,
+            final: 75, // Minimum base price
+          },
+          packaging: {
+            initial: 0,
+            final: 0,
+            total: 0,
+          },
+          insurance: {
+            optional: 0,
+            mandatory: 0,
+            total: 0,
+          },
+          grandTotal: 75,
+        } as any);
+        
+        alert(
+          language === "ar"
+            ? "حدث خطأ في حساب الأسعار. الرجاء المحاولة مرة أخرى."
+            : "Error calculating pricing. Please try again."
         );
       } finally {
         setPricingLoading(false);
