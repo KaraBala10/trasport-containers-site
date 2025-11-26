@@ -33,7 +33,7 @@ from .email_service import (
     send_status_update_email,
     send_status_update_notification_to_admin,
 )
-from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port
+from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port, ProductRequest
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from .serializers import (
     ChangePasswordSerializer,
@@ -642,17 +642,8 @@ def calculate_pricing_view(request):
         # Calculate Base LCL Price: max(priceByWeight, priceByCBM, 75)
         base_lcl_price = max(total_price_by_weight, total_price_by_cbm, 75)
         
-        # Calculate Parcel Calculation: Weight' = max(entered Weight, 20 kg), Product = Weight' * 3
-        total_entered_weight = sum(
-            float(p.get("weight", 0)) * int(p.get("repeatCount", 1))
-            for p in parcels_data
-        )
-        weight_prime = max(total_entered_weight, 20.0)
-        parcel_calculation = weight_prime * 3
-        
-        # Grand Total = max(Base LCL Price, Parcel Calculation) + packaging + insurance
-        max_base_or_parcel = max(base_lcl_price, parcel_calculation)
-        calculation_total = max_base_or_parcel + total_packaging_cost
+        # Grand Total = Base LCL Price + packaging + insurance
+        calculation_total = base_lcl_price + total_packaging_cost
 
         # Calculate insurance if declaredShipmentValue is provided
         declared_shipment_value = float(
@@ -660,8 +651,8 @@ def calculate_pricing_view(request):
         )
         insurance_cost = 0
         if declared_shipment_value > 0:
-            # Insurance: (max(Base LCL Price, Parcel Calculation) + declared value) * 1.5%
-            insurance_cost = (max_base_or_parcel + declared_shipment_value) * 0.015
+            # Insurance: (Base LCL Price + declared value) * 1.5%
+            insurance_cost = (base_lcl_price + declared_shipment_value) * 0.015
 
         total_price = calculation_total + insurance_cost
 
@@ -669,15 +660,13 @@ def calculate_pricing_view(request):
             "priceByWeight": f"Total Weight × Price per KG = {total_price_by_weight:.2f}",
             "priceByCBM": f"Total CBM × One CBM Price = {total_price_by_cbm:.2f}",
             "baseLCLPrice": f"max({total_price_by_weight:.2f}, {total_price_by_cbm:.2f}, 75) = {base_lcl_price:.2f}",
-            "parcelCalculation": f"Weight' = max({total_entered_weight:.2f}, 20) = {weight_prime:.2f} kg, Product = {weight_prime:.2f} × 3 = {parcel_calculation:.2f}",
-            "maxBaseOrParcel": f"max({base_lcl_price:.2f}, {parcel_calculation:.2f}) = {max_base_or_parcel:.2f}",
             "packagingCost": f"Total Packaging Cost = {total_packaging_cost:.2f}",
-            "calculation": f"{max_base_or_parcel:.2f} + {total_packaging_cost:.2f} = {calculation_total:.2f}",
+            "calculation": f"{base_lcl_price:.2f} + {total_packaging_cost:.2f} = {calculation_total:.2f}",
         }
 
         if insurance_cost > 0:
             formula_dict["insurance"] = (
-                f"({max_base_or_parcel:.2f} + {declared_shipment_value:.2f}) × 1.5% = {insurance_cost:.2f}"
+                f"({base_lcl_price:.2f} + {declared_shipment_value:.2f}) × 1.5% = {insurance_cost:.2f}"
             )
             formula_dict["totalPrice"] = (
                 f"{calculation_total:.2f} + {insurance_cost:.2f} = {total_price:.2f}"
@@ -691,9 +680,6 @@ def calculate_pricing_view(request):
                 "priceByWeight": round(total_price_by_weight, 2),
                 "priceByCBM": round(total_price_by_cbm, 2),
                 "basePrice": round(base_lcl_price, 2),
-                "parcelCalculation": round(parcel_calculation, 2),
-                "weightPrime": round(weight_prime, 2),
-                "maxBaseOrParcel": round(max_base_or_parcel, 2),
                 "packagingCost": round(total_packaging_cost, 2),
                 "calculation": round(calculation_total, 2),
                 "insuranceCost": round(insurance_cost, 2),
@@ -1632,3 +1618,88 @@ def ports_list_view(request):
     
     serializer = PortSerializer(ports, many=True)
     return Response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def request_new_product_view(request):
+    """Handle user requests for new products to be added"""
+    try:
+        product_name = request.data.get("productName")
+        language = request.data.get("language", "en")
+
+        if not product_name:
+            return Response(
+                {"success": False, "error": "Product name is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get the user if authenticated
+        user = request.user if request.user.is_authenticated else None
+
+        # Create the product request
+        product_request = ProductRequest.objects.create(
+            user=user,
+            product_name=product_name,
+            language=language,
+            status="PENDING",
+        )
+
+        # Send email notification to admin
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+
+            # Get all superuser emails
+            admin_emails = list(
+                User.objects.filter(is_superuser=True).values_list("email", flat=True)
+            )
+
+            if admin_emails:
+                user_info = (
+                    f"{user.username} ({user.email})" if user else "Anonymous User"
+                )
+
+                subject = f"New Product Request - {product_name}"
+                message = f"""
+A new product has been requested:
+
+Product Name: {product_name}
+Language: {language}
+Requested by: {user_info}
+Request ID: {product_request.id}
+Date: {product_request.created_at.strftime("%Y-%m-%d %H:%M:%S")}
+
+Please review and add this product to the pricing system if appropriate.
+
+You can manage product requests in the admin panel.
+"""
+
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=admin_emails,
+                    fail_silently=True,
+                )
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to send product request email: {str(e)}")
+
+        return Response(
+            {
+                "success": True,
+                "message": "Product request submitted successfully",
+                "requestId": product_request.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in request_new_product_view: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "Failed to submit product request"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

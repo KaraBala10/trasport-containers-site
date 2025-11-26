@@ -530,3 +530,57 @@ class PackagingPrice(models.Model):
 
     def __str__(self):
         return f"{self.ar_option} / {self.en_option} - €{self.price}"
+
+
+class ProductRequest(models.Model):
+    """Model to store user requests for new products to be added"""
+
+    STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="User",
+        help_text="User who requested the product",
+        null=True,
+        blank=True,
+    )
+    product_name = models.CharField(
+        max_length=255,
+        verbose_name="Product Name",
+        help_text="Name of the requested product",
+    )
+    language = models.CharField(
+        max_length=2,
+        choices=[("ar", "Arabic"), ("en", "English")],
+        default="en",
+        verbose_name="Language",
+        help_text="Language of the product name",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="PENDING",
+        verbose_name="Status",
+    )
+    admin_notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Admin Notes",
+        help_text="Notes from admin regarding this request",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Product Request"
+        verbose_name_plural = "Product Requests"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        user_info = f"{self.user.username}" if self.user else "Anonymous"
+        return f"{self.product_name} - {user_info} ({self.get_status_display()})"

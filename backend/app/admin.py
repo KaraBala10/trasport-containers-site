@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ContactMessage, FCLQuote, PackagingPrice, Price
+from .models import ContactMessage, FCLQuote, PackagingPrice, Price, ProductRequest
 
 
 @admin.register(ContactMessage)
@@ -184,6 +184,44 @@ class PackagingPriceAdmin(admin.ModelAdmin):
             "Pricing",
             {
                 "fields": ("price",),
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+            },
+        ),
+    )
+
+
+@admin.register(ProductRequest)
+class ProductRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "product_name",
+        "user",
+        "language",
+        "status",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = ("status", "language", "created_at", "updated_at")
+    search_fields = ("product_name", "user__username", "user__email")
+    readonly_fields = ("created_at", "updated_at")
+    list_editable = ("status",)
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        (
+            "Request Information",
+            {
+                "fields": ("user", "product_name", "language"),
+            },
+        ),
+        (
+            "Status",
+            {
+                "fields": ("status", "admin_notes"),
             },
         ),
         (

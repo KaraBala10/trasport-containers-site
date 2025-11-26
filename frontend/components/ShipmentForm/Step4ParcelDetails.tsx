@@ -51,6 +51,15 @@ export default function Step4ParcelDetails({
   const [validationErrors, setValidationErrors] = useState<{
     [key: string]: string;
   }>({});
+  const [customProductMode, setCustomProductMode] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [requestingProduct, setRequestingProduct] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [productRequested, setProductRequested] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   // Fetch prices from API
   useEffect(() => {
@@ -141,6 +150,12 @@ export default function Step4ParcelDetails({
       electronicsPrice: "السعر (€)",
       electronicsPicture: "صورة المنتج",
       required: "إجباري",
+      customProduct: "منتج غير موجود في القائمة؟",
+      enterCustomProduct: "أدخل اسم المنتج",
+      requestProduct: "طلب إضافة منتج",
+      backToSelect: "العودة للاختيار من القائمة",
+      productRequested: "تم إرسال الطلب للأدمن",
+      requestingProduct: "جاري الإرسال...",
       length: "الطول (سم)",
       width: "العرض (سم)",
       height: "الارتفاع (سم)",
@@ -182,6 +197,12 @@ export default function Step4ParcelDetails({
       electronicsPrice: "Price (€)",
       electronicsPicture: "Product Picture",
       required: "Required",
+      customProduct: "Product not in list?",
+      enterCustomProduct: "Enter product name",
+      requestProduct: "Request Admin to Add Product",
+      backToSelect: "Back to Select from List",
+      productRequested: "Request sent to admin",
+      requestingProduct: "Sending...",
       length: "Length (cm)",
       width: "Width (cm)",
       height: "Height (cm)",
@@ -569,52 +590,193 @@ export default function Step4ParcelDetails({
               )}
 
               {/* Product Category */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.productCategory} *
-                </label>
-                <select
-                  value={parcel.productCategory}
-                  onChange={(e) =>
-                    updateParcel(parcel.id, "productCategory", e.target.value)
-                  }
-                  disabled={loadingPrices}
-                  className={`w-full px-4 py-3 rounded-xl border-2 ${
-                    validationErrors[parcel.id]
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <option value="">
-                    {loadingPrices
-                      ? language === "ar"
-                        ? "جاري التحميل..."
-                        : "Loading..."
-                      : language === "ar"
-                      ? "اختر..."
-                      : "Select..."}
-                  </option>
-                  {parcel.isElectronicsShipment
-                    ? // For electronics shipments, only show laptop and mobile options
-                      prices
-                        .filter(
-                          (price) =>
-                            price.en_item?.toLowerCase().includes("laptop") ||
-                            price.en_item?.toLowerCase().includes("mobile") ||
-                            price.ar_item?.includes("لابتوب") ||
-                            price.ar_item?.includes("موبايل")
-                        )
-                        .map((price) => (
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    {t.productCategory} *
+                  </label>
+                  {!parcel.isElectronicsShipment && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newMode = !customProductMode[parcel.id];
+                        setCustomProductMode({
+                          ...customProductMode,
+                          [parcel.id]: newMode,
+                        });
+
+                        if (newMode) {
+                          // Switching to custom mode
+                          const updatedParcels = parcels.map((p) =>
+                            p.id === parcel.id
+                              ? {
+                                  ...p,
+                                  isCustomProduct: true,
+                                  productCategory: "",
+                                  customProductName: "",
+                                }
+                              : p
+                          );
+                          onParcelsChange(updatedParcels);
+                        } else {
+                          // Switching back to select mode
+                          const updatedParcels = parcels.map((p) =>
+                            p.id === parcel.id
+                              ? {
+                                  ...p,
+                                  isCustomProduct: false,
+                                  customProductName: "",
+                                }
+                              : p
+                          );
+                          onParcelsChange(updatedParcels);
+                        }
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold underline"
+                    >
+                      {customProductMode[parcel.id]
+                        ? t.backToSelect
+                        : t.customProduct}
+                    </button>
+                  )}
+                </div>
+
+                {customProductMode[parcel.id] ? (
+                  // Custom Product Text Input
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={parcel.customProductName || ""}
+                      onChange={(e) => {
+                        updateParcel(
+                          parcel.id,
+                          "customProductName",
+                          e.target.value
+                        );
+                      }}
+                      placeholder={
+                        language === "ar"
+                          ? "أدخل اسم المنتج (مثال: أدوات طبية متخصصة)"
+                          : "Enter product name (e.g., Specialized Medical Equipment)"
+                      }
+                      autoFocus
+                      className="w-full px-4 py-3 rounded-xl border-2 border-orange-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                    />
+                    {parcel.customProductName && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!parcel.customProductName) return;
+
+                          setRequestingProduct({
+                            ...requestingProduct,
+                            [parcel.id]: true,
+                          });
+
+                          try {
+                            const response = await apiService.requestNewProduct(
+                              {
+                                productName: parcel.customProductName,
+                                language: language,
+                              }
+                            );
+
+                            if (response.data.success) {
+                              setProductRequested({
+                                ...productRequested,
+                                [parcel.id]: true,
+                              });
+                              setTimeout(() => {
+                                setProductRequested({
+                                  ...productRequested,
+                                  [parcel.id]: false,
+                                });
+                              }, 5000);
+                            }
+                          } catch (error) {
+                            console.error("Error requesting product:", error);
+                            alert(
+                              language === "ar"
+                                ? "حدث خطأ في إرسال الطلب"
+                                : "Error sending request"
+                            );
+                          } finally {
+                            setRequestingProduct({
+                              ...requestingProduct,
+                              [parcel.id]: false,
+                            });
+                          }
+                        }}
+                        disabled={
+                          requestingProduct[parcel.id] ||
+                          productRequested[parcel.id]
+                        }
+                        className={`w-full px-4 py-3 rounded-xl font-semibold transition-all ${
+                          productRequested[parcel.id]
+                            ? "bg-green-500 text-white"
+                            : "bg-orange-500 text-white hover:bg-orange-600"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {productRequested[parcel.id]
+                          ? `✓ ${t.productRequested}`
+                          : requestingProduct[parcel.id]
+                          ? t.requestingProduct
+                          : t.requestProduct}
+                      </button>
+                    )}
+                    <p className="text-xs text-gray-600">
+                      {language === "ar"
+                        ? "سيتم إرسال طلب للأدمن لإضافة هذا المنتج مع السعر لاحقاً"
+                        : "A request will be sent to admin to add this product with price later"}
+                    </p>
+                  </div>
+                ) : (
+                  // Regular Select Dropdown
+                  <select
+                    value={parcel.productCategory}
+                    onChange={(e) =>
+                      updateParcel(parcel.id, "productCategory", e.target.value)
+                    }
+                    disabled={loadingPrices}
+                    className={`w-full px-4 py-3 rounded-xl border-2 ${
+                      validationErrors[parcel.id]
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <option value="">
+                      {loadingPrices
+                        ? language === "ar"
+                          ? "جاري التحميل..."
+                          : "Loading..."
+                        : language === "ar"
+                        ? "اختر..."
+                        : "Select..."}
+                    </option>
+                    {parcel.isElectronicsShipment
+                      ? // For electronics shipments, only show laptop and mobile options
+                        prices
+                          .filter(
+                            (price) =>
+                              price.en_item?.toLowerCase().includes("laptop") ||
+                              price.en_item?.toLowerCase().includes("mobile") ||
+                              price.ar_item?.includes("لابتوب") ||
+                              price.ar_item?.includes("موبايل")
+                          )
+                          .map((price) => (
+                            <option key={price.id} value={price.id.toString()}>
+                              {language === "ar"
+                                ? price.ar_item
+                                : price.en_item}
+                            </option>
+                          ))
+                      : prices.map((price) => (
                           <option key={price.id} value={price.id.toString()}>
                             {language === "ar" ? price.ar_item : price.en_item}
                           </option>
-                        ))
-                    : prices.map((price) => (
-                        <option key={price.id} value={price.id.toString()}>
-                          {language === "ar" ? price.ar_item : price.en_item}
-                        </option>
-                      ))}
-                </select>
+                        ))}
+                  </select>
+                )}
                 {validationErrors[parcel.id] && (
                   <p className="mt-1 text-sm text-red-600">
                     {validationErrors[parcel.id]}

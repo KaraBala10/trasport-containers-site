@@ -214,26 +214,13 @@ export default function CreateShipmentPage() {
         );
 
         // Replace the basePrice with API-calculated value and add packaging + insurance costs
-        // Grand Total = max(Base LCL Price, Parcel Calculation) + packaging + insurance
-        const maxBaseOrParcel =
-          (basePrice as any).maxBaseOrParcel || basePrice.final;
-        const parcelCalculation = (basePrice as any).parcelCalculation || 0;
+        // Grand Total = Base LCL Price + packaging + insurance
         const pricingWithPackaging = {
           ...fullPricing,
           basePrice: {
             priceByWeight: basePrice.priceByWeight,
             priceByCBM: basePrice.priceByCBM,
             final: basePrice.final,
-          },
-          parcelPrice: {
-            ...fullPricing.parcelPrice,
-            total: parcelCalculation,
-            breakdown: {
-              ...fullPricing.parcelPrice.breakdown,
-              priceByWeight: parcelCalculation,
-              priceByCBM: 0,
-              priceByProduct: 0,
-            },
           },
           // Add packaging cost from API to final packaging total
           packaging: {
@@ -246,23 +233,15 @@ export default function CreateShipmentPage() {
             optional: insuranceCostFromAPI,
             total: insuranceCostFromAPI,
           },
-          // Update grand total: max(Base LCL Price, Parcel Calculation) + packaging + insurance
+          // Update grand total: Base LCL Price + packaging + insurance
           grandTotal:
-            maxBaseOrParcel + packagingCostFromAPI + insuranceCostFromAPI,
+            basePrice.final + packagingCostFromAPI + insuranceCostFromAPI,
         };
         // Store parcel packaging cost and insurance cost for display
         (pricingWithPackaging as any).parcelPackagingCost =
           packagingCostFromAPI;
         (pricingWithPackaging as any).insuranceCostFromAPI =
           insuranceCostFromAPI;
-        // Store parcel calculation details for display
-        (pricingWithPackaging as any).weightPrime = parcelCalculation
-          ? parcelCalculation / 3
-          : 20;
-        (pricingWithPackaging as any).enteredWeight = parcels.reduce(
-          (sum, p) => sum + (p.weight || 0) * (p.repeatCount || 1),
-          0
-        );
         setPricing(pricingWithPackaging);
       } catch (error) {
         console.error("Error calculating pricing:", error);

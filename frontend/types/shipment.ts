@@ -22,6 +22,8 @@ export interface Parcel {
   weight: number; // kg
   cbm: number; // calculated automatically
   productCategory: string; // Product key (e.g., 'CLOTHES', 'MOBILE_PHONE')
+  isCustomProduct?: boolean; // Flag to indicate custom/new product
+  customProductName?: string; // Custom product name if not in list
   packagingType?: string; // Packaging Price ID
   quantity: number; // Quantity of items
   repeatCount: number; // Number of times this parcel is repeated (default: 1)

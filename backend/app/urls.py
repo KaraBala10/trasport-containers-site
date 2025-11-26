@@ -13,7 +13,8 @@ from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
                     mollie_webhook_view, payment_status_view,
                     respond_to_offer_view, send_edit_request_reply_view,
                     send_payment_reminder_view, update_fcl_quote_status_view,
-                    countries_list_view, cities_list_view, ports_list_view)
+                    countries_list_view, cities_list_view, ports_list_view,
+                    request_new_product_view)
 
 app_name = "app"
 
@@ -79,6 +80,8 @@ urlpatterns = [
     path("countries/", countries_list_view, name="countries_list"),
     path("cities/", cities_list_view, name="cities_list"),
     path("ports/", ports_list_view, name="ports_list"),
+    # Product request endpoint
+    path("request-product/", request_new_product_view, name="request_product"),
     # Admin CRUD endpoints for Price
     path(
         "admin/prices/", PriceListCreateView.as_view(), name="admin_price_list_create"

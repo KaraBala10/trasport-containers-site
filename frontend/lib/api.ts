@@ -229,6 +229,11 @@ export const apiService = {
     return apiClient.get('/packaging-prices/');
   },
 
+  // Request new product
+  requestNewProduct: (data: { productName: string; language: string }) => {
+    return apiClient.post('/request-product/', data);
+  },
+
   // Admin CRUD endpoints for Price
   adminGetPrices: () => {
     return apiClient.get('/admin/prices/');

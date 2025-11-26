@@ -16,7 +16,6 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
       priceByWeight: "حسب الوزن",
       priceByCBM: "حسب الحجم (CBM)",
       minimum: "الحد الأدنى",
-      parcelPrice: "حساب الطرود",
       priceByProduct: "حسب المنتج",
       electronicsPrice: "حساب الإلكترونيات",
       piecePrice: "سعر القطع",
@@ -38,7 +37,6 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
       priceByWeight: "By Weight",
       priceByCBM: "By Volume (CBM)",
       minimum: "Minimum",
-      parcelPrice: "Parcel Calculation",
       priceByProduct: "By Product",
       electronicsPrice: "Electronics Calculation",
       piecePrice: "Piece Price",
@@ -93,49 +91,6 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
             <span className="font-bold text-blue-900">{t.basePrice}</span>
             <span className="text-xl font-bold text-blue-900">
               {pricing.basePrice.final.toFixed(2)} €
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Parcel Price */}
-      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 shadow-lg border-2 border-green-200">
-        <h3 className="text-lg font-bold text-green-900 mb-4">
-          {t.parcelPrice}
-        </h3>
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">
-              {language === "ar" ? "الوزن المدخل" : "Entered Weight"}
-            </span>
-            <span className="font-semibold text-green-900">
-              {((pricing as any).enteredWeight || 0).toFixed(2)} kg
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">
-              {language === "ar"
-                ? "الوزن' (الحد الأدنى 20 كغ)"
-                : "Weight (Min 20 kg)"}
-            </span>
-            <span className="font-semibold text-green-900">
-              {((pricing as any).weightPrime || 20).toFixed(2)} kg
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">
-              {language === "ar"
-                ? "المنتج (الوزن' × 3)"
-                : "Product (Weight × 3)"}
-            </span>
-            <span className="font-semibold text-green-900">
-              {pricing.parcelPrice.total.toFixed(2)} €
-            </span>
-          </div>
-          <div className="pt-3 border-t border-green-300 flex justify-between items-center">
-            <span className="font-bold text-green-900">{t.parcelPrice}</span>
-            <span className="text-xl font-bold text-green-900">
-              {pricing.parcelPrice.total.toFixed(2)} €
             </span>
           </div>
         </div>
