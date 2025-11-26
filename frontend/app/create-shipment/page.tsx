@@ -10,6 +10,7 @@ import Step1Direction from "@/components/ShipmentForm/Step1Direction";
 import Step3SenderReceiver from "@/components/ShipmentForm/Step3SenderReceiver";
 import Step4ParcelDetails from "@/components/ShipmentForm/Step4ParcelDetails";
 import Step5Pricing from "@/components/ShipmentForm/Step5Pricing";
+import Step8InternalTransport from "@/components/ShipmentForm/Step8InternalTransport";
 import Step9Payment from "@/components/ShipmentForm/Step9Payment";
 import Step10Review from "@/components/ShipmentForm/Step10Review";
 import Step11Confirmation from "@/components/ShipmentForm/Step11Confirmation";
@@ -25,7 +26,7 @@ import {
 import { PricingResult } from "@/types/pricing";
 import { apiService } from "@/lib/api";
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 
 export default function CreateShipmentPage() {
   const router = useRouter();
@@ -601,7 +602,7 @@ export default function CreateShipmentPage() {
               >
                 {/* Back Button */}
                 <motion.button
-                  onClick={() => setCurrentStep(3)}
+                  onClick={() => setCurrentStep(2)}
                   className="relative px-8 py-5 bg-white border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-3xl shadow-lg hover:shadow-xl hover:border-primary-dark/30 transition-all duration-300 overflow-hidden group"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.96 }}
@@ -765,7 +766,7 @@ export default function CreateShipmentPage() {
             </motion.div>
           )}
 
-          {/* Step 5 Content - Review */}
+          {/* Step 5 Content - Internal Transport */}
           {currentStep === 5 && direction && (
             <motion.div
               key="step5"
@@ -774,24 +775,16 @@ export default function CreateShipmentPage() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.4 }}
             >
-              <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-                {t.step7Title}
-              </h2>
-              <Step10Review
+              <Step8InternalTransport
                 direction={direction}
-                shipmentTypes={shipmentTypes}
-                sender={sender}
-                receiver={receiver}
-                parcels={parcels}
-                pricing={pricing}
-                acceptedTerms={acceptedTerms}
-                acceptedPolicies={acceptedPolicies}
-                onAcceptedTermsChange={setAcceptedTerms}
-                onAcceptedPoliciesChange={setAcceptedPolicies}
-                onCreateShipment={() => {
-                  // Move to payment step instead of creating shipment
-                  setCurrentStep(6);
-                }}
+                euPickupAddress={euPickupAddress}
+                euPickupWeight={euPickupWeight}
+                onEUPickupAddressChange={setEUPickupAddress}
+                onEUPickupWeightChange={setEUPickupWeight}
+                syriaProvince={syriaProvince}
+                syriaWeight={syriaWeight}
+                onSyriaProvinceChange={setSyriaProvince}
+                onSyriaWeightChange={setSyriaWeight}
                 language={language}
               />
               <motion.div
@@ -833,6 +826,104 @@ export default function CreateShipmentPage() {
                 {/* Continue Button */}
                 <motion.button
                   onClick={() => setCurrentStep(6)}
+                  className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
+                  whileHover={{ scale: 1.08, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                >
+                  <span className="relative z-10 flex items-center gap-3">
+                    {t.continue}
+                    <motion.svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      initial={{ x: 0 }}
+                      whileHover={{ x: language === "ar" ? -5 : 5 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d={
+                          language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"
+                        }
+                      />
+                    </motion.svg>
+                  </span>
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Step 6 Content - Review */}
+          {currentStep === 6 && direction && (
+            <motion.div
+              key="step6"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.4 }}
+            >
+              <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
+                {t.step7Title}
+              </h2>
+              <Step10Review
+                direction={direction}
+                shipmentTypes={shipmentTypes}
+                sender={sender}
+                receiver={receiver}
+                parcels={parcels}
+                pricing={pricing}
+                acceptedTerms={acceptedTerms}
+                acceptedPolicies={acceptedPolicies}
+                onAcceptedTermsChange={setAcceptedTerms}
+                onAcceptedPoliciesChange={setAcceptedPolicies}
+                onCreateShipment={() => {
+                  // Move to payment step instead of creating shipment
+                  setCurrentStep(7);
+                }}
+                language={language}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="flex justify-center items-center gap-4 mt-10"
+              >
+                {/* Back Button */}
+                <motion.button
+                  onClick={() => setCurrentStep(5)}
+                  className="relative px-8 py-5 bg-white border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-3xl shadow-lg hover:shadow-xl hover:border-primary-dark/30 transition-all duration-300 overflow-hidden group"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    <motion.svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      initial={{ x: 0 }}
+                      whileHover={{ x: language === "ar" ? 3 : -3 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d={
+                          language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"
+                        }
+                      />
+                    </motion.svg>
+                    {t.back}
+                  </span>
+                </motion.button>
+
+                {/* Continue Button */}
+                <motion.button
+                  onClick={() => setCurrentStep(7)}
                   disabled={!acceptedTerms || !acceptedPolicies}
                   className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
                     acceptedTerms && acceptedPolicies
@@ -874,10 +965,10 @@ export default function CreateShipmentPage() {
             </motion.div>
           )}
 
-          {/* Step 6 Content - Payment */}
-          {currentStep === 6 && direction && (
+          {/* Step 7 Content - Payment */}
+          {currentStep === 7 && direction && (
             <motion.div
-              key="step8"
+              key="step7"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
@@ -906,7 +997,7 @@ export default function CreateShipmentPage() {
               >
                 {/* Back Button */}
                 <motion.button
-                  onClick={() => setCurrentStep(7)}
+                  onClick={() => setCurrentStep(6)}
                   className="relative px-8 py-5 bg-white border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-3xl shadow-lg hover:shadow-xl hover:border-primary-dark/30 transition-all duration-300 overflow-hidden group"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.96 }}
@@ -984,7 +1075,7 @@ export default function CreateShipmentPage() {
 
                       if (response.data.success) {
                         setShipmentId(response.data.shipment_id);
-                        setCurrentStep(9); // Go to confirmation
+                        setCurrentStep(8); // Go to confirmation
                       } else {
                         console.error(
                           "Failed to create shipment:",
@@ -1074,184 +1165,6 @@ export default function CreateShipmentPage() {
           {currentStep === 8 && direction && shipmentId && (
             <motion.div
               key="step8"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.4 }}
-            >
-              <h2 className="text-2xl font-bold text-primary-dark mb-6 text-center">
-                {t.step8Title}
-              </h2>
-              <Step9Payment
-                direction={direction}
-                paymentMethod={paymentMethod}
-                onPaymentMethodChange={setPaymentMethod}
-                transferSenderName={transferSenderName}
-                transferReference={transferReference}
-                transferSlip={transferSlip}
-                onTransferSenderNameChange={setTransferSenderName}
-                onTransferReferenceChange={setTransferReference}
-                onTransferSlipChange={setTransferSlip}
-                language={language}
-              />
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex justify-center items-center gap-4 mt-10"
-              >
-                {/* Back Button */}
-                <motion.button
-                  onClick={() => setCurrentStep(7)}
-                  className="relative px-8 py-5 bg-white border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-3xl shadow-lg hover:shadow-xl hover:border-primary-dark/30 transition-all duration-300 overflow-hidden group"
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  <span className="relative z-10 flex items-center gap-2">
-                    <motion.svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      initial={{ x: 0 }}
-                      whileHover={{ x: language === "ar" ? 3 : -3 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d={
-                          language === "ar" ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"
-                        }
-                      />
-                    </motion.svg>
-                    {t.back}
-                  </span>
-                </motion.button>
-
-                {/* Continue/Submit Button */}
-                <motion.button
-                  onClick={async () => {
-                    if (!direction) {
-                      console.error("Direction is required to create shipment");
-                      return;
-                    }
-
-                    setIsCreatingShipment(true);
-                    try {
-                      // Prepare shipment data
-                      const shipmentData = {
-                        direction: direction,
-                        shipment_types: shipmentTypes,
-                        sender: sender,
-                        receiver: receiver,
-                        parcels: parcels,
-                        // Packaging is now handled in parcel cards via packagingType field
-                        // Insurance is aggregated from all parcels
-                        declared_shipment_value: parcels.reduce(
-                          (sum, parcel) => {
-                            if (
-                              parcel.wantsInsurance ||
-                              parcel.productCategory === "MOBILE_PHONE" ||
-                              parcel.productCategory === "LAPTOP"
-                            ) {
-                              return sum + (parcel.declaredShipmentValue || 0);
-                            }
-                            return sum;
-                          },
-                          0
-                        ),
-                        eu_pickup_address: euPickupAddress,
-                        eu_pickup_weight: euPickupWeight,
-                        syria_province: syriaProvince,
-                        syria_weight: syriaWeight,
-                        payment_method: paymentMethod,
-                        transfer_sender_name: transferSenderName,
-                        transfer_reference: transferReference,
-                        accepted_terms: acceptedTerms,
-                        accepted_policies: acceptedPolicies,
-                        pricing: pricing,
-                      };
-
-                      // Send data to backend API
-                      const response = await apiService.createShipment(
-                        shipmentData
-                      );
-
-                      // Get shipment ID from backend response
-                      if (response.data && response.data.shipment_id) {
-                        setShipmentId(response.data.shipment_id);
-                        // Move to confirmation step
-                        setCurrentStep(8);
-                      } else if (response.data && response.data.id) {
-                        // Fallback: use id if shipment_id not available
-                        setShipmentId(response.data.id.toString());
-                        setCurrentStep(8);
-                      } else {
-                        console.error("No shipment ID received from backend");
-                        alert(
-                          language === "ar"
-                            ? "حدث خطأ أثناء إنشاء الشحنة"
-                            : "Error creating shipment"
-                        );
-                      }
-                    } catch (error: any) {
-                      console.error("Error creating shipment:", error);
-                      alert(
-                        language === "ar"
-                          ? "حدث خطأ أثناء إنشاء الشحنة. يرجى المحاولة مرة أخرى."
-                          : "Error creating shipment. Please try again."
-                      );
-                    } finally {
-                      setIsCreatingShipment(false);
-                    }
-                  }}
-                  disabled={isCreatingShipment}
-                  className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
-                    isCreatingShipment
-                      ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                      : "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
-                  }`}
-                  whileHover={!isCreatingShipment ? { scale: 1.08, y: -2 } : {}}
-                  whileTap={!isCreatingShipment ? { scale: 0.96 } : {}}
-                >
-                  <span className="relative z-10 flex items-center gap-3">
-                    {isCreatingShipment
-                      ? language === "ar"
-                        ? "جاري الإنشاء..."
-                        : "Creating..."
-                      : language === "ar"
-                      ? "إتمام الطلب"
-                      : "Complete Order"}
-                    <motion.svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      initial={{ x: 0 }}
-                      whileHover={{ x: language === "ar" ? -5 : 5 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d={
-                          language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"
-                        }
-                      />
-                    </motion.svg>
-                  </span>
-                </motion.button>
-              </motion.div>
-            </motion.div>
-          )}
-
-          {/* Step 10 Content - Confirmation (legacy, should not be reached) */}
-          {currentStep === 8 && direction && shipmentId && (
-            <motion.div
-              key="step10"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
