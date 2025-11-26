@@ -1428,6 +1428,40 @@ def initiate_payment_view(request, pk):
         )
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_per_piece_products_view(request):
+    """API endpoint to get products with per_piece pricing unit"""
+    try:
+        # Get all products where minimum_shipping_unit is 'per_piece'
+        per_piece_products = Price.objects.filter(
+            minimum_shipping_unit="per_piece"
+        ).values(
+            "id",
+            "ar_item",
+            "en_item",
+            "price_per_kg",
+            "minimum_shipping_weight",
+            "minimum_shipping_unit",
+        )
+
+        return Response(
+            {
+                "success": True,
+                "products": list(per_piece_products),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching per-piece products: {str(e)}")
+        return Response(
+            {"success": False, "error": "Failed to fetch products"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])  # Mollie webhook doesn't use JWT
 def mollie_webhook_view(request):

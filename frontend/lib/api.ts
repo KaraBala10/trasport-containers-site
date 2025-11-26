@@ -229,6 +229,10 @@ export const apiService = {
     return apiClient.get('/packaging-prices/');
   },
 
+  getPerPieceProducts: () => {
+    return apiClient.get('/per-piece-products/');
+  },
+
   // Request new product
   requestNewProduct: (data: { productName: string; language: string }) => {
     return apiClient.post('/request-product/', data);

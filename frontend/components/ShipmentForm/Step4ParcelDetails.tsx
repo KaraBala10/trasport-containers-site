@@ -17,6 +17,15 @@ interface Price {
   one_cbm: number;
 }
 
+interface PerPieceProduct {
+  id: number;
+  ar_item: string;
+  en_item: string;
+  price_per_kg: string;
+  minimum_shipping_weight: string;
+  minimum_shipping_unit: string;
+}
+
 interface PackagingPrice {
   id: number;
   ar_option: string;
@@ -45,6 +54,9 @@ export default function Step4ParcelDetails({
   onValidationChange,
 }: Step4ParcelDetailsProps) {
   const [prices, setPrices] = useState<Price[]>([]);
+  const [perPieceProducts, setPerPieceProducts] = useState<PerPieceProduct[]>(
+    []
+  );
   const [packagingPrices, setPackagingPrices] = useState<PackagingPrice[]>([]);
   const [loadingPrices, setLoadingPrices] = useState(true);
   const [loadingPackagingPrices, setLoadingPackagingPrices] = useState(true);
@@ -76,7 +88,20 @@ export default function Step4ParcelDetails({
         setLoadingPrices(false);
       }
     };
+
+    const fetchPerPieceProducts = async () => {
+      try {
+        const response = await apiService.getPerPieceProducts();
+        if (response.data.success) {
+          setPerPieceProducts(response.data.products);
+        }
+      } catch (error) {
+        console.error("Failed to fetch per-piece products:", error);
+      }
+    };
+
     fetchPrices();
+    fetchPerPieceProducts();
   }, []);
 
   // Fetch packaging prices from API
@@ -750,22 +775,17 @@ export default function Step4ParcelDetails({
                         : "Select..."}
                     </option>
                     {parcel.isElectronicsShipment
-                      ? // For electronics shipments, only show laptop and mobile options
-                        prices
-                          .filter(
-                            (price) =>
-                              price.en_item?.toLowerCase().includes("laptop") ||
-                              price.en_item?.toLowerCase().includes("mobile") ||
-                              price.ar_item?.includes("لابتوب") ||
-                              price.ar_item?.includes("موبايل")
-                          )
-                          .map((price) => (
-                            <option key={price.id} value={price.id.toString()}>
-                              {language === "ar"
-                                ? price.ar_item
-                                : price.en_item}
-                            </option>
-                          ))
+                      ? // For electronics shipments, use per-piece products
+                        perPieceProducts.map((product) => (
+                          <option
+                            key={product.id}
+                            value={product.id.toString()}
+                          >
+                            {language === "ar"
+                              ? product.ar_item
+                              : product.en_item}
+                          </option>
+                        ))
                       : prices.map((price) => (
                           <option key={price.id} value={price.id.toString()}>
                             {language === "ar" ? price.ar_item : price.en_item}
@@ -986,25 +1006,27 @@ export default function Step4ParcelDetails({
                   })()}
               </div>
 
-              {/* Quantity */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.quantity} *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={parcel.quantity || 1}
-                  onChange={(e) =>
-                    updateParcel(
-                      parcel.id,
-                      "quantity",
-                      parseInt(e.target.value) || 1
-                    )
-                  }
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                />
-              </div>
+              {/* Quantity - Hidden for Electronics Shipment */}
+              {!parcel.isElectronicsShipment && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t.quantity} *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={parcel.quantity || 1}
+                    onChange={(e) =>
+                      updateParcel(
+                        parcel.id,
+                        "quantity",
+                        parseInt(e.target.value) || 1
+                      )
+                    }
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  />
+                </div>
+              )}
 
               {/* Photos - Hidden for Electronics Shipment */}
               {!parcel.isElectronicsShipment && (
