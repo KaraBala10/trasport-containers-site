@@ -14,32 +14,8 @@ export interface ProductCategory {
   hsCode: string;
 }
 
-// Per-KG Product Categories (3€/kg, min 20kg)
-export const PER_KG_PRODUCTS: ProductCategory[] = [
-  { key: 'CLOTHES', name: 'البسة وملابس', nameEn: 'Clothes', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '6204/6203' },
-  { key: 'SHOES', name: 'أحذية', nameEn: 'Shoes', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '6403' },
-  { key: 'ACCESSORIES', name: 'إكسسوارات عامة', nameEn: 'Accessories', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '6117/6217' },
-  { key: 'SMALL_APPLIANCES', name: 'أجهزة منزلية صغيرة', nameEn: 'Small Appliances', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '8509' },
-  { key: 'COSMETICS', name: 'مستحضرات تجميل', nameEn: 'Cosmetics', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '3304' },
-  { key: 'PERFUMES', name: 'عطور', nameEn: 'Perfumes', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '3303' },
-  { key: 'ESSENTIAL_OILS', name: 'زيوت عطرية', nameEn: 'Essential Oils', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '3301' },
-  { key: 'HOUSEHOLD', name: 'أدوات منزلية / مطبخ', nameEn: 'Household Items', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '3924' },
-  { key: 'SPORTS', name: 'معدات رياضية', nameEn: 'Sports Equipment', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '9506' },
-  { key: 'TOYS', name: 'ألعاب أطفال', nameEn: 'Toys', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '9503' },
-  { key: 'FURNITURE_SMALL', name: 'كراسي بلاستيك / ديكور', nameEn: 'Small Furniture', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '9401/3926' },
-  { key: 'FOOD_SNACKS', name: 'حلويات/مقرمشات مغلّفة', nameEn: 'Food & Snacks', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '1704/1905' },
-  { key: 'TOOLS', name: 'أدوات صناعية ويدوية', nameEn: 'Tools', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '8205' },
-  { key: 'FISHING', name: 'معدات صيد', nameEn: 'Fishing Equipment', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '9507' },
-  { key: 'MEDICAL_GENERIC', name: 'معدات طبية عامة', nameEn: 'Medical Equipment', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '9018' },
-  { key: 'CARPETS', name: 'سجاد/موكيت', nameEn: 'Carpets', pricingMethod: 'per-kg', pricePerKg: 3, minimumWeight: 20, hsCode: '5703' },
-];
-
-// Per-Piece Product Categories
-export const PER_PIECE_PRODUCTS: ProductCategory[] = [
-  { key: 'MOBILE_PHONE', name: 'موبايل', nameEn: 'Mobile Phone', pricingMethod: 'per-piece', pricePerPiece: 80, hsCode: '8517.12' },
-  { key: 'LAPTOP', name: 'لابتوب', nameEn: 'Laptop', pricingMethod: 'per-piece', pricePerPiece: 100, hsCode: '8471.30' },
-  { key: 'LARGE_MIRROR', name: 'مرآة كبيرة', nameEn: 'Large Mirror', pricingMethod: 'per-piece', pricePerPiece: 120, hsCode: '7009' },
-];
+// Note: Product prices are now managed via Backend API (Price table in Database)
+// Old hardcoded PER_KG_PRODUCTS and PER_PIECE_PRODUCTS have been removed
 
 // Packaging Options
 export interface PackagingOption {
