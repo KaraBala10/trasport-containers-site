@@ -332,6 +332,17 @@ export const apiService = {
       params: countryCode ? { country: countryCode } : {},
     });
   },
+
+  // Product request endpoints
+  getUserProductRequests: () => {
+    return apiClient.get('/user/product-requests/');
+  },
+  getAllProductRequests: () => {
+    return apiClient.get('/admin/product-requests/');
+  },
+  updateProductRequest: (requestId: number, data: { status?: string; admin_notes?: string }) => {
+    return apiClient.patch(`/admin/product-requests/${requestId}/`, data);
+  },
 };
 
 export default apiClient;

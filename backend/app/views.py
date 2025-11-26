@@ -57,6 +57,7 @@ from .serializers import (
     PackagingPriceSerializer,
     PortSerializer,
     PriceSerializer,
+    ProductRequestSerializer,
     RegisterSerializer,
     UserSerializer,
 )
@@ -1786,5 +1787,113 @@ You can manage product requests in the admin panel.
         logger.error(traceback.format_exc())
         return Response(
             {"success": False, "error": "Failed to submit product request"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def user_product_requests_view(request):
+    """Get all product requests for the authenticated user"""
+    try:
+        # Get product requests for the current user
+        product_requests = ProductRequest.objects.filter(user=request.user).order_by("-created_at")
+        
+        serializer = ProductRequestSerializer(product_requests, many=True)
+        
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in user_product_requests_view: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "Failed to fetch product requests"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_all_product_requests_view(request):
+    """Get all product requests (Admin only)"""
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only admins can view all product requests"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    
+    try:
+        # Get all product requests
+        product_requests = ProductRequest.objects.all().order_by("-created_at")
+        
+        serializer = ProductRequestSerializer(product_requests, many=True)
+        
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in admin_all_product_requests_view: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "Failed to fetch product requests"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def update_product_request_view(request, pk):
+    """Update product request status and admin notes (Admin only)"""
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only admins can update product requests"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    
+    try:
+        product_request = ProductRequest.objects.get(pk=pk)
+        
+        # Update status if provided
+        if "status" in request.data:
+            product_request.status = request.data["status"]
+        
+        # Update admin notes if provided
+        if "admin_notes" in request.data:
+            product_request.admin_notes = request.data["admin_notes"]
+        
+        product_request.save()
+        
+        serializer = ProductRequestSerializer(product_request)
+        
+        return Response(
+            {
+                "success": True,
+                "message": "Product request updated successfully",
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    except ProductRequest.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Product request not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in update_product_request_view: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "Failed to update product request"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port
+from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port, ProductRequest
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -405,3 +405,25 @@ class PortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Port
         fields = ("id", "name_en", "name_ar", "code", "country", "country_name_en", "country_name_ar")
+
+
+class ProductRequestSerializer(serializers.ModelSerializer):
+    """Serializer for Product Request"""
+    user_username = serializers.CharField(source="user.username", read_only=True)
+    user_email = serializers.CharField(source="user.email", read_only=True)
+    
+    class Meta:
+        model = ProductRequest
+        fields = (
+            "id",
+            "user",
+            "user_username",
+            "user_email",
+            "product_name",
+            "language",
+            "status",
+            "admin_notes",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "user", "user_username", "user_email", "created_at", "updated_at")

@@ -14,7 +14,9 @@ from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
                     respond_to_offer_view, send_edit_request_reply_view,
                     send_payment_reminder_view, update_fcl_quote_status_view,
                     countries_list_view, cities_list_view, ports_list_view,
-                    request_new_product_view, get_per_piece_products_view)
+                    request_new_product_view, user_product_requests_view,
+                    admin_all_product_requests_view, update_product_request_view,
+                    get_per_piece_products_view)
 
 app_name = "app"
 
@@ -81,8 +83,11 @@ urlpatterns = [
     path("countries/", countries_list_view, name="countries_list"),
     path("cities/", cities_list_view, name="cities_list"),
     path("ports/", ports_list_view, name="ports_list"),
-    # Product request endpoint
+    # Product request endpoints
     path("request-product/", request_new_product_view, name="request_product"),
+    path("user/product-requests/", user_product_requests_view, name="user_product_requests"),
+    path("admin/product-requests/", admin_all_product_requests_view, name="admin_all_product_requests"),
+    path("admin/product-requests/<int:pk>/", update_product_request_view, name="update_product_request"),
     # Admin CRUD endpoints for Price
     path(
         "admin/prices/", PriceListCreateView.as_view(), name="admin_price_list_create"

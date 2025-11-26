@@ -86,6 +86,19 @@ interface EditRequestMessage {
   created_at: string;
 }
 
+interface ProductRequest {
+  id: number;
+  user: number;
+  user_username: string;
+  user_email: string;
+  product_name: string;
+  language: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function DashboardPage() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const { language, setLanguage, isRTL, mounted } = useLanguage();
@@ -115,6 +128,11 @@ export default function DashboardPage() {
   const [processingPayment, setProcessingPayment] = useState<number | null>(
     null
   );
+  const [productRequests, setProductRequests] = useState<ProductRequest[]>([]);
+  const [editingProductRequest, setEditingProductRequest] = useState<number | null>(null);
+  const [productRequestStatus, setProductRequestStatus] = useState<string>("");
+  const [productRequestNotes, setProductRequestNotes] = useState<string>("");
+  const [updatingProductRequest, setUpdatingProductRequest] = useState(false);
 
   const translations = useMemo(
     () => ({
@@ -225,6 +243,23 @@ export default function DashboardPage() {
         OUT_FOR_DELIVERY: "خارج للتسليم",
         DELIVERED: "تم التسليم",
         CANCELLED: "ملغى",
+        // Product Requests
+        myProductRequests: "طلبات المنتجات الخاصة بي",
+        noProductRequests: "لا توجد طلبات منتجات حتى الآن",
+        productName: "اسم المنتج",
+        requestStatus: "حالة الطلب",
+        requestDate: "تاريخ الطلب",
+        adminNotes: "ملاحظات الإدارة",
+        PENDING: "قيد المراجعة",
+        APPROVED: "تمت الموافقة",
+        REJECTED: "مرفوض",
+        allProductRequests: "كل طلبات المنتجات",
+        requestedBy: "طلب من",
+        updateStatus: "تحديث الحالة",
+        addNotes: "إضافة ملاحظات",
+        save: "حفظ",
+        updating: "جاري التحديث...",
+        updated: "تم التحديث بنجاح",
       },
       en: {
         dashboard: "Dashboard",
@@ -327,6 +362,23 @@ export default function DashboardPage() {
         OUT_FOR_DELIVERY: "Out for Delivery",
         DELIVERED: "Delivered",
         CANCELLED: "Cancelled",
+        // Product Requests
+        myProductRequests: "My Product Requests",
+        noProductRequests: "No product requests yet",
+        productName: "Product Name",
+        requestStatus: "Request Status",
+        requestDate: "Request Date",
+        adminNotes: "Admin Notes",
+        PENDING: "Under Review",
+        APPROVED: "Approved",
+        REJECTED: "Rejected",
+        allProductRequests: "All Product Requests",
+        requestedBy: "Requested by",
+        updateStatus: "Update Status",
+        addNotes: "Add Notes",
+        save: "Save",
+        updating: "Updating...",
+        updated: "Updated successfully",
       },
     }),
     []
@@ -401,6 +453,31 @@ export default function DashboardPage() {
 
     fetchFCLQuotes();
   }, [isAuthenticated, mounted, router]);
+
+  // Fetch user's product requests (or all for admin)
+  useEffect(() => {
+    const fetchProductRequests = async () => {
+      if (!isAuthenticated || !mounted) return;
+
+      try {
+        // If admin, fetch all requests; if user, fetch only theirs
+        const response = user?.is_superuser
+          ? await apiService.getAllProductRequests()
+          : await apiService.getUserProductRequests();
+          
+        if (response.data?.success && Array.isArray(response.data.data)) {
+          setProductRequests(response.data.data);
+        } else {
+          setProductRequests([]);
+        }
+      } catch (error: any) {
+        console.error("Error fetching product requests:", error);
+        setProductRequests([]);
+      }
+    };
+
+    fetchProductRequests();
+  }, [isAuthenticated, mounted, user?.is_superuser]);
 
   // Toggle quote expansion
   const toggleQuote = (quoteId: number) => {
@@ -527,6 +604,42 @@ export default function DashboardPage() {
       console.error("Error initiating payment:", error);
       alert(t.error + ": " + (error.response?.data?.error || error.response?.data?.message || error.message));
       setProcessingPayment(null);
+    }
+  };
+
+  // Handle edit product request (admin only)
+  const handleEditProductRequest = (request: ProductRequest) => {
+    setEditingProductRequest(request.id);
+    setProductRequestStatus(request.status);
+    setProductRequestNotes(request.admin_notes || "");
+  };
+
+  // Handle update product request (admin only)
+  const handleUpdateProductRequest = async () => {
+    if (!editingProductRequest) return;
+
+    try {
+      setUpdatingProductRequest(true);
+      await apiService.updateProductRequest(editingProductRequest, {
+        status: productRequestStatus,
+        admin_notes: productRequestNotes,
+      });
+
+      // Refresh product requests
+      const response = await apiService.getAllProductRequests();
+      if (response.data?.success && Array.isArray(response.data.data)) {
+        setProductRequests(response.data.data);
+      }
+
+      setEditingProductRequest(null);
+      setProductRequestStatus("");
+      setProductRequestNotes("");
+      alert(t.updated);
+    } catch (error: any) {
+      console.error("Error updating product request:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    } finally {
+      setUpdatingProductRequest(false);
     }
   };
 
@@ -3592,6 +3705,198 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+
+            {/* Product Requests Card */}
+            {productRequests.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
+                <h2 className="text-2xl font-bold text-primary-dark mb-6 flex items-center gap-3">
+                  <div className="w-1 h-8 bg-primary-yellow rounded-full"></div>
+                  {user?.is_superuser ? t.allProductRequests : t.myProductRequests}
+                </h2>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b-2 border-gray-200">
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          {t.productName}
+                        </th>
+                        {user?.is_superuser && (
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                            {t.requestedBy}
+                          </th>
+                        )}
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          {t.requestStatus}
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          {t.requestDate}
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          {t.adminNotes}
+                        </th>
+                        {user?.is_superuser && (
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                            {t.actions}
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productRequests.map((request) => (
+                        <tr
+                          key={request.id}
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="py-4 px-4">
+                            <span className="font-medium text-gray-900">
+                              {request.product_name}
+                            </span>
+                            <span className="text-xs text-gray-500 ml-2">
+                              ({request.language === "ar" ? "عربي" : "English"})
+                            </span>
+                          </td>
+                          {user?.is_superuser && (
+                            <td className="py-4 px-4">
+                              <div className="text-sm">
+                                <div className="font-medium text-gray-900">
+                                  {request.user_username || (language === "ar" ? "مجهول" : "Anonymous")}
+                                </div>
+                                {request.user_email && (
+                                  <div className="text-gray-500 text-xs">{request.user_email}</div>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                          <td className="py-4 px-4">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                request.status === "PENDING"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : request.status === "APPROVED"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {t[request.status]}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {new Date(request.created_at).toLocaleDateString(
+                              language === "ar" ? "ar-SA" : "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            {request.admin_notes ? (
+                              <span className="text-gray-700 text-sm">
+                                {request.admin_notes}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 italic text-sm">
+                                {language === "ar" ? "لا توجد ملاحظات" : "No notes"}
+                              </span>
+                            )}
+                          </td>
+                          {user?.is_superuser && (
+                            <td className="py-4 px-4">
+                              <button
+                                onClick={() => handleEditProductRequest(request)}
+                                className="text-primary-yellow hover:text-primary-yellow/80 font-medium text-sm flex items-center gap-1"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                {t.edit}
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {productRequests.length === 0 && (
+                  <p className="text-center text-gray-500 py-8">
+                    {t.noProductRequests}
+                  </p>
+                )}
+
+                {/* Edit Product Request Modal */}
+                {editingProductRequest && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                      <h3 className="text-lg font-bold text-primary-dark mb-4">
+                        {t.updateStatus}
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {t.requestStatus}
+                          </label>
+                          <select
+                            value={productRequestStatus}
+                            onChange={(e) => setProductRequestStatus(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                          >
+                            <option value="PENDING">{t.PENDING}</option>
+                            <option value="APPROVED">{t.APPROVED}</option>
+                            <option value="REJECTED">{t.REJECTED}</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {t.adminNotes}
+                          </label>
+                          <textarea
+                            value={productRequestNotes}
+                            onChange={(e) => setProductRequestNotes(e.target.value)}
+                            rows={4}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
+                            placeholder={language === "ar" ? "أضف ملاحظات..." : "Add notes..."}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 justify-end mt-6">
+                        <button
+                          onClick={() => {
+                            setEditingProductRequest(null);
+                            setProductRequestStatus("");
+                            setProductRequestNotes("");
+                          }}
+                          disabled={updatingProductRequest}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {t.cancel}
+                        </button>
+                        <button
+                          onClick={handleUpdateProductRequest}
+                          disabled={updatingProductRequest}
+                          className="px-4 py-2 text-sm font-medium text-white bg-primary-yellow hover:bg-primary-yellow/90 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {updatingProductRequest ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              {t.updating}
+                            </>
+                          ) : (
+                            t.save
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Account Information Card */}
             <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
