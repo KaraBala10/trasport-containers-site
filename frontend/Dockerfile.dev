@@ -1,6 +1,9 @@
-FROM node:20-slim
+FROM node:20-alpine
 
 WORKDIR /app
+
+# Install necessary dependencies for Next.js SWC
+RUN apk add --no-cache libc6-compat
 
 # Copy package files
 COPY package.json package-lock.json* ./

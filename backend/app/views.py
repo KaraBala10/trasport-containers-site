@@ -1717,6 +1717,10 @@ def request_new_product_view(request):
             admin_emails = list(
                 User.objects.filter(is_superuser=True).values_list("email", flat=True)
             )
+            
+            # Add ADMIN_EMAIL from settings if configured
+            if settings.ADMIN_EMAIL and settings.ADMIN_EMAIL not in admin_emails:
+                admin_emails.append(settings.ADMIN_EMAIL)
 
             if admin_emails:
                 user_info = (
