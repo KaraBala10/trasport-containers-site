@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Parcel, ShipmentType } from "@/types/shipment";
-import { calculateCBM } from "@/lib/pricing";
 import { apiService } from "@/lib/api";
 
 interface Price {
@@ -349,21 +348,19 @@ export default function Step4ParcelDetails({
           const width = field === "width" ? value : parcel.width || 0;
           const height = field === "height" ? value : parcel.height || 0;
           
-          // Try to use Backend API first
+          // Calculate CBM using Backend API only
           try {
             const response = await apiService.calculateCBM(length, width, height);
             if (response.data.success) {
               updatedParcel.cbm = response.data.cbm;
               console.log('✅ CBM calculated from Backend API:', response.data.cbm);
             } else {
-              // Fallback to local calculation
-              updatedParcel.cbm = calculateCBM(length, width, height);
-              console.log('⚠️ Backend returned error, using local CBM calculation');
+              console.error('❌ Backend API returned error for CBM calculation');
+              updatedParcel.cbm = 0;
             }
           } catch (error) {
-            // Fallback to local calculation on error
-            updatedParcel.cbm = calculateCBM(length, width, height);
-            console.log('⚠️ Backend API failed, using local CBM calculation:', error);
+            console.error('❌ Backend API failed for CBM calculation:', error);
+            updatedParcel.cbm = 0;
           }
         }
 
