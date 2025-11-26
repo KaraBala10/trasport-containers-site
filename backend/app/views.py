@@ -1431,8 +1431,43 @@ def initiate_payment_view(request, pk):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
+def get_regular_products_view(request):
+    """API endpoint to get regular products with per_kg pricing unit"""
+    try:
+        # Get all products where minimum_shipping_unit is 'per_kg'
+        regular_products = Price.objects.filter(
+            minimum_shipping_unit="per_kg"
+        ).values(
+            "id",
+            "ar_item",
+            "en_item",
+            "price_per_kg",
+            "minimum_shipping_weight",
+            "minimum_shipping_unit",
+            "one_cbm",
+        )
+
+        return Response(
+            {
+                "success": True,
+                "products": list(regular_products),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching regular products: {str(e)}")
+        return Response(
+            {"success": False, "error": "Failed to fetch regular products"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
 def get_per_piece_products_view(request):
-    """API endpoint to get products with per_piece pricing unit"""
+    """API endpoint to get products with per_piece pricing unit (Electronics)"""
     try:
         # Get all products where minimum_shipping_unit is 'per_piece'
         per_piece_products = Price.objects.filter(

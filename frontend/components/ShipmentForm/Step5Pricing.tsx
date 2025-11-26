@@ -132,10 +132,6 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
           </h3>
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-gray-700">{t.minimumElectronics}</span>
-              <span className="font-semibold text-purple-900">75.00 €</span>
-            </div>
-            <div className="flex justify-between items-center">
               <span className="text-gray-700">{t.piecePrice}</span>
               <span className="font-semibold text-purple-900">
                 {pricing.electronicsPrice.breakdown.piecePrice.toFixed(2)} €

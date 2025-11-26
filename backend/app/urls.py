@@ -16,7 +16,7 @@ from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
                     countries_list_view, cities_list_view, ports_list_view,
                     request_new_product_view, user_product_requests_view,
                     admin_all_product_requests_view, update_product_request_view,
-                    get_per_piece_products_view)
+                    get_per_piece_products_view, get_regular_products_view)
 
 app_name = "app"
 
@@ -78,6 +78,7 @@ urlpatterns = [
     path("calculate-pricing/", calculate_pricing_view, name="calculate_pricing"),
     path("prices/", get_prices_view, name="get_prices"),
     path("packaging-prices/", get_packaging_prices_view, name="get_packaging_prices"),
+    path("regular-products/", get_regular_products_view, name="regular_products"),
     path("per-piece-products/", get_per_piece_products_view, name="per_piece_products"),
     # Location endpoints
     path("countries/", countries_list_view, name="countries_list"),

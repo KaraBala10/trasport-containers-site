@@ -229,6 +229,10 @@ export const apiService = {
     return apiClient.get('/packaging-prices/');
   },
 
+  getRegularProducts: () => {
+    return apiClient.get('/regular-products/');
+  },
+
   getPerPieceProducts: () => {
     return apiClient.get('/per-piece-products/');
   },

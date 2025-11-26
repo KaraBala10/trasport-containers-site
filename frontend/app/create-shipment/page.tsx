@@ -211,9 +211,6 @@ export default function CreateShipmentPage() {
             }
           });
 
-          // Apply minimum of 75€
-          electronicsTotal = Math.max(electronicsTotal, 75);
-
           // Calculate insurance for electronics (forced)
           const electronicsInsuranceValue = electronicsParcels.reduce(
             (sum, p) =>

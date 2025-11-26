@@ -53,6 +53,7 @@ export default function Step4ParcelDetails({
   onValidationChange,
 }: Step4ParcelDetailsProps) {
   const [prices, setPrices] = useState<Price[]>([]);
+  const [regularProducts, setRegularProducts] = useState<Price[]>([]);
   const [perPieceProducts, setPerPieceProducts] = useState<PerPieceProduct[]>(
     []
   );
@@ -88,11 +89,24 @@ export default function Step4ParcelDetails({
       }
     };
 
+    const fetchRegularProducts = async () => {
+      try {
+        const response = await apiService.getRegularProducts();
+        if (response.data.success && response.data.products) {
+          setRegularProducts(response.data.products);
+          console.log('✅ Regular products loaded:', response.data.products.length);
+        }
+      } catch (error) {
+        console.error("Failed to fetch regular products:", error);
+      }
+    };
+
     const fetchPerPieceProducts = async () => {
       try {
         const response = await apiService.getPerPieceProducts();
         if (response.data.success) {
           setPerPieceProducts(response.data.products);
+          console.log('✅ Per-piece products (Electronics) loaded:', response.data.products.length);
         }
       } catch (error) {
         console.error("Failed to fetch per-piece products:", error);
@@ -100,6 +114,7 @@ export default function Step4ParcelDetails({
     };
 
     fetchPrices();
+    fetchRegularProducts();
     fetchPerPieceProducts();
   }, []);
 
@@ -789,7 +804,7 @@ export default function Step4ParcelDetails({
                         : "Select..."}
                     </option>
                     {parcel.isElectronicsShipment
-                      ? // For electronics shipments, use per-piece products
+                      ? // For electronics shipments, use per-piece products only
                         perPieceProducts.map((product) => (
                           <option
                             key={product.id}
@@ -800,7 +815,8 @@ export default function Step4ParcelDetails({
                               : product.en_item}
                           </option>
                         ))
-                      : prices.map((price) => (
+                      : // For regular parcels, use regular products only (per_kg)
+                        regularProducts.map((price) => (
                           <option key={price.id} value={price.id.toString()}>
                             {language === "ar" ? price.ar_item : price.en_item}
                           </option>
