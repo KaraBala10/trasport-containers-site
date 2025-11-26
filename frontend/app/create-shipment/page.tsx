@@ -84,36 +84,18 @@ export default function CreateShipmentPage() {
       setPricingLoading(true);
 
       try {
-        // Separate parcels by type based on shipment types selected
-        // Parcel LCL: all parcels that are not electronics or large items
-        const regularParcels = parcels.filter((p) => {
-          // If electronics is selected, exclude electronics products
-          if (shipmentTypes.includes("electronics")) {
-            const isElectronics =
-              p.productCategory === "MOBILE_PHONE" ||
-              p.productCategory === "LAPTOP" ||
-              p.productCategory === "LARGE_MIRROR";
-            if (isElectronics) return false;
-          }
-          // If large items is selected, exclude large items (they have itemType)
-          if (shipmentTypes.includes("large-items") && p.itemType) {
-            return false;
-          }
-          return true;
-        });
-
-        // Electronics: parcels with electronics product categories
+        // Separate parcels by type using isElectronicsShipment flag
+        // Electronics Shipments: parcels marked with isElectronicsShipment flag
         const electronicsParcels = parcels.filter(
-          (p) =>
-            shipmentTypes.includes("electronics") &&
-            (p.productCategory === "MOBILE_PHONE" ||
-              p.productCategory === "LAPTOP" ||
-              p.productCategory === "LARGE_MIRROR")
+          (p) => p.isElectronicsShipment === true
         );
 
         // Large Items: parcels with itemType field
-        const largeItemsParcels = parcels.filter(
-          (p) => shipmentTypes.includes("large-items") && p.itemType
+        const largeItemsParcels = parcels.filter((p) => p.itemType);
+
+        // Regular Parcels: all other parcels
+        const regularParcels = parcels.filter(
+          (p) => !p.isElectronicsShipment && !p.itemType
         );
 
         // Prepare parcels data for API
@@ -143,11 +125,7 @@ export default function CreateShipmentPage() {
           try {
             // Aggregate insurance values from all parcels
             const totalDeclaredShipmentValue = parcels.reduce((sum, parcel) => {
-              if (
-                parcel.wantsInsurance ||
-                parcel.productCategory === "MOBILE_PHONE" ||
-                parcel.productCategory === "LAPTOP"
-              ) {
+              if (parcel.wantsInsurance || parcel.isElectronicsShipment) {
                 return sum + (parcel.declaredShipmentValue || 0);
               }
               return sum;
@@ -202,11 +180,80 @@ export default function CreateShipmentPage() {
           };
         }
 
-        // Calculate other pricing components (electronics, large items)
+        // Calculate Electronics Pricing separately (per piece from Price table, minimum 75€)
+        let electronicsPricing:
+          | {
+              total: number;
+              breakdown: {
+                piecePrice: number;
+                insurance: number;
+                packaging: number;
+                final: number;
+              };
+            }
+          | undefined;
+        if (electronicsParcels.length > 0) {
+          // Get prices from API for electronics
+          const pricesResponse = await apiService.getPrices();
+          const pricesData = pricesResponse.data.success
+            ? pricesResponse.data.prices
+            : pricesResponse.data;
+
+          // Calculate electronics price using Price table and repeatCount
+          let electronicsTotal = 0;
+          electronicsParcels.forEach((parcel) => {
+            const priceEntry = pricesData.find(
+              (p: any) => p.id.toString() === parcel.productCategory
+            );
+            if (priceEntry) {
+              const pricePerPiece = parseFloat(priceEntry.price_per_kg);
+              const repeatCount = parcel.repeatCount || 1;
+              electronicsTotal += pricePerPiece * repeatCount;
+            }
+          });
+
+          // Apply minimum of 75€
+          electronicsTotal = Math.max(electronicsTotal, 75);
+
+          // Calculate insurance for electronics (forced)
+          const electronicsInsuranceValue = electronicsParcels.reduce(
+            (sum, p) =>
+              sum + (p.declaredShipmentValue || 0) * (p.repeatCount || 1),
+            0
+          );
+          const electronicsInsurance =
+            (electronicsTotal + electronicsInsuranceValue) * 0.015;
+
+          // Calculate packaging for electronics
+          // Base packaging: 5€ per piece × repeatCount (forced)
+          let electronicsPackaging = 0;
+          electronicsParcels.forEach((p) => {
+            const repeatCount = p.repeatCount || 1;
+            // Add base packaging: 5€ × repeatCount
+            electronicsPackaging += 5 * repeatCount;
+          });
+
+          // Note: Additional packaging from packagingType will be calculated by backend API
+          // and added to the total packagingCostFromAPI
+
+          electronicsPricing = {
+            total:
+              electronicsTotal + electronicsInsurance + electronicsPackaging,
+            breakdown: {
+              piecePrice: electronicsTotal,
+              insurance: electronicsInsurance,
+              packaging: electronicsPackaging,
+              final:
+                electronicsTotal + electronicsInsurance + electronicsPackaging,
+            },
+          };
+        }
+
+        // Calculate other pricing components (large items)
         // We'll use the existing calculateTotalPricing but replace basePrice
         const fullPricing = calculateTotalPricing(
           regularParcels,
-          electronicsParcels,
+          [], // Electronics handled separately above
           largeItemsParcels,
           [], // initialPackaging - removed
           [], // finalPackaging - removed (packaging now in parcel cards)
@@ -214,14 +261,27 @@ export default function CreateShipmentPage() {
         );
 
         // Replace the basePrice with API-calculated value and add packaging + insurance costs
-        // Grand Total = Base LCL Price + packaging + insurance
+        // Grand Total = Base LCL Price + Electronics + packaging + insurance
+        const electronicsTotal = electronicsPricing
+          ? electronicsPricing.total
+          : 0;
+
         const pricingWithPackaging = {
           ...fullPricing,
-          basePrice: {
-            priceByWeight: basePrice.priceByWeight,
-            priceByCBM: basePrice.priceByCBM,
-            final: basePrice.final,
-          },
+          basePrice:
+            regularParcels.length > 0
+              ? {
+                  priceByWeight: basePrice.priceByWeight,
+                  priceByCBM: basePrice.priceByCBM,
+                  final: basePrice.final,
+                }
+              : {
+                  priceByWeight: 0,
+                  priceByCBM: 0,
+                  final: 0,
+                },
+          // Add electronics pricing
+          electronicsPrice: electronicsPricing,
           // Add packaging cost from API to final packaging total
           packaging: {
             ...fullPricing.packaging,
@@ -233,9 +293,12 @@ export default function CreateShipmentPage() {
             optional: insuranceCostFromAPI,
             total: insuranceCostFromAPI,
           },
-          // Update grand total: Base LCL Price + packaging + insurance
+          // Update grand total: Base LCL Price + Electronics + packaging + insurance
           grandTotal:
-            basePrice.final + packagingCostFromAPI + insuranceCostFromAPI,
+            (regularParcels.length > 0 ? basePrice.final : 0) +
+            electronicsTotal +
+            packagingCostFromAPI +
+            insuranceCostFromAPI,
         };
         // Store parcel packaging cost and insurance cost for display
         (pricingWithPackaging as any).parcelPackagingCost =
@@ -246,30 +309,12 @@ export default function CreateShipmentPage() {
       } catch (error) {
         console.error("Error calculating pricing:", error);
         // Fallback to local calculation on error
-        const regularParcels = parcels.filter((p) => {
-          if (shipmentTypes.includes("electronics")) {
-            const isElectronics =
-              p.productCategory === "MOBILE_PHONE" ||
-              p.productCategory === "LAPTOP" ||
-              p.productCategory === "LARGE_MIRROR";
-            if (isElectronics) return false;
-          }
-          if (shipmentTypes.includes("large-items") && p.itemType) {
-            return false;
-          }
-          return true;
-        });
-
         const electronicsParcels = parcels.filter(
-          (p) =>
-            shipmentTypes.includes("electronics") &&
-            (p.productCategory === "MOBILE_PHONE" ||
-              p.productCategory === "LAPTOP" ||
-              p.productCategory === "LARGE_MIRROR")
+          (p) => p.isElectronicsShipment === true
         );
-
-        const largeItemsParcels = parcels.filter(
-          (p) => shipmentTypes.includes("large-items") && p.itemType
+        const largeItemsParcels = parcels.filter((p) => p.itemType);
+        const regularParcels = parcels.filter(
+          (p) => !p.isElectronicsShipment && !p.itemType
         );
 
         setPricing(

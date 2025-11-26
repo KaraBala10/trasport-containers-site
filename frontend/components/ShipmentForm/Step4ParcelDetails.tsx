@@ -171,9 +171,8 @@ export default function Step4ParcelDetails({
       addElectronics: "إضافة شحنة إلكترونيات",
       removeParcel: "حذف الطرد",
       electronicsShipment: "شحنة إلكترونيات",
-      electronicsName: "اسم المنتج",
-      electronicsPrice: "السعر (€)",
-      electronicsPicture: "صورة المنتج",
+      electronicsName: "اسم الجهاز/الموديل",
+      electronicsPicture: "صورة الجهاز",
       required: "إجباري",
       customProduct: "منتج غير موجود في القائمة؟",
       enterCustomProduct: "أدخل اسم المنتج",
@@ -188,6 +187,8 @@ export default function Step4ParcelDetails({
       productCategory: "نوع المنتج",
       packagingType: "نوع التغليف",
       packagingTypeOptional: "اختياري",
+      additionalPackaging: "تغليف إضافي",
+      basePackagingNote: "* يتضمن تغليف أساسي 5€",
       quantity: "الكمية",
       repeatCount: "عدد التكرار",
       repeatCountHint: "كم مرة تريد تكرار هذا الطرد؟",
@@ -218,9 +219,8 @@ export default function Step4ParcelDetails({
       addElectronics: "Add Electronics Shipment",
       removeParcel: "Remove Parcel",
       electronicsShipment: "Electronics Shipment",
-      electronicsName: "Product Name",
-      electronicsPrice: "Price (€)",
-      electronicsPicture: "Product Picture",
+      electronicsName: "Device Name/Model",
+      electronicsPicture: "Device Picture",
       required: "Required",
       customProduct: "Product not in list?",
       enterCustomProduct: "Enter product name",
@@ -235,6 +235,8 @@ export default function Step4ParcelDetails({
       productCategory: "Product Category",
       packagingType: "Packaging Type",
       packagingTypeOptional: "Optional",
+      additionalPackaging: "Additional Packaging",
+      basePackagingNote: "* Includes base packaging 5€",
       quantity: "Quantity",
       repeatCount: "Repeat Count",
       repeatCountHint: "How many times to repeat this parcel?",
@@ -307,7 +309,6 @@ export default function Step4ParcelDetails({
       photos: [],
       isElectronicsShipment: true,
       electronicsName: "",
-      electronicsPrice: 0,
       electronicsPicture: undefined,
       wantsInsurance: true, // Force insurance
       declaredShipmentValue: 0,
@@ -832,7 +833,7 @@ export default function Step4ParcelDetails({
               {parcel.isElectronicsShipment && (
                 <>
                   {/* Electronics Name */}
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       {t.electronicsName} *{" "}
                       <span className="text-blue-600 text-xs">
@@ -851,35 +852,8 @@ export default function Step4ParcelDetails({
                       }
                       placeholder={
                         language === "ar"
-                          ? "مثال: iPhone 14 Pro"
-                          : "e.g., iPhone 14 Pro"
-                      }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    />
-                  </div>
-
-                  {/* Electronics Price */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t.electronicsPrice} *{" "}
-                      <span className="text-blue-600 text-xs">
-                        ({t.required})
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={parcel.electronicsPrice || ""}
-                      onChange={(e) =>
-                        updateParcel(
-                          parcel.id,
-                          "electronicsPrice",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      placeholder={
-                        language === "ar" ? "مثال: 799.99" : "e.g., 799.99"
+                          ? "مثال: iPhone 14 Pro - 256GB - أزرق"
+                          : "e.g., iPhone 14 Pro - 256GB - Blue"
                       }
                       className="w-full px-4 py-3 rounded-xl border-2 border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     />
@@ -913,11 +887,11 @@ export default function Step4ParcelDetails({
                           <span className="text-blue-700 font-semibold">
                             {parcel.electronicsPicture
                               ? language === "ar"
-                                ? "تم اختيار الصورة"
-                                : "Picture selected"
+                                ? "تم اختيار الصورة ✓"
+                                : "Picture selected ✓"
                               : language === "ar"
-                              ? "اختر صورة"
-                              : "Choose picture"}
+                              ? "اختر صورة للجهاز"
+                              : "Choose device picture"}
                           </span>
                         </div>
                         <input
@@ -937,7 +911,7 @@ export default function Step4ParcelDetails({
                         />
                       </label>
                       {parcel.electronicsPicture && (
-                        <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-blue-300 shadow-sm">
+                        <div className="w-24 h-24 rounded-lg overflow-hidden border-2 border-blue-300 shadow-md">
                           <img
                             src={URL.createObjectURL(parcel.electronicsPicture)}
                             alt="Electronics"
@@ -946,65 +920,100 @@ export default function Step4ParcelDetails({
                         </div>
                       )}
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {language === "ar"
+                        ? "يرجى رفع صورة واضحة للجهاز"
+                        : "Please upload a clear picture of the device"}
+                    </p>
                   </div>
                 </>
               )}
 
-              {/* Packaging Type */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.packagingType}{" "}
-                  <span className="text-gray-400 text-xs">
-                    ({t.packagingTypeOptional})
-                  </span>
-                </label>
-                <select
-                  value={parcel.packagingType || ""}
-                  onChange={(e) =>
-                    updateParcel(
-                      parcel.id,
-                      "packagingType",
-                      e.target.value || undefined
-                    )
-                  }
-                  disabled={loadingPackagingPrices}
-                  className={`w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <option value="">
-                    {loadingPackagingPrices
-                      ? language === "ar"
-                        ? "جاري التحميل..."
-                        : "Loading..."
-                      : language === "ar"
-                      ? "بدون تغليف"
-                      : "No Packaging"}
-                  </option>
-                  {packagingPrices.map((packaging) => (
-                    <option key={packaging.id} value={packaging.id.toString()}>
-                      {language === "ar"
-                        ? packaging.ar_option
-                        : packaging.en_option}{" "}
-                      ({packaging.dimension}) - €{packaging.price}
-                    </option>
-                  ))}
-                </select>
-                {parcel.packagingType &&
-                  (() => {
-                    const selectedPackaging = packagingPrices.find(
-                      (p) => p.id.toString() === parcel.packagingType
-                    );
-                    if (selectedPackaging) {
-                      return (
-                        <p className="mt-1 text-xs text-gray-500">
-                          {language === "ar"
-                            ? `السعر: €${selectedPackaging.price}`
-                            : `Price: €${selectedPackaging.price}`}
-                        </p>
-                      );
+              {/* Base Packaging Note for Electronics */}
+              {parcel.isElectronicsShipment && (
+                <div className="md:col-span-2 bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-blue-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                      />
+                    </svg>
+                    <span className="text-sm font-semibold text-blue-900">
+                      {t.basePackagingNote}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Packaging Type - Hidden for Electronics Shipment */}
+              {!parcel.isElectronicsShipment && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t.packagingType}{" "}
+                    <span className="text-gray-400 text-xs">
+                      ({t.packagingTypeOptional})
+                    </span>
+                  </label>
+                  <select
+                    value={parcel.packagingType || ""}
+                    onChange={(e) =>
+                      updateParcel(
+                        parcel.id,
+                        "packagingType",
+                        e.target.value || undefined
+                      )
                     }
-                    return null;
-                  })()}
-              </div>
+                    disabled={loadingPackagingPrices}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {loadingPackagingPrices
+                        ? language === "ar"
+                          ? "جاري التحميل..."
+                          : "Loading..."
+                        : language === "ar"
+                        ? "بدون تغليف"
+                        : "No Packaging"}
+                    </option>
+                    {packagingPrices.map((packaging) => (
+                      <option
+                        key={packaging.id}
+                        value={packaging.id.toString()}
+                      >
+                        {language === "ar"
+                          ? packaging.ar_option
+                          : packaging.en_option}{" "}
+                        ({packaging.dimension}) - €{packaging.price}
+                      </option>
+                    ))}
+                  </select>
+                  {parcel.packagingType &&
+                    (() => {
+                      const selectedPackaging = packagingPrices.find(
+                        (p) => p.id.toString() === parcel.packagingType
+                      );
+                      if (selectedPackaging) {
+                        return (
+                          <p className="mt-1 text-xs text-gray-500">
+                            {language === "ar"
+                              ? `السعر: €${selectedPackaging.price}`
+                              : `Price: €${selectedPackaging.price}`}
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
+                </div>
+              )}
 
               {/* Quantity - Hidden for Electronics Shipment */}
               {!parcel.isElectronicsShipment && (
