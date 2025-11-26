@@ -343,6 +343,11 @@ export const apiService = {
   updateProductRequest: (requestId: number, data: { status?: string; admin_notes?: string }) => {
     return apiClient.patch(`/admin/product-requests/${requestId}/`, data);
   },
+
+  // CBM Calculation API
+  calculateCBM: (length: number, width: number, height: number) => {
+    return apiClient.post('/calculate-cbm/', { length, width, height });
+  },
 };
 
 export default apiClient;

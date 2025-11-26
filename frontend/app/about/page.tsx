@@ -790,15 +790,15 @@ export default function AboutPage() {
               className="text-center mb-16"
             >
               <h2 className="text-5xl font-bold text-primary-dark mb-4">
-                {content.offices.title}
-              </h2>
+            {content.offices.title}
+          </h2>
               <div className="flex justify-center">
                 <div className="w-32 h-1.5 bg-primary-yellow rounded-full" />
               </div>
             </motion.div>
 
             <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
-              {/* Europe Office */}
+            {/* Europe Office */}
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -820,15 +820,15 @@ export default function AboutPage() {
 
                 <div className="mb-8">
                   <h3 className="text-3xl font-bold text-primary-dark mb-3 text-center">
-                    {content.offices.europe.title}
-                  </h3>
+                  {content.offices.europe.title}
+                </h3>
                   <div className="text-primary-yellow font-bold text-2xl mb-2 text-center">
-                    {content.offices.europe.companyName}
-                  </div>
-                  <div className="text-gray-600 text-sm italic text-center">
-                    {content.offices.europe.tagline}
-                  </div>
+                  {content.offices.europe.companyName}
                 </div>
+                  <div className="text-gray-600 text-sm italic text-center">
+                  {content.offices.europe.tagline}
+                </div>
+              </div>
 
                 <div className="space-y-6">
                   <motion.div
@@ -838,27 +838,27 @@ export default function AboutPage() {
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
                       <svg
                         className="w-6 h-6 text-primary-dark"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
                     </div>
                     <p className="text-gray-700 text-lg">
-                      {content.offices.europe.address}
-                    </p>
+                    {content.offices.europe.address}
+                  </p>
                   </motion.div>
 
                   <motion.div
@@ -868,24 +868,24 @@ export default function AboutPage() {
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
                       <svg
                         className="w-6 h-6 text-primary-dark"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                        />
-                      </svg>
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
                     </div>
-                    <a
-                      href={`tel:${content.offices.europe.phone}`}
+                  <a
+                    href={`tel:${content.offices.europe.phone}`}
                       className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
-                    >
-                      {content.offices.europe.phone}
-                    </a>
+                  >
+                    {content.offices.europe.phone}
+                  </a>
                   </motion.div>
 
                   <motion.div
@@ -895,24 +895,24 @@ export default function AboutPage() {
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
                       <svg
                         className="w-6 h-6 text-primary-dark"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
                     </div>
-                    <a
-                      href={`mailto:${content.offices.europe.email}`}
+                  <a
+                    href={`mailto:${content.offices.europe.email}`}
                       className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
-                    >
-                      {content.offices.europe.email}
-                    </a>
+                  >
+                    {content.offices.europe.email}
+                  </a>
                   </motion.div>
 
                   <motion.div
@@ -922,31 +922,31 @@ export default function AboutPage() {
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
                       <svg
                         className="w-6 h-6 text-primary-dark"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-                        />
-                      </svg>
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                    />
+                  </svg>
                     </div>
-                    <a
-                      href={`https://${content.offices.europe.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  <a
+                    href={`https://${content.offices.europe.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                       className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
-                    >
-                      {content.offices.europe.website}
-                    </a>
+                  >
+                    {content.offices.europe.website}
+                  </a>
                   </motion.div>
                 </div>
               </motion.div>
 
-              {/* Syria Office */}
+            {/* Syria Office */}
               <motion.div
                 initial={{ opacity: 0, x: 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -968,18 +968,18 @@ export default function AboutPage() {
 
                 <div className="mb-8">
                   <h3 className="text-3xl font-bold text-primary-dark mb-3 text-center">
-                    {content.offices.syria.title}
-                  </h3>
+                  {content.offices.syria.title}
+                </h3>
                   <div className="text-primary-dark font-bold text-2xl mb-2 text-center">
-                    {content.offices.syria.companyName}
-                  </div>
-                  <div className="text-gray-600 text-sm italic text-center">
-                    {content.offices.syria.companyNameEn}
-                  </div>
+                  {content.offices.syria.companyName}
                 </div>
+                  <div className="text-gray-600 text-sm italic text-center">
+                  {content.offices.syria.companyNameEn}
+                </div>
+              </div>
 
                 <div className="space-y-6">
-                  {content.offices.syria.locations.map((location, index) => (
+                {content.offices.syria.locations.map((location, index) => (
                     <motion.div
                       key={index}
                       whileHover={{ x: 10 }}
@@ -988,30 +988,30 @@ export default function AboutPage() {
                       <div className="flex-shrink-0 w-12 h-12 bg-primary-dark/10 rounded-full flex items-center justify-center">
                         <svg
                           className="w-6 h-6 text-primary-dark"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
                       </div>
-                      <div>
+                    <div>
                         <div className="font-bold text-primary-dark text-lg mb-1">
-                          {location.name}
-                        </div>
-                        <div className="text-gray-700">{location.address}</div>
+                        {location.name}
                       </div>
+                      <div className="text-gray-700">{location.address}</div>
+                    </div>
                     </motion.div>
                   ))}
 
@@ -1022,24 +1022,24 @@ export default function AboutPage() {
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-dark/10 rounded-full flex items-center justify-center">
                       <svg
                         className="w-6 h-6 text-primary-dark"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                        />
-                      </svg>
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
                     </div>
-                    <a
-                      href={`tel:${content.offices.syria.phone}`}
+                  <a
+                    href={`tel:${content.offices.syria.phone}`}
                       className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
-                    >
-                      {content.offices.syria.phone}
-                    </a>
+                  >
+                    {content.offices.syria.phone}
+                  </a>
                   </motion.div>
 
                   <motion.div
@@ -1049,30 +1049,30 @@ export default function AboutPage() {
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-dark/10 rounded-full flex items-center justify-center">
                       <svg
                         className="w-6 h-6 text-primary-dark"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
                     </div>
-                    <a
-                      href={`mailto:${content.offices.syria.email}`}
+                  <a
+                    href={`mailto:${content.offices.syria.email}`}
                       className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
-                    >
-                      {content.offices.syria.email}
-                    </a>
+                  >
+                    {content.offices.syria.email}
+                  </a>
                   </motion.div>
                 </div>
               </motion.div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
         {/* CTA Section with Enhanced Design */}
         <motion.div
@@ -1164,8 +1164,8 @@ export default function AboutPage() {
                   </motion.div>
                 </Link>
               </motion.div>
-            </div>
           </div>
+        </div>
         </motion.div>
       </main>
 

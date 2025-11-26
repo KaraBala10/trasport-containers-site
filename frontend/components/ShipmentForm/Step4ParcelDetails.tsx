@@ -338,8 +338,8 @@ export default function Step4ParcelDetails({
     onParcelsChange(parcels.filter((p) => p.id !== id));
   };
 
-  const updateParcel = (id: string, field: keyof Parcel, value: any) => {
-    const updatedParcels = parcels.map((parcel) => {
+  const updateParcel = async (id: string, field: keyof Parcel, value: any) => {
+    const updatedParcels = await Promise.all(parcels.map(async (parcel) => {
       if (parcel.id === id) {
         const updatedParcel = { ...parcel, [field]: value };
 
@@ -348,7 +348,23 @@ export default function Step4ParcelDetails({
           const length = field === "length" ? value : parcel.length || 0;
           const width = field === "width" ? value : parcel.width || 0;
           const height = field === "height" ? value : parcel.height || 0;
-          updatedParcel.cbm = calculateCBM(length, width, height);
+          
+          // Try to use Backend API first
+          try {
+            const response = await apiService.calculateCBM(length, width, height);
+            if (response.data.success) {
+              updatedParcel.cbm = response.data.cbm;
+              console.log('✅ CBM calculated from Backend API:', response.data.cbm);
+            } else {
+              // Fallback to local calculation
+              updatedParcel.cbm = calculateCBM(length, width, height);
+              console.log('⚠️ Backend returned error, using local CBM calculation');
+            }
+          } catch (error) {
+            // Fallback to local calculation on error
+            updatedParcel.cbm = calculateCBM(length, width, height);
+            console.log('⚠️ Backend API failed, using local CBM calculation:', error);
+          }
         }
 
         // Force enable insurance for MOBILE_PHONE and LAPTOP
@@ -378,7 +394,7 @@ export default function Step4ParcelDetails({
         return updatedParcel;
       }
       return parcel;
-    });
+    }));
     onParcelsChange(updatedParcels);
   };
 
