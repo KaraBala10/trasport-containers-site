@@ -19,9 +19,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 try:
     from mollie.api.client import Client as MollieClient
+
     MOLLIE_AVAILABLE = True
 except ImportError:
     MOLLIE_AVAILABLE = False
+
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from .email_service import (
     send_contact_form_notification,
@@ -33,8 +36,17 @@ from .email_service import (
     send_status_update_email,
     send_status_update_notification_to_admin,
 )
-from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port, ProductRequest
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from .models import (
+    City,
+    ContactMessage,
+    Country,
+    EditRequestMessage,
+    FCLQuote,
+    PackagingPrice,
+    Port,
+    Price,
+    ProductRequest,
+)
 from .serializers import (
     ChangePasswordSerializer,
     CitySerializer,
@@ -641,7 +653,7 @@ def calculate_pricing_view(request):
 
         # Calculate Base LCL Price: max(priceByWeight, priceByCBM, 75)
         base_lcl_price = max(total_price_by_weight, total_price_by_cbm, 75)
-        
+
         # Grand Total = Base LCL Price + packaging + insurance
         calculation_total = base_lcl_price + total_packaging_cost
 
@@ -1445,7 +1457,8 @@ def mollie_webhook_view(request):
         if not api_key:
             logger.error("Mollie API key is not configured")
             return Response(
-                {"error": "Configuration error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "Configuration error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         mollie_client = MollieClient()
@@ -1487,7 +1500,8 @@ def mollie_webhook_view(request):
     except Exception as e:
         logger.error(f"Error processing Mollie webhook: {str(e)}", exc_info=True)
         return Response(
-            {"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {"error": "Internal server error"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
@@ -1503,7 +1517,10 @@ def payment_status_view(request, pk):
         # Check if user owns this quote
         if quote.user != request.user and not request.user.is_superuser:
             return Response(
-                {"success": False, "error": "You can only check payment status for your own quotes."},
+                {
+                    "success": False,
+                    "error": "You can only check payment status for your own quotes.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -1525,7 +1542,11 @@ def payment_status_view(request, pk):
                         "status": payment.status,
                         "amount": payment.amount,
                         "paid_at": payment.paid_at,
-                        "checkout_url": payment.checkout_url if hasattr(payment, "checkout_url") else None,
+                        "checkout_url": (
+                            payment.checkout_url
+                            if hasattr(payment, "checkout_url")
+                            else None
+                        ),
                     }
                     # Update local status if different
                     if quote.payment_status != payment.status:
@@ -1553,8 +1574,16 @@ def payment_status_view(request, pk):
                 "payment_status": quote.payment_status,
                 "payment_method": quote.payment_method,
                 "payment_id": quote.payment_id,
-                "payment_created_at": quote.payment_created_at.isoformat() if quote.payment_created_at else None,
-                "payment_updated_at": quote.payment_updated_at.isoformat() if quote.payment_updated_at else None,
+                "payment_created_at": (
+                    quote.payment_created_at.isoformat()
+                    if quote.payment_created_at
+                    else None
+                ),
+                "payment_updated_at": (
+                    quote.payment_updated_at.isoformat()
+                    if quote.payment_updated_at
+                    else None
+                ),
                 "mollie_payment": payment_status_info,
             },
             status=status.HTTP_200_OK,
@@ -1595,12 +1624,12 @@ def countries_list_view(request):
 def cities_list_view(request):
     """Get list of cities, optionally filtered by country"""
     country_code = request.query_params.get("country", None)
-    
+
     if country_code:
         cities = City.objects.filter(country__code=country_code)
     else:
         cities = City.objects.all()
-    
+
     serializer = CitySerializer(cities, many=True)
     return Response(serializer.data)
 
@@ -1610,12 +1639,12 @@ def cities_list_view(request):
 def ports_list_view(request):
     """Get list of ports, optionally filtered by country"""
     country_code = request.query_params.get("country", None)
-    
+
     if country_code:
         ports = Port.objects.filter(country__code=country_code)
     else:
         ports = Port.objects.all()
-    
+
     serializer = PortSerializer(ports, many=True)
     return Response(serializer.data)
 
@@ -1647,8 +1676,8 @@ def request_new_product_view(request):
 
         # Send email notification to admin
         try:
-            from django.core.mail import send_mail
             from django.conf import settings
+            from django.core.mail import send_mail
 
             # Get all superuser emails
             admin_emails = list(
@@ -1661,7 +1690,10 @@ def request_new_product_view(request):
                 )
 
                 subject = f"New Product Request - {product_name}"
-                message = f"""
+
+                # Different message based on whether user is authenticated
+                if user and user.email:
+                    message = f"""
 A new product has been requested:
 
 Product Name: {product_name}
@@ -1670,7 +1702,22 @@ Requested by: {user_info}
 Request ID: {product_request.id}
 Date: {product_request.created_at.strftime("%Y-%m-%d %H:%M:%S")}
 
-Please review and add this product to the pricing system if appropriate.
+IMPORTANT: Please reply to this user at {user.email} once you have added this product to the system.
+
+You can manage product requests in the admin panel.
+"""
+                else:
+                    message = f"""
+A new product has been requested:
+
+Product Name: {product_name}
+Language: {language}
+Requested by: Anonymous User (not logged in)
+Request ID: {product_request.id}
+Date: {product_request.created_at.strftime("%Y-%m-%d %H:%M:%S")}
+
+Note: This user was not logged in, so we cannot send them an email notification.
+Please add this product to the pricing system if appropriate.
 
 You can manage product requests in the admin panel.
 """

@@ -682,23 +682,25 @@ export default function Step4ParcelDetails({
                             );
 
                             if (response.data.success) {
-                              setProductRequested({
-                                ...productRequested,
-                                [parcel.id]: true,
-                              });
-                              setTimeout(() => {
-                                setProductRequested({
-                                  ...productRequested,
-                                  [parcel.id]: false,
-                                });
-                              }, 5000);
+                              // Show success message
+                              alert(
+                                language === "ar"
+                                  ? `تم إرسال طلبك بنجاح!\n\nسيقوم الأدمن بمراجعة طلبك وإضافة المنتج "${parcel.customProductName}" مع السعر.\n\nسنقوم بإرسال بريد إلكتروني لك عند إضافة المنتج.\n\nشكراً لك!`
+                                  : `Request sent successfully!\n\nThe admin will review your request and add the product "${parcel.customProductName}" with pricing.\n\nWe will send you an email when the product is added.\n\nThank you!`
+                              );
+
+                              // Remove this parcel card
+                              const updatedParcels = parcels.filter(
+                                (p) => p.id !== parcel.id
+                              );
+                              onParcelsChange(updatedParcels);
                             }
                           } catch (error) {
                             console.error("Error requesting product:", error);
                             alert(
                               language === "ar"
-                                ? "حدث خطأ في إرسال الطلب"
-                                : "Error sending request"
+                                ? "حدث خطأ في إرسال الطلب. الرجاء المحاولة مرة أخرى."
+                                : "Error sending request. Please try again."
                             );
                           } finally {
                             setRequestingProduct({
@@ -711,23 +713,17 @@ export default function Step4ParcelDetails({
                           requestingProduct[parcel.id] ||
                           productRequested[parcel.id]
                         }
-                        className={`w-full px-4 py-3 rounded-xl font-semibold transition-all ${
-                          productRequested[parcel.id]
-                            ? "bg-green-500 text-white"
-                            : "bg-orange-500 text-white hover:bg-orange-600"
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className="w-full px-4 py-3 rounded-xl font-semibold transition-all bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {productRequested[parcel.id]
-                          ? `✓ ${t.productRequested}`
-                          : requestingProduct[parcel.id]
+                        {requestingProduct[parcel.id]
                           ? t.requestingProduct
                           : t.requestProduct}
                       </button>
                     )}
                     <p className="text-xs text-gray-600">
                       {language === "ar"
-                        ? "سيتم إرسال طلب للأدمن لإضافة هذا المنتج مع السعر لاحقاً"
-                        : "A request will be sent to admin to add this product with price later"}
+                        ? "سيتم إرسال طلبك للأدمن وسنرسل لك بريد إلكتروني عند إضافة المنتج"
+                        : "Your request will be sent to admin and we will email you when the product is added"}
                     </p>
                   </div>
                 ) : (
