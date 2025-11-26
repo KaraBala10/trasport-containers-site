@@ -52,6 +52,7 @@ export default function AdminPricingPage() {
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [selectedUnit, setSelectedUnit] = useState<"per_kg" | "per_piece">("per_kg");
 
   const translations = useMemo(
     () => ({
@@ -294,6 +295,7 @@ export default function AdminPricingPage() {
 
   const handleEditPrice = (price: Price) => {
     setEditingPrice(price);
+    setSelectedUnit(price.minimum_shipping_unit);
     setShowPriceForm(true);
   };
 
@@ -307,6 +309,7 @@ export default function AdminPricingPage() {
     setShowPackagingForm(false);
     setEditingPrice(null);
     setEditingPackagingPrice(null);
+    setSelectedUnit("per_kg");
     setError("");
   };
 
@@ -403,6 +406,7 @@ export default function AdminPricingPage() {
                       <button
                         onClick={() => {
                           setEditingPrice(null);
+                          setSelectedUnit("per_kg");
                           setShowPriceForm(true);
                         }}
                         className="px-6 py-3 bg-primary-yellow hover:bg-yellow-500 text-white font-semibold rounded-lg transition-colors"
@@ -463,6 +467,14 @@ export default function AdminPricingPage() {
                                   required
                                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
                                 />
+                                {selectedUnit === "per_piece" && (
+                                  <p className="mt-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                    💡 <strong>{language === "ar" ? "للإلكترونيات:" : "For Electronics:"}</strong>{" "}
+                                    {language === "ar"
+                                      ? "هنا سعر القطعة الواحدة (مثلاً: 100€ للموبايل)"
+                                      : "This is the price per piece (e.g., 100€ for a mobile phone)"}
+                                  </p>
+                                )}
                               </div>
                               <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -478,6 +490,14 @@ export default function AdminPricingPage() {
                                   required
                                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
                                 />
+                                {selectedUnit === "per_piece" && (
+                                  <p className="mt-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                    💡 <strong>{language === "ar" ? "للإلكترونيات:" : "For Electronics:"}</strong>{" "}
+                                    {language === "ar"
+                                      ? "الحد الأدنى للكمية (مثلاً: 1 = قطعة واحدة على الأقل)"
+                                      : "Minimum quantity (e.g., 1 = at least one piece)"}
+                                  </p>
+                                )}
                               </div>
                               <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -488,6 +508,9 @@ export default function AdminPricingPage() {
                                   defaultValue={
                                     editingPrice?.minimum_shipping_unit ||
                                     "per_kg"
+                                  }
+                                  onChange={(e) =>
+                                    setSelectedUnit(e.target.value as "per_kg" | "per_piece")
                                   }
                                   required
                                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
@@ -510,6 +533,14 @@ export default function AdminPricingPage() {
                                   required
                                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
                                 />
+                                {selectedUnit === "per_piece" && (
+                                  <p className="mt-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                    ⚠️ <strong>{language === "ar" ? "للإلكترونيات:" : "For Electronics:"}</strong>{" "}
+                                    {language === "ar"
+                                      ? "اتركه فارغ أو 0 (لا يُستخدم للإلكترونيات)"
+                                      : "Leave empty or 0 (not used for electronics)"}
+                                  </p>
+                                )}
                               </div>
                             </div>
                             <div className="mt-6 flex gap-4 justify-end">
