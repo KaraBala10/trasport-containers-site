@@ -134,7 +134,13 @@ export default function Step4ParcelDetails({
     ar: {
       title: "تفاصيل الطرود",
       addParcel: "إضافة طرد جديد",
+      addElectronics: "إضافة شحنة إلكترونيات",
       removeParcel: "حذف الطرد",
+      electronicsShipment: "شحنة إلكترونيات",
+      electronicsName: "اسم المنتج",
+      electronicsPrice: "السعر (€)",
+      electronicsPicture: "صورة المنتج",
+      required: "إجباري",
       length: "الطول (سم)",
       width: "العرض (سم)",
       height: "الارتفاع (سم)",
@@ -169,7 +175,13 @@ export default function Step4ParcelDetails({
     en: {
       title: "Parcel Details",
       addParcel: "Add New Parcel",
+      addElectronics: "Add Electronics Shipment",
       removeParcel: "Remove Parcel",
+      electronicsShipment: "Electronics Shipment",
+      electronicsName: "Product Name",
+      electronicsPrice: "Price (€)",
+      electronicsPicture: "Product Picture",
+      required: "Required",
       length: "Length (cm)",
       width: "Width (cm)",
       height: "Height (cm)",
@@ -221,6 +233,40 @@ export default function Step4ParcelDetails({
       selectedPrice?.ar_item?.includes("موبايل") ||
       selectedPrice?.ar_item?.includes("لابتوب")
     );
+  };
+
+  const addElectronicsShipment = () => {
+    // Find laptop and mobile prices
+    const laptopPrice = prices.find(
+      (p) =>
+        p.en_item?.toLowerCase().includes("laptop") ||
+        p.ar_item?.includes("لابتوب")
+    );
+    const mobilePrice = prices.find(
+      (p) =>
+        p.en_item?.toLowerCase().includes("mobile") ||
+        p.ar_item?.includes("موبايل")
+    );
+
+    const newElectronics: Parcel = {
+      id: `electronics-${Date.now()}`,
+      length: 0,
+      width: 0,
+      height: 0,
+      weight: 0,
+      cbm: 0,
+      productCategory: laptopPrice ? laptopPrice.id.toString() : "", // Default to laptop if available
+      quantity: 1,
+      repeatCount: 1,
+      photos: [],
+      isElectronicsShipment: true,
+      electronicsName: "",
+      electronicsPrice: 0,
+      electronicsPicture: undefined,
+      wantsInsurance: true, // Force insurance
+      declaredShipmentValue: 0,
+    };
+    onParcelsChange([...parcels, newElectronics]);
   };
 
   const addParcel = () => {
@@ -330,7 +376,7 @@ export default function Step4ParcelDetails({
   return (
     <div className="space-y-6">
       {/* Add Parcel Button */}
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-4">
         <motion.button
           onClick={addParcel}
           className="px-6 py-3 bg-primary-yellow text-primary-dark font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -338,6 +384,14 @@ export default function Step4ParcelDetails({
           whileTap={{ scale: 0.95 }}
         >
           {t.addParcel}
+        </motion.button>
+        <motion.button
+          onClick={addElectronicsShipment}
+          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {t.addElectronics}
         </motion.button>
       </div>
 
@@ -349,12 +403,18 @@ export default function Step4ParcelDetails({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
+            className={`rounded-2xl p-6 shadow-lg border-2 ${
+              parcel.isElectronicsShipment
+                ? "bg-gradient-to-br from-blue-50 to-purple-50 border-blue-300"
+                : "bg-white border-gray-100"
+            }`}
           >
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="text-xl font-bold text-primary-dark">
-                  {language === "ar"
+                  {parcel.isElectronicsShipment
+                    ? t.electronicsShipment + ` #${index + 1}`
+                    : language === "ar"
                     ? `طرد #${index + 1}`
                     : `Parcel #${index + 1}`}
                 </h3>
@@ -409,100 +469,104 @@ export default function Step4ParcelDetails({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Dimensions */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.length} *
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={parcel.length || ""}
-                  onChange={(e) =>
-                    updateParcel(
-                      parcel.id,
-                      "length",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                />
-              </div>
+              {/* Dimensions - Hidden for Electronics Shipment */}
+              {!parcel.isElectronicsShipment && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.length} *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={parcel.length || ""}
+                      onChange={(e) =>
+                        updateParcel(
+                          parcel.id,
+                          "length",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.width} *
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={parcel.width || ""}
-                  onChange={(e) =>
-                    updateParcel(
-                      parcel.id,
-                      "width",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.width} *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={parcel.width || ""}
+                      onChange={(e) =>
+                        updateParcel(
+                          parcel.id,
+                          "width",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.height} *
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={parcel.height || ""}
-                  onChange={(e) =>
-                    updateParcel(
-                      parcel.id,
-                      "height",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.height} *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={parcel.height || ""}
+                      onChange={(e) =>
+                        updateParcel(
+                          parcel.id,
+                          "height",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.weight} *
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={parcel.weight || ""}
-                  onChange={(e) =>
-                    updateParcel(
-                      parcel.id,
-                      "weight",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.weight} *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={parcel.weight || ""}
+                      onChange={(e) =>
+                        updateParcel(
+                          parcel.id,
+                          "weight",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                    />
+                  </div>
 
-              {/* CBM Display (Auto-calculated) */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.cbm}
-                </label>
-                <div className="px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 flex items-center">
-                  {parcel.cbm > 0
-                    ? `${parcel.cbm.toFixed(6)} m³`
-                    : language === "ar"
-                    ? "0.000000 m³"
-                    : "0.000000 m³"}
-                </div>
-              </div>
+                  {/* CBM Display (Auto-calculated) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.cbm}
+                    </label>
+                    <div className="px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 flex items-center">
+                      {parcel.cbm > 0
+                        ? `${parcel.cbm.toFixed(6)} m³`
+                        : language === "ar"
+                        ? "0.000000 m³"
+                        : "0.000000 m³"}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Product Category */}
               <div>
@@ -530,11 +594,26 @@ export default function Step4ParcelDetails({
                       ? "اختر..."
                       : "Select..."}
                   </option>
-                  {prices.map((price) => (
-                    <option key={price.id} value={price.id.toString()}>
-                      {language === "ar" ? price.ar_item : price.en_item}
-                    </option>
-                  ))}
+                  {parcel.isElectronicsShipment
+                    ? // For electronics shipments, only show laptop and mobile options
+                      prices
+                        .filter(
+                          (price) =>
+                            price.en_item?.toLowerCase().includes("laptop") ||
+                            price.en_item?.toLowerCase().includes("mobile") ||
+                            price.ar_item?.includes("لابتوب") ||
+                            price.ar_item?.includes("موبايل")
+                        )
+                        .map((price) => (
+                          <option key={price.id} value={price.id.toString()}>
+                            {language === "ar" ? price.ar_item : price.en_item}
+                          </option>
+                        ))
+                    : prices.map((price) => (
+                        <option key={price.id} value={price.id.toString()}>
+                          {language === "ar" ? price.ar_item : price.en_item}
+                        </option>
+                      ))}
                 </select>
                 {validationErrors[parcel.id] && (
                   <p className="mt-1 text-sm text-red-600">
@@ -570,6 +649,128 @@ export default function Step4ParcelDetails({
                     return null;
                   })()}
               </div>
+
+              {/* Electronics Specific Fields */}
+              {parcel.isElectronicsShipment && (
+                <>
+                  {/* Electronics Name */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.electronicsName} *{" "}
+                      <span className="text-blue-600 text-xs">
+                        ({t.required})
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={parcel.electronicsName || ""}
+                      onChange={(e) =>
+                        updateParcel(
+                          parcel.id,
+                          "electronicsName",
+                          e.target.value
+                        )
+                      }
+                      placeholder={
+                        language === "ar"
+                          ? "مثال: iPhone 14 Pro"
+                          : "e.g., iPhone 14 Pro"
+                      }
+                      className="w-full px-4 py-3 rounded-xl border-2 border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    />
+                  </div>
+
+                  {/* Electronics Price */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.electronicsPrice} *{" "}
+                      <span className="text-blue-600 text-xs">
+                        ({t.required})
+                      </span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={parcel.electronicsPrice || ""}
+                      onChange={(e) =>
+                        updateParcel(
+                          parcel.id,
+                          "electronicsPrice",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      placeholder={
+                        language === "ar" ? "مثال: 799.99" : "e.g., 799.99"
+                      }
+                      className="w-full px-4 py-3 rounded-xl border-2 border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    />
+                  </div>
+
+                  {/* Electronics Picture */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.electronicsPicture} *{" "}
+                      <span className="text-blue-600 text-xs">
+                        ({t.required})
+                      </span>
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <label className="flex-1 cursor-pointer">
+                        <div className="px-6 py-4 border-2 border-dashed border-blue-300 rounded-xl hover:border-blue-500 transition-colors bg-blue-50/50 hover:bg-blue-100/50 flex items-center justify-center gap-3">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6 text-blue-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span className="text-blue-700 font-semibold">
+                            {parcel.electronicsPicture
+                              ? language === "ar"
+                                ? "تم اختيار الصورة"
+                                : "Picture selected"
+                              : language === "ar"
+                              ? "اختر صورة"
+                              : "Choose picture"}
+                          </span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              updateParcel(
+                                parcel.id,
+                                "electronicsPicture",
+                                file
+                              );
+                            }
+                          }}
+                        />
+                      </label>
+                      {parcel.electronicsPicture && (
+                        <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-blue-300 shadow-sm">
+                          <img
+                            src={URL.createObjectURL(parcel.electronicsPicture)}
+                            alt="Electronics"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Packaging Type */}
               <div>
@@ -647,25 +848,29 @@ export default function Step4ParcelDetails({
                 />
               </div>
 
-              {/* Photos */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.photos} * ({t.photosRequired})
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handlePhotoUpload(parcel.id, e.target.files)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                />
-                {parcel.photos && parcel.photos.length > 0 && (
-                  <p className="mt-2 text-sm text-gray-600">
-                    {parcel.photos.length}{" "}
-                    {language === "ar" ? "صورة محملة" : "photos uploaded"}
-                  </p>
-                )}
-              </div>
+              {/* Photos - Hidden for Electronics Shipment */}
+              {!parcel.isElectronicsShipment && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t.photos} * ({t.photosRequired})
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) =>
+                      handlePhotoUpload(parcel.id, e.target.files)
+                    }
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  />
+                  {parcel.photos && parcel.photos.length > 0 && (
+                    <p className="mt-2 text-sm text-gray-600">
+                      {parcel.photos.length}{" "}
+                      {language === "ar" ? "صورة محملة" : "photos uploaded"}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Electronics Fields */}
               {hasElectronics && (
@@ -839,7 +1044,8 @@ export default function Step4ParcelDetails({
                       <h4 className="text-lg font-bold text-primary-dark">
                         {t.insurance}
                       </h4>
-                      {isPhoneOrLaptop(parcel.productCategory) && (
+                      {(isPhoneOrLaptop(parcel.productCategory) ||
+                        parcel.isElectronicsShipment) && (
                         <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
                           {language === "ar" ? "إلزامي" : "Required"}
                         </span>
@@ -855,7 +1061,10 @@ export default function Step4ParcelDetails({
                         type="checkbox"
                         id={`insurance-checkbox-${parcel.id}`}
                         checked={parcel.wantsInsurance || false}
-                        disabled={isPhoneOrLaptop(parcel.productCategory)}
+                        disabled={
+                          isPhoneOrLaptop(parcel.productCategory) ||
+                          parcel.isElectronicsShipment
+                        }
                         onChange={(e) => {
                           updateParcel(
                             parcel.id,
@@ -878,7 +1087,8 @@ export default function Step4ParcelDetails({
 
                     {/* Declared Shipment Value Field - Only shown when checkbox is checked or required */}
                     {(parcel.wantsInsurance ||
-                      isPhoneOrLaptop(parcel.productCategory)) && (
+                      isPhoneOrLaptop(parcel.productCategory) ||
+                      parcel.isElectronicsShipment) && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}

@@ -33,6 +33,10 @@ export interface Parcel {
   declaredValue?: number; // € - Required for electronics
   hasInvoice?: boolean;
   devicePhoto?: File; // Device photo (1 required for electronics)
+  isElectronicsShipment?: boolean; // Flag to identify electronics shipment cards
+  electronicsName?: string; // Name of the electronic device
+  electronicsPrice?: number; // Price of the electronic device
+  electronicsPicture?: File; // Picture of the electronic device
   
   // Large Items specific fields
   itemType?: string;
