@@ -68,30 +68,6 @@ export default function CreateShipmentPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Show loading spinner while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
-        <Header />
-        <div className="h-20" aria-hidden="true" />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-yellow"></div>
-            <p className="mt-4 text-gray-600">
-              {language === "ar" ? "جاري التحميل..." : "Loading..."}
-            </p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Don't render the form if not authenticated
-  if (!isAuthenticated) {
-    return null;
-  }
-
   // Calculate pricing using API for base price - only when user reaches Step 4
   useEffect(() => {
     const calculatePricing = async () => {
