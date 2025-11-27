@@ -1,14 +1,47 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { PricingResult } from "@/types/pricing";
+import { ShippingDirection } from "@/types/shipment";
+import apiService from "@/lib/api";
 
 interface Step5PricingProps {
   pricing: PricingResult;
   language: "ar" | "en";
+  direction: ShippingDirection | null;
+  selectedEUShippingMethod: number | null;
+  syriaProvince: string;
 }
 
-export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
+interface ShippingMethod {
+  id: number;
+  name: string;
+  carrier: string;
+  price: number;
+  currency: string;
+  delivery_days: string;
+}
+
+interface SyrianProvince {
+  id: number;
+  province_code: string;
+  province_name_ar: string;
+  province_name_en: string;
+  min_price: string;
+  rate_per_kg: string;
+}
+
+export default function Step5Pricing({ 
+  pricing, 
+  language, 
+  direction, 
+  selectedEUShippingMethod, 
+  syriaProvince 
+}: Step5PricingProps) {
+  const [transportPrice, setTransportPrice] = useState<number>(0);
+  const [transportName, setTransportName] = useState<string>("");
+  const [loadingTransport, setLoadingTransport] = useState<boolean>(false);
   const translations = {
     ar: {
       title: "ملخص التسعير",
@@ -32,6 +65,9 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
       finalPackaging: "تغليف نهائي",
       parcelPackaging: "تغليف الطرود",
       insuranceOptional: "تأمين اختياري",
+      transport: "النقل الداخلي",
+      euTransport: "النقل في أوروبا",
+      syriaTransport: "النقل في سورية",
       grandTotal: "الإجمالي النهائي",
     },
     en: {
@@ -57,11 +93,63 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
       finalPackaging: "Final Packaging",
       parcelPackaging: "Parcel Packaging",
       insuranceOptional: "Optional Insurance",
+      transport: "Internal Transport",
+      euTransport: "Transport in Europe",
+      syriaTransport: "Transport in Syria",
       grandTotal: "Grand Total",
     },
   };
 
   const t = translations[language];
+
+  // Fetch transport prices based on user selection
+  useEffect(() => {
+    const fetchTransportPrice = async () => {
+      if (!direction) return;
+
+      setLoadingTransport(true);
+      
+      try {
+        if (direction === 'eu-sy') {
+          // Fetch EU shipping method price
+          if (selectedEUShippingMethod) {
+            // In a real scenario, you'd fetch this from API or state
+            // For now, we'll set a placeholder
+            setTransportName(language === "ar" ? "شحن أوروبي محدد" : "Selected EU Shipping");
+            setTransportPrice(0); // Will be set from the shipping method
+          }
+        } else if (direction === 'sy-eu') {
+          // Fetch Syria province price
+          if (syriaProvince) {
+            try {
+              const response = await apiService.getSyrianProvinces();
+              if (response.data.success && response.data.provinces) {
+                const province = response.data.provinces.find(
+                  (p: SyrianProvince) => p.province_code === syriaProvince
+                );
+                if (province) {
+                  setTransportName(
+                    language === "ar" 
+                      ? `النقل من ${province.province_name_ar}` 
+                      : `Transport from ${province.province_name_en}`
+                  );
+                  // Calculate based on weight or minimum
+                  const minPrice = parseFloat(province.min_price);
+                  setTransportPrice(minPrice);
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching Syria transport price:", error);
+            }
+          }
+        }
+      } finally {
+        setLoadingTransport(false);
+      }
+    };
+
+    fetchTransportPrice();
+  }, [direction, selectedEUShippingMethod, syriaProvince, language]);
 
   return (
     <motion.div
@@ -282,6 +370,47 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
         </div>
       )}
 
+      {/* Internal Transport */}
+      {transportPrice > 0 && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 shadow-lg border-2 border-green-200"
+        >
+          <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+              />
+            </svg>
+            {t.transport}
+          </h3>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700">{transportName}</span>
+              <span className="font-semibold text-green-900">
+                {transportPrice.toFixed(2)} €
+              </span>
+            </div>
+            <div className="pt-3 border-t border-green-300 flex justify-between items-center">
+              <span className="font-bold text-green-900">{t.transport}</span>
+              <span className="text-xl font-bold text-green-900">
+                {transportPrice.toFixed(2)} €
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Grand Total */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -294,7 +423,7 @@ export default function Step5Pricing({ pricing, language }: Step5PricingProps) {
             {t.grandTotal}
           </span>
           <span className="text-4xl font-black text-primary-dark">
-            {pricing.grandTotal.toFixed(2)} €
+            {(pricing.grandTotal + transportPrice).toFixed(2)} €
           </span>
         </div>
       </motion.div>

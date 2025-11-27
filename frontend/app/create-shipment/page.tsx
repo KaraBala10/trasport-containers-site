@@ -72,11 +72,11 @@ export default function CreateShipmentPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Calculate pricing using API for base price - only when user reaches Step 4
+  // Calculate pricing using API for base price - only when user reaches Step 5
   useEffect(() => {
     const calculatePricing = async () => {
-      // Only calculate when user is on Step 4 (Pricing Summary)
-      if (currentStep !== 4) {
+      // Only calculate when user is on Step 5 (Pricing Summary)
+      if (currentStep !== 5) {
         return;
       }
 
@@ -358,8 +358,9 @@ export default function CreateShipmentPage() {
       step2Title: "اختر نوع الشحنة",
       step3Title: "بيانات المرسل والمستلم",
       step4Title: "تفاصيل الطرود",
-      step5Title: "ملخص التسعير",
-      step6Title: "مراجعة وتأكيد",
+      step5Title: "النقل الداخلي",
+      step6Title: "ملخص التسعير",
+      step7Title: "مراجعة وتأكيد",
       step7Title: "طريقة الدفع",
       step8Title: "تم إنشاء الشحنة",
       back: "رجوع",
@@ -377,8 +378,9 @@ export default function CreateShipmentPage() {
       step2Title: "Select Shipment Type",
       step3Title: "Sender & Receiver Information",
       step4Title: "Parcel Details",
-      step5Title: "Pricing Summary",
-      step6Title: "Review & Confirm",
+      step5Title: "Internal Transport",
+      step6Title: "Pricing Summary",
+      step7Title: "Review & Confirm",
       step7Title: "Payment Method",
       step8Title: "Shipment Created",
       back: "Back",
@@ -674,8 +676,8 @@ export default function CreateShipmentPage() {
             </motion.div>
           )}
 
-          {/* Step 4 Content - Pricing Summary */}
-          {currentStep === 4 && (
+          {/* Step 4 Content - Internal Transport */}
+          {currentStep === 4 && direction && (
             <motion.div
               key="step4"
               initial={{ opacity: 0, x: -20 }}
@@ -683,24 +685,26 @@ export default function CreateShipmentPage() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.4 }}
             >
-              {pricingLoading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-yellow mb-4"></div>
-                  <p className="text-gray-600 text-lg">
-                    {language === "ar"
-                      ? "جاري حساب الأسعار..."
-                      : "Calculating prices..."}
-                  </p>
-                </div>
-              ) : pricing ? (
-                <Step5Pricing pricing={pricing} language={language} />
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  {language === "ar"
-                    ? "يرجى إضافة الطرود أولاً في الخطوة السابقة"
-                    : "Please add parcels first in the previous step"}
-                </div>
-              )}
+              <Step8InternalTransport
+                direction={direction}
+                language={language}
+                euPickupAddress={euPickupAddress}
+                onEUPickupAddressChange={setEUPickupAddress}
+                euPickupWeight={euPickupWeight}
+                onEUPickupWeightChange={setEUPickupWeight}
+                euPickupCity={euPickupCity}
+                onEUPickupCityChange={setEUPickupCity}
+                euPickupPostalCode={euPickupPostalCode}
+                onEUPickupPostalCodeChange={setEUPickupPostalCode}
+                euPickupCountry={euPickupCountry}
+                onEUPickupCountryChange={setEUPickupCountry}
+                selectedEUShippingMethod={selectedEUShippingMethod}
+                onEUShippingMethodChange={setSelectedEUShippingMethod}
+                syriaProvince={syriaProvince}
+                onSyriaProvinceChange={setSyriaProvince}
+                syriaWeight={syriaWeight}
+                onSyriaWeightChange={setSyriaWeight}
+              />
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -770,8 +774,8 @@ export default function CreateShipmentPage() {
             </motion.div>
           )}
 
-          {/* Step 5 Content - Internal Transport */}
-          {currentStep === 5 && direction && (
+          {/* Step 5 Content - Pricing Summary */}
+          {currentStep === 5 && (
             <motion.div
               key="step5"
               initial={{ opacity: 0, x: -20 }}
@@ -779,26 +783,30 @@ export default function CreateShipmentPage() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.4 }}
             >
-              <Step8InternalTransport
-                direction={direction}
-                euPickupAddress={euPickupAddress}
-                euPickupWeight={euPickupWeight}
-                euPickupCity={euPickupCity}
-                euPickupPostalCode={euPickupPostalCode}
-                euPickupCountry={euPickupCountry}
-                selectedEUShippingMethod={selectedEUShippingMethod}
-                onEUPickupAddressChange={setEUPickupAddress}
-                onEUPickupWeightChange={setEUPickupWeight}
-                onEUPickupCityChange={setEUPickupCity}
-                onEUPickupPostalCodeChange={setEUPickupPostalCode}
-                onEUPickupCountryChange={setEUPickupCountry}
-                onEUShippingMethodChange={setSelectedEUShippingMethod}
-                syriaProvince={syriaProvince}
-                syriaWeight={syriaWeight}
-                onSyriaProvinceChange={setSyriaProvince}
-                onSyriaWeightChange={setSyriaWeight}
-                language={language}
-              />
+              {pricingLoading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-yellow mb-4"></div>
+                  <p className="text-gray-600 text-lg">
+                    {language === "ar"
+                      ? "جاري حساب الأسعار..."
+                      : "Calculating prices..."}
+                  </p>
+                </div>
+              ) : pricing ? (
+                <Step5Pricing 
+                  pricing={pricing} 
+                  language={language}
+                  direction={direction}
+                  selectedEUShippingMethod={selectedEUShippingMethod}
+                  syriaProvince={syriaProvince}
+                />
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  {language === "ar"
+                    ? "يرجى إضافة الطرود أولاً في الخطوة السابقة"
+                    : "Please add parcels first in the previous step"}
+                </div>
+              )}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
