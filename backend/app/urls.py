@@ -16,7 +16,8 @@ from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
                     countries_list_view, cities_list_view, ports_list_view,
                     request_new_product_view, user_product_requests_view,
                     admin_all_product_requests_view, update_product_request_view,
-                    get_per_piece_products_view, get_regular_products_view)
+                    get_per_piece_products_view, get_regular_products_view,
+                    calculate_eu_shipping_view, sendcloud_webhook_view)
 
 app_name = "app"
 
@@ -107,4 +108,7 @@ urlpatterns = [
         PackagingPriceDetailView.as_view(),
         name="admin_packaging_price_detail",
     ),
+    # Sendcloud Shipping endpoints
+    path("calculate-eu-shipping/", calculate_eu_shipping_view, name="calculate_eu_shipping"),
+    path("sendcloud/webhook/", sendcloud_webhook_view, name="sendcloud_webhook"),
 ]

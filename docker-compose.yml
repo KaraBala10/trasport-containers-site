@@ -39,9 +39,9 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: django_backend
-    # Backend is only accessible through nginx (not directly from host)
-    expose:
-      - "8000"
+    # Expose backend port for direct access during development
+    ports:
+      - "8000:8000"
     volumes:
       - .:/app
       - static_volume:/app/staticfiles

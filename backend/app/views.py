@@ -1932,3 +1932,260 @@ def update_product_request_view(request, pk):
             {"success": False, "error": "Failed to update product request"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+# ============================================================================
+# SENDCLOUD API ENDPOINTS
+# ============================================================================
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Allow authenticated users and guests
+def calculate_eu_shipping_view(request):
+    """
+    Calculate EU internal shipping rates using Sendcloud API
+    
+    POST /api/calculate-eu-shipping/
+    
+    Request Body:
+    {
+        "sender_address": "Wattweg 5",
+        "sender_city": "Bergen op Zoom",
+        "sender_postal_code": "4622RA",
+        "sender_country": "NL",
+        "receiver_address": "Main Street 123",
+        "receiver_city": "Amsterdam",
+        "receiver_postal_code": "1012AB",
+        "receiver_country": "NL",
+        "weight": 25.5,
+        "length": 50,  (optional)
+        "width": 40,   (optional)
+        "height": 30   (optional)
+    }
+    
+    Response:
+    {
+        "success": true,
+        "shipping_methods": [
+            {
+                "id": 1,
+                "name": "PostNL",
+                "carrier": "postnl",
+                "price": 6.25,
+                "currency": "EUR",
+                "delivery_days": "2-3"
+            }
+        ]
+    }
+    
+    Security:
+    - All inputs are validated and sanitized
+    - Only EU country codes accepted
+    - Weight/dimension limits enforced
+    - Secure logging (no personal data)
+    """
+    from .sendcloud_service import (
+        get_shipping_methods,
+        SendcloudAPIError,
+        SendcloudValidationError,
+    )
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # ✅ Extract and validate request data
+        sender_address = request.data.get("sender_address")
+        sender_city = request.data.get("sender_city")
+        sender_postal_code = request.data.get("sender_postal_code")
+        sender_country = request.data.get("sender_country")
+        receiver_address = request.data.get("receiver_address")
+        receiver_city = request.data.get("receiver_city")
+        receiver_postal_code = request.data.get("receiver_postal_code")
+        receiver_country = request.data.get("receiver_country")
+        weight = request.data.get("weight")
+        
+        # Optional dimensions
+        length = request.data.get("length")
+        width = request.data.get("width")
+        height = request.data.get("height")
+        
+        # ✅ Check required fields
+        required_fields = {
+            "sender_address": sender_address,
+            "sender_city": sender_city,
+            "sender_postal_code": sender_postal_code,
+            "sender_country": sender_country,
+            "receiver_address": receiver_address,
+            "receiver_city": receiver_city,
+            "receiver_postal_code": receiver_postal_code,
+            "receiver_country": receiver_country,
+            "weight": weight,
+        }
+        
+        missing_fields = [field for field, value in required_fields.items() if not value]
+        if missing_fields:
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Missing required fields: {', '.join(missing_fields)}",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # ✅ Call Sendcloud service (validation happens inside)
+        shipping_methods = get_shipping_methods(
+            sender_address=sender_address,
+            sender_city=sender_city,
+            sender_postal_code=sender_postal_code,
+            sender_country=sender_country,
+            receiver_address=receiver_address,
+            receiver_city=receiver_city,
+            receiver_postal_code=receiver_postal_code,
+            receiver_country=receiver_country,
+            weight=weight,
+            length=length,
+            width=width,
+            height=height,
+        )
+        
+        logger.info(f"✅ Retrieved {len(shipping_methods)} shipping methods from Sendcloud")
+        
+        return Response(
+            {
+                "success": True,
+                "shipping_methods": shipping_methods,
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+    except SendcloudValidationError as e:
+        # Input validation failed
+        logger.warning(f"Validation error in calculate_eu_shipping: {str(e)}")
+        return Response(
+            {"success": False, "error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+        
+    except SendcloudAPIError as e:
+        # Sendcloud API call failed
+        logger.error(f"Sendcloud API error in calculate_eu_shipping: {str(e)}")
+        return Response(
+            {"success": False, "error": "Unable to fetch shipping rates. Please try again."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+        
+    except Exception as e:
+        # Unexpected error
+        logger.error(f"Unexpected error in calculate_eu_shipping: {type(e).__name__}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "An unexpected error occurred"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Webhooks come from Sendcloud, not authenticated users
+def sendcloud_webhook_view(request):
+    """
+    Handle Sendcloud webhook notifications
+    
+    POST /api/sendcloud/webhook/
+    
+    Headers:
+        Sendcloud-Signature: HMAC signature for verification
+    
+    Body:
+    {
+        "parcel": {
+            "id": 12345,
+            "tracking_number": "3SABCD...",
+            "status": {
+                "id": 1,
+                "message": "delivered"
+            },
+            "carrier": {
+                "code": "postnl"
+            }
+        },
+        "timestamp": "2024-01-01T10:00:00Z",
+        "action": "parcel_status_changed"
+    }
+    
+    Security:
+    - Webhook signature verification (HMAC-SHA256)
+    - Payload validation
+    - Prevents fake webhook attacks
+    """
+    from .sendcloud_service import (
+        verify_webhook_signature,
+        parse_webhook_data,
+        SendcloudValidationError,
+    )
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # ✅ STEP 1: Get signature from headers
+        signature = request.headers.get('Sendcloud-Signature', '')
+        
+        # ✅ STEP 2: Verify webhook signature
+        if not verify_webhook_signature(request.body, signature):
+            logger.error("⚠️ Sendcloud webhook signature verification FAILED - rejecting request")
+            return Response(
+                {"success": False, "error": "Invalid signature"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        
+        logger.info("✅ Sendcloud webhook signature verified")
+        
+        # ✅ STEP 3: Parse request body
+        try:
+            webhook_data = request.data
+        except Exception:
+            logger.error("Failed to parse webhook JSON")
+            return Response(
+                {"success": False, "error": "Invalid JSON"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # ✅ STEP 4: Validate and extract webhook data
+        validated_data = parse_webhook_data(webhook_data)
+        
+        sendcloud_id = validated_data['sendcloud_id']
+        tracking_number = validated_data['tracking_number']
+        status_message = validated_data['status']
+        carrier = validated_data['carrier']
+        
+        logger.info(
+            f"Webhook received: Parcel {sendcloud_id}, "
+            f"Status: {status_message}, Carrier: {carrier}"
+        )
+        
+        # ✅ STEP 5: Update shipment in database
+        # TODO: Find and update the LCL shipment based on sendcloud_id
+        # For now, just log and acknowledge
+        
+        # Note: This will be implemented when we create LCLShipment model
+        logger.info(f"Webhook processed successfully for parcel {sendcloud_id}")
+        
+        # ✅ Return 200 OK to acknowledge receipt
+        return Response(
+            {"success": True, "message": "Webhook processed"},
+            status=status.HTTP_200_OK,
+        )
+        
+    except SendcloudValidationError as e:
+        logger.warning(f"Webhook validation failed: {str(e)}")
+        return Response(
+            {"success": False, "error": "Invalid webhook data"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in sendcloud_webhook: {type(e).__name__}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "Internal server error"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

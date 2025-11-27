@@ -248,3 +248,14 @@ MOLLIE_REDIRECT_CANCEL_URL = config(
     "MOLLIE_REDIRECT_CANCEL_URL",
     default="https://medo-freight.eu/dashboard?payment=canceled",
 )
+
+# Sendcloud Shipping Configuration
+SENDCLOUD_PUBLIC_KEY = config("SENDCLOUD_PUBLIC_KEY", default="").strip()
+SENDCLOUD_SECRET_KEY = config("SENDCLOUD_SECRET_KEY", default="").strip()
+SENDCLOUD_API_URL = config(
+    "SENDCLOUD_API_URL",
+    default="https://panel.sendcloud.sc/api/v2/",
+)
+SENDCLOUD_USE_TEST_MODE = config("SENDCLOUD_USE_TEST_MODE", default=True, cast=bool)
+SENDCLOUD_WEBHOOK_SECRET = config("SENDCLOUD_WEBHOOK_SECRET", default="")
+SENDCLOUD_WEBHOOK_URL = config("SENDCLOUD_WEBHOOK_URL", default="")

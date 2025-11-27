@@ -44,6 +44,10 @@ export default function CreateShipmentPage() {
   const [declaredShipmentValue, setDeclaredShipmentValue] = useState<number>(0);
   const [euPickupAddress, setEUPickupAddress] = useState<string>("");
   const [euPickupWeight, setEUPickupWeight] = useState<number>(0);
+  const [euPickupCity, setEUPickupCity] = useState<string>("");
+  const [euPickupPostalCode, setEUPickupPostalCode] = useState<string>("");
+  const [euPickupCountry, setEUPickupCountry] = useState<string>("");
+  const [selectedEUShippingMethod, setSelectedEUShippingMethod] = useState<number | null>(null);
   const [syriaProvince, setSyriaProvince] = useState<string>("");
   const [syriaWeight, setSyriaWeight] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<
@@ -779,8 +783,16 @@ export default function CreateShipmentPage() {
                 direction={direction}
                 euPickupAddress={euPickupAddress}
                 euPickupWeight={euPickupWeight}
+                euPickupCity={euPickupCity}
+                euPickupPostalCode={euPickupPostalCode}
+                euPickupCountry={euPickupCountry}
+                selectedEUShippingMethod={selectedEUShippingMethod}
                 onEUPickupAddressChange={setEUPickupAddress}
                 onEUPickupWeightChange={setEUPickupWeight}
+                onEUPickupCityChange={setEUPickupCity}
+                onEUPickupPostalCodeChange={setEUPickupPostalCode}
+                onEUPickupCountryChange={setEUPickupCountry}
+                onEUShippingMethodChange={setSelectedEUShippingMethod}
                 syriaProvince={syriaProvince}
                 syriaWeight={syriaWeight}
                 onSyriaProvinceChange={setSyriaProvince}
@@ -1059,6 +1071,10 @@ export default function CreateShipmentPage() {
                         ),
                         eu_pickup_address: euPickupAddress,
                         eu_pickup_weight: euPickupWeight,
+                        eu_pickup_city: euPickupCity,
+                        eu_pickup_postal_code: euPickupPostalCode,
+                        eu_pickup_country: euPickupCountry,
+                        selected_eu_shipping_method: selectedEUShippingMethod,
                         syria_province: syriaProvince,
                         syria_weight: syriaWeight,
                         payment_method: paymentMethod,

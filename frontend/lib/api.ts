@@ -352,7 +352,25 @@ export const apiService = {
   calculateCBM: (length: number, width: number, height: number) => {
     return apiClient.post('/calculate-cbm/', { length, width, height });
   },
+
+  // Sendcloud EU Shipping API
+  calculateEUShipping: (data: {
+    sender_address: string;
+    sender_city: string;
+    sender_postal_code: string;
+    sender_country: string;
+    receiver_address: string;
+    receiver_city: string;
+    receiver_postal_code: string;
+    receiver_country: string;
+    weight: number;
+    length?: number;
+    width?: number;
+    height?: number;
+  }) => {
+    return apiClient.post('/calculate-eu-shipping/', data);
+  },
 };
 
-export default apiClient;
+export default apiService;
 
