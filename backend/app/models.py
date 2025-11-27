@@ -335,9 +335,9 @@ class FCLQuote(models.Model):
         ("ARRIVED_WATTWEG_5", "Arrived Wattweg 5"),
         ("SORTING_WATTWEG_5", "Sorting Wattweg 5"),
         ("READY_FOR_EXPORT", "Ready for Export"),
-        ("IN_TRANSIT_TO_SYRIA", "In Transit to Syria"),
-        ("ARRIVED_SYRIA", "Arrived Syria"),
-        ("SYRIA_SORTING", "Syria Sorting"),
+        ("IN_TRANSIT_TO_DESTINATION", "In Transit to Destination"),
+        ("ARRIVED_DESTINATION", "Arrived at Destination"),
+        ("DESTINATION_SORTING", "Sorting at Destination"),
         ("READY_FOR_DELIVERY", "Ready for Delivery"),
         ("OUT_FOR_DELIVERY", "Out for Delivery"),
         ("DELIVERED", "Delivered"),
@@ -655,3 +655,51 @@ class SyrianProvincePrice(models.Model):
             return float(self.min_price)
         calculated = float(weight) * float(self.rate_per_kg)
         return max(calculated, float(self.min_price))
+
+
+class ShippingSettings(models.Model):
+    """
+    Global shipping settings - Only one instance should exist
+    """
+    sendcloud_profit_margin = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=10.00,
+        verbose_name="Sendcloud Profit Margin (%)",
+        help_text="Profit margin percentage added to Sendcloud prices (e.g., 10.00 for 10%)",
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Shipping Settings"
+        verbose_name_plural = "Shipping Settings"
+    
+    def __str__(self):
+        return f"Shipping Settings (Sendcloud Margin: {self.sendcloud_profit_margin}%)"
+    
+    def save(self, *args, **kwargs):
+        """
+        Ensure only one instance exists (Singleton pattern)
+        """
+        if not self.pk and ShippingSettings.objects.exists():
+            # If trying to create new instance when one exists, update existing instead
+            existing = ShippingSettings.objects.first()
+            existing.sendcloud_profit_margin = self.sendcloud_profit_margin
+            existing.save()
+            return existing
+        return super().save(*args, **kwargs)
+    
+    @classmethod
+    def get_settings(cls):
+        """
+        Get the shipping settings instance (creates one if doesn't exist)
+        """
+        settings, created = cls.objects.get_or_create(
+            pk=1,
+            defaults={'sendcloud_profit_margin': 10.00}
+        )
+        if created:
+            print("✅ Created default ShippingSettings")
+        return settings

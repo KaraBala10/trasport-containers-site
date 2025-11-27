@@ -236,9 +236,9 @@ export default function DashboardPage() {
         ARRIVED_WATTWEG_5: "وصل إلى واتفيج 5",
         SORTING_WATTWEG_5: "فرز في واتفيج 5",
         READY_FOR_EXPORT: "جاهز للتصدير",
-        IN_TRANSIT_TO_SYRIA: "في الطريق إلى سوريا",
-        ARRIVED_SYRIA: "وصل إلى سوريا",
-        SYRIA_SORTING: "فرز في سوريا",
+        IN_TRANSIT_TO_DESTINATION: "في الطريق إلى الوجهة",
+        ARRIVED_DESTINATION: "وصل إلى الوجهة",
+        DESTINATION_SORTING: "فرز في الوجهة",
         READY_FOR_DELIVERY: "جاهز للتسليم",
         OUT_FOR_DELIVERY: "خارج للتسليم",
         DELIVERED: "تم التسليم",
@@ -355,9 +355,9 @@ export default function DashboardPage() {
         ARRIVED_WATTWEG_5: "Arrived Wattweg 5",
         SORTING_WATTWEG_5: "Sorting Wattweg 5",
         READY_FOR_EXPORT: "Ready for Export",
-        IN_TRANSIT_TO_SYRIA: "In Transit to Syria",
-        ARRIVED_SYRIA: "Arrived Syria",
-        SYRIA_SORTING: "Syria Sorting",
+        IN_TRANSIT_TO_DESTINATION: "In Transit to Destination",
+        ARRIVED_DESTINATION: "Arrived at Destination",
+        DESTINATION_SORTING: "Sorting at Destination",
         READY_FOR_DELIVERY: "Ready for Delivery",
         OUT_FOR_DELIVERY: "Out for Delivery",
         DELIVERED: "Delivered",
@@ -719,11 +719,11 @@ export default function DashboardPage() {
       const quote = fclQuotes.find((q) => q.id === quoteId);
       if (!quote) return;
 
-      // Check if payment is 100% before allowing status updates to IN_TRANSIT_TO_SYRIA and beyond
+      // Check if payment is 100% before allowing status updates to IN_TRANSIT_TO_DESTINATION and beyond
       const restrictedStatuses = [
-        "IN_TRANSIT_TO_SYRIA",
-        "ARRIVED_SYRIA",
-        "SYRIA_SORTING",
+        "IN_TRANSIT_TO_DESTINATION",
+        "ARRIVED_DESTINATION",
+        "DESTINATION_SORTING",
         "READY_FOR_DELIVERY",
         "OUT_FOR_DELIVERY",
         "DELIVERED",
@@ -889,11 +889,11 @@ export default function DashboardPage() {
         "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800 border border-pink-300",
       READY_FOR_EXPORT:
         "bg-gradient-to-r from-cyan-100 to-cyan-200 text-cyan-800 border border-cyan-300",
-      IN_TRANSIT_TO_SYRIA:
+      IN_TRANSIT_TO_DESTINATION:
         "bg-gradient-to-r from-teal-100 to-teal-200 text-teal-800 border border-teal-300",
-      ARRIVED_SYRIA:
+      ARRIVED_DESTINATION:
         "bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border border-emerald-300",
-      SYRIA_SORTING:
+      DESTINATION_SORTING:
         "bg-gradient-to-r from-lime-100 to-lime-200 text-lime-800 border border-lime-300",
       READY_FOR_DELIVERY:
         "bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border border-amber-300",
@@ -1431,6 +1431,93 @@ export default function DashboardPage() {
 
                     {/* Bottom Shine Effect */}
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-yellow via-yellow-400 to-primary-dark transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                  </Link>
+
+                  {/* Shipping Settings (Sendcloud Profit Margin) Card */}
+                  <Link
+                    href="/dashboard/shipping-settings"
+                    className="group relative bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-2xl shadow-lg p-6 border-2 border-transparent hover:border-primary-yellow transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-2 overflow-hidden"
+                  >
+                    {/* Animated Background Pattern */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-yellow to-blue-400 rounded-full blur-3xl"></div>
+                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-primary-dark to-purple-400 rounded-full blur-3xl"></div>
+                    </div>
+
+                    <div className="relative flex items-start gap-4">
+                      {/* Icon Container */}
+                      <div className="relative">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                          <div className="absolute inset-0 bg-blue-400 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                          
+                          <svg
+                            className="w-8 h-8 text-white relative z-10 drop-shadow-lg"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                        </div>
+
+                        <div className="absolute inset-0 rounded-2xl border-2 border-blue-400 animate-ping opacity-20"></div>
+                      </div>
+
+                      {/* Text Content */}
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:scale-105 transition-transform duration-300">
+                          {language === "ar"
+                            ? "إعدادات الشحن"
+                            : "Shipping Settings"}
+                        </h3>
+                        <p className="text-sm text-gray-600 font-medium mb-2">
+                          {language === "ar"
+                            ? "إدارة هوامش الربح على Sendcloud"
+                            : "Manage Sendcloud profit margins"}
+                        </p>
+
+                        {/* Feature Tags */}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-semibold border border-blue-200">
+                            {language === "ar" ? "Sendcloud" : "Sendcloud"}
+                          </span>
+                          <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-semibold border border-purple-200">
+                            {language === "ar" ? "هامش ربح" : "Profit Margin"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Arrow Icon */}
+                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                        <svg
+                          className="w-6 h-6 text-primary-yellow"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                          />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Bottom Shine Effect */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-primary-yellow transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
                   </Link>
                 </div>
               </div>
@@ -2300,7 +2387,7 @@ export default function DashboardPage() {
                                       {getStatusDisplay("READY_FOR_EXPORT")}
                                     </option>
                                     <option
-                                      value="IN_TRANSIT_TO_SYRIA"
+                                      value="IN_TRANSIT_TO_DESTINATION"
                                       disabled={
                                         !!(
                                           quote.total_price &&
@@ -2312,7 +2399,7 @@ export default function DashboardPage() {
                                         )
                                       }
                                     >
-                                      {getStatusDisplay("IN_TRANSIT_TO_SYRIA")}
+                                      {getStatusDisplay("IN_TRANSIT_TO_DESTINATION")}
                                       {quote.total_price &&
                                       quote.total_price > 0 &&
                                       ((quote.amount_paid || 0) /
@@ -2327,7 +2414,7 @@ export default function DashboardPage() {
                                         : ""}
                                     </option>
                                     <option
-                                      value="ARRIVED_SYRIA"
+                                      value="ARRIVED_DESTINATION"
                                       disabled={
                                         !!(
                                           quote.total_price &&
@@ -2339,7 +2426,7 @@ export default function DashboardPage() {
                                         )
                                       }
                                     >
-                                      {getStatusDisplay("ARRIVED_SYRIA")}
+                                      {getStatusDisplay("ARRIVED_DESTINATION")}
                                       {quote.total_price &&
                                       quote.total_price > 0 &&
                                       ((quote.amount_paid || 0) /
@@ -2354,7 +2441,7 @@ export default function DashboardPage() {
                                         : ""}
                                     </option>
                                     <option
-                                      value="SYRIA_SORTING"
+                                      value="DESTINATION_SORTING"
                                       disabled={
                                         !!(
                                           quote.total_price &&
@@ -2366,7 +2453,7 @@ export default function DashboardPage() {
                                         )
                                       }
                                     >
-                                      {getStatusDisplay("SYRIA_SORTING")}
+                                      {getStatusDisplay("DESTINATION_SORTING")}
                                       {quote.total_price &&
                                       quote.total_price > 0 &&
                                       ((quote.amount_paid || 0) /

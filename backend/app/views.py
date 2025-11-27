@@ -438,9 +438,9 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
                 "ARRIVED_WATTWEG_5",
                 "SORTING_WATTWEG_5",
                 "READY_FOR_EXPORT",
-                "IN_TRANSIT_TO_SYRIA",
-                "ARRIVED_SYRIA",
-                "SYRIA_SORTING",
+                "IN_TRANSIT_TO_DESTINATION",
+                "ARRIVED_DESTINATION",
+                "DESTINATION_SORTING",
                 "READY_FOR_DELIVERY",
                 "OUT_FOR_DELIVERY",
                 "DELIVERED",
@@ -482,9 +482,9 @@ class FCLQuoteDetailView(generics.RetrieveUpdateDestroyAPIView):
                 "ARRIVED_WATTWEG_5",
                 "SORTING_WATTWEG_5",
                 "READY_FOR_EXPORT",
-                "IN_TRANSIT_TO_SYRIA",
-                "ARRIVED_SYRIA",
-                "SYRIA_SORTING",
+                "IN_TRANSIT_TO_DESTINATION",
+                "ARRIVED_DESTINATION",
+                "DESTINATION_SORTING",
                 "READY_FOR_DELIVERY",
                 "OUT_FOR_DELIVERY",
                 "DELIVERED",
@@ -2052,6 +2052,32 @@ def calculate_eu_shipping_view(request):
         
         logger.info(f"✅ Retrieved {len(shipping_methods)} shipping methods from Sendcloud")
         
+        # ✅ Calculate profit margin from ShippingSettings
+        try:
+            from .models import ShippingSettings
+            settings_obj = ShippingSettings.get_settings()
+            profit_margin_percent = float(settings_obj.sendcloud_profit_margin)  # Get percentage
+            
+            logger.info(f"📊 Calculating profit margin: {profit_margin_percent}%")
+            
+            for method in shipping_methods:
+                sendcloud_price = method['price']  # Original Sendcloud price
+                profit_amount = round(sendcloud_price * (profit_margin_percent / 100), 2)  # Calculate profit
+                total_price = round(sendcloud_price + profit_amount, 2)  # Calculate total
+                
+                # Add all prices to response
+                method['profit_amount'] = profit_amount
+                method['profit_margin_percent'] = profit_margin_percent
+                method['total_price'] = total_price  # Frontend just displays this
+                
+                logger.info(f"  💰 {method['name']}: Sendcloud=€{sendcloud_price} + Profit=€{profit_amount} = Total=€{total_price}")
+            
+            logger.info(f"✅ Calculated profit for {len(shipping_methods)} methods")
+        except Exception as e:
+            logger.error(f"❌ Could not calculate profit margin: {str(e)}")
+            logger.error(traceback.format_exc())
+            logger.warning("⚠️ Profit margin not added.")
+        
         return Response(
             {
                 "success": True,
@@ -2478,5 +2504,109 @@ def admin_syrian_province_detail_view(request, pk):
             logger.error(f"Error deleting province (admin): {str(e)}")
             return Response(
                 {"success": False, "error": "Failed to delete province"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+# ============================================================================
+# ADMIN SHIPPING SETTINGS API
+# ============================================================================
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAdminUser])
+def admin_shipping_settings_view(request):
+    """
+    Admin endpoint to get or update shipping settings
+    
+    GET /api/admin/shipping-settings/
+    Returns the shipping settings (singleton)
+    
+    PUT /api/admin/shipping-settings/
+    Update shipping settings
+    Body: {
+        "sendcloud_profit_margin": 10.00
+    }
+    """
+    from .models import ShippingSettings
+    
+    if request.method == "GET":
+        try:
+            settings = ShippingSettings.get_settings()
+            
+            return Response(
+                {
+                    "success": True,
+                    "settings": {
+                        "id": settings.id,
+                        "sendcloud_profit_margin": float(settings.sendcloud_profit_margin),
+                        "created_at": settings.created_at,
+                        "updated_at": settings.updated_at,
+                    }
+                },
+                status=status.HTTP_200_OK,
+            )
+            
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching shipping settings (admin): {str(e)}")
+            return Response(
+                {"success": False, "error": "Failed to fetch shipping settings"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    
+    elif request.method == "PUT":
+        try:
+            settings = ShippingSettings.get_settings()
+            
+            # Get profit margin from request
+            profit_margin = request.data.get("sendcloud_profit_margin")
+            
+            if profit_margin is None:
+                return Response(
+                    {"success": False, "error": "sendcloud_profit_margin is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Validate profit margin
+            try:
+                profit_margin = float(profit_margin)
+                if profit_margin < 0:
+                    return Response(
+                        {"success": False, "error": "Profit margin cannot be negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            except (ValueError, TypeError):
+                return Response(
+                    {"success": False, "error": "Invalid profit margin value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Update settings
+            settings.sendcloud_profit_margin = profit_margin
+            settings.save()
+            
+            logger = logging.getLogger(__name__)
+            logger.info(f"✅ Admin updated Sendcloud profit margin to {profit_margin}%")
+            
+            return Response(
+                {
+                    "success": True,
+                    "message": "Shipping settings updated successfully",
+                    "settings": {
+                        "id": settings.id,
+                        "sendcloud_profit_margin": float(settings.sendcloud_profit_margin),
+                        "updated_at": settings.updated_at,
+                    }
+                },
+                status=status.HTTP_200_OK,
+            )
+            
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error updating shipping settings (admin): {str(e)}")
+            logger.error(traceback.format_exc())
+            return Response(
+                {"success": False, "error": "Failed to update shipping settings"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ContactMessage, FCLQuote, PackagingPrice, Price, ProductRequest, SyrianProvincePrice
+from .models import ContactMessage, FCLQuote, PackagingPrice, Price, ProductRequest, SyrianProvincePrice, ShippingSettings
 
 
 @admin.register(ContactMessage)
@@ -285,3 +285,36 @@ class SyrianProvincePriceAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+
+@admin.register(ShippingSettings)
+class ShippingSettingsAdmin(admin.ModelAdmin):
+    list_display = (
+        "sendcloud_profit_margin",
+        "updated_at",
+    )
+    readonly_fields = ("created_at", "updated_at")
+    
+    fieldsets = (
+        (
+            "Sendcloud Settings",
+            {
+                "fields": ("sendcloud_profit_margin",),
+                "description": "Profit margin percentage added to Sendcloud shipping prices. Example: 10.00 means 10% profit.",
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+            },
+        ),
+    )
+    
+    def has_add_permission(self, request):
+        """Only allow one settings instance"""
+        return not ShippingSettings.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        """Don't allow deletion of settings"""
+        return False

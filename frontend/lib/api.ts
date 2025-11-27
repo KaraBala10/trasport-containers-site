@@ -429,6 +429,20 @@ export const apiService = {
   adminDeleteSyrianProvince: (id: number) => {
     return apiClient.delete(`/admin/syrian-provinces/${id}/`);
   },
+
+  // ============================================
+  // SHIPPING SETTINGS (Admin Only)
+  // ============================================
+  
+  // Get shipping settings
+  adminGetShippingSettings: () => {
+    return apiClient.get("/admin/shipping-settings/");
+  },
+
+  // Update shipping settings
+  adminUpdateShippingSettings: (data: { sendcloud_profit_margin: number }) => {
+    return apiClient.put("/admin/shipping-settings/", data);
+  },
 };
 
 export default apiService;

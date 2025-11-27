@@ -8,8 +8,11 @@ interface Step5PricingProps {
   pricing: PricingResult;
   language: "ar" | "en";
   direction: ShippingDirection | null;
-  selectedEUShippingPrice: number;
+  selectedEUShippingPrice: number; // Sendcloud original price
   selectedEUShippingName: string;
+  selectedEUShippingProfitAmount?: number; // Profit amount from backend
+  selectedEUShippingProfitMarginPercent?: number; // Profit margin %
+  selectedEUShippingTotalPrice?: number; // Total price (calculated in backend)
   syriaProvince: string;
   syriaTransportPrice: number;
   syriaTransportDetails: any;
@@ -21,6 +24,9 @@ export default function Step5Pricing({
   direction,
   selectedEUShippingPrice,
   selectedEUShippingName,
+  selectedEUShippingProfitAmount,
+  selectedEUShippingProfitMarginPercent,
+  selectedEUShippingTotalPrice,
   syriaProvince,
   syriaTransportPrice,
   syriaTransportDetails,
@@ -95,29 +101,38 @@ export default function Step5Pricing({
     direction,
     syriaTransportDetails,
     syriaTransportPrice,
-    selectedEUShippingPrice,
+    selectedEUShippingPrice, // Sendcloud original price
+    selectedEUShippingProfitAmount, // Profit amount
+    selectedEUShippingProfitMarginPercent, // Profit %
     selectedEUShippingName,
     pricingGrandTotal: pricing?.grandTotal,
   });
 
   // Show transport cards based on data availability (ignore direction)
-  const isEUTransport = selectedEUShippingPrice && selectedEUShippingPrice > 0;
+  const isEUTransport = selectedEUShippingPrice !== null && selectedEUShippingPrice !== undefined;
   const isSyriaTransport =
-    syriaTransportDetails?.calculated_price &&
-    syriaTransportDetails.calculated_price > 0;
+    syriaTransportDetails?.calculated_price !== null &&
+    syriaTransportDetails?.calculated_price !== undefined;
 
-  // Calculate transport prices
-  const euTransportPrice = isEUTransport ? selectedEUShippingPrice : 0;
+  // Get prices from backend (NO calculations here!)
+  const sendcloudPrice = isEUTransport ? (selectedEUShippingPrice || 0) : 0;
+  const profitAmount = isEUTransport ? (selectedEUShippingProfitAmount || 0) : 0;
+  const euTransportPrice = isEUTransport ? (selectedEUShippingTotalPrice || 0) : 0; // Backend calculated total
   const syriaTransportCost = isSyriaTransport
-    ? syriaTransportDetails.calculated_price
+    ? (syriaTransportDetails.calculated_price || 0)
     : 0;
   const totalTransportPrice = euTransportPrice + syriaTransportCost;
 
   console.log("🔍 Step5Pricing - Calculated Transport:", {
     direction,
+    sendcloudPrice,
+    profitAmount,
+    profitMarginPercent: selectedEUShippingProfitMarginPercent,
+    euTransportPrice,
+    selectedEUShippingName,
+    syriaTransportDetails,
     isEUTransport,
     isSyriaTransport,
-    euTransportPrice,
     syriaTransportCost,
     totalTransportPrice,
   });
@@ -365,7 +380,7 @@ export default function Step5Pricing({
             </svg>
             {t.euTransport}
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-700">
                 {language === "ar" ? "طريقة الشحن" : "Shipping Method"}
@@ -374,12 +389,52 @@ export default function Step5Pricing({
                 {selectedEUShippingName}
               </span>
             </div>
-            <div className="pt-3 border-t border-blue-300 flex justify-between items-center">
-              <span className="font-bold text-blue-900">{t.transport}</span>
-              <span className="text-xl font-bold text-blue-900">
-                €{euTransportPrice.toFixed(2)}
-              </span>
-            </div>
+            
+            {/* تفاصيل التسعير من Backend */}
+            {sendcloudPrice > 0 && profitAmount !== undefined && (
+              <div className="bg-white rounded-lg p-4 space-y-2 border border-blue-200">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">
+                    {language === "ar" ? "سعر Sendcloud:" : "Sendcloud Price:"}
+                  </span>
+                  <span className="font-semibold text-gray-800">
+                    €{sendcloudPrice.toFixed(2)}
+                  </span>
+                </div>
+                
+                {profitAmount > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-green-600">
+                      {language === "ar" 
+                        ? `+ الربح (${selectedEUShippingProfitMarginPercent}%):`
+                        : `+ Profit (${selectedEUShippingProfitMarginPercent}%):`}
+                    </span>
+                    <span className="font-semibold text-green-600">
+                      €{profitAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                  <span className="font-bold text-gray-800">
+                    {language === "ar" ? "المجموع:" : "Total:"}
+                  </span>
+                  <span className="text-lg font-bold text-blue-600">
+                    €{euTransportPrice.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {/* إذا ما في تفاصيل، عرض السعر النهائي بس */}
+            {(sendcloudPrice === 0 || profitAmount === undefined) && euTransportPrice > 0 && (
+              <div className="pt-3 border-t border-blue-300 flex justify-between items-center">
+                <span className="font-bold text-blue-900">{t.transport}</span>
+                <span className="text-xl font-bold text-blue-900">
+                  €{euTransportPrice.toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
