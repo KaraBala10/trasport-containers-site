@@ -47,9 +47,17 @@ export default function CreateShipmentPage() {
   const [euPickupCity, setEUPickupCity] = useState<string>("");
   const [euPickupPostalCode, setEUPickupPostalCode] = useState<string>("");
   const [euPickupCountry, setEUPickupCountry] = useState<string>("");
-  const [selectedEUShippingMethod, setSelectedEUShippingMethod] = useState<number | null>(null);
+  const [selectedEUShippingMethod, setSelectedEUShippingMethod] = useState<
+    number | null
+  >(null);
+  const [selectedEUShippingPrice, setSelectedEUShippingPrice] =
+    useState<number>(0);
+  const [selectedEUShippingName, setSelectedEUShippingName] =
+    useState<string>("");
   const [syriaProvince, setSyriaProvince] = useState<string>("");
   const [syriaWeight, setSyriaWeight] = useState<number>(0);
+  const [syriaTransportPrice, setSyriaTransportPrice] = useState<number>(0);
+  const [syriaTransportDetails, setSyriaTransportDetails] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<
     "mollie" | "cash" | "internal-transfer" | null
   >(null);
@@ -269,6 +277,17 @@ export default function CreateShipmentPage() {
                   priceByCBM: 0,
                   final: 0,
                 },
+          // Parcel price (same as base price for now)
+          parcelPrice: {
+            total: regularParcels.length > 0 ? basePrice.final : 0,
+            breakdown: {
+              priceByWeight:
+                regularParcels.length > 0 ? basePrice.priceByWeight : 0,
+              priceByCBM: regularParcels.length > 0 ? basePrice.priceByCBM : 0,
+              priceByProduct: 0,
+              final: regularParcels.length > 0 ? basePrice.final : 0,
+            },
+          },
           // Electronics pricing from Backend
           electronicsPrice: electronicsPricing,
           // Packaging cost from Backend API
@@ -293,8 +312,11 @@ export default function CreateShipmentPage() {
         // Store additional info for display
         (pricingResult as any).parcelPackagingCost = packagingCostFromAPI;
         (pricingResult as any).insuranceCostFromAPI = insuranceCostFromAPI;
-        
-        console.log('✅ All pricing calculated from Backend API:', pricingResult);
+
+        console.log(
+          "✅ All pricing calculated from Backend API:",
+          pricingResult
+        );
         setPricing(pricingResult);
       } catch (error) {
         console.error("❌ Error calculating pricing from Backend:", error);
@@ -317,7 +339,7 @@ export default function CreateShipmentPage() {
           },
           grandTotal: 75,
         } as any);
-        
+
         alert(
           language === "ar"
             ? "حدث خطأ في حساب الأسعار. الرجاء المحاولة مرة أخرى."
@@ -361,7 +383,6 @@ export default function CreateShipmentPage() {
       step5Title: "النقل الداخلي",
       step6Title: "ملخص التسعير",
       step7Title: "مراجعة وتأكيد",
-      step7Title: "طريقة الدفع",
       step8Title: "تم إنشاء الشحنة",
       back: "رجوع",
       continue: "متابعة",
@@ -381,7 +402,6 @@ export default function CreateShipmentPage() {
       step5Title: "Internal Transport",
       step6Title: "Pricing Summary",
       step7Title: "Review & Confirm",
-      step7Title: "Payment Method",
       step8Title: "Shipment Created",
       back: "Back",
       continue: "Continue",
@@ -699,11 +719,23 @@ export default function CreateShipmentPage() {
                 euPickupCountry={euPickupCountry}
                 onEUPickupCountryChange={setEUPickupCountry}
                 selectedEUShippingMethod={selectedEUShippingMethod}
-                onEUShippingMethodChange={setSelectedEUShippingMethod}
+                onEUShippingMethodChange={(id, price, name) => {
+                  setSelectedEUShippingMethod(id);
+                  setSelectedEUShippingPrice(price || 0);
+                  setSelectedEUShippingName(name || "");
+                }}
                 syriaProvince={syriaProvince}
                 onSyriaProvinceChange={setSyriaProvince}
                 syriaWeight={syriaWeight}
                 onSyriaWeightChange={setSyriaWeight}
+                onSyriaTransportPriceChange={(price, details) => {
+                  console.log("✅ Received Syria Transport Data:", {
+                    price,
+                    details,
+                  });
+                  setSyriaTransportPrice(price);
+                  setSyriaTransportDetails(details);
+                }}
               />
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -793,13 +825,26 @@ export default function CreateShipmentPage() {
                   </p>
                 </div>
               ) : pricing ? (
-                <Step5Pricing 
-                  pricing={pricing} 
-                  language={language}
-                  direction={direction}
-                  selectedEUShippingMethod={selectedEUShippingMethod}
-                  syriaProvince={syriaProvince}
-                />
+                <>
+                  {console.log("📤 Sending to Step5Pricing:", {
+                    direction,
+                    selectedEUShippingPrice,
+                    selectedEUShippingName,
+                    syriaTransportPrice,
+                    syriaTransportDetails,
+                    pricingGrandTotal: pricing.grandTotal,
+                  })}
+                  <Step5Pricing
+                    pricing={pricing}
+                    language={language}
+                    direction={direction}
+                    selectedEUShippingPrice={selectedEUShippingPrice}
+                    selectedEUShippingName={selectedEUShippingName}
+                    syriaProvince={syriaProvince}
+                    syriaTransportPrice={syriaTransportPrice}
+                    syriaTransportDetails={syriaTransportDetails}
+                  />
+                </>
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   {language === "ar"
@@ -904,6 +949,9 @@ export default function CreateShipmentPage() {
                   setCurrentStep(7);
                 }}
                 language={language}
+                selectedEUShippingName={selectedEUShippingName}
+                selectedEUShippingPrice={selectedEUShippingPrice}
+                syriaTransportDetails={syriaTransportDetails}
               />
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
