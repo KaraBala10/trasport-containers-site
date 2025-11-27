@@ -436,7 +436,7 @@ export default function CreateShipmentPage() {
                 {t.step1Title}
               </h2>
               <Step1Direction
-                direction={direction ?? "eu-sy"}
+                direction={direction}
                 onDirectionChange={(dir) => {
                   setDirection(dir);
                 }}
