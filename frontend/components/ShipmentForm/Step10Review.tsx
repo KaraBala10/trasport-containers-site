@@ -25,7 +25,8 @@ interface Step10ReviewProps {
   onCreateShipment: () => void;
   language: "ar" | "en";
   selectedEUShippingName?: string;
-  selectedEUShippingPrice?: number;
+  selectedEUShippingPrice?: number; // Original Sendcloud price
+  selectedEUShippingTotalPrice?: number; // Total price with profit (from backend)
   syriaTransportDetails?: any;
 }
 
@@ -44,6 +45,7 @@ export default function Step10Review({
   language,
   selectedEUShippingName,
   selectedEUShippingPrice,
+  selectedEUShippingTotalPrice,
   syriaTransportDetails,
 }: Step10ReviewProps) {
   const translations = {
@@ -167,8 +169,8 @@ export default function Step10Review({
     syriaTransportDetails?.calculated_price &&
     syriaTransportDetails.calculated_price > 0;
 
-  // Calculate transport prices
-  const euTransportPrice = isEUTransport ? selectedEUShippingPrice : 0;
+  // Calculate transport prices (use total_price from backend, NOT selectedEUShippingPrice)
+  const euTransportPrice = isEUTransport ? (selectedEUShippingTotalPrice || 0) : 0;
   const syriaTransportCost = isSyriaTransport
     ? syriaTransportDetails.calculated_price
     : 0;
@@ -178,7 +180,9 @@ export default function Step10Review({
     direction,
     isEUTransport,
     isSyriaTransport,
-    euTransportPrice,
+    selectedEUShippingPrice, // Original Sendcloud price
+    selectedEUShippingTotalPrice, // Total with profit (from backend)
+    euTransportPrice, // Should be total_price
     syriaTransportCost,
     totalTransportCost,
     selectedEUShippingName,

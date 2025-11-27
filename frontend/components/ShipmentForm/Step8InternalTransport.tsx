@@ -528,8 +528,13 @@ export default function Step8InternalTransport({
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-primary-dark">
-                          {method.price.toFixed(2)} {method.currency}
+                          {(method.total_price || method.price).toFixed(2)} {method.currency}
                         </p>
+                        {method.profit_amount && method.profit_amount > 0 && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {language === "ar" ? "شامل الربح" : "Incl. profit"} ({method.profit_margin_percent}%)
+                          </p>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -1013,8 +1018,13 @@ export default function Step8InternalTransport({
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-primary-dark">
-                            {method.price.toFixed(2)} {method.currency}
+                            {(method.total_price || method.price).toFixed(2)} {method.currency}
                           </p>
+                          {method.profit_amount && method.profit_amount > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {language === "ar" ? "شامل الربح" : "Incl. profit"} ({method.profit_margin_percent}%)
+                            </p>
+                          )}
                         </div>
                       </div>
                     </motion.div>
