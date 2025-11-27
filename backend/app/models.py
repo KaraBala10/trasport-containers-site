@@ -584,3 +584,74 @@ class ProductRequest(models.Model):
     def __str__(self):
         user_info = f"{self.user.username}" if self.user else "Anonymous"
         return f"{self.product_name} - {user_info} ({self.get_status_display()})"
+
+
+class SyrianProvincePrice(models.Model):
+    """Model to store Syrian internal transport pricing by province"""
+    
+    province_code = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="Province Code",
+        help_text="Unique code for the province (e.g., DAMASCUS, ALEPPO)",
+    )
+    province_name_ar = models.CharField(
+        max_length=100,
+        verbose_name="Province Name (Arabic)",
+        help_text="Arabic name of the province",
+    )
+    province_name_en = models.CharField(
+        max_length=100,
+        verbose_name="Province Name (English)",
+        help_text="English name of the province",
+    )
+    min_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Minimum Price (€)",
+        help_text="Minimum transport price regardless of weight",
+    )
+    rate_per_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Rate per KG (€)",
+        help_text="Price per kilogram of shipment weight",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Active",
+        help_text="Whether this province is available for selection",
+    )
+    display_order = models.IntegerField(
+        default=0,
+        verbose_name="Display Order",
+        help_text="Order in which province appears in dropdown (lower = first)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "province_name_en"]
+        verbose_name = "Syrian Province Price"
+        verbose_name_plural = "Syrian Province Prices"
+
+    def __str__(self):
+        return f"{self.province_name_ar} / {self.province_name_en} - Min: €{self.min_price}, Rate: €{self.rate_per_kg}/kg"
+    
+    def calculate_price(self, weight: float) -> float:
+        """
+        Calculate transport price for given weight
+        Formula: max(weight × rate_per_kg, min_price)
+        
+        Args:
+            weight: Weight in kilograms
+        
+        Returns:
+            Calculated price in EUR
+        """
+        if weight <= 0:
+            return float(self.min_price)
+        calculated = float(weight) * float(self.rate_per_kg)
+        return max(calculated, float(self.min_price))

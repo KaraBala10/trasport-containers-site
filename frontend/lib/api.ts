@@ -370,6 +370,65 @@ export const apiService = {
   }) => {
     return apiClient.post('/calculate-eu-shipping/', data);
   },
+
+  // ============================================================================
+  // SYRIAN INTERNAL TRANSPORT API
+  // ============================================================================
+
+  // Get all active Syrian provinces
+  getSyrianProvinces: () => {
+    return apiClient.get('/syrian-provinces/');
+  },
+
+  // Calculate Syrian internal transport price
+  calculateSyriaTransport: (data: { province_code: string; weight: number }) => {
+    return apiClient.post('/calculate-syria-transport/', data);
+  },
+
+  // ============================================================================
+  // ADMIN SYRIAN PROVINCES CRUD
+  // ============================================================================
+
+  // Get all provinces (admin only - includes inactive)
+  adminGetAllSyrianProvinces: () => {
+    return apiClient.get('/admin/syrian-provinces/');
+  },
+
+  // Create new province (admin only)
+  adminCreateSyrianProvince: (data: {
+    province_code: string;
+    province_name_ar: string;
+    province_name_en: string;
+    min_price: number;
+    rate_per_kg: number;
+    is_active?: boolean;
+    display_order?: number;
+  }) => {
+    return apiClient.post('/admin/syrian-provinces/', data);
+  },
+
+  // Get single province (admin only)
+  adminGetSyrianProvince: (id: number) => {
+    return apiClient.get(`/admin/syrian-provinces/${id}/`);
+  },
+
+  // Update province (admin only)
+  adminUpdateSyrianProvince: (id: number, data: {
+    province_code?: string;
+    province_name_ar?: string;
+    province_name_en?: string;
+    min_price?: number;
+    rate_per_kg?: number;
+    is_active?: boolean;
+    display_order?: number;
+  }) => {
+    return apiClient.put(`/admin/syrian-provinces/${id}/`, data);
+  },
+
+  // Delete province (admin only)
+  adminDeleteSyrianProvince: (id: number) => {
+    return apiClient.delete(`/admin/syrian-provinces/${id}/`);
+  },
 };
 
 export default apiService;

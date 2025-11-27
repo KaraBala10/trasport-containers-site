@@ -17,7 +17,9 @@ from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
                     request_new_product_view, user_product_requests_view,
                     admin_all_product_requests_view, update_product_request_view,
                     get_per_piece_products_view, get_regular_products_view,
-                    calculate_eu_shipping_view, sendcloud_webhook_view)
+                    calculate_eu_shipping_view, sendcloud_webhook_view,
+                    get_syrian_provinces_view, calculate_syria_transport_view,
+                    admin_syrian_provinces_view, admin_syrian_province_detail_view)
 
 app_name = "app"
 
@@ -111,4 +113,10 @@ urlpatterns = [
     # Sendcloud Shipping endpoints
     path("calculate-eu-shipping/", calculate_eu_shipping_view, name="calculate_eu_shipping"),
     path("sendcloud/webhook/", sendcloud_webhook_view, name="sendcloud_webhook"),
+    # Syrian Internal Transport endpoints
+    path("syrian-provinces/", get_syrian_provinces_view, name="syrian_provinces"),
+    path("calculate-syria-transport/", calculate_syria_transport_view, name="calculate_syria_transport"),
+    # Admin CRUD endpoints for Syrian Province Pricing
+    path("admin/syrian-provinces/", admin_syrian_provinces_view, name="admin_syrian_provinces"),
+    path("admin/syrian-provinces/<int:pk>/", admin_syrian_province_detail_view, name="admin_syrian_province_detail"),
 ]

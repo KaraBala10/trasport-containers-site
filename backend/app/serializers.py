@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port, ProductRequest
+from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port, ProductRequest, SyrianProvincePrice
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -427,3 +427,57 @@ class ProductRequestSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = ("id", "user", "user_username", "user_email", "created_at", "updated_at")
+
+
+class SyrianProvincePriceSerializer(serializers.ModelSerializer):
+    """Serializer for Syrian Province Pricing"""
+    
+    class Meta:
+        model = SyrianProvincePrice
+        fields = (
+            "id",
+            "province_code",
+            "province_name_ar",
+            "province_name_en",
+            "min_price",
+            "rate_per_kg",
+            "is_active",
+            "display_order",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+    
+    def validate_min_price(self, value):
+        """Validate minimum price is non-negative"""
+        if value < 0:
+            raise serializers.ValidationError("Minimum price cannot be negative")
+        if value > 1000:
+            raise serializers.ValidationError("Minimum price seems too high (max 1000€)")
+        return value
+    
+    def validate_rate_per_kg(self, value):
+        """Validate rate per kg is non-negative"""
+        if value < 0:
+            raise serializers.ValidationError("Rate per kg cannot be negative")
+        if value > 10:
+            raise serializers.ValidationError("Rate per kg seems too high (max 10€)")
+        return value
+    
+    def validate_province_code(self, value):
+        """Validate and normalize province code"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Province code is required")
+        return value.strip().upper()
+    
+    def validate_province_name_ar(self, value):
+        """Validate Arabic province name"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Arabic province name is required")
+        return value.strip()
+    
+    def validate_province_name_en(self, value):
+        """Validate English province name"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("English province name is required")
+        return value.strip()

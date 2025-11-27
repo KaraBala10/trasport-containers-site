@@ -11,7 +11,7 @@ from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -46,6 +46,7 @@ from .models import (
     Port,
     Price,
     ProductRequest,
+    SyrianProvincePrice,
 )
 from .serializers import (
     ChangePasswordSerializer,
@@ -59,6 +60,7 @@ from .serializers import (
     PriceSerializer,
     ProductRequestSerializer,
     RegisterSerializer,
+    SyrianProvincePriceSerializer,
     UserSerializer,
 )
 
@@ -2189,3 +2191,292 @@ def sendcloud_webhook_view(request):
             {"success": False, "error": "Internal server error"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+# ============================================================================
+# SYRIAN INTERNAL TRANSPORT PRICING API ENDPOINTS
+# ============================================================================
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_syrian_provinces_view(request):
+    """
+    Get list of all active Syrian provinces with pricing
+    
+    GET /api/syrian-provinces/
+    
+    Response:
+    {
+        "success": true,
+        "provinces": [
+            {
+                "id": 1,
+                "province_code": "DAMASCUS",
+                "province_name_ar": "دمشق",
+                "province_name_en": "Damascus",
+                "min_price": "10.00",
+                "rate_per_kg": "0.07",
+                "is_active": true,
+                "display_order": 1
+            }
+        ]
+    }
+    """
+    try:
+        provinces = SyrianProvincePrice.objects.filter(is_active=True)
+        serializer = SyrianProvincePriceSerializer(provinces, many=True)
+        
+        return Response(
+            {"success": True, "provinces": serializer.data},
+            status=status.HTTP_200_OK,
+        )
+        
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching Syrian provinces: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "Failed to fetch provinces"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def calculate_syria_transport_view(request):
+    """
+    Calculate Syrian internal transport price
+    
+    POST /api/calculate-syria-transport/
+    
+    Request Body:
+    {
+        "province_code": "DAMASCUS",
+        "weight": 100.5
+    }
+    
+    Response:
+    {
+        "success": true,
+        "province": {
+            "code": "DAMASCUS",
+            "name_ar": "دمشق",
+            "name_en": "Damascus"
+        },
+        "weight": 100.5,
+        "min_price": 10.00,
+        "rate_per_kg": 0.07,
+        "calculated_price": 14.04,
+        "breakdown": {
+            "weight_cost": 7.04,
+            "min_price": 10.00,
+            "final_price": 14.04
+        }
+    }
+    """
+    try:
+        province_code = request.data.get("province_code")
+        weight = request.data.get("weight")
+        
+        # Validation
+        if not province_code:
+            return Response(
+                {"success": False, "error": "Province code is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if weight is None or weight <= 0:
+            return Response(
+                {"success": False, "error": "Valid weight is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Get province
+        try:
+            province = SyrianProvincePrice.objects.get(
+                province_code=province_code.upper(),
+                is_active=True
+            )
+        except SyrianProvincePrice.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Province not found or inactive"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        # Calculate price using model method
+        final_price = province.calculate_price(float(weight))
+        weight_cost = float(weight) * float(province.rate_per_kg)
+        
+        return Response(
+            {
+                "success": True,
+                "province": {
+                    "code": province.province_code,
+                    "name_ar": province.province_name_ar,
+                    "name_en": province.province_name_en,
+                },
+                "weight": float(weight),
+                "min_price": float(province.min_price),
+                "rate_per_kg": float(province.rate_per_kg),
+                "calculated_price": round(final_price, 2),
+                "breakdown": {
+                    "weight_cost": round(weight_cost, 2),
+                    "min_price": float(province.min_price),
+                    "final_price": round(final_price, 2),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error calculating Syria transport price: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "Failed to calculate price"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+# ============================================================================
+# ADMIN CRUD FOR SYRIAN PROVINCE PRICING
+# ============================================================================
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAdminUser])
+def admin_syrian_provinces_view(request):
+    """
+    Admin endpoint to list all provinces or create new province
+    
+    GET /api/admin/syrian-provinces/
+    Returns all provinces (active and inactive)
+    
+    POST /api/admin/syrian-provinces/
+    Create new province
+    """
+    if request.method == "GET":
+        try:
+            provinces = SyrianProvincePrice.objects.all()
+            serializer = SyrianProvincePriceSerializer(provinces, many=True)
+            
+            return Response(
+                {"success": True, "provinces": serializer.data},
+                status=status.HTTP_200_OK,
+            )
+            
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching all provinces (admin): {str(e)}")
+            return Response(
+                {"success": False, "error": "Failed to fetch provinces"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    
+    elif request.method == "POST":
+        try:
+            serializer = SyrianProvincePriceSerializer(data=request.data)
+            
+            if serializer.is_valid():
+                serializer.save()
+                logger = logging.getLogger(__name__)
+                logger.info(f"✅ Admin created new Syrian province: {serializer.data['province_code']}")
+                
+                return Response(
+                    {"success": True, "message": "Province created successfully", "province": serializer.data},
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return Response(
+                    {"success": False, "errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+                
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating province (admin): {str(e)}")
+            logger.error(traceback.format_exc())
+            return Response(
+                {"success": False, "error": "Failed to create province"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@api_view(["GET", "PUT", "DELETE"])
+@permission_classes([IsAdminUser])
+def admin_syrian_province_detail_view(request, pk):
+    """
+    Admin endpoint to retrieve, update or delete a specific province
+    
+    GET /api/admin/syrian-provinces/<id>/
+    Retrieve province details
+    
+    PUT /api/admin/syrian-provinces/<id>/
+    Update province
+    
+    DELETE /api/admin/syrian-provinces/<id>/
+    Delete province
+    """
+    try:
+        province = SyrianProvincePrice.objects.get(pk=pk)
+    except SyrianProvincePrice.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Province not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    
+    if request.method == "GET":
+        serializer = SyrianProvincePriceSerializer(province)
+        return Response(
+            {"success": True, "province": serializer.data},
+            status=status.HTTP_200_OK,
+        )
+    
+    elif request.method == "PUT":
+        try:
+            serializer = SyrianProvincePriceSerializer(province, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                logger = logging.getLogger(__name__)
+                logger.info(f"✅ Admin updated Syrian province: {province.province_code}")
+                
+                return Response(
+                    {"success": True, "message": "Province updated successfully", "province": serializer.data},
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                return Response(
+                    {"success": False, "errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+                
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error updating province (admin): {str(e)}")
+            return Response(
+                {"success": False, "error": "Failed to update province"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    
+    elif request.method == "DELETE":
+        try:
+            province_code = province.province_code
+            province.delete()
+            
+            logger = logging.getLogger(__name__)
+            logger.info(f"✅ Admin deleted Syrian province: {province_code}")
+            
+            return Response(
+                {"success": True, "message": "Province deleted successfully"},
+                status=status.HTTP_200_OK,
+            )
+            
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error deleting province (admin): {str(e)}")
+            return Response(
+                {"success": False, "error": "Failed to delete province"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ContactMessage, FCLQuote, PackagingPrice, Price, ProductRequest
+from .models import ContactMessage, FCLQuote, PackagingPrice, Price, ProductRequest, SyrianProvincePrice
 
 
 @admin.register(ContactMessage)
@@ -222,6 +222,60 @@ class ProductRequestAdmin(admin.ModelAdmin):
             "Status",
             {
                 "fields": ("status", "admin_notes"),
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+            },
+        ),
+    )
+
+
+@admin.register(SyrianProvincePrice)
+class SyrianProvincePriceAdmin(admin.ModelAdmin):
+    list_display = (
+        "province_name_en",
+        "province_name_ar",
+        "province_code",
+        "min_price",
+        "rate_per_kg",
+        "is_active",
+        "display_order",
+        "updated_at",
+    )
+    list_filter = ("is_active", "created_at", "updated_at")
+    search_fields = ("province_name_en", "province_name_ar", "province_code")
+    readonly_fields = ("created_at", "updated_at")
+    list_editable = ("min_price", "rate_per_kg", "is_active", "display_order")
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        (
+            "Province Information",
+            {
+                "fields": (
+                    "province_code",
+                    ("province_name_ar", "province_name_en"),
+                    "display_order",
+                ),
+            },
+        ),
+        (
+            "Pricing",
+            {
+                "fields": (
+                    "min_price",
+                    "rate_per_kg",
+                ),
+                "description": "Formula: max(weight × rate_per_kg, min_price)",
+            },
+        ),
+        (
+            "Status",
+            {
+                "fields": ("is_active",),
             },
         ),
         (

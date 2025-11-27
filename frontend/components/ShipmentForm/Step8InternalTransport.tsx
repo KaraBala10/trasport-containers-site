@@ -69,23 +69,34 @@ const euCountries = [
   { code: 'GB', name: 'المملكة المتحدة', nameEn: 'United Kingdom' },
 ];
 
-// Syrian provinces with pricing
-const syrianProvinces = [
-  { code: 'ALEPPO', name: 'حلب', nameEn: 'Aleppo', minPrice: 0, ratePerKg: 0 }, // Center location
-  { code: 'LATAKIA', name: 'اللاذقية', nameEn: 'Latakia', minPrice: 6, ratePerKg: 0.05 },
-  { code: 'TARTOUS', name: 'طرطوس', nameEn: 'Tartous', minPrice: 7, ratePerKg: 0.05 },
-  { code: 'DAMASCUS', name: 'دمشق', nameEn: 'Damascus', minPrice: 10, ratePerKg: 0.07 },
-  { code: 'RIF_DIMASHQ', name: 'ريف دمشق', nameEn: 'Rif Dimashq', minPrice: 10, ratePerKg: 0.07 },
-  { code: 'HOMS', name: 'حمص', nameEn: 'Homs', minPrice: 9, ratePerKg: 0.06 },
-  { code: 'HAMA', name: 'حماة', nameEn: 'Hama', minPrice: 8, ratePerKg: 0.06 },
-  { code: 'IDLIB', name: 'إدلب', nameEn: 'Idlib', minPrice: 7, ratePerKg: 0.06 },
-  { code: 'SUWEIDA', name: 'السويداء', nameEn: 'Suweida', minPrice: 12, ratePerKg: 0.08 },
-  { code: 'DARAA', name: 'درعا', nameEn: 'Daraa', minPrice: 11, ratePerKg: 0.07 },
-  { code: 'QUNEITRA', name: 'القنيطرة', nameEn: 'Quneitra', minPrice: 10, ratePerKg: 0.07 },
-  { code: 'RAQQA', name: 'الرقة', nameEn: 'Raqqa', minPrice: 13, ratePerKg: 0.08 },
-  { code: 'DER_EZZOR', name: 'دير الزور', nameEn: 'Deir ez-Zor', minPrice: 14, ratePerKg: 0.09 },
-  { code: 'HASAKA', name: 'الحسكة', nameEn: 'Hasaka', minPrice: 18, ratePerKg: 0.10 },
-];
+// ✅ Syrian provinces - interface for API data
+interface SyrianProvince {
+  id: number;
+  province_code: string;
+  province_name_ar: string;
+  province_name_en: string;
+  min_price: string;
+  rate_per_kg: string;
+  is_active: boolean;
+  display_order: number;
+}
+
+interface SyriaTransportCalculation {
+  province: {
+    code: string;
+    name_ar: string;
+    name_en: string;
+  };
+  weight: number;
+  min_price: number;
+  rate_per_kg: number;
+  calculated_price: number;
+  breakdown: {
+    weight_cost: number;
+    min_price: number;
+    final_price: number;
+  };
+}
 
 export default function Step8InternalTransport({
   direction,
@@ -112,6 +123,12 @@ export default function Step8InternalTransport({
   const [loadingShipping, setLoadingShipping] = useState(false);
   const [shippingError, setShippingError] = useState<string | null>(null);
   const [canCalculate, setCanCalculate] = useState(false);
+  
+  // ✅ States for Syrian internal transport
+  const [syrianProvinces, setSyrianProvinces] = useState<SyrianProvince[]>([]);
+  const [loadingSyriaProvinces, setLoadingSyriaProvinces] = useState(true);
+  const [syriaTransportPrice, setSyriaTransportPrice] = useState<SyriaTransportCalculation | null>(null);
+  const [loadingSyriaPrice, setLoadingSyriaPrice] = useState(false);
 
   const translations = {
     ar: {
@@ -181,6 +198,54 @@ export default function Step8InternalTransport({
   const t = translations[language];
   const isEUtoSY = direction === 'eu-sy';
 
+  // ✅ Load Syrian provinces on component mount
+  useEffect(() => {
+    const fetchSyrianProvinces = async () => {
+      try {
+        setLoadingSyriaProvinces(true);
+        const response = await apiService.getSyrianProvinces();
+        if (response.data.success) {
+          setSyrianProvinces(response.data.provinces);
+        }
+      } catch (error) {
+        console.error('Error loading Syrian provinces:', error);
+      } finally {
+        setLoadingSyriaProvinces(false);
+      }
+    };
+
+    fetchSyrianProvinces();
+  }, []);
+
+  // ✅ Calculate Syrian transport price when province or weight changes
+  useEffect(() => {
+    const calculateSyriaPrice = async () => {
+      if (!syriaProvince || !syriaWeight || syriaWeight <= 0) {
+        setSyriaTransportPrice(null);
+        return;
+      }
+
+      try {
+        setLoadingSyriaPrice(true);
+        const response = await apiService.calculateSyriaTransport({
+          province_code: syriaProvince,
+          weight: syriaWeight,
+        });
+
+        if (response.data.success) {
+          setSyriaTransportPrice(response.data);
+        }
+      } catch (error) {
+        console.error('Error calculating Syria transport price:', error);
+        setSyriaTransportPrice(null);
+      } finally {
+        setLoadingSyriaPrice(false);
+      }
+    };
+
+    calculateSyriaPrice();
+  }, [syriaProvince, syriaWeight]);
+
   // ✅ Check if all required fields are filled for EU shipping calculation
   useEffect(() => {
     const allFieldsFilled = 
@@ -243,16 +308,8 @@ export default function Step8InternalTransport({
     }
   };
 
-  // Calculate Syria transport price
-  const calculateSyriaPrice = () => {
-    if (!syriaProvince || syriaWeight <= 0) return 0;
-    const province = syrianProvinces.find(p => p.code === syriaProvince);
-    if (!province) return 0;
-    return Math.max(syriaWeight * province.ratePerKg, province.minPrice);
-  };
-
-  const syriaPrice = calculateSyriaPrice();
-  const selectedProvince = syrianProvinces.find(p => p.code === syriaProvince);
+  // ✅ Syria transport price calculation will be done via Backend API
+  // TODO: Implement API call to calculate price based on province and weight
 
   return (
     <div className="space-y-8">
@@ -453,12 +510,17 @@ export default function Step8InternalTransport({
               <select
                 value={syriaProvince}
                 onChange={(e) => onSyriaProvinceChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                disabled={loadingSyriaProvinces}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                <option value="">
+                  {loadingSyriaProvinces 
+                    ? (language === 'ar' ? 'جاري التحميل...' : 'Loading...') 
+                    : (language === 'ar' ? 'اختر...' : 'Select...')}
+                </option>
                 {syrianProvinces.map(province => (
-                  <option key={province.code} value={province.code}>
-                    {language === 'ar' ? province.name : province.nameEn}
+                  <option key={province.province_code} value={province.province_code}>
+                    {language === 'ar' ? province.province_name_ar : province.province_name_en}
                   </option>
                 ))}
               </select>
@@ -484,39 +546,50 @@ export default function Step8InternalTransport({
                   />
                 </div>
 
-                {selectedProvince && (
+                {/* ✅ Real-time price calculation from Backend API */}
+                {syriaWeight > 0 && (
                   <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">{t.minPrice}</span>
-                        <span className="font-semibold text-blue-900">
-                          {selectedProvince.minPrice.toFixed(2)} €
-                        </span>
+                    {loadingSyriaPrice ? (
+                      <p className="text-sm text-blue-600 text-center animate-pulse">
+                        {language === 'ar' ? 'جاري حساب السعر...' : 'Calculating price...'}
+                      </p>
+                    ) : syriaTransportPrice ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-700">
+                            {language === 'ar' ? 'تكلفة الوزن:' : 'Weight Cost:'}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            €{syriaTransportPrice.breakdown.weight_cost.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-700">
+                            {language === 'ar' ? 'الحد الأدنى:' : 'Minimum:'}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            €{syriaTransportPrice.min_price.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="pt-2 border-t-2 border-blue-300 flex justify-between items-center">
+                          <span className="text-base font-bold text-blue-900">
+                            {language === 'ar' ? 'السعر النهائي:' : 'Final Price:'}
+                          </span>
+                          <span className="text-xl font-bold text-blue-600">
+                            €{syriaTransportPrice.calculated_price.toFixed(2)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                          {language === 'ar' 
+                            ? `(${syriaWeight} كغ × €${syriaTransportPrice.rate_per_kg.toFixed(2)}/كغ)`
+                            : `(${syriaWeight} kg × €${syriaTransportPrice.rate_per_kg.toFixed(2)}/kg)`}
+                        </p>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">{t.ratePerKg}</span>
-                        <span className="font-semibold text-blue-900">
-                          {selectedProvince.ratePerKg.toFixed(2)} €/kg
-                        </span>
-                      </div>
-                      {syriaWeight > 0 && (
-                        <>
-                          <div className="pt-2 border-t border-blue-300">
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-700 font-semibold">
-                                {syriaWeight} kg × {selectedProvince.ratePerKg.toFixed(2)} € = {(syriaWeight * selectedProvince.ratePerKg).toFixed(2)} €
-                              </span>
-                            </div>
-                          </div>
-                          <div className="pt-2 border-t border-blue-300 flex justify-between items-center">
-                            <span className="font-bold text-blue-900">{t.calculatedPrice}</span>
-                            <span className="text-xl font-bold text-blue-900">
-                              {syriaPrice.toFixed(2)} €
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    ) : (
+                      <p className="text-sm text-red-600 text-center">
+                        {language === 'ar' ? '❌ فشل حساب السعر' : '❌ Failed to calculate price'}
+                      </p>
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -556,12 +629,17 @@ export default function Step8InternalTransport({
               <select
                 value={syriaProvince}
                 onChange={(e) => onSyriaProvinceChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                disabled={loadingSyriaProvinces}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                <option value="">
+                  {loadingSyriaProvinces 
+                    ? (language === 'ar' ? 'جاري التحميل...' : 'Loading...') 
+                    : (language === 'ar' ? 'اختر...' : 'Select...')}
+                </option>
                 {syrianProvinces.map(province => (
-                  <option key={province.code} value={province.code}>
-                    {language === 'ar' ? province.name : province.nameEn}
+                  <option key={province.province_code} value={province.province_code}>
+                    {language === 'ar' ? province.province_name_ar : province.province_name_en}
                   </option>
                 ))}
               </select>
@@ -587,39 +665,50 @@ export default function Step8InternalTransport({
                   />
                 </div>
 
-                {selectedProvince && (
+                {/* ✅ Real-time price calculation from Backend API */}
+                {syriaWeight > 0 && (
                   <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">{t.minPrice}</span>
-                        <span className="font-semibold text-blue-900">
-                          {selectedProvince.minPrice.toFixed(2)} €
-                        </span>
+                    {loadingSyriaPrice ? (
+                      <p className="text-sm text-blue-600 text-center animate-pulse">
+                        {language === 'ar' ? 'جاري حساب السعر...' : 'Calculating price...'}
+                      </p>
+                    ) : syriaTransportPrice ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-700">
+                            {language === 'ar' ? 'تكلفة الوزن:' : 'Weight Cost:'}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            €{syriaTransportPrice.breakdown.weight_cost.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-700">
+                            {language === 'ar' ? 'الحد الأدنى:' : 'Minimum:'}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            €{syriaTransportPrice.min_price.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="pt-2 border-t-2 border-blue-300 flex justify-between items-center">
+                          <span className="text-base font-bold text-blue-900">
+                            {language === 'ar' ? 'السعر النهائي:' : 'Final Price:'}
+                          </span>
+                          <span className="text-xl font-bold text-blue-600">
+                            €{syriaTransportPrice.calculated_price.toFixed(2)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                          {language === 'ar' 
+                            ? `(${syriaWeight} كغ × €${syriaTransportPrice.rate_per_kg.toFixed(2)}/كغ)`
+                            : `(${syriaWeight} kg × €${syriaTransportPrice.rate_per_kg.toFixed(2)}/kg)`}
+                        </p>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">{t.ratePerKg}</span>
-                        <span className="font-semibold text-blue-900">
-                          {selectedProvince.ratePerKg.toFixed(2)} €/kg
-                        </span>
-                      </div>
-                      {syriaWeight > 0 && (
-                        <>
-                          <div className="pt-2 border-t border-blue-300">
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-700 font-semibold">
-                                {syriaWeight} kg × {selectedProvince.ratePerKg.toFixed(2)} € = {(syriaWeight * selectedProvince.ratePerKg).toFixed(2)} €
-                              </span>
-                            </div>
-                          </div>
-                          <div className="pt-2 border-t border-blue-300 flex justify-between items-center">
-                            <span className="font-bold text-blue-900">{t.calculatedPrice}</span>
-                            <span className="text-xl font-bold text-blue-900">
-                              {syriaPrice.toFixed(2)} €
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    ) : (
+                      <p className="text-sm text-red-600 text-center">
+                        {language === 'ar' ? '❌ فشل حساب السعر' : '❌ Failed to calculate price'}
+                      </p>
+                    )}
                   </div>
                 )}
               </motion.div>

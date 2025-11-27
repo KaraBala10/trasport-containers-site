@@ -1269,14 +1269,71 @@ export default function DashboardPage() {
                   {language === "ar" ? "إدارة النظام" : "System Management"}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Pricing Management Card - Enhanced Design */}
                   <Link
                     href="/dashboard/pricing"
-                    className="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-200 hover:border-primary-yellow transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                    className="group relative bg-gradient-to-br from-yellow-50 via-white to-orange-50 rounded-2xl shadow-lg p-6 border-2 border-transparent hover:border-primary-yellow transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-2 overflow-hidden"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-primary-yellow rounded-lg flex items-center justify-center">
+                    {/* Animated Background Pattern */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-yellow to-orange-400 rounded-full blur-3xl"></div>
+                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-primary-dark to-primary-yellow rounded-full blur-3xl"></div>
+                    </div>
+
+                    <div className="relative flex items-start gap-4">
+                      {/* Icon Container with Gradient */}
+                      <div className="relative">
+                        <div className="w-16 h-16 bg-gradient-to-br from-primary-yellow via-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                          {/* Inner Glow */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-yellow-300 to-orange-300 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                          
+                          <svg
+                            className="w-8 h-8 text-white relative z-10 drop-shadow-lg"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </div>
+
+                        {/* Pulsing Ring */}
+                        <div className="absolute inset-0 rounded-2xl border-2 border-primary-yellow animate-ping opacity-20"></div>
+                      </div>
+
+                      {/* Text Content */}
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold bg-gradient-to-r from-primary-yellow via-orange-500 to-primary-dark bg-clip-text text-transparent mb-2 group-hover:scale-105 transition-transform duration-300">
+                          {language === "ar"
+                            ? "💰 إدارة الأسعار"
+                            : "💰 Pricing Management"}
+                        </h3>
+                        <p className="text-sm text-gray-700 font-medium mb-2">
+                          {language === "ar"
+                            ? "إدارة أسعار المنتجات والتغليف"
+                            : "Manage product and packaging prices"}
+                        </p>
+
+                        {/* Feature Tags */}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-semibold border border-yellow-200">
+                            {language === "ar" ? "LCL" : "LCL"}
+                          </span>
+                          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-semibold border border-orange-200">
+                            {language === "ar" ? "التغليف" : "Packaging"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Arrow Icon */}
+                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
                         <svg
-                          className="w-6 h-6 text-white"
+                          className="w-6 h-6 text-primary-yellow"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1285,23 +1342,95 @@ export default function DashboardPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
                           />
                         </svg>
                       </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-primary-dark">
+                    </div>
+
+                    {/* Bottom Shine Effect */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-yellow via-orange-400 to-primary-dark transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                  </Link>
+
+                  {/* Syrian Internal Transport Management Card */}
+                  <Link
+                    href="/dashboard/syria-transport"
+                    className="group relative bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-200 hover:border-primary-yellow transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-2 overflow-hidden"
+                  >
+                    {/* Animated Background Pattern */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-500">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary-yellow rounded-full blur-3xl"></div>
+                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary-dark rounded-full blur-3xl"></div>
+                    </div>
+
+                    <div className="relative flex items-start gap-4">
+                      {/* Icon Container */}
+                      <div className="relative">
+                        <div className="w-16 h-16 bg-gradient-to-br from-primary-yellow to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                          <div className="absolute inset-0 bg-primary-yellow rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                          
+                          <svg
+                            className="w-8 h-8 text-white relative z-10 drop-shadow-lg"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                            />
+                          </svg>
+                        </div>
+
+                        <div className="absolute inset-0 rounded-2xl border-2 border-primary-yellow animate-ping opacity-20"></div>
+                      </div>
+
+                      {/* Text Content */}
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:scale-105 transition-transform duration-300">
                           {language === "ar"
-                            ? "إدارة الأسعار"
-                            : "Pricing Management"}
+                            ? "النقل الداخلي - سورية"
+                            : "Internal Transport - Syria"}
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 font-medium mb-2">
                           {language === "ar"
-                            ? "إدارة أسعار المنتجات والتغليف"
-                            : "Manage product and packaging prices"}
+                            ? "إدارة أسعار النقل حسب المحافظات"
+                            : "Manage transport prices by province"}
                         </p>
+
+                        {/* Feature Tags */}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <span className="text-xs bg-yellow-50 text-primary-dark px-2 py-1 rounded-full font-semibold border border-primary-yellow">
+                            {language === "ar" ? "النقل الداخلي" : "Domestic"}
+                          </span>
+                          <span className="text-xs bg-yellow-50 text-primary-dark px-2 py-1 rounded-full font-semibold border border-primary-yellow">
+                            {language === "ar" ? "حساب تلقائي" : "Auto Calculate"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Arrow Icon */}
+                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                        <svg
+                          className="w-6 h-6 text-primary-yellow"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                          />
+                        </svg>
                       </div>
                     </div>
+
+                    {/* Bottom Shine Effect */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-yellow via-yellow-400 to-primary-dark transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
                   </Link>
                 </div>
               </div>
