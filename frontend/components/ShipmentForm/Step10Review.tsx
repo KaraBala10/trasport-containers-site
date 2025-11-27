@@ -187,82 +187,74 @@ export default function Step10Review({
 
   return (
     <div className="space-y-8">
-      {/* Shipment Summary */}
+      {/* Shipment Summary - Invoice Style */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
+        className="bg-white rounded-lg p-6 border border-gray-300"
       >
-        <h3 className="text-xl font-bold text-primary-dark mb-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
           {t.shipmentSummary}
         </h3>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <span className="text-sm font-semibold text-gray-700">
-                {t.direction}:
-              </span>
-              <p className="text-gray-900 font-bold">
-                {isEUtoSY ? t.euToSy : t.syToEu}
-              </p>
-            </div>
-            <div>
-              <span className="text-sm font-semibold text-gray-700">
-                {t.parcelsCount}:
-              </span>
-              <p className="text-gray-900 font-bold">{parcels.length}</p>
-            </div>
-            <div>
-              <span className="text-sm font-semibold text-gray-700">
-                {t.totalWeight}:
-              </span>
-              <p className="text-gray-900 font-bold">
-                {totalWeight.toFixed(2)} kg
-              </p>
-            </div>
-            <div>
-              <span className="text-sm font-semibold text-gray-700">
-                {t.totalCBM}:
-              </span>
-              <p className="text-gray-900 font-bold">
-                {totalCBM.toFixed(4)} m³
-              </p>
-            </div>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">{t.direction}:</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {isEUtoSY ? t.euToSy : t.syToEu}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">{t.parcelsCount}:</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {parcels.length}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">{t.totalWeight}:</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {totalWeight.toFixed(2)} kg
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">{t.totalCBM}:</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {totalCBM.toFixed(4)} m³
+            </span>
           </div>
 
           {sender && (
-            <div className="pt-4 border-t border-gray-200">
-              <span className="text-sm font-semibold text-gray-700">
+            <div className="pt-3 border-t border-gray-200">
+              <div className="text-sm font-semibold text-gray-700 mb-1">
                 {t.senderInfo}:
-              </span>
-              <p className="text-gray-900">{sender.fullName}</p>
-              <p className="text-gray-600 text-sm">
+              </div>
+              <div className="text-sm text-gray-900">{sender.fullName}</div>
+              <div className="text-xs text-gray-600">
                 {sender.city}, {sender.country || sender.province}
-              </p>
+              </div>
             </div>
           )}
 
           {receiver && (
-            <div className="pt-4 border-t border-gray-200">
-              <span className="text-sm font-semibold text-gray-700">
+            <div className="pt-3 border-t border-gray-200">
+              <div className="text-sm font-semibold text-gray-700 mb-1">
                 {t.receiverInfo}:
-              </span>
-              <p className="text-gray-900">{receiver.fullName}</p>
-              <p className="text-gray-600 text-sm">
+              </div>
+              <div className="text-sm text-gray-900">{receiver.fullName}</div>
+              <div className="text-xs text-gray-600">
                 {receiver.city}, {receiver.country || receiver.province}
-              </p>
+              </div>
             </div>
           )}
 
           {pricing && (
-            <div className="pt-4 border-t border-gray-200">
-              <span className="text-sm font-semibold text-gray-700 mb-3 block">
+            <div className="pt-4 border-t-2 border-gray-300">
+              <span className="text-base font-bold text-gray-900 mb-3 block">
                 {t.pricingSummary}:
               </span>
 
               {/* Pricing Breakdown */}
-              <div className="mt-3 space-y-2 bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div className="mt-3 space-y-2">
                 {/* Base LCL Price */}
                 {pricing.basePrice && pricing.basePrice.final > 0 && (
                   <div className="flex justify-between items-center">
@@ -312,131 +304,80 @@ export default function Step10Review({
                   </div>
                 )}
 
-                {/* Total Before Transport */}
-                <div className="pt-2 border-t border-gray-300 flex justify-between items-center">
-                  <span className="text-sm font-bold text-gray-800">
-                    {t.totalBeforeTransport}:
-                  </span>
-                  <span className="text-base font-bold text-gray-900">
-                    €{pricing.grandTotal.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Internal Transport - EU Transport Card */}
-              {isEUTransport && (
-                <div className="mt-3 bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-300 shadow-md">
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-green-700"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
-                      />
-                    </svg>
-                    <h4 className="text-base font-bold text-green-900">
-                      {t.euTransport}
-                    </h4>
+                {/* EU Transport - Text Format */}
+                {isEUTransport && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-700">
+                      {t.euTransport} ({selectedEUShippingName}):
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      €{euTransportPrice.toFixed(2)}
+                    </span>
                   </div>
-                  <div className="space-y-2">
+                )}
+
+                {/* Syria Transport - Text Format with Details */}
+                {isSyriaTransport && (
+                  <>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-700">
-                        {language === "ar" ? "طريقة الشحن" : "Shipping Method"}
+                        {t.syriaTransport}:
                       </span>
-                      <span className="text-sm font-semibold text-gray-900">
-                        {selectedEUShippingName}
-                      </span>
+                      <span className="text-sm font-semibold text-gray-900"></span>
                     </div>
-                    <div className="pt-2 border-t border-green-300 flex justify-between items-center">
-                      <span className="text-sm font-bold text-green-900">
-                        {t.finalPrice}:
-                      </span>
-                      <span className="text-lg font-bold text-green-700">
-                        €{selectedEUShippingPrice?.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Internal Transport - Syria Transport Card */}
-              {isSyriaTransport && (
-                <div className="mt-3 bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-300 shadow-md">
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-green-700"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
-                      />
-                    </svg>
-                    <h4 className="text-base font-bold text-green-900">
-                      {t.syriaTransport}
-                    </h4>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pl-4">
                       <span className="text-xs text-gray-600">
-                        {t.weightCost}:
+                        {t.weightCost} ({syriaTransportDetails.weight} kg × €
+                        {syriaTransportDetails.rate_per_kg?.toFixed(2)}/kg):
                       </span>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-xs font-semibold text-gray-800">
                         €
                         {syriaTransportDetails.breakdown?.weight_cost?.toFixed(
                           2
                         ) || "0.00"}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pl-4">
                       <span className="text-xs text-gray-600">
                         {t.minimumPrice}:
                       </span>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className="text-xs font-semibold text-gray-800">
                         €{syriaTransportDetails.min_price?.toFixed(2) || "0.00"}
                       </span>
                     </div>
-                    {/* Calculation Details */}
-                    {syriaTransportDetails.weight &&
-                      syriaTransportDetails.rate_per_kg && (
-                        <div className="flex justify-center items-center text-xs text-gray-500 italic">
-                          ({syriaTransportDetails.weight} kg × €
-                          {syriaTransportDetails.rate_per_kg?.toFixed(2)}/kg)
-                        </div>
-                      )}
-                    <div className="pt-2 border-t border-green-300 flex justify-between items-center">
-                      <span className="text-sm font-bold text-green-900">
+                    <div className="flex justify-between items-center pl-4">
+                      <span className="text-sm font-bold text-gray-700">
                         {t.finalPrice}:
                       </span>
-                      <span className="text-lg font-bold text-green-700">
+                      <span className="text-sm font-bold text-gray-900">
                         €
                         {syriaTransportDetails.calculated_price?.toFixed(2) ||
                           "0.00"}
                       </span>
                     </div>
-                  </div>
-                </div>
-              )}
+                  </>
+                )}
 
-              {/* Grand Total with Transport */}
-              <div className="mt-4 bg-gradient-to-r from-primary-yellow/20 to-primary-yellow/30 rounded-xl p-4 border-2 border-primary-dark/30">
+                {/* Total Before Transport */}
+                {(isEUTransport || isSyriaTransport) && (
+                  <div className="pt-2 border-t border-gray-300 flex justify-between items-center">
+                    <span className="text-sm font-bold text-gray-800">
+                      {t.totalBeforeTransport}:
+                    </span>
+                    <span className="text-base font-bold text-gray-900">
+                      €{pricing.grandTotal.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Grand Total - Invoice Style */}
+              <div className="mt-4 bg-gray-100 rounded-lg p-4 border-2 border-gray-400">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-primary-dark">
+                  <span className="text-xl font-bold text-gray-900">
                     {t.grandTotal}:
                   </span>
-                  <span className="text-3xl font-black text-primary-dark">
+                  <span className="text-2xl font-bold text-gray-900">
                     €
                     {(() => {
                       const baseTotal = pricing.grandTotal || 0;
@@ -462,52 +403,56 @@ export default function Step10Review({
         </div>
       </motion.div>
 
-      {/* Operational Policies */}
+      {/* Operational Policies - Invoice Style */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
+        className="bg-white rounded-lg p-6 border border-gray-300"
       >
-        <h3 className="text-xl font-bold text-primary-dark mb-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
           {t.operationalPolicies}
         </h3>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Policy 1: Rejection */}
-          <div className="bg-red-50 rounded-xl p-4 border-2 border-red-200">
-            <h4 className="font-bold text-red-900 mb-2">{t.policyRejection}</h4>
-            <p className="text-sm text-red-800">{t.policyRejectionDesc}</p>
+          <div className="border-l-4 border-red-500 pl-3 py-2">
+            <h4 className="font-bold text-gray-900 text-sm mb-1">
+              {t.policyRejection}
+            </h4>
+            <p className="text-xs text-gray-700">{t.policyRejectionDesc}</p>
           </div>
 
           {/* Policy 2: Storage */}
-          <div className="bg-orange-50 rounded-xl p-4 border-2 border-orange-200">
-            <h4 className="font-bold text-orange-900 mb-2">
+          <div className="border-l-4 border-orange-500 pl-3 py-2">
+            <h4 className="font-bold text-gray-900 text-sm mb-1">
               {t.policyStorage}
             </h4>
-            <p className="text-sm text-orange-800">{t.policyStorageDesc}</p>
+            <p className="text-xs text-gray-700">{t.policyStorageDesc}</p>
           </div>
 
           {/* Policy 3: KYC */}
-          <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-            <h4 className="font-bold text-blue-900 mb-2">{t.policyKYC}</h4>
-            <p className="text-sm text-blue-800">{t.policyKYCDesc}</p>
+          <div className="border-l-4 border-blue-500 pl-3 py-2">
+            <h4 className="font-bold text-gray-900 text-sm mb-1">
+              {t.policyKYC}
+            </h4>
+            <p className="text-xs text-gray-700">{t.policyKYCDesc}</p>
           </div>
 
           {/* Policy 4: Liability */}
-          <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200">
-            <h4 className="font-bold text-purple-900 mb-2">
+          <div className="border-l-4 border-purple-500 pl-3 py-2">
+            <h4 className="font-bold text-gray-900 text-sm mb-1">
               {t.policyLiability}
             </h4>
-            <p className="text-sm text-purple-800">{t.policyLiabilityDesc}</p>
+            <p className="text-xs text-gray-700">{t.policyLiabilityDesc}</p>
           </div>
 
           {/* Policy 5: Large Items */}
-          <div className="bg-yellow-50 rounded-xl p-4 border-2 border-yellow-200">
-            <h4 className="font-bold text-yellow-900 mb-2">
+          <div className="border-l-4 border-yellow-500 pl-3 py-2">
+            <h4 className="font-bold text-gray-900 text-sm mb-1">
               {t.policyLargeItems}
             </h4>
-            <p className="text-sm text-yellow-800">{t.policyLargeItemsDesc}</p>
+            <p className="text-xs text-gray-700">{t.policyLargeItemsDesc}</p>
           </div>
         </div>
 
@@ -536,14 +481,14 @@ export default function Step10Review({
         </div>
       </motion.div>
 
-      {/* Terms and Conditions */}
+      {/* Terms and Conditions - Invoice Style */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
+        className="bg-white rounded-lg p-6 border border-gray-300"
       >
-        <h3 className="text-xl font-bold text-primary-dark mb-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
           {t.termsAndConditions}
         </h3>
 
