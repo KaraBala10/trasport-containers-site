@@ -9,7 +9,10 @@ interface ShippingMethod {
   id: number;
   name: string;
   carrier: string;
-  price: number;
+  price: number; // Sendcloud original price
+  profit_amount?: number; // Calculated profit amount
+  profit_margin_percent?: number; // Profit margin percentage
+  total_price?: number; // Total price (calculated in backend)
   currency: string;
   delivery_days: string;
 }
@@ -29,8 +32,11 @@ interface Step8InternalTransportProps {
   onEUPickupCountryChange: (country: string) => void;
   onEUShippingMethodChange: (
     methodId: number | null,
-    price?: number,
-    name?: string
+    sendcloudPrice?: number,
+    name?: string,
+    profitAmount?: number,
+    profitMarginPercent?: number,
+    totalPrice?: number
   ) => void;
   syriaProvince: string;
   syriaWeight: number;
@@ -494,7 +500,10 @@ export default function Step8InternalTransport({
                       onEUShippingMethodChange(
                         method.id,
                         method.price,
-                        method.name
+                        method.name,
+                        method.profit_amount,
+                        method.profit_margin_percent,
+                        method.total_price
                       )
                     }
                   >
@@ -976,7 +985,10 @@ export default function Step8InternalTransport({
                         onEUShippingMethodChange(
                           method.id,
                           method.price,
-                          method.name
+                          method.name,
+                          method.profit_amount,
+                          method.profit_margin_percent,
+                          method.total_price
                         )
                       }
                     >
