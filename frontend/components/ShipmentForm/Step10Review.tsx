@@ -161,22 +161,27 @@ export default function Step10Review({
   const totalWeight = parcels.reduce((sum, p) => sum + (p.weight || 0), 0);
   const totalCBM = parcels.reduce((sum, p) => sum + (p.cbm || 0), 0);
 
-  const isEUTransport =
-    direction === "eu-sy" &&
-    selectedEUShippingPrice &&
-    selectedEUShippingPrice > 0;
+  // Show transport cards based on data availability (ignore direction) - Same as Step5Pricing
+  const isEUTransport = selectedEUShippingPrice && selectedEUShippingPrice > 0;
   const isSyriaTransport =
-    direction === "sy-eu" &&
-    syriaTransportDetails &&
+    syriaTransportDetails?.calculated_price &&
     syriaTransportDetails.calculated_price > 0;
+
+  // Calculate transport prices
+  const euTransportPrice = isEUTransport ? selectedEUShippingPrice : 0;
+  const syriaTransportCost = isSyriaTransport
+    ? syriaTransportDetails.calculated_price
+    : 0;
+  const totalTransportCost = euTransportPrice + syriaTransportCost;
 
   console.log("🔍 Step10Review - Transport Props:", {
     direction,
-    selectedEUShippingName,
-    selectedEUShippingPrice,
-    syriaTransportDetails,
     isEUTransport,
     isSyriaTransport,
+    euTransportPrice,
+    syriaTransportCost,
+    totalTransportCost,
+    selectedEUShippingName,
     pricingGrandTotal: pricing?.grandTotal,
   });
 
@@ -403,6 +408,14 @@ export default function Step10Review({
                         €{syriaTransportDetails.min_price?.toFixed(2) || "0.00"}
                       </span>
                     </div>
+                    {/* Calculation Details */}
+                    {syriaTransportDetails.weight &&
+                      syriaTransportDetails.rate_per_kg && (
+                        <div className="flex justify-center items-center text-xs text-gray-500 italic">
+                          ({syriaTransportDetails.weight} kg × €
+                          {syriaTransportDetails.rate_per_kg?.toFixed(2)}/kg)
+                        </div>
+                      )}
                     <div className="pt-2 border-t border-green-300 flex justify-between items-center">
                       <span className="text-sm font-bold text-green-900">
                         {t.finalPrice}:
@@ -427,26 +440,16 @@ export default function Step10Review({
                     €
                     {(() => {
                       const baseTotal = pricing.grandTotal || 0;
-                      // Calculate total transport cost (sum of both if both exist)
-                      const euTransportCost =
-                        selectedEUShippingPrice && selectedEUShippingPrice > 0
-                          ? selectedEUShippingPrice
-                          : 0;
-                      const syriaTransportCost =
-                        syriaTransportDetails?.calculated_price &&
-                        syriaTransportDetails.calculated_price > 0
-                          ? syriaTransportDetails.calculated_price
-                          : 0;
-                      const totalTransportCost =
-                        euTransportCost + syriaTransportCost;
                       const finalTotal = baseTotal + totalTransportCost;
 
                       console.log("💰 Step10Review Grand Total:", {
                         baseTotal,
-                        euTransportCost,
+                        euTransportPrice,
                         syriaTransportCost,
                         totalTransportCost,
                         direction,
+                        isEUTransport,
+                        isSyriaTransport,
                         finalTotal,
                       });
                       return finalTotal.toFixed(2);

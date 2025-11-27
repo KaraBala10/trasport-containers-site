@@ -100,28 +100,26 @@ export default function Step5Pricing({
     pricingGrandTotal: pricing?.grandTotal,
   });
 
-  // Calculate both transport prices (can have both EU and Syria transport)
-  const euTransportPrice =
-    selectedEUShippingPrice && selectedEUShippingPrice > 0
-      ? selectedEUShippingPrice
-      : 0;
-  const syriaTransportCost =
+  // Show transport cards based on data availability (ignore direction)
+  const isEUTransport = selectedEUShippingPrice && selectedEUShippingPrice > 0;
+  const isSyriaTransport =
     syriaTransportDetails?.calculated_price &&
-    syriaTransportDetails.calculated_price > 0
-      ? syriaTransportDetails.calculated_price
-      : 0;
-  const totalTransportPrice = euTransportPrice + syriaTransportCost;
+    syriaTransportDetails.calculated_price > 0;
 
-  const isEUTransport = euTransportPrice > 0;
-  const isSyriaTransport = syriaTransportCost > 0;
+  // Calculate transport prices
+  const euTransportPrice = isEUTransport ? selectedEUShippingPrice : 0;
+  const syriaTransportCost = isSyriaTransport
+    ? syriaTransportDetails.calculated_price
+    : 0;
+  const totalTransportPrice = euTransportPrice + syriaTransportCost;
 
   console.log("🔍 Step5Pricing - Calculated Transport:", {
     direction,
+    isEUTransport,
+    isSyriaTransport,
     euTransportPrice,
     syriaTransportCost,
     totalTransportPrice,
-    isEUTransport,
-    isSyriaTransport,
   });
 
   return (
