@@ -321,11 +321,20 @@ export default function Step8InternalTransport({
       });
 
       if (response.data.success && response.data.shipping_methods) {
-        console.log("📦 EU Shipping Methods from API:", response.data.shipping_methods);
+        console.log(
+          "📦 EU Shipping Methods from API:",
+          response.data.shipping_methods
+        );
         // Log first method to see structure
         if (response.data.shipping_methods.length > 0) {
-          console.log("📦 First Method Structure:", response.data.shipping_methods[0]);
-          console.log("📦 First Method Keys:", Object.keys(response.data.shipping_methods[0]));
+          console.log(
+            "📦 First Method Structure:",
+            response.data.shipping_methods[0]
+          );
+          console.log(
+            "📦 First Method Keys:",
+            Object.keys(response.data.shipping_methods[0])
+          );
         }
         setShippingMethods(response.data.shipping_methods);
 
@@ -543,13 +552,8 @@ export default function Step8InternalTransport({
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-primary-dark">
-                          {(method.total_price || method.price).toFixed(2)} {method.currency}
+                          {method.price.toFixed(2)} {method.currency}
                         </p>
-                        {method.profit_amount && method.profit_amount > 0 && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {language === "ar" ? "شامل الربح" : "Incl. profit"} ({method.profit_margin_percent}%)
-                          </p>
-                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -1042,13 +1046,8 @@ export default function Step8InternalTransport({
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-primary-dark">
-                            {(method.total_price || method.price).toFixed(2)} {method.currency}
+                            {method.price.toFixed(2)} {method.currency}
                           </p>
-                          {method.profit_amount && method.profit_amount > 0 && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              {language === "ar" ? "شامل الربح" : "Incl. profit"} ({method.profit_margin_percent}%)
-                            </p>
-                          )}
                         </div>
                       </div>
                     </motion.div>
