@@ -6,8 +6,8 @@ import { ShippingDirection } from '@/types/shipment';
 
 interface Step9PaymentProps {
   direction: ShippingDirection;
-  paymentMethod: 'cash' | 'internal-transfer' | null;  // 'mollie' removed, Stripe integration pending
-  onPaymentMethodChange: (method: 'cash' | 'internal-transfer' | null) => void;
+  paymentMethod: 'stripe' | 'cash' | 'internal-transfer' | null;
+  onPaymentMethodChange: (method: 'stripe' | 'cash' | 'internal-transfer' | null) => void;
   transferSenderName: string;
   transferReference: string;
   transferSlip: File | null;
@@ -32,8 +32,8 @@ export default function Step9Payment({
   const translations = {
     ar: {
       title: 'طريقة الدفع',
-      molliePayment: 'الدفع عبر Mollie',
-      mollieDesc: 'ادفع بأمان عبر Mollie - جميع طرق الدفع متاحة',
+      stripePayment: 'الدفع عبر Stripe',
+      stripeDesc: 'ادفع بأمان عبر Stripe - جميع طرق الدفع متاحة (بطاقات بنكية، Apple Pay، Google Pay)',
       paymentMethods: 'طرق الدفع المتاحة',
       cashPayment: 'الدفع نقداً في مركز حلب',
       cashDesc: 'دفع كامل قيمة الشحن نقداً عند تسليم الطرود في مركزنا في حلب',
@@ -53,8 +53,8 @@ export default function Step9Payment({
     },
     en: {
       title: 'Payment Method',
-      molliePayment: 'Pay via Mollie',
-      mollieDesc: 'Pay securely via Mollie - all payment methods available',
+      stripePayment: 'Pay via Stripe',
+      stripeDesc: 'Pay securely via Stripe - all payment methods available (Credit Cards, Apple Pay, Google Pay)',
       paymentMethods: 'Available Payment Methods',
       cashPayment: 'Cash Payment at Aleppo Center',
       cashDesc: 'Pay full shipping amount in cash when delivering parcels at our center in Aleppo',
@@ -85,9 +85,8 @@ export default function Step9Payment({
 
   return (
     <div className="space-y-8">
-      {/* DISABLED: Mollie payment removed, Stripe integration pending */}
-      {/* Europe Payment (Mollie) */}
-      {false && isEUtoSY && (
+      {/* Stripe Payment (Europe) */}
+      {isEUtoSY && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -95,16 +94,16 @@ export default function Step9Payment({
         >
           <div className="mb-4">
             <h3 className="text-xl font-bold text-primary-dark mb-2">
-              {t.molliePayment}
+              {t.stripePayment}
             </h3>
-            <p className="text-sm text-gray-600 mb-2">{t.mollieDesc}</p>
+            <p className="text-sm text-gray-600 mb-2">{t.stripeDesc}</p>
           </div>
 
           <div className="space-y-3">
             <motion.button
-              onClick={() => onPaymentMethodChange('mollie')}
+              onClick={() => onPaymentMethodChange('stripe')}
               className={`w-full p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'mollie'
+                paymentMethod === 'stripe'
                   ? 'border-primary-yellow bg-primary-yellow/10'
                   : 'border-gray-300 hover:border-primary-yellow/50'
               }`}
@@ -114,18 +113,18 @@ export default function Step9Payment({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    paymentMethod === 'mollie' ? 'border-primary-yellow bg-primary-yellow' : 'border-gray-300'
+                    paymentMethod === 'stripe' ? 'border-primary-yellow bg-primary-yellow' : 'border-gray-300'
                   }`}>
-                    {paymentMethod === 'mollie' && (
+                    {paymentMethod === 'stripe' && (
                       <div className="w-3 h-3 rounded-full bg-primary-dark" />
                     )}
                   </div>
-                  <span className="font-semibold text-gray-800">{t.molliePayment}</span>
+                  <span className="font-semibold text-gray-800">{t.stripePayment}</span>
                 </div>
               </div>
             </motion.button>
 
-            {paymentMethod === 'mollie' && (
+            {paymentMethod === 'stripe' && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -133,7 +132,7 @@ export default function Step9Payment({
               >
                 <p className="text-sm font-semibold text-blue-900 mb-2">{t.paymentMethods}:</p>
                 <div className="flex flex-wrap gap-2">
-                  {['Visa', 'MasterCard', 'iDEAL', 'SEPA', 'PayPal', 'Apple Pay', 'Google Pay', 'Klarna'].map(method => (
+                  {['Visa', 'MasterCard', 'American Express', 'Apple Pay', 'Google Pay', 'Link'].map(method => (
                     <span key={method} className="px-3 py-1 bg-white text-blue-900 text-xs rounded-full border border-blue-300">
                       {method}
                     </span>
@@ -141,14 +140,15 @@ export default function Step9Payment({
                 </div>
                 <p className="text-xs text-blue-700 mt-3">
                   {language === 'ar' 
-                    ? 'سيتم توجيهك إلى صفحة الدفع الآمنة من Mollie' 
-                    : 'You will be redirected to Mollie secure payment page'}
+                    ? 'سيتم توجيهك إلى صفحة الدفع الآمنة من Stripe' 
+                    : 'You will be redirected to Stripe secure payment page'}
                 </p>
               </motion.div>
             )}
           </div>
         </motion.div>
       )}
+
 
       {/* Syria Payment for EU→SY */}
       {isEUtoSY && (
@@ -451,9 +451,8 @@ export default function Step9Payment({
         </motion.div>
       )}
 
-      {/* Europe Payment for SY→EU */}
-      {/* DISABLED: Mollie payment removed, Stripe integration pending */}
-      {false && !isEUtoSY && (
+      {/* Stripe Payment for SY→EU */}
+      {!isEUtoSY && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -462,20 +461,20 @@ export default function Step9Payment({
         >
           <div className="mb-4">
             <h3 className="text-xl font-bold text-primary-dark mb-2">
-              {t.molliePayment}
+              {t.stripePayment}
             </h3>
             <p className="text-sm text-gray-600 mb-2">
               {language === 'ar' 
-                ? 'يمكنك الدفع في أوروبا عبر Mollie'
-                : 'You can pay in Europe via Mollie'}
+                ? 'يمكنك الدفع في أوروبا عبر Stripe'
+                : 'You can pay in Europe via Stripe'}
             </p>
           </div>
 
           <div className="space-y-3">
             <motion.button
-              onClick={() => onPaymentMethodChange('mollie')}
+              onClick={() => onPaymentMethodChange('stripe')}
               className={`w-full p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'mollie'
+                paymentMethod === 'stripe'
                   ? 'border-primary-yellow bg-primary-yellow/10'
                   : 'border-gray-300 hover:border-primary-yellow/50'
               }`}
@@ -485,18 +484,18 @@ export default function Step9Payment({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    paymentMethod === 'mollie' ? 'border-primary-yellow bg-primary-yellow' : 'border-gray-300'
+                    paymentMethod === 'stripe' ? 'border-primary-yellow bg-primary-yellow' : 'border-gray-300'
                   }`}>
-                    {paymentMethod === 'mollie' && (
+                    {paymentMethod === 'stripe' && (
                       <div className="w-3 h-3 rounded-full bg-primary-dark" />
                     )}
                   </div>
-                  <span className="font-semibold text-gray-800">{t.molliePayment}</span>
+                  <span className="font-semibold text-gray-800">{t.stripePayment}</span>
                 </div>
               </div>
             </motion.button>
 
-            {paymentMethod === 'mollie' && (
+            {paymentMethod === 'stripe' && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -504,7 +503,7 @@ export default function Step9Payment({
               >
                 <p className="text-sm font-semibold text-blue-900 mb-2">{t.paymentMethods}:</p>
                 <div className="flex flex-wrap gap-2">
-                  {['Visa', 'MasterCard', 'iDEAL', 'SEPA', 'PayPal', 'Apple Pay', 'Google Pay', 'Klarna'].map(method => (
+                  {['Visa', 'MasterCard', 'American Express', 'Apple Pay', 'Google Pay', 'Link'].map(method => (
                     <span key={method} className="px-3 py-1 bg-white text-blue-900 text-xs rounded-full border border-blue-300">
                       {method}
                     </span>
@@ -515,6 +514,7 @@ export default function Step9Payment({
           </div>
         </motion.div>
       )}
+
     </div>
   );
 }

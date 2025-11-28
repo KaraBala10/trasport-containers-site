@@ -232,22 +232,23 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="contact@medo-freight.
 SERVER_EMAIL = config("SERVER_EMAIL", default="contact@medo-freight.eu")
 ADMIN_EMAIL = config("ADMIN_EMAIL", default=None)
 
-# DISABLED: Mollie Payment Configuration - Removed, Stripe integration pending
-# MOLLIE_API_KEY = config("MOLLIE_API_KEY", default="")
-# MOLLIE_API_KEY_TEST = config("MOLLIE_API_KEY_TEST", default="")
-# MOLLIE_USE_TEST_MODE = config("MOLLIE_USE_TEST_MODE", default=True, cast=bool)
-# MOLLIE_WEBHOOK_URL = config(
-#     "MOLLIE_WEBHOOK_URL",
-#     default="https://medo-freight.eu/api/mollie/webhook/",
-# )
-# MOLLIE_REDIRECT_SUCCESS_URL = config(
-#     "MOLLIE_REDIRECT_SUCCESS_URL",
-#     default="https://medo-freight.eu/dashboard?payment=success",
-# )
-# MOLLIE_REDIRECT_CANCEL_URL = config(
-#     "MOLLIE_REDIRECT_CANCEL_URL",
-#     default="https://medo-freight.eu/dashboard?payment=canceled",
-# )
+# Mollie payment gateway removed - using Stripe only
+
+# Stripe Payment Configuration
+STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="").strip()
+STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY", default="").strip()
+STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET", default="").strip()
+STRIPE_USE_TEST_MODE = config("STRIPE_USE_TEST_MODE", default=True, cast=bool)
+
+# Stripe redirect URLs
+STRIPE_REDIRECT_SUCCESS_URL = config(
+    "STRIPE_REDIRECT_SUCCESS_URL",
+    default="https://medo-freight.eu/dashboard?payment=success",
+)
+STRIPE_REDIRECT_CANCEL_URL = config(
+    "STRIPE_REDIRECT_CANCEL_URL",
+    default="https://medo-freight.eu/dashboard?payment=canceled",
+)
 
 # Sendcloud Shipping Configuration
 SENDCLOUD_PUBLIC_KEY = config("SENDCLOUD_PUBLIC_KEY", default="").strip()

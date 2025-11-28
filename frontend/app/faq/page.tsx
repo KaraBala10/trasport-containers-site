@@ -153,7 +153,7 @@ export default function FAQPage() {
         {
           question: "كيف يمكنني الدفع؟",
           answer:
-            "يتم الدفع عبر الخيارات التالية:\n\n• الدفع الإلكتروني داخل أوروبا عبر بوابة الدفع Mollie (بطاقات بنكية – iDEAL – SEPA – Bancontact)\n\n• الدفع النقدي (كاش) داخل سورية في مراكزنا المعتمدة\n\n• الدفع عبر مكاتب الصرافة المعتمدة (تحويل محلي داخل سورية حسب التعليمات الظاهرة عند إتمام الطلب)",
+            "يتم الدفع عبر الخيارات التالية:\n\n• الدفع الإلكتروني داخل أوروبا عبر Stripe (بطاقات بنكية – Apple Pay – Google Pay)\n\n• الدفع النقدي (كاش) داخل سورية في مراكزنا المعتمدة\n\n• الدفع عبر مكاتب الصرافة المعتمدة (تحويل محلي داخل سورية حسب التعليمات الظاهرة عند إتمام الطلب)",
         },
       ],
     },
@@ -285,7 +285,7 @@ export default function FAQPage() {
         {
           question: "How can I pay?",
           answer:
-            "Payment is made through the following options:\n\n• Electronic payment within Europe via Mollie payment gateway (bank cards – iDEAL – SEPA – Bancontact)\n\n• Cash payment inside Syria at our authorized centers\n\n• Payment through authorized exchange offices (local transfer within Syria according to instructions shown when completing the order)",
+            "Payment is made through the following options:\n\n• Electronic payment within Europe via Stripe (Credit Cards – Apple Pay – Google Pay)\n\n• Cash payment inside Syria at our authorized centers\n\n• Payment through authorized exchange offices (local transfer within Syria according to instructions shown when completing the order)",
         },
       ],
     },

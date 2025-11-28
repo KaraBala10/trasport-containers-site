@@ -213,7 +213,7 @@ export const apiService = {
   },
 
   initiatePayment: (id: number) => {
-    return apiClient.post(`/fcl/quotes/${id}/initiate-payment/`);
+    return apiClient.post(`/fcl/quotes/${id}/initiate-stripe-payment/`);
   },
 
   getPaymentStatus: (id: number) => {

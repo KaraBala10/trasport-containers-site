@@ -390,26 +390,60 @@ export default function DashboardPage() {
     }
   }, [mounted, loading, isAuthenticated, router]);
 
-  // Handle payment return from Mollie
+  // Handle payment return from Stripe
   useEffect(() => {
     if (typeof window !== "undefined" && mounted) {
       const params = new URLSearchParams(window.location.search);
       const paymentStatus = params.get("payment");
+      const quoteId = params.get("quote_id");
       
       if (paymentStatus === "success") {
-        alert(
-          language === "ar"
-            ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
-            : "Payment received successfully! The paid amount will be updated shortly."
-        );
         // Refresh quotes to get updated payment status
         const fetchQuotes = async () => {
           try {
             const response = await apiService.getFCLQuotes();
             const quotes = response.data?.results || response.data || [];
             setFclQuotes(Array.isArray(quotes) ? quotes : []);
+            
+            // If we have a quote_id, try to get updated payment status
+            if (quoteId) {
+              try {
+                const paymentResponse = await apiService.getPaymentStatus(parseInt(quoteId));
+                if (paymentResponse.data?.success) {
+                  const paymentData = paymentResponse.data;
+                  const message = language === "ar"
+                    ? `تم استلام الدفعة بنجاح! المبلغ المدفوع: €${paymentData.amount_paid?.toFixed(2) || "0.00"} من إجمالي €${paymentData.total_price?.toFixed(2) || "0.00"}`
+                    : `Payment received successfully! Amount paid: €${paymentData.amount_paid?.toFixed(2) || "0.00"} of €${paymentData.total_price?.toFixed(2) || "0.00"}`;
+                  alert(message);
+                } else {
+                  alert(
+                    language === "ar"
+                      ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
+                      : "Payment received successfully! The paid amount will be updated shortly."
+                  );
+                }
+              } catch (error) {
+                console.error("Error fetching payment status:", error);
+                alert(
+                  language === "ar"
+                    ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
+                    : "Payment received successfully! The paid amount will be updated shortly."
+                );
+              }
+            } else {
+              alert(
+                language === "ar"
+                  ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
+                  : "Payment received successfully! The paid amount will be updated shortly."
+              );
+            }
           } catch (error) {
             console.error("Error refreshing quotes:", error);
+            alert(
+              language === "ar"
+                ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
+                : "Payment received successfully! The paid amount will be updated shortly."
+            );
           }
         };
         fetchQuotes();
@@ -595,7 +629,7 @@ export default function DashboardPage() {
       const response = await apiService.initiatePayment(quoteId);
       
       if (response.data?.success && response.data?.checkout_url) {
-        // Redirect to Mollie checkout
+        // Redirect to Stripe checkout
         window.location.href = response.data.checkout_url;
       } else {
         throw new Error(response.data?.error || "Failed to initiate payment");

@@ -17,13 +17,16 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-# DISABLED: Mollie removed, Stripe integration pending
-# try:
-#     from mollie.api.client import Client as MollieClient
-#     MOLLIE_AVAILABLE = True
-# except ImportError:
-#     MOLLIE_AVAILABLE = False
-MOLLIE_AVAILABLE = False
+# Mollie payment gateway removed - using Stripe only
+
+# Stripe Payment Integration
+try:
+    import stripe
+    stripe.api_key = settings.STRIPE_SECRET_KEY if settings.STRIPE_SECRET_KEY else None
+    STRIPE_AVAILABLE = True
+except ImportError:
+    STRIPE_AVAILABLE = False
+    stripe = None
 
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
@@ -1378,38 +1381,29 @@ def payment_status_view(request, pk):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # DISABLED: Mollie removed, Stripe integration pending
-        # If there's a payment_id, try to get latest status from Mollie
+        # Get latest payment status from Stripe if payment_method is stripe
         payment_status_info = None
-        # if quote.payment_id and MOLLIE_AVAILABLE:
-        #     try:
-        #         api_key = (
-        #             settings.MOLLIE_API_KEY_TEST
-        #             if settings.MOLLIE_USE_TEST_MODE
-        #             else settings.MOLLIE_API_KEY
-        #         )
-        #         if api_key:
-        #             mollie_client = MollieClient()
-        #             mollie_client.set_api_key(api_key)
-        #             payment = mollie_client.payments.get(quote.payment_id)
-        #             payment_status_info = {
-        #                 "id": payment.id,
-        #                 "status": payment.status,
-        #                 "amount": payment.amount,
-        #                 "paid_at": payment.paid_at,
-        #                 "checkout_url": (
-        #                     payment.checkout_url
-        #                     if hasattr(payment, "checkout_url")
-        #                     else None
-        #                 ),
-        #             }
-        #             # Update local status if different
-        #             if quote.payment_status != payment.status:
-        #                 quote.payment_status = payment.status
-        #                 quote.payment_updated_at = timezone.now()
-        #                 quote.save()
-        #     except Exception as e:
-        #         logger.warning(f"Could not fetch payment status from Mollie: {str(e)}")
+        if quote.payment_id and quote.payment_method == "stripe" and STRIPE_AVAILABLE:
+            try:
+                if settings.STRIPE_SECRET_KEY:
+                    # Retrieve Stripe checkout session
+                    session = stripe.checkout.Session.retrieve(quote.payment_id)
+                    payment_status_info = {
+                        "id": session.id,
+                        "status": session.payment_status,
+                        "amount_total": session.amount_total / 100 if session.amount_total else 0,  # Convert from cents
+                        "currency": session.currency.upper(),
+                        "url": session.url if hasattr(session, "url") else None,
+                    }
+                    # Update local status if different
+                    if quote.payment_status != session.payment_status:
+                        quote.payment_status = session.payment_status
+                        quote.payment_updated_at = timezone.now()
+                        quote.save()
+            except stripe.error.StripeError as e:
+                logger.warning(f"Could not fetch payment status from Stripe: {str(e)}")
+            except Exception as e:
+                logger.warning(f"Error fetching Stripe payment status: {str(e)}")
 
         # Calculate payment info
         total_price = float(quote.total_price) if quote.total_price else 0
@@ -1439,7 +1433,7 @@ def payment_status_view(request, pk):
                     if quote.payment_updated_at
                     else None
                 ),
-                # "mollie_payment": payment_status_info,  # DISABLED: Mollie removed
+                "stripe_payment": payment_status_info if quote.payment_method == "stripe" else None,
             },
             status=status.HTTP_200_OK,
         )
@@ -1456,6 +1450,343 @@ def payment_status_view(request, pk):
                 "success": False,
                 "error": "An error occurred while checking payment status.",
             },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_stripe_payment_view(request, pk):
+    """API endpoint to initiate Stripe payment for an FCL quote"""
+    logger = logging.getLogger(__name__)
+
+    if not STRIPE_AVAILABLE:
+        return Response(
+            {
+                "success": False,
+                "error": "Stripe payment service is not available. Please install stripe.",
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+
+        # Check if user owns this quote
+        if quote.user != request.user:
+            return Response(
+                {"success": False, "error": "You can only pay for your own quotes."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Check if quote is in PENDING_PAYMENT status
+        if quote.status != "PENDING_PAYMENT":
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Payment can only be initiated for quotes with PENDING_PAYMENT status. Current status: {quote.status}",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if total_price is set
+        if not quote.total_price or quote.total_price <= 0:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Total price must be set before initiating payment.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Calculate remaining amount
+        amount_paid = quote.amount_paid or Decimal("0")
+        remaining_amount = quote.total_price - amount_paid
+
+        if remaining_amount <= 0:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Payment is already complete. No remaining amount to pay.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Ensure remaining amount is at least 0.50 EUR (Stripe minimum)
+        if remaining_amount < Decimal("0.50"):
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Remaining amount (€{remaining_amount:.2f}) is too small. Minimum payment is €0.50.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check Stripe API key
+        if not settings.STRIPE_SECRET_KEY:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Stripe API key is not configured. Please contact administrator.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Create payment description
+        description = f"FCL Quote Payment - {quote.quote_number or f'#{quote.id}'}"
+        if amount_paid > 0:
+            description += f" (Remaining: €{remaining_amount:.2f})"
+
+        # Create Stripe Checkout Session
+        try:
+            # Ensure we have a valid amount (minimum 0.50 EUR = 50 cents)
+            amount_in_cents = max(50, int(remaining_amount * 100))
+            
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                line_items=[
+                    {
+                        "price_data": {
+                            "currency": "eur",
+                            "product_data": {
+                                "name": f"FCL Quote {quote.quote_number or f'#{quote.id}'}",
+                                "description": description,
+                            },
+                            "unit_amount": amount_in_cents,
+                        },
+                        "quantity": 1,
+                    }
+                ],
+                mode="payment",
+                success_url=settings.STRIPE_REDIRECT_SUCCESS_URL + f"&quote_id={quote.id}",
+                cancel_url=settings.STRIPE_REDIRECT_CANCEL_URL + f"&quote_id={quote.id}",
+                metadata={
+                    "quote_id": str(quote.id),
+                    "quote_number": quote.quote_number or f"#{quote.id}",
+                    "user_id": str(request.user.id),
+                    "remaining_amount": str(remaining_amount),
+                },
+                customer_email=request.user.email if request.user.email else None,
+                expires_at=int(timezone.now().timestamp()) + (24 * 60 * 60),  # Expire in 24 hours
+            )
+
+            # Save payment information to quote
+            quote.payment_id = checkout_session.id
+            quote.payment_status = checkout_session.payment_status
+            quote.payment_method = "stripe"
+            quote.payment_created_at = timezone.now()
+            quote.payment_updated_at = timezone.now()
+            quote.save()
+
+            logger.info(
+                f"Stripe payment initiated for quote {quote.id}: Session ID {checkout_session.id}"
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Payment initiated successfully.",
+                    "checkout_url": checkout_session.url,
+                    "session_id": checkout_session.id,
+                    "amount": {
+                        "value": float(remaining_amount),
+                        "currency": "EUR",
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe API error: {str(e)}", exc_info=True)
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Stripe payment error: {str(e)}",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "FCL quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error initiating Stripe payment: {str(e)}", exc_info=True)
+        return Response(
+            {
+                "success": False,
+                "error": f"An error occurred while initiating payment: {str(e)}",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Stripe webhook doesn't use JWT
+def stripe_webhook_view(request):
+    """API endpoint to receive webhook notifications from Stripe"""
+    logger = logging.getLogger(__name__)
+
+    if not STRIPE_AVAILABLE:
+        logger.error("Stripe webhook received but Stripe API is not available")
+        return Response(
+            {"error": "Service unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+
+    try:
+        payload = request.body
+        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+
+        if not sig_header:
+            return Response(
+                {"error": "Missing Stripe signature"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verify webhook signature
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            )
+        except ValueError as e:
+            logger.error(f"Invalid payload: {str(e)}")
+            return Response(
+                {"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except stripe.error.SignatureVerificationError as e:
+            logger.error(f"Invalid signature: {str(e)}")
+            return Response(
+                {"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Handle the event
+        if event["type"] == "checkout.session.completed":
+            session = event["data"]["object"]
+            session_id = session.get("id")
+            payment_status = session.get("payment_status")
+
+            # Find quote by session_id (stored in payment_id)
+            try:
+                quote = FCLQuote.objects.get(payment_id=session_id)
+            except FCLQuote.DoesNotExist:
+                logger.warning(f"Quote not found for Stripe session ID: {session_id}")
+                return Response(
+                    {"error": "Quote not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Update payment status
+            quote.payment_status = payment_status
+            quote.payment_updated_at = timezone.now()
+
+            # If payment is paid, update amount_paid
+            if payment_status == "paid" and session.get("amount_total"):
+                paid_amount = Decimal(session["amount_total"]) / 100  # Convert from cents
+                current_amount_paid = quote.amount_paid or Decimal("0")
+                total_price = quote.total_price or Decimal("0")
+                
+                # Prevent duplicate payment processing
+                # Check if this payment would exceed the total price
+                expected_new_total = current_amount_paid + paid_amount
+                
+                if expected_new_total > total_price:
+                    # Cap at total price to prevent overpayment
+                    quote.amount_paid = total_price
+                    logger.warning(
+                        f"Payment for quote {quote.id} would exceed total price. Capped at €{total_price:.2f}"
+                    )
+                elif current_amount_paid < total_price:
+                    # Only add if this payment hasn't been processed yet
+                    # Check if the session was already processed by comparing amounts
+                    quote.amount_paid = expected_new_total
+                    logger.info(
+                        f"Payment received for quote {quote.id}: €{paid_amount:.2f}. Total paid: €{quote.amount_paid:.2f}"
+                    )
+                else:
+                    logger.info(
+                        f"Payment already processed for quote {quote.id}. Current paid: €{current_amount_paid:.2f}"
+                    )
+                
+                # If payment is complete (100%), log it
+                if quote.total_price and quote.amount_paid >= quote.total_price:
+                    logger.info(
+                        f"Payment complete for quote {quote.id}: €{quote.amount_paid:.2f} / €{quote.total_price:.2f}"
+                    )
+
+            quote.save()
+
+            logger.info(
+                f"Webhook processed for quote {quote.id}: Stripe session {session_id} status updated to {payment_status}"
+            )
+
+        elif event["type"] == "checkout.session.async_payment_succeeded":
+            # Handle async payment succeeded (for delayed payment methods)
+            session = event["data"]["object"]
+            session_id = session.get("id")
+            
+            try:
+                quote = FCLQuote.objects.get(payment_id=session_id)
+                quote.payment_status = "paid"
+                quote.payment_updated_at = timezone.now()
+                
+                if session.get("amount_total"):
+                    paid_amount = Decimal(session["amount_total"]) / 100
+                    current_amount_paid = quote.amount_paid or Decimal("0")
+                    if current_amount_paid < quote.total_price:
+                        quote.amount_paid = current_amount_paid + paid_amount
+                
+                quote.save()
+                logger.info(
+                    f"Async payment succeeded for quote {quote.id}: Stripe session {session_id}"
+                )
+            except FCLQuote.DoesNotExist:
+                logger.warning(f"Quote not found for async payment session ID: {session_id}")
+
+        elif event["type"] == "checkout.session.async_payment_failed":
+            # Handle async payment failed
+            session = event["data"]["object"]
+            session_id = session.get("id")
+            
+            try:
+                quote = FCLQuote.objects.get(payment_id=session_id)
+                quote.payment_status = "failed"
+                quote.payment_updated_at = timezone.now()
+                quote.save()
+                logger.warning(
+                    f"Async payment failed for quote {quote.id}: Stripe session {session_id}"
+                )
+            except FCLQuote.DoesNotExist:
+                logger.warning(f"Quote not found for failed payment session ID: {session_id}")
+
+        elif event["type"] == "payment_intent.succeeded":
+            # Handle payment intent succeeded (backup handler)
+            payment_intent = event["data"]["object"]
+            payment_intent_id = payment_intent.get("id")
+            
+            # Try to find quote by metadata if available
+            metadata = payment_intent.get("metadata", {})
+            quote_id = metadata.get("quote_id")
+            
+            if quote_id:
+                try:
+                    quote = FCLQuote.objects.get(pk=quote_id)
+                    # Only update if we have a payment_id and it matches
+                    if quote.payment_id:
+                        # The checkout.session.completed event should handle this
+                        # But we log it for reference
+                        logger.info(
+                            f"Payment intent succeeded for quote {quote.id}: Payment Intent {payment_intent_id}"
+                        )
+                except FCLQuote.DoesNotExist:
+                    logger.warning(f"Quote {quote_id} not found for payment intent {payment_intent_id}")
+            else:
+                logger.info(f"Payment intent succeeded: {payment_intent_id} (no quote_id in metadata)")
+
+        return Response({"success": True}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(f"Error processing Stripe webhook: {str(e)}", exc_info=True)
+        return Response(
+            {"error": "Internal server error"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

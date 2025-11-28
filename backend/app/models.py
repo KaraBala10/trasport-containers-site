@@ -278,13 +278,13 @@ class FCLQuote(models.Model):
         help_text="Amount paid by the user",
     )
 
-    # Payment fields (Mollie)
+    # Payment fields (Stripe)
     payment_id = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         verbose_name="Payment ID",
-        help_text="Mollie payment ID",
+        help_text="Payment gateway ID (Stripe Session ID)",
     )
     payment_status = models.CharField(
         max_length=50,
@@ -298,14 +298,14 @@ class FCLQuote(models.Model):
             ("expired", "Expired"),
         ],
         verbose_name="Payment Status",
-        help_text="Current payment status from Mollie",
+        help_text="Current payment status from payment gateway (Stripe)",
     )
     payment_method = models.CharField(
         max_length=50,
         blank=True,
         null=True,
         choices=[
-            ("mollie", "Mollie"),
+            ("stripe", "Stripe"),
             ("cash", "Cash"),
             ("internal-transfer", "Internal Transfer"),
         ],

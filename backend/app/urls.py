@@ -10,7 +10,7 @@ from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
                     calculate_cbm_view, calculate_pricing_view,
                     current_user_view, get_packaging_prices_view,
                     get_prices_view, logout_view,
-                    payment_status_view,
+                    payment_status_view, initiate_stripe_payment_view, stripe_webhook_view,
                     respond_to_offer_view, send_edit_request_reply_view,
                     send_payment_reminder_view, update_fcl_quote_status_view,
                     countries_list_view, cities_list_view, ports_list_view,
@@ -64,7 +64,7 @@ urlpatterns = [
         send_payment_reminder_view,
         name="fcl_quote_send_payment_reminder",
     ),
-    # DISABLED: Mollie payment removed, Stripe integration pending
+    # Mollie payment removed - using Stripe only
     # path(
     #     "fcl/quotes/<int:pk>/initiate-payment/",
     #     initiate_payment_view,
@@ -75,9 +75,16 @@ urlpatterns = [
         payment_status_view,
         name="fcl_quote_payment_status",
     ),
+    # Stripe payment endpoints
+    path(
+        "fcl/quotes/<int:pk>/initiate-stripe-payment/",
+        initiate_stripe_payment_view,
+        name="fcl_quote_initiate_stripe_payment",
+    ),
     path("fcl/quotes/<int:pk>/", FCLQuoteDetailView.as_view(), name="fcl_quote_detail"),
-    # DISABLED: Mollie webhook removed
-    # path("mollie/webhook/", mollie_webhook_view, name="mollie_webhook"),
+    # Stripe webhook
+    path("stripe/webhook/", stripe_webhook_view, name="stripe_webhook"),
+    # Mollie webhook removed - using Stripe only
     # Utility endpoints
     path("calculate-cbm/", calculate_cbm_view, name="calculate_cbm"),
     path("calculate-pricing/", calculate_pricing_view, name="calculate_pricing"),
