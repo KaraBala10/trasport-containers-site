@@ -277,7 +277,7 @@ export default function TrackingPage() {
       <main className="flex-grow">
         {/* Spacer for fixed header */}
         <div className="h-20" aria-hidden="true" />
-        
+
         {/* Header Section */}
         <div className="bg-gradient-to-r from-primary-dark via-primary-dark to-primary-yellow py-12">
           <div className="container mx-auto px-4">

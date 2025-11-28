@@ -243,11 +243,11 @@ STRIPE_USE_TEST_MODE = config("STRIPE_USE_TEST_MODE", default=True, cast=bool)
 # Stripe redirect URLs
 STRIPE_REDIRECT_SUCCESS_URL = config(
     "STRIPE_REDIRECT_SUCCESS_URL",
-    default="https://medo-freight.eu/dashboard?payment=success",
+    default="http://localhost/dashboard?payment=success",
 )
 STRIPE_REDIRECT_CANCEL_URL = config(
     "STRIPE_REDIRECT_CANCEL_URL",
-    default="https://medo-freight.eu/dashboard?payment=canceled",
+    default="http://localhost/dashboard?payment=canceled",
 )
 
 # Stripe Domain (for subscription billing portal)

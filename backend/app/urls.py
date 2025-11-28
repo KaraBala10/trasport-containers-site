@@ -13,6 +13,9 @@ from .views import (
     FCLQuoteDetailView,
     FCLQuoteListView,
     FCLQuoteView,
+    LCLShipmentDetailView,
+    LCLShipmentListView,
+    LCLShipmentView,
     LoginView,
     RegisterView,
     UserProfileView,
@@ -109,6 +112,14 @@ urlpatterns = [
         name="fcl_quote_initiate_stripe_payment",
     ),
     path("fcl/quotes/<int:pk>/", FCLQuoteDetailView.as_view(), name="fcl_quote_detail"),
+    # LCL Shipment endpoints
+    path("shipments/", LCLShipmentView.as_view(), name="lcl_shipment_create"),
+    path("shipments/list/", LCLShipmentListView.as_view(), name="lcl_shipment_list"),
+    path(
+        "shipments/<int:pk>/",
+        LCLShipmentDetailView.as_view(),
+        name="lcl_shipment_detail",
+    ),
     # Stripe webhook
     path("stripe/webhook/", stripe_webhook_view, name="stripe_webhook"),
     # Mollie webhook removed - using Stripe only

@@ -80,7 +80,8 @@ export default function CreateShipmentPage() {
   const [isCreatingShipment, setIsCreatingShipment] = useState<boolean>(false);
   const [isParcelDetailsValid, setIsParcelDetailsValid] =
     useState<boolean>(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  const [isProcessingPayment, setIsProcessingPayment] =
+    useState<boolean>(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -401,23 +402,81 @@ export default function CreateShipmentPage() {
       return;
     }
 
+    if (!sender || !receiver) {
+      alert(
+        language === "ar"
+          ? "يرجى التأكد من إدخال بيانات المرسل والمستلم"
+          : "Please ensure sender and receiver information is provided"
+      );
+      return;
+    }
+
     setIsProcessingPayment(true);
     try {
-      // Create checkout session via API
-      const response = await apiService.createShipmentCheckout({
+      // First, create the shipment
+      const shipmentData = {
+        direction: direction,
+        sender_name: sender.name,
+        sender_email: sender.email,
+        sender_phone: sender.phone,
+        sender_address: sender.address,
+        sender_city: sender.city,
+        sender_postal_code: sender.postalCode || "",
+        sender_country: sender.country,
+        receiver_name: receiver.name,
+        receiver_email: receiver.email,
+        receiver_phone: receiver.phone,
+        receiver_address: receiver.address,
+        receiver_city: receiver.city,
+        receiver_postal_code: receiver.postalCode || "",
+        receiver_country: receiver.country,
+        parcels: parcels,
+        eu_pickup_address: euPickupAddress,
+        eu_pickup_weight: euPickupWeight,
+        eu_pickup_city: euPickupCity,
+        eu_pickup_postal_code: euPickupPostalCode,
+        eu_pickup_country: euPickupCountry,
+        selected_eu_shipping_method: selectedEUShippingMethod,
+        selected_eu_shipping_name: selectedEUShippingName,
+        syria_province: syriaProvince,
+        syria_weight: syriaWeight,
+        payment_method: "stripe",
+        total_price: grandTotalWithTransport,
+      };
+
+      const shipmentResponse = await apiService.createShipment(shipmentData);
+      const shipmentId = shipmentResponse.data?.id;
+
+      if (!shipmentId) {
+        throw new Error("Failed to create shipment");
+      }
+
+      // Then create checkout session with shipment ID in metadata
+      const checkoutResponse = await apiService.createShipmentCheckout({
         amount: grandTotalWithTransport,
         currency: "eur",
         metadata: {
           direction: direction || "",
           shipment_types: shipmentTypes.join(","),
+          shipment_id: shipmentId.toString(),
         },
       });
 
-      if (response.data?.success && response.data?.checkout_url) {
+      if (checkoutResponse.data?.success && checkoutResponse.data?.checkout_url) {
+        // Update shipment with stripe_session_id
+        if (checkoutResponse.data?.session_id) {
+          await apiService.updateShipment(shipmentId, {
+            stripe_session_id: checkoutResponse.data.session_id,
+            payment_status: "pending",
+          });
+        }
+        
         // Redirect to Stripe checkout
-        window.location.href = response.data.checkout_url;
+        window.location.href = checkoutResponse.data.checkout_url;
       } else {
-        throw new Error(response.data?.error || "Failed to create checkout session");
+        throw new Error(
+          checkoutResponse.data?.error || "Failed to create checkout session"
+        );
       }
     } catch (error: any) {
       console.error("Error creating Stripe checkout:", error);
@@ -1199,41 +1258,37 @@ export default function CreateShipmentPage() {
 
                     setIsCreatingShipment(true);
                     try {
-                      // Prepare shipment data
+                      // Prepare shipment data for new API
                       const shipmentData = {
                         direction: direction,
-                        shipment_types: shipmentTypes,
-                        sender: sender,
-                        receiver: receiver,
+                        sender_name: sender?.name || "",
+                        sender_email: sender?.email || "",
+                        sender_phone: sender?.phone || "",
+                        sender_address: sender?.address || "",
+                        sender_city: sender?.city || "",
+                        sender_postal_code: sender?.postalCode || "",
+                        sender_country: sender?.country || "",
+                        receiver_name: receiver?.name || "",
+                        receiver_email: receiver?.email || "",
+                        receiver_phone: receiver?.phone || "",
+                        receiver_address: receiver?.address || "",
+                        receiver_city: receiver?.city || "",
+                        receiver_postal_code: receiver?.postalCode || "",
+                        receiver_country: receiver?.country || "",
                         parcels: parcels,
-                        // Packaging is now handled in parcel cards via packagingType field
-                        // Insurance is aggregated from all parcels
-                        declared_shipment_value: parcels.reduce(
-                          (sum, parcel) => {
-                            if (
-                              parcel.wantsInsurance ||
-                              parcel.productCategory === "MOBILE_PHONE" ||
-                              parcel.productCategory === "LAPTOP"
-                            ) {
-                              return sum + (parcel.declaredShipmentValue || 0);
-                            }
-                            return sum;
-                          },
-                          0
-                        ),
                         eu_pickup_address: euPickupAddress,
                         eu_pickup_weight: euPickupWeight,
                         eu_pickup_city: euPickupCity,
                         eu_pickup_postal_code: euPickupPostalCode,
                         eu_pickup_country: euPickupCountry,
                         selected_eu_shipping_method: selectedEUShippingMethod,
+                        selected_eu_shipping_name: selectedEUShippingName,
                         syria_province: syriaProvince,
                         syria_weight: syriaWeight,
                         payment_method: paymentMethod,
                         transfer_sender_name: transferSenderName,
                         transfer_reference: transferReference,
-                        accepted_terms: acceptedTerms,
-                        accepted_policies: acceptedPolicies,
+                        total_price: grandTotalWithTransport,
                       };
 
                       // Create shipment via API
@@ -1241,13 +1296,13 @@ export default function CreateShipmentPage() {
                         shipmentData
                       );
 
-                      if (response.data.success) {
-                        setShipmentId(response.data.shipment_id);
+                      if (response.data?.id || response.data?.shipment_number) {
+                        setShipmentId(response.data.id || response.data.shipment_number);
                         setCurrentStep(8); // Go to confirmation
                       } else {
                         console.error(
                           "Failed to create shipment:",
-                          response.data.error
+                          response.data?.error || response.data
                         );
                         alert(
                           language === "ar"

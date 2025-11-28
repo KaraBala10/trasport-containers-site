@@ -99,6 +99,55 @@ interface ProductRequest {
   updated_at: string;
 }
 
+interface LCLShipment {
+  id: number;
+  shipment_number: string;
+  direction: "eu-sy" | "sy-eu";
+  sender_name: string;
+  sender_email: string;
+  sender_phone: string;
+  sender_address: string;
+  sender_city: string;
+  sender_postal_code: string;
+  sender_country: string;
+  receiver_name: string;
+  receiver_email: string;
+  receiver_phone: string;
+  receiver_address: string;
+  receiver_city: string;
+  receiver_postal_code: string;
+  receiver_country: string;
+  parcels: any[];
+  eu_pickup_address?: string;
+  eu_pickup_city?: string;
+  eu_pickup_postal_code?: string;
+  eu_pickup_country?: string;
+  eu_pickup_weight?: number;
+  selected_eu_shipping_method?: number;
+  selected_eu_shipping_name?: string;
+  syria_province?: string;
+  syria_weight?: number;
+  payment_method?: string;
+  payment_status?: string;
+  stripe_session_id?: string;
+  total_price: number;
+  amount_paid: number;
+  status: string;
+  tracking_number?: string;
+  sendcloud_id?: number;
+  created_at: string;
+  updated_at: string;
+  paid_at?: string;
+  // User info (for admin view)
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  };
+}
+
 export default function DashboardPage() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const { language, setLanguage, isRTL, mounted } = useLanguage();
@@ -106,6 +155,9 @@ export default function DashboardPage() {
   const [fclQuotes, setFclQuotes] = useState<FCLQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
   const [expandedQuotes, setExpandedQuotes] = useState<Set<number>>(new Set());
+  const [lclShipments, setLclShipments] = useState<LCLShipment[]>([]);
+  const [shipmentsLoading, setShipmentsLoading] = useState(true);
+  const [expandedShipments, setExpandedShipments] = useState<Set<number>>(new Set());
   const [editingQuote, setEditingQuote] = useState<FCLQuote | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -161,6 +213,15 @@ export default function DashboardPage() {
         memberSince: "عضو منذ",
         myFCLQuotes: "طلبات عرض السعر FCL الخاصة بي",
         noQuotes: "لا توجد طلبات عرض سعر حتى الآن",
+        myLCLShipments: "شحناتي LCL",
+        allLCLShipments: "جميع شحنات LCL",
+        noShipments: "لا توجد شحنات حتى الآن",
+        shipmentNumber: "رقم الشحنة",
+        direction: "الاتجاه",
+        euToSy: "أوروبا إلى سوريا",
+        syToEu: "سوريا إلى أوروبا",
+        trackingNumber: "رقم التتبع",
+        noTracking: "لا يوجد رقم تتبع",
         quoteNumber: "رقم الطلب",
         route: "المسار",
         containerType: "نوع الحاوية",
@@ -286,6 +347,15 @@ export default function DashboardPage() {
         memberSince: "Member since",
         myFCLQuotes: "My FCL Quote Requests",
         noQuotes: "No quote requests yet",
+        myLCLShipments: "My LCL Shipments",
+        allLCLShipments: "All LCL Shipments",
+        noShipments: "No shipments yet",
+        shipmentNumber: "Shipment Number",
+        direction: "Direction",
+        euToSy: "Europe to Syria",
+        syToEu: "Syria to Europe",
+        trackingNumber: "Tracking Number",
+        noTracking: "No tracking number",
         quoteNumber: "Quote Number",
         route: "Route",
         containerType: "Container Type",
@@ -396,6 +466,33 @@ export default function DashboardPage() {
       const params = new URLSearchParams(window.location.search);
       const paymentStatus = params.get("payment");
       const quoteId = params.get("quote_id");
+      const type = params.get("type");
+      
+      if (paymentStatus === "success" && type === "shipment") {
+        // Refresh shipments to get updated payment status
+        const fetchShipments = async () => {
+          try {
+            const response = await apiService.getShipments();
+            const shipments = response.data?.results || response.data || [];
+            setLclShipments(Array.isArray(shipments) ? shipments : []);
+            
+            // Show success message
+            alert(
+              language === "ar"
+                ? "تم الدفع بنجاح! سيتم تحديث حالة الشحنة قريباً."
+                : "Payment successful! Shipment status will be updated shortly."
+            );
+            
+            // Clean URL
+            window.history.replaceState({}, "", "/dashboard");
+          } catch (error: any) {
+            console.error("Error fetching shipments after payment:", error);
+          }
+        };
+        
+        fetchShipments();
+        return;
+      }
       
       if (paymentStatus === "success") {
         // Refresh quotes to get updated payment status
@@ -488,6 +585,31 @@ export default function DashboardPage() {
     fetchFCLQuotes();
   }, [isAuthenticated, mounted, router]);
 
+  // Fetch LCL shipments
+  useEffect(() => {
+    const fetchLCLShipments = async () => {
+      if (!isAuthenticated || !mounted) return;
+
+      try {
+        setShipmentsLoading(true);
+        const response = await apiService.getShipments();
+        const shipments = response.data?.results || response.data || [];
+        setLclShipments(Array.isArray(shipments) ? shipments : []);
+      } catch (error: any) {
+        console.error("Error fetching LCL shipments:", error);
+        if (error.response?.status === 401) {
+          router.push("/login");
+        } else {
+          setLclShipments([]);
+        }
+      } finally {
+        setShipmentsLoading(false);
+      }
+    };
+
+    fetchLCLShipments();
+  }, [isAuthenticated, mounted, router]);
+
   // Fetch user's product requests (or all for admin)
   useEffect(() => {
     const fetchProductRequests = async () => {
@@ -521,6 +643,19 @@ export default function DashboardPage() {
         newSet.delete(quoteId);
       } else {
         newSet.add(quoteId);
+      }
+      return newSet;
+    });
+  };
+
+  // Toggle shipment expansion
+  const toggleShipment = (shipmentId: number) => {
+    setExpandedShipments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(shipmentId)) {
+        newSet.delete(shipmentId);
+      } else {
+        newSet.add(shipmentId);
       }
       return newSet;
     });
@@ -1231,7 +1366,7 @@ export default function DashboardPage() {
                   <h1 className="text-3xl md:text-4xl font-bold mb-2">
                     {t.welcome},{" "}
                     {user?.first_name || user?.username || t.welcomeBack}!
-                  </h1>
+              </h1>
                   <p className="text-white/90 text-lg">{user?.email}</p>
                   {memberSinceDate && (
                     <p className="text-white/80 text-sm mt-2">
@@ -1272,8 +1407,8 @@ export default function DashboardPage() {
                     </svg>
                     {t.goToHome}
                   </Link>
-                  <button
-                    onClick={logout}
+              <button
+                onClick={logout}
                     className="px-6 py-3 bg-red-600/90 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                   >
                     <svg
@@ -1290,7 +1425,7 @@ export default function DashboardPage() {
                       />
                     </svg>
                     {t.logout}
-                  </button>
+              </button>
                 </div>
               </div>
             </div>
@@ -1312,7 +1447,7 @@ export default function DashboardPage() {
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-yellow to-orange-400 rounded-full blur-3xl"></div>
                       <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-primary-dark to-primary-yellow rounded-full blur-3xl"></div>
-                    </div>
+              </div>
 
                     <div className="relative flex items-start gap-4">
                       {/* Icon Container with Gradient */}
@@ -1567,8 +1702,8 @@ export default function DashboardPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Create LCL Shipment */}
-                  <Link
-                    href="/create-shipment"
+                <Link
+                  href="/create-shipment"
                     className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-yellow transform hover:-translate-y-2"
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -1611,10 +1746,10 @@ export default function DashboardPage() {
                     <p className="text-gray-600 text-sm">
                       {t.createLCLShipmentDesc}
                     </p>
-                  </Link>
+                </Link>
 
                   {/* FCL Quote */}
-                  <Link
+                <Link
                     href="/fcl-quote"
                     className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
                   >
@@ -1656,10 +1791,10 @@ export default function DashboardPage() {
                       {t.fclQuote}
                     </h3>
                     <p className="text-gray-600 text-sm">{t.fclQuoteDesc}</p>
-                  </Link>
+                </Link>
 
                   {/* Track Shipment */}
-                  <Link
+                <Link
                     href="/tracking"
                     className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
                   >
@@ -1703,7 +1838,7 @@ export default function DashboardPage() {
                     <p className="text-gray-600 text-sm">
                       {t.trackShipmentDesc}
                     </p>
-                  </Link>
+                </Link>
                 </div>
               </div>
             )}
@@ -1737,14 +1872,14 @@ export default function DashboardPage() {
                   </svg>
                   <p className="text-gray-600 text-lg">{t.noQuotes}</p>
                   {!isAdmin && (
-                    <Link
+                <Link
                       href="/fcl-quote"
                       className="mt-4 inline-block px-6 py-3 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-all"
-                    >
+                >
                       {t.fclQuote}
-                    </Link>
+                </Link>
                   )}
-                </div>
+              </div>
               ) : (
                 <div className="space-y-4">
                   {fclQuotes.map((quote) => {
@@ -1765,7 +1900,7 @@ export default function DashboardPage() {
                                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     {t.quoteNumber}
                                   </p>
-                                </div>
+            </div>
                                 <p
                                   className="font-bold text-primary-dark text-base sm:text-lg font-mono whitespace-nowrap overflow-hidden text-ellipsis"
                                   title={
@@ -1788,9 +1923,9 @@ export default function DashboardPage() {
                                     <p className="text-sm font-semibold text-gray-800 mt-0.5">
                                       {quote.user.username}
                                     </p>
-                                  </div>
+          </div>
                                 )}
-                              </div>
+        </div>
 
                               {/* Route */}
                               <div className="space-y-1">
@@ -1806,7 +1941,7 @@ export default function DashboardPage() {
                                     {quote.port_of_discharge}
                                   </span>
                                 </p>
-                              </div>
+      </div>
 
                               {/* Container Type */}
                               <div className="space-y-1">
@@ -1819,7 +1954,7 @@ export default function DashboardPage() {
                                 <p className="text-xs text-gray-600">
                                   {quote.number_of_containers} {t.containers}
                                 </p>
-                              </div>
+    </div>
 
                               {/* Status */}
                               <div className="space-y-2">
@@ -3952,6 +4087,274 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* LCL Shipments Card */}
+            <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
+              <h2 className="text-2xl font-bold text-primary-dark mb-6 flex items-center gap-3">
+                <div className="w-1 h-8 bg-primary-yellow rounded-full"></div>
+                {user?.is_superuser ? t.allLCLShipments : t.myLCLShipments}
+              </h2>
+
+              {shipmentsLoading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-yellow mb-4"></div>
+                  <p className="text-gray-600 text-lg">{t.loading}</p>
+                </div>
+              ) : lclShipments.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg
+                    className="w-16 h-16 text-gray-400 mx-auto mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                    />
+                  </svg>
+                  <p className="text-gray-600 text-lg">{t.noShipments}</p>
+                  {!user?.is_superuser && (
+                    <Link
+                      href="/create-shipment"
+                      className="mt-4 inline-block px-6 py-3 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-all"
+                    >
+                      {t.createLCLShipment}
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {lclShipments.map((shipment) => {
+                    const isExpanded = expandedShipments.has(shipment.id);
+                    return (
+                      <div
+                        key={shipment.id}
+                        className="group bg-white rounded-2xl shadow-md hover:shadow-xl border border-gray-200 hover:border-primary-yellow/50 transition-all duration-300 overflow-hidden"
+                      >
+                        {/* Summary Row */}
+                        <div className="p-6 bg-gradient-to-br from-white to-gray-50/50">
+                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                              {/* Shipment Number */}
+                              <div className="sm:col-span-2 lg:col-span-2 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    {t.shipmentNumber}
+                                  </p>
+                                </div>
+                                <p
+                                  className="font-bold text-primary-dark text-base sm:text-lg font-mono whitespace-nowrap overflow-hidden text-ellipsis"
+                                  title={shipment.shipment_number}
+                                >
+                                  {shipment.shipment_number}
+                                </p>
+                                {user?.is_superuser && shipment.user && (
+                                  <div className="mt-3 pt-3 border-t border-gray-200">
+                                    <p className="text-xs text-gray-500">
+                                      {t.submittedBy}
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                                      {shipment.user.username}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Direction */}
+                              <div className="space-y-1">
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  {t.direction}
+                                </p>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {shipment.direction === "eu-sy" ? t.euToSy : t.syToEu}
+                                </p>
+                              </div>
+
+                              {/* Status */}
+                              <div className="space-y-2">
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  {t.status}
+                                </p>
+                                <span
+                                  className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm ${getStatusColor(
+                                    shipment.status || "CREATED"
+                                  )}`}
+                                >
+                                  {getStatusDisplay(shipment.status || "CREATED")}
+                                </span>
+                                {shipment.tracking_number && (
+                                  <div className="mt-2">
+                                    <p className="text-xs text-gray-500 mb-1">
+                                      {t.trackingNumber}
+                                    </p>
+                                    <p className="text-xs font-mono font-semibold text-primary-dark">
+                                      {shipment.tracking_number}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => toggleShipment(shipment.id)}
+                                className="px-4 py-2 text-sm font-semibold text-primary-dark bg-primary-yellow/10 hover:bg-primary-yellow/20 rounded-lg transition-all"
+                              >
+                                {isExpanded ? t.collapse : t.expand}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expanded Details */}
+                        {isExpanded && (
+                          <div className="border-t border-gray-200 p-6 bg-gray-50/50">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {/* Sender Info */}
+                              <div className="space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <h4 className="font-bold text-primary-dark text-lg">
+                                    {language === "ar" ? "المرسل" : "Sender"}
+                                  </h4>
+                                </div>
+                                <div className="space-y-2">
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {shipment.sender_name}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {shipment.sender_email}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {shipment.sender_phone}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {shipment.sender_address}, {shipment.sender_city}, {shipment.sender_country}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Receiver Info */}
+                              <div className="space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <h4 className="font-bold text-primary-dark text-lg">
+                                    {language === "ar" ? "المستلم" : "Receiver"}
+                                  </h4>
+                                </div>
+                                <div className="space-y-2">
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {shipment.receiver_name}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {shipment.receiver_email}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {shipment.receiver_phone}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {shipment.receiver_address}, {shipment.receiver_city}, {shipment.receiver_country}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Parcels */}
+                              {shipment.parcels && shipment.parcels.length > 0 && (
+                                <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                    <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                    <h4 className="font-bold text-primary-dark text-lg">
+                                      {language === "ar" ? "الطرود" : "Parcels"}
+                                    </h4>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {shipment.parcels.map((parcel: any, idx: number) => (
+                                      <div key={idx} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                        <p className="text-sm font-semibold text-gray-900 mb-2">
+                                          {language === "ar" ? `طرد ${idx + 1}` : `Parcel ${idx + 1}`}
+                                        </p>
+                                        <div className="text-xs text-gray-600 space-y-1">
+                                          {parcel.weight && (
+                                            <p>{language === "ar" ? "الوزن" : "Weight"}: {parcel.weight} kg</p>
+                                          )}
+                                          {parcel.cbm && (
+                                            <p>{language === "ar" ? "الحجم" : "CBM"}: {parcel.cbm} m³</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Payment Info */}
+                              {shipment.total_price > 0 && (
+                                <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                    <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                    <h4 className="font-bold text-primary-dark text-lg">
+                                      {language === "ar" ? "معلومات الدفع" : "Payment Information"}
+                                    </h4>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <p className="text-xs text-gray-500 mb-1">
+                                        {t.totalPrice}
+                                      </p>
+                                      <p className="text-sm font-bold text-primary-dark">
+                                        €{shipment.total_price.toFixed(2)}
+                                      </p>
+                                    </div>
+                                    {shipment.payment_method && (
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">
+                                          {language === "ar" ? "طريقة الدفع" : "Payment Method"}
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-900 capitalize">
+                                          {shipment.payment_method}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Tracking */}
+                              {shipment.tracking_number && (
+                                <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                    <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                    <h4 className="font-bold text-primary-dark text-lg">
+                                      {t.trackingNumber}
+                                    </h4>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <p className="text-sm font-mono font-semibold text-primary-dark">
+                                      {shipment.tracking_number}
+                                    </p>
+                                    <Link
+                                      href={`/tracking?tracking=${shipment.tracking_number}`}
+                                      className="px-4 py-2 text-sm font-semibold text-white bg-primary-dark hover:bg-primary-dark/90 rounded-lg transition-all"
+                                    >
+                                      {t.track}
+                                    </Link>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

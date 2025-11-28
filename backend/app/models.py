@@ -713,3 +713,130 @@ class CheckoutSessionRecord(models.Model):
     stripe_price_id = models.CharField(max_length=255)
     has_access = models.BooleanField(default=False)
     is_completed = models.BooleanField(default=False)
+
+
+class LCLShipment(models.Model):
+    """Model to store LCL shipment requests"""
+    
+    STATUS_CHOICES = [
+        ("CREATED", "Created"),
+        ("PAYMENT_PENDING", "Payment Pending"),
+        ("PAID", "Paid"),
+        ("PROCESSING", "Processing"),
+        ("IN_TRANSIT", "In Transit"),
+        ("DELIVERED", "Delivered"),
+        ("CANCELLED", "Cancelled"),
+    ]
+    
+    DIRECTION_CHOICES = [
+        ("eu-sy", "Europe to Syria"),
+        ("sy-eu", "Syria to Europe"),
+    ]
+    
+    PAYMENT_METHOD_CHOICES = [
+        ("stripe", "Stripe"),
+        ("cash", "Cash"),
+        ("internal-transfer", "Internal Transfer"),
+    ]
+    
+    # User
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lcl_shipments")
+    
+    # Shipment Number
+    shipment_number = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    
+    # Direction
+    direction = models.CharField(max_length=10, choices=DIRECTION_CHOICES)
+    
+    # Sender Information
+    sender_name = models.CharField(max_length=255)
+    sender_email = models.EmailField()
+    sender_phone = models.CharField(max_length=50)
+    sender_address = models.TextField()
+    sender_city = models.CharField(max_length=255)
+    sender_postal_code = models.CharField(max_length=50, blank=True)
+    sender_country = models.CharField(max_length=100)
+    
+    # Receiver Information
+    receiver_name = models.CharField(max_length=255)
+    receiver_email = models.EmailField()
+    receiver_phone = models.CharField(max_length=50)
+    receiver_address = models.TextField()
+    receiver_city = models.CharField(max_length=255)
+    receiver_postal_code = models.CharField(max_length=50, blank=True)
+    receiver_country = models.CharField(max_length=100)
+    
+    # Parcels (stored as JSON)
+    parcels = models.JSONField(default=list, help_text="List of parcel objects")
+    
+    # EU Pickup (for eu-sy direction)
+    eu_pickup_address = models.TextField(blank=True)
+    eu_pickup_city = models.CharField(max_length=255, blank=True)
+    eu_pickup_postal_code = models.CharField(max_length=50, blank=True)
+    eu_pickup_country = models.CharField(max_length=100, blank=True)
+    eu_pickup_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    selected_eu_shipping_method = models.IntegerField(null=True, blank=True)
+    selected_eu_shipping_name = models.CharField(max_length=255, blank=True)
+    
+    # Syria Transport (for eu-sy direction)
+    syria_province = models.CharField(max_length=255, blank=True)
+    syria_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Payment
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
+    payment_status = models.CharField(max_length=50, default="pending")
+    stripe_session_id = models.CharField(max_length=255, blank=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Transfer details (for internal-transfer payment)
+    transfer_sender_name = models.CharField(max_length=255, blank=True)
+    transfer_reference = models.CharField(max_length=255, blank=True)
+    transfer_slip = models.FileField(upload_to="transfer_slips/", blank=True, null=True)
+    
+    # Status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="CREATED")
+    
+    # Tracking
+    tracking_number = models.CharField(max_length=255, blank=True, default="")
+    sendcloud_id = models.IntegerField(null=True, blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "LCL Shipment"
+        verbose_name_plural = "LCL Shipments"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["shipment_number"]),
+        ]
+    
+    def __str__(self):
+        return f"LCL Shipment #{self.id} - {self.shipment_number or 'N/A'} - {self.get_status_display()}"
+    
+    def save(self, *args, **kwargs):
+        if not self.shipment_number:
+            # Generate shipment number: LCL-YYYYMMDD-XXXX
+            from django.utils import timezone
+            date_str = timezone.now().strftime("%Y%m%d")
+            last_shipment = LCLShipment.objects.filter(
+                shipment_number__startswith=f"LCL-{date_str}"
+            ).order_by("-shipment_number").first()
+            
+            if last_shipment and last_shipment.shipment_number:
+                try:
+                    last_num = int(last_shipment.shipment_number.split("-")[-1])
+                    next_num = last_num + 1
+                except (ValueError, IndexError):
+                    next_num = 1
+            else:
+                next_num = 1
+            
+            self.shipment_number = f"LCL-{date_str}-{next_num:04d}"
+        
+        super().save(*args, **kwargs)

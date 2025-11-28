@@ -107,7 +107,7 @@ export const apiService = {
 
   // Shipment endpoints
   getShipments: () => {
-    return apiClient.get('/shipments/');
+    return apiClient.get('/shipments/list/');
   },
 
   getShipment: (id: number) => {

@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port, ProductRequest, SyrianProvincePrice
+from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port, ProductRequest, SyrianProvincePrice, LCLShipment
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -481,3 +481,68 @@ class SyrianProvincePriceSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError("English province name is required")
         return value.strip()
+
+
+class LCLShipmentSerializer(serializers.ModelSerializer):
+    """Serializer for LCL Shipments"""
+    user_username = serializers.CharField(source="user.username", read_only=True)
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+    
+    class Meta:
+        model = LCLShipment
+        fields = (
+            "id",
+            "user",
+            "user_username",
+            "user_email",
+            "shipment_number",
+            "direction",
+            "sender_name",
+            "sender_email",
+            "sender_phone",
+            "sender_address",
+            "sender_city",
+            "sender_postal_code",
+            "sender_country",
+            "receiver_name",
+            "receiver_email",
+            "receiver_phone",
+            "receiver_address",
+            "receiver_city",
+            "receiver_postal_code",
+            "receiver_country",
+            "parcels",
+            "eu_pickup_address",
+            "eu_pickup_city",
+            "eu_pickup_postal_code",
+            "eu_pickup_country",
+            "eu_pickup_weight",
+            "selected_eu_shipping_method",
+            "selected_eu_shipping_name",
+            "syria_province",
+            "syria_weight",
+            "payment_method",
+            "payment_status",
+            "stripe_session_id",
+            "total_price",
+            "amount_paid",
+            "transfer_sender_name",
+            "transfer_reference",
+            "transfer_slip",
+            "status",
+            "tracking_number",
+            "sendcloud_id",
+            "created_at",
+            "updated_at",
+            "paid_at",
+        )
+        read_only_fields = (
+            "id",
+            "user",
+            "user_username",
+            "user_email",
+            "shipment_number",
+            "created_at",
+            "updated_at",
+            "paid_at",
+        )

@@ -45,6 +45,7 @@ from .models import (
     Country,
     EditRequestMessage,
     FCLQuote,
+    LCLShipment,
     PackagingPrice,
     Port,
     Price,
@@ -58,6 +59,7 @@ from .serializers import (
     CountrySerializer,
     EditRequestMessageSerializer,
     FCLQuoteSerializer,
+    LCLShipmentSerializer,
     PackagingPriceSerializer,
     PortSerializer,
     PriceSerializer,
@@ -1669,15 +1671,47 @@ def stripe_webhook_view(request):
             session = event["data"]["object"]
             session_id = session.get("id")
             payment_status = session.get("payment_status")
+            metadata = session.get("metadata", {})
+            event_type = metadata.get("type", "")
 
-            # Find quote by session_id (stored in payment_id)
+            # Check if this is a shipment payment
+            if event_type == "shipment":
+                try:
+                    shipment = LCLShipment.objects.get(stripe_session_id=session_id)
+                    shipment.payment_status = payment_status
+
+                    if payment_status == "paid" and session.get("amount_total"):
+                        paid_amount = Decimal(session["amount_total"]) / 100
+                        shipment.amount_paid = paid_amount
+                        shipment.status = "PAID"
+                        shipment.paid_at = timezone.now()
+
+                        logger.info(
+                            f"Payment received for shipment {shipment.id}: €{paid_amount:.2f}"
+                        )
+
+                    shipment.save()
+                    logger.info(
+                        f"Webhook processed for shipment {shipment.id}: Stripe session {session_id} status updated to {payment_status}"
+                    )
+                except LCLShipment.DoesNotExist:
+                    logger.warning(
+                        f"Shipment not found for Stripe session ID: {session_id}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error processing shipment webhook: {str(e)}", exc_info=True
+                    )
+
+            # Find quote by session_id (stored in payment_id) - for FCL quotes
             try:
                 quote = FCLQuote.objects.get(payment_id=session_id)
             except FCLQuote.DoesNotExist:
-                logger.warning(f"Quote not found for Stripe session ID: {session_id}")
-                return Response(
-                    {"error": "Quote not found"}, status=status.HTTP_404_NOT_FOUND
-                )
+                if event_type != "shipment":
+                    logger.warning(
+                        f"Quote not found for Stripe session ID: {session_id}"
+                    )
+                return Response({"success": True}, status=status.HTTP_200_OK)
 
             # Update payment status
             quote.payment_status = payment_status
@@ -2778,6 +2812,78 @@ def admin_shipping_settings_view(request):
             )
 
 
+# ===================================================================================================
+# LCL Shipment Views
+# ===================================================================================================
+
+
+class LCLShipmentView(generics.CreateAPIView):
+    """API endpoint to create LCL shipment"""
+
+    serializer_class = LCLShipmentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def perform_create(self, serializer):
+        """Set user to current authenticated user"""
+        serializer.save(user=self.request.user)
+
+        # Log creation
+        logger = logging.getLogger(__name__)
+        shipment = serializer.instance
+        logger.info(
+            f"Created LCL shipment {shipment.id} - {shipment.shipment_number} for user {self.request.user.id}"
+        )
+
+
+class LCLShipmentListView(generics.ListAPIView):
+    """API endpoint to list user's LCL shipments (or all shipments for admin)"""
+
+    serializer_class = LCLShipmentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return shipments for the authenticated user, or all shipments if admin"""
+        if not self.request.user.is_authenticated:
+            return LCLShipment.objects.none()
+
+        # If user is superuser, return all shipments
+        if self.request.user.is_superuser:
+            return LCLShipment.objects.all().order_by("-created_at")
+        else:
+            # Regular user - only their shipments
+            return LCLShipment.objects.filter(user=self.request.user).order_by(
+                "-created_at"
+            )
+
+
+class LCLShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """API endpoint to retrieve, update, or delete a specific LCL shipment"""
+
+    serializer_class = LCLShipmentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        """Return shipments for the authenticated user, or all shipments if admin"""
+        if not self.request.user.is_authenticated:
+            return LCLShipment.objects.none()
+
+        # Admin can access all shipments, regular users only their own
+        if self.request.user.is_superuser:
+            return LCLShipment.objects.all()
+        return LCLShipment.objects.filter(user=self.request.user)
+
+    def get_serializer_context(self):
+        """Add request to serializer context"""
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_shipment_checkout_session(request):
@@ -2834,6 +2940,7 @@ def create_shipment_checkout_session(request):
             metadata={
                 "user_id": str(request.user.id),
                 "amount": str(amount),
+                "type": "shipment",
                 **metadata,
             },
             customer_email=request.user.email if request.user.email else None,
