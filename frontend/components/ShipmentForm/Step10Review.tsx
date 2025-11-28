@@ -164,13 +164,17 @@ export default function Step10Review({
   const totalCBM = parcels.reduce((sum, p) => sum + (p.cbm || 0), 0);
 
   // Show transport cards based on data availability (ignore direction) - Same as Step5Pricing
-  const isEUTransport = selectedEUShippingPrice && selectedEUShippingPrice > 0;
+  // Use selectedEUShippingTotalPrice (with profit) to determine if EU transport exists
+  const isEUTransport =
+    selectedEUShippingTotalPrice && selectedEUShippingTotalPrice > 0;
   const isSyriaTransport =
     syriaTransportDetails?.calculated_price &&
     syriaTransportDetails.calculated_price > 0;
 
   // Calculate transport prices (use total_price from backend, NOT selectedEUShippingPrice)
-  const euTransportPrice = isEUTransport ? (selectedEUShippingTotalPrice || 0) : 0;
+  const euTransportPrice = isEUTransport
+    ? selectedEUShippingTotalPrice || 0
+    : 0;
   const syriaTransportCost = isSyriaTransport
     ? syriaTransportDetails.calculated_price
     : 0;

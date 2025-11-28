@@ -321,6 +321,12 @@ export default function Step8InternalTransport({
       });
 
       if (response.data.success && response.data.shipping_methods) {
+        console.log("📦 EU Shipping Methods from API:", response.data.shipping_methods);
+        // Log first method to see structure
+        if (response.data.shipping_methods.length > 0) {
+          console.log("📦 First Method Structure:", response.data.shipping_methods[0]);
+          console.log("📦 First Method Keys:", Object.keys(response.data.shipping_methods[0]));
+        }
         setShippingMethods(response.data.shipping_methods);
 
         if (response.data.shipping_methods.length === 0) {
@@ -496,7 +502,16 @@ export default function Step8InternalTransport({
                         ? "border-primary-yellow bg-yellow-50"
                         : "border-gray-200 bg-white hover:border-gray-300"
                     }`}
-                    onClick={() =>
+                    onClick={() => {
+                      console.log("🖱️ Clicked EU Shipping Method:", {
+                        id: method.id,
+                        name: method.name,
+                        price: method.price,
+                        profit_amount: method.profit_amount,
+                        profit_margin_percent: method.profit_margin_percent,
+                        total_price: method.total_price,
+                        fullMethod: method,
+                      });
                       onEUShippingMethodChange(
                         method.id,
                         method.price,
@@ -504,8 +519,8 @@ export default function Step8InternalTransport({
                         method.profit_amount,
                         method.profit_margin_percent,
                         method.total_price
-                      )
-                    }
+                      );
+                    }}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -986,7 +1001,16 @@ export default function Step8InternalTransport({
                           ? "border-primary-yellow bg-yellow-50"
                           : "border-gray-200 bg-white hover:border-gray-300"
                       }`}
-                      onClick={() =>
+                      onClick={() => {
+                        console.log("🖱️ Clicked EU Shipping Method (RTL):", {
+                          id: method.id,
+                          name: method.name,
+                          price: method.price,
+                          profit_amount: method.profit_amount,
+                          profit_margin_percent: method.profit_margin_percent,
+                          total_price: method.total_price,
+                          fullMethod: method,
+                        });
                         onEUShippingMethodChange(
                           method.id,
                           method.price,
@@ -994,8 +1018,8 @@ export default function Step8InternalTransport({
                           method.profit_amount,
                           method.profit_margin_percent,
                           method.total_price
-                        )
-                      }
+                        );
+                      }}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">

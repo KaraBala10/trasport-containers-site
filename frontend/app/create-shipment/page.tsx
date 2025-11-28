@@ -56,8 +56,10 @@ export default function CreateShipmentPage() {
     useState<string>("");
   const [selectedEUShippingProfitAmount, setSelectedEUShippingProfitAmount] =
     useState<number>(0); // Calculated profit amount
-  const [selectedEUShippingProfitMarginPercent, setSelectedEUShippingProfitMarginPercent] =
-    useState<number>(0); // Profit margin percentage
+  const [
+    selectedEUShippingProfitMarginPercent,
+    setSelectedEUShippingProfitMarginPercent,
+  ] = useState<number>(0); // Profit margin percentage
   const [selectedEUShippingTotalPrice, setSelectedEUShippingTotalPrice] =
     useState<number>(0); // Total price (calculated in backend)
   const [syriaProvince, setSyriaProvince] = useState<string>("");
@@ -725,13 +727,34 @@ export default function CreateShipmentPage() {
                 euPickupCountry={euPickupCountry}
                 onEUPickupCountryChange={setEUPickupCountry}
                 selectedEUShippingMethod={selectedEUShippingMethod}
-                onEUShippingMethodChange={(id, price, name, profitAmount, profitMarginPercent, totalPrice) => {
+                onEUShippingMethodChange={(
+                  id,
+                  price,
+                  name,
+                  profitAmount,
+                  profitMarginPercent,
+                  totalPrice
+                ) => {
+                  console.log("🔵 onEUShippingMethodChange called with:", {
+                    id,
+                    price,
+                    name,
+                    profitAmount,
+                    profitMarginPercent,
+                    totalPrice,
+                  });
                   setSelectedEUShippingMethod(id);
                   setSelectedEUShippingPrice(price || 0); // Sendcloud original price
                   setSelectedEUShippingName(name || "");
                   setSelectedEUShippingProfitAmount(profitAmount || 0); // Profit amount
-                  setSelectedEUShippingProfitMarginPercent(profitMarginPercent || 0); // Profit %
+                  setSelectedEUShippingProfitMarginPercent(
+                    profitMarginPercent || 0
+                  ); // Profit %
                   setSelectedEUShippingTotalPrice(totalPrice || 0); // Total (backend calculated)
+                  console.log(
+                    "✅ State updated - selectedEUShippingTotalPrice:",
+                    totalPrice || 0
+                  );
                 }}
                 syriaProvince={syriaProvince}
                 onSyriaProvinceChange={setSyriaProvince}
@@ -838,6 +861,9 @@ export default function CreateShipmentPage() {
                   {console.log("📤 Sending to Step5Pricing:", {
                     direction,
                     selectedEUShippingPrice,
+                    selectedEUShippingTotalPrice,
+                    selectedEUShippingProfitAmount,
+                    selectedEUShippingProfitMarginPercent,
                     selectedEUShippingName,
                     syriaTransportPrice,
                     syriaTransportDetails,
@@ -849,8 +875,12 @@ export default function CreateShipmentPage() {
                     direction={direction}
                     selectedEUShippingPrice={selectedEUShippingPrice}
                     selectedEUShippingName={selectedEUShippingName}
-                    selectedEUShippingProfitAmount={selectedEUShippingProfitAmount}
-                    selectedEUShippingProfitMarginPercent={selectedEUShippingProfitMarginPercent}
+                    selectedEUShippingProfitAmount={
+                      selectedEUShippingProfitAmount
+                    }
+                    selectedEUShippingProfitMarginPercent={
+                      selectedEUShippingProfitMarginPercent
+                    }
                     selectedEUShippingTotalPrice={selectedEUShippingTotalPrice}
                     syriaProvince={syriaProvince}
                     syriaTransportPrice={syriaTransportPrice}

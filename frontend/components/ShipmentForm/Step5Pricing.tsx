@@ -102,6 +102,7 @@ export default function Step5Pricing({
     syriaTransportDetails,
     syriaTransportPrice,
     selectedEUShippingPrice, // Sendcloud original price
+    selectedEUShippingTotalPrice, // Total price with profit
     selectedEUShippingProfitAmount, // Profit amount
     selectedEUShippingProfitMarginPercent, // Profit %
     selectedEUShippingName,
@@ -109,10 +110,12 @@ export default function Step5Pricing({
   });
 
   // Show transport cards based on data availability (ignore direction)
-  const isEUTransport = selectedEUShippingPrice !== null && selectedEUShippingPrice !== undefined;
+  // Use selectedEUShippingTotalPrice (with profit) to determine if EU transport exists
+  const isEUTransport = selectedEUShippingTotalPrice && selectedEUShippingTotalPrice > 0;
   const isSyriaTransport =
     syriaTransportDetails?.calculated_price !== null &&
-    syriaTransportDetails?.calculated_price !== undefined;
+    syriaTransportDetails?.calculated_price !== undefined &&
+    syriaTransportDetails?.calculated_price > 0;
 
   // Get prices from backend (NO calculations here!)
   const sendcloudPrice = isEUTransport ? (selectedEUShippingPrice || 0) : 0;
@@ -128,7 +131,8 @@ export default function Step5Pricing({
     sendcloudPrice,
     profitAmount,
     profitMarginPercent: selectedEUShippingProfitMarginPercent,
-    euTransportPrice,
+    selectedEUShippingTotalPrice, // Total price with profit
+    euTransportPrice, // Should equal selectedEUShippingTotalPrice
     selectedEUShippingName,
     syriaTransportDetails,
     isEUTransport,
