@@ -462,7 +462,10 @@ export default function CreateShipmentPage() {
         },
       });
 
-      if (checkoutResponse.data?.success && checkoutResponse.data?.checkout_url) {
+      if (
+        checkoutResponse.data?.success &&
+        checkoutResponse.data?.checkout_url
+      ) {
         // Update shipment with stripe_session_id
         if (checkoutResponse.data?.session_id) {
           await apiService.updateShipment(shipmentId, {
@@ -470,7 +473,7 @@ export default function CreateShipmentPage() {
             payment_status: "pending",
           });
         }
-        
+
         // Redirect to Stripe checkout
         window.location.href = checkoutResponse.data.checkout_url;
       } else {
@@ -1297,7 +1300,9 @@ export default function CreateShipmentPage() {
                       );
 
                       if (response.data?.id || response.data?.shipment_number) {
-                        setShipmentId(response.data.id || response.data.shipment_number);
+                        setShipmentId(
+                          response.data.id || response.data.shipment_number
+                        );
                         setCurrentStep(8); // Go to confirmation
                       } else {
                         console.error(
