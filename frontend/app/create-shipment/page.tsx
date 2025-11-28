@@ -65,7 +65,7 @@ export default function CreateShipmentPage() {
   const [syriaTransportPrice, setSyriaTransportPrice] = useState<number>(0);
   const [syriaTransportDetails, setSyriaTransportDetails] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<
-    "mollie" | "cash" | "internal-transfer" | null
+    "cash" | "internal-transfer" | null  // "mollie" removed, Stripe integration pending
   >(null);
   const [transferSenderName, setTransferSenderName] = useState<string>("");
   const [transferReference, setTransferReference] = useState<string>("");

@@ -6,8 +6,8 @@ import { ShippingDirection } from '@/types/shipment';
 
 interface Step9PaymentProps {
   direction: ShippingDirection;
-  paymentMethod: 'mollie' | 'cash' | 'internal-transfer' | null;
-  onPaymentMethodChange: (method: 'mollie' | 'cash' | 'internal-transfer' | null) => void;
+  paymentMethod: 'cash' | 'internal-transfer' | null;  // 'mollie' removed, Stripe integration pending
+  onPaymentMethodChange: (method: 'cash' | 'internal-transfer' | null) => void;
   transferSenderName: string;
   transferReference: string;
   transferSlip: File | null;
@@ -85,8 +85,9 @@ export default function Step9Payment({
 
   return (
     <div className="space-y-8">
+      {/* DISABLED: Mollie payment removed, Stripe integration pending */}
       {/* Europe Payment (Mollie) */}
-      {isEUtoSY && (
+      {false && isEUtoSY && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -451,7 +452,8 @@ export default function Step9Payment({
       )}
 
       {/* Europe Payment for SY→EU */}
-      {!isEUtoSY && (
+      {/* DISABLED: Mollie payment removed, Stripe integration pending */}
+      {false && !isEUtoSY && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

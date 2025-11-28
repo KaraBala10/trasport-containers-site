@@ -6,4 +6,5 @@ django-cors-headers>=4.3.0
 djangorestframework-simplejwt>=5.3.0
 gunicorn>=21.2.0
 whitenoise>=6.6.0
-mollie-api-python>=3.0.0
+# DISABLED: Mollie removed, Stripe integration pending
+# mollie-api-python>=3.0.0
