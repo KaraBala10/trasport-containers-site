@@ -46,9 +46,7 @@ export default function Step5Pricing({
       insurance: "تأمين إلزامي",
       specialPackaging: "تغليف خاص",
       minimumElectronics: "الحد الأدنى",
-      largeItemsPrice: "حساب القطع الكبيرة",
       approximate: "سعر تقريبي",
-      largeItemsNote: "ملاحظة: السعر النهائي سيتم حسابه بعد القياس في المركز",
       packaging: "التغليف",
       initialPackaging: "تغليف مبدئي",
       finalPackaging: "تغليف نهائي",
@@ -76,10 +74,7 @@ export default function Step5Pricing({
       insurance: "Mandatory Insurance",
       specialPackaging: "Special Packaging",
       minimumElectronics: "Minimum",
-      largeItemsPrice: "Large Items Calculation",
       approximate: "Approximate Price",
-      largeItemsNote:
-        "Note: Final price will be calculated after measurement at center",
       packaging: "Packaging",
       initialPackaging: "Initial Packaging",
       finalPackaging: "Final Packaging",
@@ -239,30 +234,6 @@ export default function Step5Pricing({
                 {pricing.electronicsPrice.total.toFixed(2)} €
               </span>
             </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Large Items Price */}
-      {pricing.largeItemsPrice && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 shadow-lg border-2 border-orange-200"
-        >
-          <h3 className="text-lg font-bold text-orange-900 mb-4">
-            {t.largeItemsPrice}
-          </h3>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700">{t.approximate}</span>
-              <span className="font-semibold text-orange-900">
-                {pricing.largeItemsPrice.approximate.toFixed(2)} €
-              </span>
-            </div>
-            <p className="mt-4 text-sm text-orange-700 italic">
-              {pricing.largeItemsPrice.note}
-            </p>
           </div>
         </motion.div>
       )}

@@ -39,11 +39,6 @@ export interface Parcel {
   electronicsName?: string; // Name/Model of the electronic device
   electronicsPicture?: File; // Picture of the electronic device
   
-  // Large Items specific fields
-  itemType?: string;
-  unknownDimensions?: boolean;
-  notes?: string;
-  
   // Insurance fields
   wantsInsurance?: boolean;
   declaredShipmentValue?: number; // € - Declared shipment value for insurance
@@ -51,7 +46,6 @@ export interface Parcel {
 
 export interface ShipmentFormData {
   direction: ShippingDirection | null;
-  shipmentTypes: ShipmentType[];
   sender: PersonInfo | null;
   receiver: PersonInfo | null;
   parcels: Parcel[];

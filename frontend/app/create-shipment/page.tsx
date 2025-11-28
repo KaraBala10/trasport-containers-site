@@ -19,7 +19,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   ShippingDirection,
-  ShipmentType,
   Parcel,
   PersonInfo,
 } from "@/types/shipment";
@@ -34,9 +33,6 @@ export default function CreateShipmentPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<ShippingDirection | null>(null);
-  const [shipmentTypes, setShipmentTypes] = useState<ShipmentType[]>([
-    "parcel-lcl",
-  ]);
   const [sender, setSender] = useState<PersonInfo | null>(null);
   const [receiver, setReceiver] = useState<PersonInfo | null>(null);
   const [parcels, setParcels] = useState<Parcel[]>([]);
@@ -112,12 +108,9 @@ export default function CreateShipmentPage() {
           (p) => p.isElectronicsShipment === true
         );
 
-        // Large Items: parcels with itemType field
-        const largeItemsParcels = parcels.filter((p) => p.itemType);
-
-        // Regular Parcels: all other parcels
+        // Regular Parcels: all other parcels (non-electronics)
         const regularParcels = parcels.filter(
-          (p) => !p.isElectronicsShipment && !p.itemType
+          (p) => !p.isElectronicsShipment
         );
 
         // Prepare parcels data for API
@@ -364,14 +357,14 @@ export default function CreateShipmentPage() {
   }, [
     currentStep, // Trigger when user reaches Step 4
     parcels,
-    shipmentTypes,
   ]);
 
   // Calculate electronics declared value for insurance
+  // Check based on parcels with isElectronicsShipment flag or specific product categories
   const electronicsDeclaredValue = useMemo(() => {
-    if (!shipmentTypes.includes("electronics")) return 0;
     const electronicsParcels = parcels.filter(
       (p) =>
+        p.isElectronicsShipment === true ||
         p.productCategory === "MOBILE_PHONE" ||
         p.productCategory === "LAPTOP" ||
         p.productCategory === "LARGE_MIRROR"
@@ -380,7 +373,7 @@ export default function CreateShipmentPage() {
       (sum, p) => sum + (p.declaredValue || 0),
       0
     );
-  }, [parcels, shipmentTypes]);
+  }, [parcels]);
 
   // Calculate Grand Total with Transport
   const grandTotalWithTransport = useMemo(() => {
@@ -416,20 +409,20 @@ export default function CreateShipmentPage() {
       // First, create the shipment
       const shipmentData = {
         direction: direction,
-        sender_name: sender.name,
+        sender_name: sender.fullName,
         sender_email: sender.email,
         sender_phone: sender.phone,
-        sender_address: sender.address,
+        sender_address: `${sender.street} ${sender.streetNumber}`.trim(),
         sender_city: sender.city,
         sender_postal_code: sender.postalCode || "",
         sender_country: sender.country,
-        receiver_name: receiver.name,
+        receiver_name: receiver.fullName,
         receiver_email: receiver.email,
         receiver_phone: receiver.phone,
-        receiver_address: receiver.address,
+        receiver_address: `${receiver.street} ${receiver.streetNumber}`.trim(),
         receiver_city: receiver.city,
         receiver_postal_code: receiver.postalCode || "",
-        receiver_country: receiver.country,
+        receiver_country: receiver.country || "",
         parcels: parcels,
         eu_pickup_address: euPickupAddress,
         eu_pickup_weight: euPickupWeight,
@@ -441,7 +434,7 @@ export default function CreateShipmentPage() {
         syria_province: syriaProvince,
         syria_weight: syriaWeight,
         payment_method: "stripe",
-        total_price: grandTotalWithTransport,
+        total_price: Number(grandTotalWithTransport.toFixed(2)),
       };
 
       const shipmentResponse = await apiService.createShipment(shipmentData);
@@ -457,7 +450,6 @@ export default function CreateShipmentPage() {
         currency: "eur",
         metadata: {
           direction: direction || "",
-          shipment_types: shipmentTypes.join(","),
           shipment_id: shipmentId.toString(),
         },
       });
@@ -497,7 +489,6 @@ export default function CreateShipmentPage() {
       title: "إنشاء شحنة جديدة",
       subtitle: "اختر اتجاه الشحن لبدء رحلتك",
       step1Title: "اختر اتجاه الشحن",
-      step2Title: "اختر نوع الشحنة",
       step3Title: "بيانات المرسل والمستلم",
       step4Title: "تفاصيل الطرود",
       step5Title: "النقل الداخلي",
@@ -516,7 +507,6 @@ export default function CreateShipmentPage() {
       title: "Create New Shipment",
       subtitle: "Select shipping direction to begin your journey",
       step1Title: "Select Shipping Direction",
-      step2Title: "Select Shipment Type",
       step3Title: "Sender & Receiver Information",
       step4Title: "Parcel Details",
       step5Title: "Internal Transport",
@@ -734,7 +724,6 @@ export default function CreateShipmentPage() {
                 {t.step5Title}
               </h2>
               <Step4ParcelDetails
-                shipmentTypes={shipmentTypes}
                 parcels={parcels}
                 onParcelsChange={setParcels}
                 language={language}
@@ -1089,7 +1078,6 @@ export default function CreateShipmentPage() {
               </h2>
               <Step10Review
                 direction={direction}
-                shipmentTypes={shipmentTypes}
                 sender={sender}
                 receiver={receiver}
                 parcels={parcels}
@@ -1264,17 +1252,21 @@ export default function CreateShipmentPage() {
                       // Prepare shipment data for new API
                       const shipmentData = {
                         direction: direction,
-                        sender_name: sender?.name || "",
+                        sender_name: sender?.fullName || "",
                         sender_email: sender?.email || "",
                         sender_phone: sender?.phone || "",
-                        sender_address: sender?.address || "",
+                        sender_address: sender?.street && sender?.streetNumber 
+                          ? `${sender.street} ${sender.streetNumber}`.trim()
+                          : sender?.street || "",
                         sender_city: sender?.city || "",
                         sender_postal_code: sender?.postalCode || "",
                         sender_country: sender?.country || "",
-                        receiver_name: receiver?.name || "",
+                        receiver_name: receiver?.fullName || "",
                         receiver_email: receiver?.email || "",
                         receiver_phone: receiver?.phone || "",
-                        receiver_address: receiver?.address || "",
+                        receiver_address: receiver?.street && receiver?.streetNumber
+                          ? `${receiver.street} ${receiver.streetNumber}`.trim()
+                          : receiver?.street || "",
                         receiver_city: receiver?.city || "",
                         receiver_postal_code: receiver?.postalCode || "",
                         receiver_country: receiver?.country || "",
@@ -1291,7 +1283,7 @@ export default function CreateShipmentPage() {
                         payment_method: paymentMethod,
                         transfer_sender_name: transferSenderName,
                         transfer_reference: transferReference,
-                        total_price: grandTotalWithTransport,
+                        total_price: Number(grandTotalWithTransport.toFixed(2)),
                       };
 
                       // Create shipment via API

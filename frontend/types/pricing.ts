@@ -74,12 +74,6 @@ export interface PricingResult {
     };
   };
   
-  // Large Items Price (approximate)
-  largeItemsPrice?: {
-    approximate: number;
-    note: string;
-  };
-  
   // Additional Services
   packaging: {
     initial: number;

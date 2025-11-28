@@ -4,7 +4,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ShippingDirection,
-  ShipmentType,
   PersonInfo,
   Parcel,
 } from "@/types/shipment";
@@ -13,7 +12,6 @@ import Link from "next/link";
 
 interface Step10ReviewProps {
   direction: ShippingDirection;
-  shipmentTypes: ShipmentType[];
   sender: PersonInfo | null;
   receiver: PersonInfo | null;
   parcels: Parcel[];
@@ -32,7 +30,6 @@ interface Step10ReviewProps {
 
 export default function Step10Review({
   direction,
-  shipmentTypes,
   sender,
   receiver,
   parcels,
@@ -85,9 +82,6 @@ export default function Step10Review({
       policyLiability: "سياسة المسؤولية",
       policyLiabilityDesc:
         "بدون تأمين → لا تعويض. التأمين يغطي القيمة المصرّح بها فقط. لا تعويض عن: التأخير، الجمارك، الطقس، الحرب، تلف التغليف الخارجي",
-      policyLargeItems: "سياسة القطع الكبيرة",
-      policyLargeItemsDesc:
-        "السعر في الموقع تقديري. السعر النهائي بعد الوزن الحقيقي. يجوز فرض تغليف إجباري. لا تسليم قبل دفع الفاتورة المعدلة",
       termsAndConditions: "الشروط والأحكام",
       acceptTerms: "أوافق على الشروط والأحكام",
       acceptPolicies: "أوافق على السياسات التشغيلية",
@@ -99,7 +93,6 @@ export default function Step10Review({
       syToEu: "من سورية إلى أوروبا",
       parcelLCL: "طرود LCL",
       electronics: "إلكترونيات",
-      largeItems: "قطع كبيرة",
       businessLCL: "شحن تجاري LCL",
     },
     en: {
@@ -138,9 +131,6 @@ export default function Step10Review({
       policyLiability: "Liability Policy",
       policyLiabilityDesc:
         "Without insurance → no compensation. Insurance covers declared value only. No compensation for: delays, customs, weather, war, external packaging damage",
-      policyLargeItems: "Large Items Policy",
-      policyLargeItemsDesc:
-        "Website price is approximate. Final price after actual weight. Mandatory packaging may be imposed. No delivery before paying adjusted invoice",
       termsAndConditions: "Terms and Conditions",
       acceptTerms: "I agree to the Terms and Conditions",
       acceptPolicies: "I agree to the Operational Policies",
@@ -152,7 +142,6 @@ export default function Step10Review({
       syToEu: "Syria to Europe",
       parcelLCL: "Parcel LCL",
       electronics: "Electronics",
-      largeItems: "Large Items",
       businessLCL: "Business LCL",
     },
   };
@@ -455,13 +444,6 @@ export default function Step10Review({
             <p className="text-xs text-gray-700">{t.policyLiabilityDesc}</p>
           </div>
 
-          {/* Policy 5: Large Items */}
-          <div className="border-l-4 border-yellow-500 pl-3 py-2">
-            <h4 className="font-bold text-gray-900 text-sm mb-1">
-              {t.policyLargeItems}
-            </h4>
-            <p className="text-xs text-gray-700">{t.policyLargeItemsDesc}</p>
-          </div>
         </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200">

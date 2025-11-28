@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Parcel, ShipmentType } from "@/types/shipment";
+import { Parcel } from "@/types/shipment";
 import { apiService } from "@/lib/api";
 
 interface Price {
@@ -34,7 +34,6 @@ interface PackagingPrice {
 }
 
 interface Step4ParcelDetailsProps {
-  shipmentTypes: ShipmentType[];
   parcels: Parcel[];
   onParcelsChange: (parcels: Parcel[]) => void;
   language: "ar" | "en";
@@ -46,7 +45,6 @@ interface Step4ParcelDetailsProps {
 }
 
 export default function Step4ParcelDetails({
-  shipmentTypes,
   parcels,
   onParcelsChange,
   language,
@@ -208,18 +206,7 @@ export default function Step4ParcelDetails({
       repeatCountHint: "كم مرة تريد تكرار هذا الطرد؟",
       photos: "صور الطرد",
       photosRequired: "مطلوب: 3 صور",
-      devicePhoto: "صورة المنتج الإلكتروني",
-      devicePhotoRequired: "مطلوب: صورة واحدة",
       cbm: "الحجم (CBM)",
-      deviceType: "نوع الجهاز",
-      deviceModel: "الموديل",
-      declaredValue: "القيمة المعلنة (€)",
-      hasInvoice: "يوجد فاتورة شراء",
-      itemType: "نوع القطعة",
-      unknownDimensions: "لا أعرف الأبعاد الدقيقة",
-      notes: "ملاحظات",
-      electronicsInfo: "معلومات الإلكترونيات",
-      largeItemInfo: "معلومات القطعة الكبيرة",
       insurance: "التأمين",
       insuranceCheckbox: "أريد التأمين على الشحنة",
       insuranceDesc:
@@ -256,18 +243,7 @@ export default function Step4ParcelDetails({
       repeatCountHint: "How many times to repeat this parcel?",
       photos: "Parcel Photos",
       photosRequired: "Required: 3 photos",
-      devicePhoto: "Electronics Device Photo",
-      devicePhotoRequired: "Required: 1 photo",
       cbm: "Volume (CBM)",
-      deviceType: "Device Type",
-      deviceModel: "Model",
-      declaredValue: "Declared Value (€)",
-      hasInvoice: "Has Purchase Invoice",
-      itemType: "Item Type",
-      unknownDimensions: "Unknown Dimensions",
-      notes: "Notes",
-      electronicsInfo: "Electronics Information",
-      largeItemInfo: "Large Item Information",
       insurance: "Insurance",
       insuranceCheckbox: "I want insurance for the shipment",
       insuranceDesc:
@@ -278,8 +254,6 @@ export default function Step4ParcelDetails({
   };
 
   const t = translations[language];
-  const hasElectronics = shipmentTypes.includes("electronics");
-  const hasLargeItems = shipmentTypes.includes("large-items");
 
   // Helper function to check if product is phone or laptop
   const isPhoneOrLaptop = (productCategory: string): boolean => {
@@ -412,41 +386,18 @@ export default function Step4ParcelDetails({
 
   const handlePhotoUpload = (
     id: string,
-    files: FileList | null,
-    isDevicePhoto: boolean = false
+    files: FileList | null
   ) => {
     if (!files || files.length === 0) return;
 
     const updatedParcels = parcels.map((parcel) => {
       if (parcel.id === id) {
-        if (isDevicePhoto) {
-          return { ...parcel, devicePhoto: files[0] };
-        } else {
-          return { ...parcel, photos: Array.from(files) };
-        }
+        return { ...parcel, photos: Array.from(files) };
       }
       return parcel;
     });
     onParcelsChange(updatedParcels);
   };
-
-  // Device types for electronics
-  const deviceTypes = [
-    { id: "mobile", name: "موبايل", nameEn: "Mobile Phone" },
-    { id: "laptop", name: "لابتوب", nameEn: "Laptop" },
-    { id: "camera", name: "كاميرا", nameEn: "Camera" },
-    { id: "tablet", name: "تابلت", nameEn: "Tablet" },
-    { id: "other", name: "أخرى", nameEn: "Other" },
-  ];
-
-  // Item types for large items
-  const itemTypes = [
-    { id: "furniture", name: "أثاث", nameEn: "Furniture" },
-    { id: "appliance", name: "جهاز منزلي", nameEn: "Home Appliance" },
-    { id: "refrigerator", name: "براد", nameEn: "Refrigerator" },
-    { id: "washing-machine", name: "غسالة", nameEn: "Washing Machine" },
-    { id: "other", name: "أخرى", nameEn: "Other" },
-  ];
 
   return (
     <div className="space-y-6">
@@ -1088,170 +1039,6 @@ export default function Step4ParcelDetails({
                     </p>
                   )}
                 </div>
-              )}
-
-              {/* Electronics Fields */}
-              {hasElectronics && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="md:col-span-2 space-y-4 p-4 bg-purple-50 rounded-xl border-2 border-purple-200"
-                >
-                  <h4 className="font-bold text-purple-900">
-                    {t.electronicsInfo}
-                  </h4>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t.deviceType} *
-                    </label>
-                    <select
-                      value={parcel.deviceType || ""}
-                      onChange={(e) =>
-                        updateParcel(parcel.id, "deviceType", e.target.value)
-                      }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
-                    >
-                      <option value="">
-                        {language === "ar" ? "اختر..." : "Select..."}
-                      </option>
-                      {deviceTypes.map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {language === "ar" ? type.name : type.nameEn}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t.deviceModel} *
-                    </label>
-                    <input
-                      type="text"
-                      value={parcel.deviceModel || ""}
-                      onChange={(e) =>
-                        updateParcel(parcel.id, "deviceModel", e.target.value)
-                      }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t.declaredValue} * (€)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={parcel.declaredValue || ""}
-                      onChange={(e) =>
-                        updateParcel(
-                          parcel.id,
-                          "declaredValue",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                    />
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={parcel.hasInvoice || false}
-                      onChange={(e) =>
-                        updateParcel(parcel.id, "hasInvoice", e.target.checked)
-                      }
-                      className="w-5 h-5 text-primary-yellow rounded focus:ring-primary-yellow"
-                    />
-                    <label className="ml-2 text-sm text-gray-700">
-                      {t.hasInvoice}
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t.devicePhoto} * ({t.devicePhotoRequired})
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        handlePhotoUpload(parcel.id, e.target.files, true)
-                      }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                    />
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Large Items Fields */}
-              {hasLargeItems && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="md:col-span-2 space-y-4 p-4 bg-orange-50 rounded-xl border-2 border-orange-200"
-                >
-                  <h4 className="font-bold text-orange-900">
-                    {t.largeItemInfo}
-                  </h4>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t.itemType} *
-                    </label>
-                    <select
-                      value={parcel.itemType || ""}
-                      onChange={(e) =>
-                        updateParcel(parcel.id, "itemType", e.target.value)
-                      }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
-                    >
-                      <option value="">
-                        {language === "ar" ? "اختر..." : "Select..."}
-                      </option>
-                      {itemTypes.map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {language === "ar" ? type.name : type.nameEn}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={parcel.unknownDimensions || false}
-                      onChange={(e) =>
-                        updateParcel(
-                          parcel.id,
-                          "unknownDimensions",
-                          e.target.checked
-                        )
-                      }
-                      className="w-5 h-5 text-primary-yellow rounded focus:ring-primary-yellow"
-                    />
-                    <label className="ml-2 text-sm text-gray-700">
-                      {t.unknownDimensions}
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t.notes}
-                    </label>
-                    <textarea
-                      value={parcel.notes || ""}
-                      onChange={(e) =>
-                        updateParcel(parcel.id, "notes", e.target.value)
-                      }
-                      rows={3}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                    />
-                  </div>
-                </motion.div>
               )}
 
               {/* Insurance Section - Inside Parcel Card */}

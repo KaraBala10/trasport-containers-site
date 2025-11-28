@@ -744,7 +744,7 @@ export default function AboutPage() {
                 >
                   {/* Quote Icon */}
                   <div className="absolute top-4 right-4 text-6xl text-primary-yellow/20">
-                    "
+                    &ldquo;
                   </div>
 
                   {/* Rating Stars */}
@@ -763,7 +763,7 @@ export default function AboutPage() {
                   </div>
 
                   <p className="text-gray-700 mb-6 leading-relaxed italic">
-                    "{testimonial.text}"
+                    &ldquo;{testimonial.text}&rdquo;
                   </p>
 
                   <div className="border-t border-gray-200 pt-4">
