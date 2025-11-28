@@ -80,6 +80,7 @@ export default function CreateShipmentPage() {
   const [isCreatingShipment, setIsCreatingShipment] = useState<boolean>(false);
   const [isParcelDetailsValid, setIsParcelDetailsValid] =
     useState<boolean>(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -379,6 +380,55 @@ export default function CreateShipmentPage() {
       0
     );
   }, [parcels, shipmentTypes]);
+
+  // Calculate Grand Total with Transport
+  const grandTotalWithTransport = useMemo(() => {
+    if (!pricing) return 0;
+    const euTransportPrice = selectedEUShippingTotalPrice || 0;
+    const syriaTransportCost = syriaTransportDetails?.calculated_price || 0;
+    const totalTransportPrice = euTransportPrice + syriaTransportCost;
+    return pricing.grandTotal + totalTransportPrice;
+  }, [pricing, selectedEUShippingTotalPrice, syriaTransportDetails]);
+
+  // Handle Stripe Payment
+  const handleStripePayment = async () => {
+    if (!pricing || grandTotalWithTransport <= 0) {
+      alert(
+        language === "ar"
+          ? "يرجى التأكد من حساب السعر أولاً"
+          : "Please ensure pricing is calculated first"
+      );
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    try {
+      // Create checkout session via API
+      const response = await apiService.createShipmentCheckout({
+        amount: grandTotalWithTransport,
+        currency: "eur",
+        metadata: {
+          direction: direction || "",
+          shipment_types: shipmentTypes.join(","),
+        },
+      });
+
+      if (response.data?.success && response.data?.checkout_url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.checkout_url;
+      } else {
+        throw new Error(response.data?.error || "Failed to create checkout session");
+      }
+    } catch (error: any) {
+      console.error("Error creating Stripe checkout:", error);
+      alert(
+        language === "ar"
+          ? "حدث خطأ أثناء إنشاء جلسة الدفع. يرجى المحاولة مرة أخرى."
+          : "An error occurred while creating payment session. Please try again."
+      );
+      setIsProcessingPayment(false);
+    }
+  };
 
   const translations = {
     ar: {
@@ -1099,6 +1149,9 @@ export default function CreateShipmentPage() {
                 onTransferReferenceChange={setTransferReference}
                 onTransferSlipChange={setTransferSlip}
                 language={language}
+                grandTotal={grandTotalWithTransport}
+                onStripePayment={handleStripePayment}
+                isProcessingPayment={isProcessingPayment}
               />
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

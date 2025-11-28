@@ -179,7 +179,7 @@ class FCLQuote(models.Model):
     )
     cargo_insurance = models.BooleanField(default=False, verbose_name="Cargo Insurance")
     on_carriage = models.BooleanField(default=False, verbose_name="On-carriage")
-    
+
     # Certificate of Origin
     CERTIFICATE_OF_ORIGIN_CHOICES = [
         ("none", "None"),
@@ -199,13 +199,12 @@ class FCLQuote(models.Model):
         choices=CERTIFICATE_OF_ORIGIN_CHOICES,
         default="none",
         blank=True,
-        verbose_name="Certificate of Origin Type"
+        verbose_name="Certificate of Origin Type",
     )
-    
+
     # Destination Customs Clearance
     destination_customs_clearance = models.BooleanField(
-        default=False, 
-        verbose_name="Destination Customs Clearance"
+        default=False, verbose_name="Destination Customs Clearance"
     )
 
     # Customer Details
@@ -588,7 +587,7 @@ class ProductRequest(models.Model):
 
 class SyrianProvincePrice(models.Model):
     """Model to store Syrian internal transport pricing by province"""
-    
+
     province_code = models.CharField(
         max_length=50,
         unique=True,
@@ -639,15 +638,15 @@ class SyrianProvincePrice(models.Model):
 
     def __str__(self):
         return f"{self.province_name_ar} / {self.province_name_en} - Min: €{self.min_price}, Rate: €{self.rate_per_kg}/kg"
-    
+
     def calculate_price(self, weight: float) -> float:
         """
         Calculate transport price for given weight
         Formula: max(weight × rate_per_kg, min_price)
-        
+
         Args:
             weight: Weight in kilograms
-        
+
         Returns:
             Calculated price in EUR
         """
@@ -661,6 +660,7 @@ class ShippingSettings(models.Model):
     """
     Global shipping settings - Only one instance should exist
     """
+
     sendcloud_profit_margin = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -668,17 +668,17 @@ class ShippingSettings(models.Model):
         verbose_name="Sendcloud Profit Margin (%)",
         help_text="Profit margin percentage added to Sendcloud prices (e.g., 10.00 for 10%)",
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Shipping Settings"
         verbose_name_plural = "Shipping Settings"
-    
+
     def __str__(self):
         return f"Shipping Settings (Sendcloud Margin: {self.sendcloud_profit_margin}%)"
-    
+
     def save(self, *args, **kwargs):
         """
         Ensure only one instance exists (Singleton pattern)
@@ -690,16 +690,26 @@ class ShippingSettings(models.Model):
             existing.save()
             return existing
         return super().save(*args, **kwargs)
-    
+
     @classmethod
     def get_settings(cls):
         """
         Get the shipping settings instance (creates one if doesn't exist)
         """
         settings, created = cls.objects.get_or_create(
-            pk=1,
-            defaults={'sendcloud_profit_margin': 10.00}
+            pk=1, defaults={"sendcloud_profit_margin": 10.00}
         )
         if created:
             print("✅ Created default ShippingSettings")
         return settings
+
+
+class CheckoutSessionRecord(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, help_text="The user who initiated the checkout."
+    )
+    stripe_customer_id = models.CharField(max_length=255)
+    stripe_checkout_session_id = models.CharField(max_length=255)
+    stripe_price_id = models.CharField(max_length=255)
+    has_access = models.BooleanField(default=False)
+    is_completed = models.BooleanField(default=False)

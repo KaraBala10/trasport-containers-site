@@ -1,26 +1,53 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .admin_views import (PackagingPriceDetailView,
-                          PackagingPriceListCreateView, PriceDetailView,
-                          PriceListCreateView)
-from .views import (ChangePasswordView, ContactMessageView, FCLQuoteDetailView,
-                    FCLQuoteListView, FCLQuoteView, LoginView, RegisterView,
-                    UserProfileView, approve_or_decline_edit_request_view,
-                    calculate_cbm_view, calculate_pricing_view,
-                    current_user_view, get_packaging_prices_view,
-                    get_prices_view, logout_view,
-                    payment_status_view, initiate_stripe_payment_view, stripe_webhook_view,
-                    respond_to_offer_view, send_edit_request_reply_view,
-                    send_payment_reminder_view, update_fcl_quote_status_view,
-                    countries_list_view, cities_list_view, ports_list_view,
-                    request_new_product_view, user_product_requests_view,
-                    admin_all_product_requests_view, update_product_request_view,
-                    get_per_piece_products_view, get_regular_products_view,
-                    calculate_eu_shipping_view, sendcloud_webhook_view,
-                    get_syrian_provinces_view, calculate_syria_transport_view,
-                    admin_syrian_provinces_view, admin_syrian_province_detail_view,
-                    admin_shipping_settings_view)
+from .admin_views import (
+    PackagingPriceDetailView,
+    PackagingPriceListCreateView,
+    PriceDetailView,
+    PriceListCreateView,
+)
+from .views import (
+    ChangePasswordView,
+    ContactMessageView,
+    FCLQuoteDetailView,
+    FCLQuoteListView,
+    FCLQuoteView,
+    LoginView,
+    RegisterView,
+    UserProfileView,
+    admin_all_product_requests_view,
+    admin_shipping_settings_view,
+    admin_syrian_province_detail_view,
+    admin_syrian_provinces_view,
+    approve_or_decline_edit_request_view,
+    calculate_cbm_view,
+    calculate_eu_shipping_view,
+    calculate_pricing_view,
+    calculate_syria_transport_view,
+    cities_list_view,
+    countries_list_view,
+    create_shipment_checkout_session,
+    current_user_view,
+    get_packaging_prices_view,
+    get_per_piece_products_view,
+    get_prices_view,
+    get_regular_products_view,
+    get_syrian_provinces_view,
+    initiate_stripe_payment_view,
+    logout_view,
+    payment_status_view,
+    ports_list_view,
+    request_new_product_view,
+    respond_to_offer_view,
+    send_edit_request_reply_view,
+    send_payment_reminder_view,
+    sendcloud_webhook_view,
+    stripe_webhook_view,
+    update_fcl_quote_status_view,
+    update_product_request_view,
+    user_product_requests_view,
+)
 
 app_name = "app"
 
@@ -98,9 +125,21 @@ urlpatterns = [
     path("ports/", ports_list_view, name="ports_list"),
     # Product request endpoints
     path("request-product/", request_new_product_view, name="request_product"),
-    path("user/product-requests/", user_product_requests_view, name="user_product_requests"),
-    path("admin/product-requests/", admin_all_product_requests_view, name="admin_all_product_requests"),
-    path("admin/product-requests/<int:pk>/", update_product_request_view, name="update_product_request"),
+    path(
+        "user/product-requests/",
+        user_product_requests_view,
+        name="user_product_requests",
+    ),
+    path(
+        "admin/product-requests/",
+        admin_all_product_requests_view,
+        name="admin_all_product_requests",
+    ),
+    path(
+        "admin/product-requests/<int:pk>/",
+        update_product_request_view,
+        name="update_product_request",
+    ),
     # Admin CRUD endpoints for Price
     path(
         "admin/prices/", PriceListCreateView.as_view(), name="admin_price_list_create"
@@ -120,14 +159,40 @@ urlpatterns = [
         name="admin_packaging_price_detail",
     ),
     # Sendcloud Shipping endpoints
-    path("calculate-eu-shipping/", calculate_eu_shipping_view, name="calculate_eu_shipping"),
+    path(
+        "calculate-eu-shipping/",
+        calculate_eu_shipping_view,
+        name="calculate_eu_shipping",
+    ),
     path("sendcloud/webhook/", sendcloud_webhook_view, name="sendcloud_webhook"),
     # Syrian Internal Transport endpoints
     path("syrian-provinces/", get_syrian_provinces_view, name="syrian_provinces"),
-    path("calculate-syria-transport/", calculate_syria_transport_view, name="calculate_syria_transport"),
+    path(
+        "calculate-syria-transport/",
+        calculate_syria_transport_view,
+        name="calculate_syria_transport",
+    ),
     # Admin CRUD endpoints for Syrian Province Pricing
-    path("admin/syrian-provinces/", admin_syrian_provinces_view, name="admin_syrian_provinces"),
-    path("admin/syrian-provinces/<int:pk>/", admin_syrian_province_detail_view, name="admin_syrian_province_detail"),
+    path(
+        "admin/syrian-provinces/",
+        admin_syrian_provinces_view,
+        name="admin_syrian_provinces",
+    ),
+    path(
+        "admin/syrian-provinces/<int:pk>/",
+        admin_syrian_province_detail_view,
+        name="admin_syrian_province_detail",
+    ),
     # Admin Shipping Settings endpoint
-    path("admin/shipping-settings/", admin_shipping_settings_view, name="admin_shipping_settings"),
+    path(
+        "admin/shipping-settings/",
+        admin_shipping_settings_view,
+        name="admin_shipping_settings",
+    ),
+    # Shipment checkout session (for payment)
+    path(
+        "shipments/create-checkout-session/",
+        create_shipment_checkout_session,
+        name="create-shipment-checkout-session",
+    ),
 ]

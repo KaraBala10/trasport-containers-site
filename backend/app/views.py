@@ -22,13 +22,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 # Stripe Payment Integration
 try:
     import stripe
+
     stripe.api_key = settings.STRIPE_SECRET_KEY if settings.STRIPE_SECRET_KEY else None
     STRIPE_AVAILABLE = True
 except ImportError:
     STRIPE_AVAILABLE = False
     stripe = None
-
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from .email_service import (
     send_contact_form_notification,
@@ -1299,9 +1298,7 @@ def get_regular_products_view(request):
     """API endpoint to get regular products with per_kg pricing unit"""
     try:
         # Get all products where minimum_shipping_unit is 'per_kg'
-        regular_products = Price.objects.filter(
-            minimum_shipping_unit="per_kg"
-        ).values(
+        regular_products = Price.objects.filter(minimum_shipping_unit="per_kg").values(
             "id",
             "ar_item",
             "en_item",
@@ -1391,7 +1388,9 @@ def payment_status_view(request, pk):
                     payment_status_info = {
                         "id": session.id,
                         "status": session.payment_status,
-                        "amount_total": session.amount_total / 100 if session.amount_total else 0,  # Convert from cents
+                        "amount_total": (
+                            session.amount_total / 100 if session.amount_total else 0
+                        ),  # Convert from cents
                         "currency": session.currency.upper(),
                         "url": session.url if hasattr(session, "url") else None,
                     }
@@ -1433,7 +1432,9 @@ def payment_status_view(request, pk):
                     if quote.payment_updated_at
                     else None
                 ),
-                "stripe_payment": payment_status_info if quote.payment_method == "stripe" else None,
+                "stripe_payment": (
+                    payment_status_info if quote.payment_method == "stripe" else None
+                ),
             },
             status=status.HTTP_200_OK,
         )
@@ -1541,7 +1542,7 @@ def initiate_stripe_payment_view(request, pk):
         try:
             # Ensure we have a valid amount (minimum 0.50 EUR = 50 cents)
             amount_in_cents = max(50, int(remaining_amount * 100))
-            
+
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=["card"],
                 line_items=[
@@ -1558,8 +1559,10 @@ def initiate_stripe_payment_view(request, pk):
                     }
                 ],
                 mode="payment",
-                success_url=settings.STRIPE_REDIRECT_SUCCESS_URL + f"&quote_id={quote.id}",
-                cancel_url=settings.STRIPE_REDIRECT_CANCEL_URL + f"&quote_id={quote.id}",
+                success_url=settings.STRIPE_REDIRECT_SUCCESS_URL
+                + f"&quote_id={quote.id}",
+                cancel_url=settings.STRIPE_REDIRECT_CANCEL_URL
+                + f"&quote_id={quote.id}",
                 metadata={
                     "quote_id": str(quote.id),
                     "quote_number": quote.quote_number or f"#{quote.id}",
@@ -1567,7 +1570,8 @@ def initiate_stripe_payment_view(request, pk):
                     "remaining_amount": str(remaining_amount),
                 },
                 customer_email=request.user.email if request.user.email else None,
-                expires_at=int(timezone.now().timestamp()) + (24 * 60 * 60),  # Expire in 24 hours
+                expires_at=int(timezone.now().timestamp())
+                + (24 * 60 * 60),  # Expire in 24 hours
             )
 
             # Save payment information to quote
@@ -1640,7 +1644,8 @@ def stripe_webhook_view(request):
 
         if not sig_header:
             return Response(
-                {"error": "Missing Stripe signature"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Missing Stripe signature"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Verify webhook signature
@@ -1680,14 +1685,16 @@ def stripe_webhook_view(request):
 
             # If payment is paid, update amount_paid
             if payment_status == "paid" and session.get("amount_total"):
-                paid_amount = Decimal(session["amount_total"]) / 100  # Convert from cents
+                paid_amount = (
+                    Decimal(session["amount_total"]) / 100
+                )  # Convert from cents
                 current_amount_paid = quote.amount_paid or Decimal("0")
                 total_price = quote.total_price or Decimal("0")
-                
+
                 # Prevent duplicate payment processing
                 # Check if this payment would exceed the total price
                 expected_new_total = current_amount_paid + paid_amount
-                
+
                 if expected_new_total > total_price:
                     # Cap at total price to prevent overpayment
                     quote.amount_paid = total_price
@@ -1705,7 +1712,7 @@ def stripe_webhook_view(request):
                     logger.info(
                         f"Payment already processed for quote {quote.id}. Current paid: €{current_amount_paid:.2f}"
                     )
-                
+
                 # If payment is complete (100%), log it
                 if quote.total_price and quote.amount_paid >= quote.total_price:
                     logger.info(
@@ -1722,30 +1729,32 @@ def stripe_webhook_view(request):
             # Handle async payment succeeded (for delayed payment methods)
             session = event["data"]["object"]
             session_id = session.get("id")
-            
+
             try:
                 quote = FCLQuote.objects.get(payment_id=session_id)
                 quote.payment_status = "paid"
                 quote.payment_updated_at = timezone.now()
-                
+
                 if session.get("amount_total"):
                     paid_amount = Decimal(session["amount_total"]) / 100
                     current_amount_paid = quote.amount_paid or Decimal("0")
                     if current_amount_paid < quote.total_price:
                         quote.amount_paid = current_amount_paid + paid_amount
-                
+
                 quote.save()
                 logger.info(
                     f"Async payment succeeded for quote {quote.id}: Stripe session {session_id}"
                 )
             except FCLQuote.DoesNotExist:
-                logger.warning(f"Quote not found for async payment session ID: {session_id}")
+                logger.warning(
+                    f"Quote not found for async payment session ID: {session_id}"
+                )
 
         elif event["type"] == "checkout.session.async_payment_failed":
             # Handle async payment failed
             session = event["data"]["object"]
             session_id = session.get("id")
-            
+
             try:
                 quote = FCLQuote.objects.get(payment_id=session_id)
                 quote.payment_status = "failed"
@@ -1755,17 +1764,19 @@ def stripe_webhook_view(request):
                     f"Async payment failed for quote {quote.id}: Stripe session {session_id}"
                 )
             except FCLQuote.DoesNotExist:
-                logger.warning(f"Quote not found for failed payment session ID: {session_id}")
+                logger.warning(
+                    f"Quote not found for failed payment session ID: {session_id}"
+                )
 
         elif event["type"] == "payment_intent.succeeded":
             # Handle payment intent succeeded (backup handler)
             payment_intent = event["data"]["object"]
             payment_intent_id = payment_intent.get("id")
-            
+
             # Try to find quote by metadata if available
             metadata = payment_intent.get("metadata", {})
             quote_id = metadata.get("quote_id")
-            
+
             if quote_id:
                 try:
                     quote = FCLQuote.objects.get(pk=quote_id)
@@ -1777,9 +1788,13 @@ def stripe_webhook_view(request):
                             f"Payment intent succeeded for quote {quote.id}: Payment Intent {payment_intent_id}"
                         )
                 except FCLQuote.DoesNotExist:
-                    logger.warning(f"Quote {quote_id} not found for payment intent {payment_intent_id}")
+                    logger.warning(
+                        f"Quote {quote_id} not found for payment intent {payment_intent_id}"
+                    )
             else:
-                logger.info(f"Payment intent succeeded: {payment_intent_id} (no quote_id in metadata)")
+                logger.info(
+                    f"Payment intent succeeded: {payment_intent_id} (no quote_id in metadata)"
+                )
 
         return Response({"success": True}, status=status.HTTP_200_OK)
 
@@ -1869,7 +1884,7 @@ def request_new_product_view(request):
             admin_emails = list(
                 User.objects.filter(is_superuser=True).values_list("email", flat=True)
             )
-            
+
             # Add ADMIN_EMAIL from settings if configured
             if settings.ADMIN_EMAIL and settings.ADMIN_EMAIL not in admin_emails:
                 admin_emails.append(settings.ADMIN_EMAIL)
@@ -1948,10 +1963,12 @@ def user_product_requests_view(request):
     """Get all product requests for the authenticated user"""
     try:
         # Get product requests for the current user
-        product_requests = ProductRequest.objects.filter(user=request.user).order_by("-created_at")
-        
+        product_requests = ProductRequest.objects.filter(user=request.user).order_by(
+            "-created_at"
+        )
+
         serializer = ProductRequestSerializer(product_requests, many=True)
-        
+
         return Response(
             {
                 "success": True,
@@ -1978,13 +1995,13 @@ def admin_all_product_requests_view(request):
             {"success": False, "error": "Only admins can view all product requests"},
             status=status.HTTP_403_FORBIDDEN,
         )
-    
+
     try:
         # Get all product requests
         product_requests = ProductRequest.objects.all().order_by("-created_at")
-        
+
         serializer = ProductRequestSerializer(product_requests, many=True)
-        
+
         return Response(
             {
                 "success": True,
@@ -2011,22 +2028,22 @@ def update_product_request_view(request, pk):
             {"success": False, "error": "Only admins can update product requests"},
             status=status.HTTP_403_FORBIDDEN,
         )
-    
+
     try:
         product_request = ProductRequest.objects.get(pk=pk)
-        
+
         # Update status if provided
         if "status" in request.data:
             product_request.status = request.data["status"]
-        
+
         # Update admin notes if provided
         if "admin_notes" in request.data:
             product_request.admin_notes = request.data["admin_notes"]
-        
+
         product_request.save()
-        
+
         serializer = ProductRequestSerializer(product_request)
-        
+
         return Response(
             {
                 "success": True,
@@ -2060,9 +2077,9 @@ def update_product_request_view(request, pk):
 def calculate_eu_shipping_view(request):
     """
     Calculate EU internal shipping rates using Sendcloud API
-    
+
     POST /api/calculate-eu-shipping/
-    
+
     Request Body:
     {
         "sender_address": "Wattweg 5",
@@ -2078,7 +2095,7 @@ def calculate_eu_shipping_view(request):
         "width": 40,   (optional)
         "height": 30   (optional)
     }
-    
+
     Response:
     {
         "success": true,
@@ -2093,7 +2110,7 @@ def calculate_eu_shipping_view(request):
             }
         ]
     }
-    
+
     Security:
     - All inputs are validated and sanitized
     - Only EU country codes accepted
@@ -2101,13 +2118,13 @@ def calculate_eu_shipping_view(request):
     - Secure logging (no personal data)
     """
     from .sendcloud_service import (
-        get_shipping_methods,
         SendcloudAPIError,
         SendcloudValidationError,
+        get_shipping_methods,
     )
-    
+
     logger = logging.getLogger(__name__)
-    
+
     try:
         # ✅ Extract and validate request data
         sender_address = request.data.get("sender_address")
@@ -2119,12 +2136,12 @@ def calculate_eu_shipping_view(request):
         receiver_postal_code = request.data.get("receiver_postal_code")
         receiver_country = request.data.get("receiver_country")
         weight = request.data.get("weight")
-        
+
         # Optional dimensions
         length = request.data.get("length")
         width = request.data.get("width")
         height = request.data.get("height")
-        
+
         # ✅ Check required fields
         required_fields = {
             "sender_address": sender_address,
@@ -2137,8 +2154,10 @@ def calculate_eu_shipping_view(request):
             "receiver_country": receiver_country,
             "weight": weight,
         }
-        
-        missing_fields = [field for field, value in required_fields.items() if not value]
+
+        missing_fields = [
+            field for field, value in required_fields.items() if not value
+        ]
         if missing_fields:
             return Response(
                 {
@@ -2147,7 +2166,7 @@ def calculate_eu_shipping_view(request):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # ✅ Call Sendcloud service (validation happens inside)
         shipping_methods = get_shipping_methods(
             sender_address=sender_address,
@@ -2163,35 +2182,46 @@ def calculate_eu_shipping_view(request):
             width=width,
             height=height,
         )
-        
-        logger.info(f"✅ Retrieved {len(shipping_methods)} shipping methods from Sendcloud")
-        
+
+        logger.info(
+            f"✅ Retrieved {len(shipping_methods)} shipping methods from Sendcloud"
+        )
+
         # ✅ Calculate profit margin from ShippingSettings
         try:
             from .models import ShippingSettings
+
             settings_obj = ShippingSettings.get_settings()
-            profit_margin_percent = float(settings_obj.sendcloud_profit_margin)  # Get percentage
-            
+            profit_margin_percent = float(
+                settings_obj.sendcloud_profit_margin
+            )  # Get percentage
+
             logger.info(f"📊 Calculating profit margin: {profit_margin_percent}%")
-            
+
             for method in shipping_methods:
-                sendcloud_price = method['price']  # Original Sendcloud price
-                profit_amount = round(sendcloud_price * (profit_margin_percent / 100), 2)  # Calculate profit
-                total_price = round(sendcloud_price + profit_amount, 2)  # Calculate total
-                
+                sendcloud_price = method["price"]  # Original Sendcloud price
+                profit_amount = round(
+                    sendcloud_price * (profit_margin_percent / 100), 2
+                )  # Calculate profit
+                total_price = round(
+                    sendcloud_price + profit_amount, 2
+                )  # Calculate total
+
                 # Add all prices to response
-                method['profit_amount'] = profit_amount
-                method['profit_margin_percent'] = profit_margin_percent
-                method['total_price'] = total_price  # Frontend just displays this
-                
-                logger.info(f"  💰 {method['name']}: Sendcloud=€{sendcloud_price} + Profit=€{profit_amount} = Total=€{total_price}")
-            
+                method["profit_amount"] = profit_amount
+                method["profit_margin_percent"] = profit_margin_percent
+                method["total_price"] = total_price  # Frontend just displays this
+
+                logger.info(
+                    f"  💰 {method['name']}: Sendcloud=€{sendcloud_price} + Profit=€{profit_amount} = Total=€{total_price}"
+                )
+
             logger.info(f"✅ Calculated profit for {len(shipping_methods)} methods")
         except Exception as e:
             logger.error(f"❌ Could not calculate profit margin: {str(e)}")
             logger.error(traceback.format_exc())
             logger.warning("⚠️ Profit margin not added.")
-        
+
         return Response(
             {
                 "success": True,
@@ -2199,7 +2229,7 @@ def calculate_eu_shipping_view(request):
             },
             status=status.HTTP_200_OK,
         )
-        
+
     except SendcloudValidationError as e:
         # Input validation failed
         logger.warning(f"Validation error in calculate_eu_shipping: {str(e)}")
@@ -2207,15 +2237,18 @@ def calculate_eu_shipping_view(request):
             {"success": False, "error": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
         )
-        
+
     except SendcloudAPIError as e:
         # Sendcloud API call failed
         logger.error(f"Sendcloud API error in calculate_eu_shipping: {str(e)}")
         return Response(
-            {"success": False, "error": "Unable to fetch shipping rates. Please try again."},
+            {
+                "success": False,
+                "error": "Unable to fetch shipping rates. Please try again.",
+            },
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
-        
+
     except Exception as e:
         # Unexpected error
         logger.error(f"Unexpected error in calculate_eu_shipping: {type(e).__name__}")
@@ -2231,12 +2264,12 @@ def calculate_eu_shipping_view(request):
 def sendcloud_webhook_view(request):
     """
     Handle Sendcloud webhook notifications
-    
+
     POST /api/sendcloud/webhook/
-    
+
     Headers:
         Sendcloud-Signature: HMAC signature for verification
-    
+
     Body:
     {
         "parcel": {
@@ -2253,34 +2286,36 @@ def sendcloud_webhook_view(request):
         "timestamp": "2024-01-01T10:00:00Z",
         "action": "parcel_status_changed"
     }
-    
+
     Security:
     - Webhook signature verification (HMAC-SHA256)
     - Payload validation
     - Prevents fake webhook attacks
     """
     from .sendcloud_service import (
-        verify_webhook_signature,
-        parse_webhook_data,
         SendcloudValidationError,
+        parse_webhook_data,
+        verify_webhook_signature,
     )
-    
+
     logger = logging.getLogger(__name__)
-    
+
     try:
         # ✅ STEP 1: Get signature from headers
-        signature = request.headers.get('Sendcloud-Signature', '')
-        
+        signature = request.headers.get("Sendcloud-Signature", "")
+
         # ✅ STEP 2: Verify webhook signature
         if not verify_webhook_signature(request.body, signature):
-            logger.error("⚠️ Sendcloud webhook signature verification FAILED - rejecting request")
+            logger.error(
+                "⚠️ Sendcloud webhook signature verification FAILED - rejecting request"
+            )
             return Response(
                 {"success": False, "error": "Invalid signature"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-        
+
         logger.info("✅ Sendcloud webhook signature verified")
-        
+
         # ✅ STEP 3: Parse request body
         try:
             webhook_data = request.data
@@ -2290,40 +2325,40 @@ def sendcloud_webhook_view(request):
                 {"success": False, "error": "Invalid JSON"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # ✅ STEP 4: Validate and extract webhook data
         validated_data = parse_webhook_data(webhook_data)
-        
-        sendcloud_id = validated_data['sendcloud_id']
-        tracking_number = validated_data['tracking_number']
-        status_message = validated_data['status']
-        carrier = validated_data['carrier']
-        
+
+        sendcloud_id = validated_data["sendcloud_id"]
+        tracking_number = validated_data["tracking_number"]
+        status_message = validated_data["status"]
+        carrier = validated_data["carrier"]
+
         logger.info(
             f"Webhook received: Parcel {sendcloud_id}, "
-            f"Status: {status_message}, Carrier: {carrier}"
+            f"Tracking: {tracking_number}, Status: {status_message}, Carrier: {carrier}"
         )
-        
+
         # ✅ STEP 5: Update shipment in database
         # TODO: Find and update the LCL shipment based on sendcloud_id
         # For now, just log and acknowledge
-        
+
         # Note: This will be implemented when we create LCLShipment model
         logger.info(f"Webhook processed successfully for parcel {sendcloud_id}")
-        
+
         # ✅ Return 200 OK to acknowledge receipt
         return Response(
             {"success": True, "message": "Webhook processed"},
             status=status.HTTP_200_OK,
         )
-        
+
     except SendcloudValidationError as e:
         logger.warning(f"Webhook validation failed: {str(e)}")
         return Response(
             {"success": False, "error": "Invalid webhook data"},
             status=status.HTTP_400_BAD_REQUEST,
         )
-        
+
     except Exception as e:
         logger.error(f"Unexpected error in sendcloud_webhook: {type(e).__name__}")
         logger.error(traceback.format_exc())
@@ -2343,9 +2378,9 @@ def sendcloud_webhook_view(request):
 def get_syrian_provinces_view(request):
     """
     Get list of all active Syrian provinces with pricing
-    
+
     GET /api/syrian-provinces/
-    
+
     Response:
     {
         "success": true,
@@ -2366,12 +2401,12 @@ def get_syrian_provinces_view(request):
     try:
         provinces = SyrianProvincePrice.objects.filter(is_active=True)
         serializer = SyrianProvincePriceSerializer(provinces, many=True)
-        
+
         return Response(
             {"success": True, "provinces": serializer.data},
             status=status.HTTP_200_OK,
         )
-        
+
     except Exception as e:
         logger = logging.getLogger(__name__)
         logger.error(f"Error fetching Syrian provinces: {str(e)}")
@@ -2387,15 +2422,15 @@ def get_syrian_provinces_view(request):
 def calculate_syria_transport_view(request):
     """
     Calculate Syrian internal transport price
-    
+
     POST /api/calculate-syria-transport/
-    
+
     Request Body:
     {
         "province_code": "DAMASCUS",
         "weight": 100.5
     }
-    
+
     Response:
     {
         "success": true,
@@ -2418,36 +2453,35 @@ def calculate_syria_transport_view(request):
     try:
         province_code = request.data.get("province_code")
         weight = request.data.get("weight")
-        
+
         # Validation
         if not province_code:
             return Response(
                 {"success": False, "error": "Province code is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         if weight is None or weight <= 0:
             return Response(
                 {"success": False, "error": "Valid weight is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Get province
         try:
             province = SyrianProvincePrice.objects.get(
-                province_code=province_code.upper(),
-                is_active=True
+                province_code=province_code.upper(), is_active=True
             )
         except SyrianProvincePrice.DoesNotExist:
             return Response(
                 {"success": False, "error": "Province not found or inactive"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        
+
         # Calculate price using model method
         final_price = province.calculate_price(float(weight))
         weight_cost = float(weight) * float(province.rate_per_kg)
-        
+
         return Response(
             {
                 "success": True,
@@ -2468,7 +2502,7 @@ def calculate_syria_transport_view(request):
             },
             status=status.HTTP_200_OK,
         )
-        
+
     except Exception as e:
         logger = logging.getLogger(__name__)
         logger.error(f"Error calculating Syria transport price: {str(e)}")
@@ -2489,10 +2523,10 @@ def calculate_syria_transport_view(request):
 def admin_syrian_provinces_view(request):
     """
     Admin endpoint to list all provinces or create new province
-    
+
     GET /api/admin/syrian-provinces/
     Returns all provinces (active and inactive)
-    
+
     POST /api/admin/syrian-provinces/
     Create new province
     """
@@ -2500,12 +2534,12 @@ def admin_syrian_provinces_view(request):
         try:
             provinces = SyrianProvincePrice.objects.all()
             serializer = SyrianProvincePriceSerializer(provinces, many=True)
-            
+
             return Response(
                 {"success": True, "provinces": serializer.data},
                 status=status.HTTP_200_OK,
             )
-            
+
         except Exception as e:
             logger = logging.getLogger(__name__)
             logger.error(f"Error fetching all provinces (admin): {str(e)}")
@@ -2513,18 +2547,24 @@ def admin_syrian_provinces_view(request):
                 {"success": False, "error": "Failed to fetch provinces"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-    
+
     elif request.method == "POST":
         try:
             serializer = SyrianProvincePriceSerializer(data=request.data)
-            
+
             if serializer.is_valid():
                 serializer.save()
                 logger = logging.getLogger(__name__)
-                logger.info(f"✅ Admin created new Syrian province: {serializer.data['province_code']}")
-                
+                logger.info(
+                    f"✅ Admin created new Syrian province: {serializer.data['province_code']}"
+                )
+
                 return Response(
-                    {"success": True, "message": "Province created successfully", "province": serializer.data},
+                    {
+                        "success": True,
+                        "message": "Province created successfully",
+                        "province": serializer.data,
+                    },
                     status=status.HTTP_201_CREATED,
                 )
             else:
@@ -2532,7 +2572,7 @@ def admin_syrian_provinces_view(request):
                     {"success": False, "errors": serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-                
+
         except Exception as e:
             logger = logging.getLogger(__name__)
             logger.error(f"Error creating province (admin): {str(e)}")
@@ -2548,13 +2588,13 @@ def admin_syrian_provinces_view(request):
 def admin_syrian_province_detail_view(request, pk):
     """
     Admin endpoint to retrieve, update or delete a specific province
-    
+
     GET /api/admin/syrian-provinces/<id>/
     Retrieve province details
-    
+
     PUT /api/admin/syrian-provinces/<id>/
     Update province
-    
+
     DELETE /api/admin/syrian-provinces/<id>/
     Delete province
     """
@@ -2565,25 +2605,33 @@ def admin_syrian_province_detail_view(request, pk):
             {"success": False, "error": "Province not found"},
             status=status.HTTP_404_NOT_FOUND,
         )
-    
+
     if request.method == "GET":
         serializer = SyrianProvincePriceSerializer(province)
         return Response(
             {"success": True, "province": serializer.data},
             status=status.HTTP_200_OK,
         )
-    
+
     elif request.method == "PUT":
         try:
-            serializer = SyrianProvincePriceSerializer(province, data=request.data, partial=True)
-            
+            serializer = SyrianProvincePriceSerializer(
+                province, data=request.data, partial=True
+            )
+
             if serializer.is_valid():
                 serializer.save()
                 logger = logging.getLogger(__name__)
-                logger.info(f"✅ Admin updated Syrian province: {province.province_code}")
-                
+                logger.info(
+                    f"✅ Admin updated Syrian province: {province.province_code}"
+                )
+
                 return Response(
-                    {"success": True, "message": "Province updated successfully", "province": serializer.data},
+                    {
+                        "success": True,
+                        "message": "Province updated successfully",
+                        "province": serializer.data,
+                    },
                     status=status.HTTP_200_OK,
                 )
             else:
@@ -2591,7 +2639,7 @@ def admin_syrian_province_detail_view(request, pk):
                     {"success": False, "errors": serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-                
+
         except Exception as e:
             logger = logging.getLogger(__name__)
             logger.error(f"Error updating province (admin): {str(e)}")
@@ -2599,20 +2647,20 @@ def admin_syrian_province_detail_view(request, pk):
                 {"success": False, "error": "Failed to update province"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-    
+
     elif request.method == "DELETE":
         try:
             province_code = province.province_code
             province.delete()
-            
+
             logger = logging.getLogger(__name__)
             logger.info(f"✅ Admin deleted Syrian province: {province_code}")
-            
+
             return Response(
                 {"success": True, "message": "Province deleted successfully"},
                 status=status.HTTP_200_OK,
             )
-            
+
         except Exception as e:
             logger = logging.getLogger(__name__)
             logger.error(f"Error deleting province (admin): {str(e)}")
@@ -2632,10 +2680,10 @@ def admin_syrian_province_detail_view(request, pk):
 def admin_shipping_settings_view(request):
     """
     Admin endpoint to get or update shipping settings
-    
+
     GET /api/admin/shipping-settings/
     Returns the shipping settings (singleton)
-    
+
     PUT /api/admin/shipping-settings/
     Update shipping settings
     Body: {
@@ -2643,24 +2691,26 @@ def admin_shipping_settings_view(request):
     }
     """
     from .models import ShippingSettings
-    
+
     if request.method == "GET":
         try:
             settings = ShippingSettings.get_settings()
-            
+
             return Response(
                 {
                     "success": True,
                     "settings": {
                         "id": settings.id,
-                        "sendcloud_profit_margin": float(settings.sendcloud_profit_margin),
+                        "sendcloud_profit_margin": float(
+                            settings.sendcloud_profit_margin
+                        ),
                         "created_at": settings.created_at,
                         "updated_at": settings.updated_at,
-                    }
+                    },
                 },
                 status=status.HTTP_200_OK,
             )
-            
+
         except Exception as e:
             logger = logging.getLogger(__name__)
             logger.error(f"Error fetching shipping settings (admin): {str(e)}")
@@ -2668,20 +2718,20 @@ def admin_shipping_settings_view(request):
                 {"success": False, "error": "Failed to fetch shipping settings"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-    
+
     elif request.method == "PUT":
         try:
             settings = ShippingSettings.get_settings()
-            
+
             # Get profit margin from request
             profit_margin = request.data.get("sendcloud_profit_margin")
-            
+
             if profit_margin is None:
                 return Response(
                     {"success": False, "error": "sendcloud_profit_margin is required"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             # Validate profit margin
             try:
                 profit_margin = float(profit_margin)
@@ -2695,27 +2745,29 @@ def admin_shipping_settings_view(request):
                     {"success": False, "error": "Invalid profit margin value"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             # Update settings
             settings.sendcloud_profit_margin = profit_margin
             settings.save()
-            
+
             logger = logging.getLogger(__name__)
             logger.info(f"✅ Admin updated Sendcloud profit margin to {profit_margin}%")
-            
+
             return Response(
                 {
                     "success": True,
                     "message": "Shipping settings updated successfully",
                     "settings": {
                         "id": settings.id,
-                        "sendcloud_profit_margin": float(settings.sendcloud_profit_margin),
+                        "sendcloud_profit_margin": float(
+                            settings.sendcloud_profit_margin
+                        ),
                         "updated_at": settings.updated_at,
-                    }
+                    },
                 },
                 status=status.HTTP_200_OK,
             )
-            
+
         except Exception as e:
             logger = logging.getLogger(__name__)
             logger.error(f"Error updating shipping settings (admin): {str(e)}")
@@ -2724,3 +2776,108 @@ def admin_shipping_settings_view(request):
                 {"success": False, "error": "Failed to update shipping settings"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_shipment_checkout_session(request):
+    """
+    Create Stripe checkout session for shipment payment
+    """
+    logger = logging.getLogger(__name__)
+
+    if not STRIPE_AVAILABLE:
+        return Response(
+            {"success": False, "error": "Stripe is not available"},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    if not settings.STRIPE_SECRET_KEY:
+        return Response(
+            {"success": False, "error": "Stripe API key is not configured"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    try:
+        amount = float(request.data.get("amount", 0))
+        currency = request.data.get("currency", "eur")
+        metadata = request.data.get("metadata", {})
+
+        if amount <= 0:
+            return Response(
+                {"success": False, "error": "Amount must be greater than 0"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Ensure minimum amount (0.50 EUR = 50 cents)
+        amount_in_cents = max(50, int(amount * 100))
+
+        # Create Stripe Checkout Session
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price_data": {
+                        "currency": currency,
+                        "product_data": {
+                            "name": "Shipment Payment",
+                            "description": f"Payment for shipment - {metadata.get('direction', 'N/A')}",
+                        },
+                        "unit_amount": amount_in_cents,
+                    },
+                    "quantity": 1,
+                }
+            ],
+            mode="payment",
+            success_url=settings.STRIPE_REDIRECT_SUCCESS_URL + "&type=shipment",
+            cancel_url=settings.STRIPE_REDIRECT_CANCEL_URL + "&type=shipment",
+            metadata={
+                "user_id": str(request.user.id),
+                "amount": str(amount),
+                **metadata,
+            },
+            customer_email=request.user.email if request.user.email else None,
+            expires_at=int(timezone.now().timestamp())
+            + (24 * 60 * 60),  # Expire in 24 hours
+        )
+
+        logger.info(
+            f"Created shipment checkout session {checkout_session.id} for user {request.user.id}, amount: €{amount}"
+        )
+
+        return Response(
+            {
+                "success": True,
+                "checkout_url": checkout_session.url,
+                "session_id": checkout_session.id,
+                "amount": {
+                    "value": float(amount),
+                    "currency": currency.upper(),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except ValueError as e:
+        logger.error(f"Invalid amount in create_shipment_checkout_session: {str(e)}")
+        return Response(
+            {"success": False, "error": "Invalid amount"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except stripe.error.StripeError as e:
+        logger.error(
+            f"Stripe API error in create_shipment_checkout_session: {str(e)}",
+            exc_info=True,
+        )
+        return Response(
+            {"success": False, "error": f"Stripe payment error: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    except Exception as e:
+        logger.error(
+            f"Error creating shipment checkout session: {str(e)}", exc_info=True
+        )
+        return Response(
+            {"success": False, "error": f"An error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

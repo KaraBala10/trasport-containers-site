@@ -250,6 +250,12 @@ STRIPE_REDIRECT_CANCEL_URL = config(
     default="https://medo-freight.eu/dashboard?payment=canceled",
 )
 
+# Stripe Domain (for subscription billing portal)
+STRIPE_DOMAIN = config(
+    "STRIPE_DOMAIN",
+    default="http://localhost:8000",  # Change to your production domain
+)
+
 # Sendcloud Shipping Configuration
 SENDCLOUD_PUBLIC_KEY = config("SENDCLOUD_PUBLIC_KEY", default="").strip()
 SENDCLOUD_SECRET_KEY = config("SENDCLOUD_SECRET_KEY", default="").strip()

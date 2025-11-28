@@ -216,6 +216,14 @@ export const apiService = {
     return apiClient.post(`/fcl/quotes/${id}/initiate-stripe-payment/`);
   },
 
+  createShipmentCheckout: (data: {
+    amount: number;
+    currency: string;
+    metadata?: Record<string, string>;
+  }) => {
+    return apiClient.post('/shipments/create-checkout-session/', data);
+  },
+
   getPaymentStatus: (id: number) => {
     return apiClient.get(`/fcl/quotes/${id}/payment-status/`);
   },
