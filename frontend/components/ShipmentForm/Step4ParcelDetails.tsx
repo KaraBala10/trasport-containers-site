@@ -136,39 +136,146 @@ export default function Step4ParcelDetails({
     fetchPackagingPrices();
   }, []);
 
-  // Validate parcels against minimum shipping weight
+  // Validate parcels - comprehensive validation for all required fields
   useEffect(() => {
     const errors: { [key: string]: string } = {};
     let isValid = true;
 
     parcels.forEach((parcel) => {
-      if (!parcel.productCategory) return;
+      const parcelErrors: string[] = [];
 
-      const price = prices.find(
-        (p) => p.id.toString() === parcel.productCategory
-      );
-      if (!price) return;
-
-      const minWeight = parseFloat(price.minimum_shipping_weight.toString());
-      const parcelWeight = parcel.weight || 0;
-      const parcelQuantity = parcel.quantity || 1;
-
-      if (price.minimum_shipping_unit === "per_kg") {
-        if (parcelWeight < minWeight) {
-          errors[parcel.id] =
+      // For Electronics Shipment
+      if (parcel.isElectronicsShipment) {
+        // Electronics Name is required
+        if (!parcel.electronicsName?.trim()) {
+          parcelErrors.push(
             language === "ar"
-              ? `الوزن الأدنى المطلوب: ${minWeight} كغ`
-              : `Minimum weight required: ${minWeight} kg`;
-          isValid = false;
+              ? "اسم الجهاز/الموديل مطلوب"
+              : "Device name/model is required"
+          );
         }
-      } else if (price.minimum_shipping_unit === "per_piece") {
-        if (parcelQuantity < minWeight) {
-          errors[parcel.id] =
+
+        // Electronics Picture is required
+        if (!parcel.electronicsPicture) {
+          parcelErrors.push(
             language === "ar"
-              ? `الكمية الأدنى المطلوبة: ${minWeight} قطعة`
-              : `Minimum quantity required: ${minWeight} piece(s)`;
-          isValid = false;
+              ? "صورة الجهاز مطلوبة"
+              : "Device picture is required"
+          );
         }
+
+        // Product Category is required
+        if (!parcel.productCategory) {
+          parcelErrors.push(
+            language === "ar"
+              ? "نوع المنتج مطلوب"
+              : "Product category is required"
+          );
+        }
+      } else {
+        // For Regular Parcel
+        // Dimensions are required
+        if (!parcel.length || parcel.length <= 0) {
+          parcelErrors.push(
+            language === "ar"
+              ? "الطول مطلوب (يجب أن يكون أكبر من 0)"
+              : "Length is required (must be greater than 0)"
+          );
+        }
+        if (!parcel.width || parcel.width <= 0) {
+          parcelErrors.push(
+            language === "ar"
+              ? "العرض مطلوب (يجب أن يكون أكبر من 0)"
+              : "Width is required (must be greater than 0)"
+          );
+        }
+        if (!parcel.height || parcel.height <= 0) {
+          parcelErrors.push(
+            language === "ar"
+              ? "الارتفاع مطلوب (يجب أن يكون أكبر من 0)"
+              : "Height is required (must be greater than 0)"
+          );
+        }
+
+        // Weight is required
+        if (!parcel.weight || parcel.weight <= 0) {
+          parcelErrors.push(
+            language === "ar"
+              ? "الوزن مطلوب (يجب أن يكون أكبر من 0)"
+              : "Weight is required (must be greater than 0)"
+          );
+        }
+
+        // Product Category is required
+        if (!parcel.productCategory && !parcel.isCustomProduct) {
+          parcelErrors.push(
+            language === "ar"
+              ? "نوع المنتج مطلوب"
+              : "Product category is required"
+          );
+        }
+
+        // Custom Product Name is required if custom product mode
+        if (parcel.isCustomProduct && !parcel.customProductName?.trim()) {
+          parcelErrors.push(
+            language === "ar"
+              ? "اسم المنتج المخصص مطلوب"
+              : "Custom product name is required"
+          );
+        }
+
+        // Quantity is required
+        if (!parcel.quantity || parcel.quantity < 1) {
+          parcelErrors.push(
+            language === "ar"
+              ? "الكمية مطلوبة (يجب أن تكون 1 على الأقل)"
+              : "Quantity is required (must be at least 1)"
+          );
+        }
+
+        // Photos are required (3 photos)
+        if (!parcel.photos || parcel.photos.length < 3) {
+          parcelErrors.push(
+            language === "ar"
+              ? "3 صور مطلوبة"
+              : "3 photos are required"
+          );
+        }
+      }
+
+      // Validate against minimum shipping weight if product category is selected
+      if (parcel.productCategory && !parcel.isCustomProduct) {
+        const price = prices.find(
+          (p) => p.id.toString() === parcel.productCategory
+        );
+        if (price) {
+          const minWeight = parseFloat(price.minimum_shipping_weight.toString());
+          const parcelWeight = parcel.weight || 0;
+          const parcelQuantity = parcel.quantity || 1;
+
+          if (price.minimum_shipping_unit === "per_kg") {
+            if (parcelWeight < minWeight) {
+              parcelErrors.push(
+                language === "ar"
+                  ? `الوزن الأدنى المطلوب: ${minWeight} كغ`
+                  : `Minimum weight required: ${minWeight} kg`
+              );
+            }
+          } else if (price.minimum_shipping_unit === "per_piece") {
+            if (parcelQuantity < minWeight) {
+              parcelErrors.push(
+                language === "ar"
+                  ? `الكمية الأدنى المطلوبة: ${minWeight} قطعة`
+                  : `Minimum quantity required: ${minWeight} piece(s)`
+              );
+            }
+          }
+        }
+      }
+
+      if (parcelErrors.length > 0) {
+        errors[parcel.id] = parcelErrors.join(", ");
+        isValid = false;
       }
     });
 
@@ -507,7 +614,7 @@ export default function Step4ParcelDetails({
                     <input
                       type="number"
                       step="0.1"
-                      min="0"
+                      min="0.1"
                       value={parcel.length || ""}
                       onChange={(e) =>
                         updateParcel(
@@ -516,7 +623,12 @@ export default function Step4ParcelDetails({
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                      placeholder={language === "ar" ? "مثال: 30.5" : "e.g., 30.5"}
+                      className={`w-full px-4 py-3 rounded-xl border-2 ${
+                        validationErrors[parcel.id] && !parcel.length
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
                     />
                   </div>
 
@@ -527,7 +639,7 @@ export default function Step4ParcelDetails({
                     <input
                       type="number"
                       step="0.1"
-                      min="0"
+                      min="0.1"
                       value={parcel.width || ""}
                       onChange={(e) =>
                         updateParcel(
@@ -536,7 +648,12 @@ export default function Step4ParcelDetails({
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                      placeholder={language === "ar" ? "مثال: 25.0" : "e.g., 25.0"}
+                      className={`w-full px-4 py-3 rounded-xl border-2 ${
+                        validationErrors[parcel.id] && !parcel.width
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
                     />
                   </div>
 
@@ -547,7 +664,7 @@ export default function Step4ParcelDetails({
                     <input
                       type="number"
                       step="0.1"
-                      min="0"
+                      min="0.1"
                       value={parcel.height || ""}
                       onChange={(e) =>
                         updateParcel(
@@ -556,7 +673,12 @@ export default function Step4ParcelDetails({
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                      placeholder={language === "ar" ? "مثال: 15.2" : "e.g., 15.2"}
+                      className={`w-full px-4 py-3 rounded-xl border-2 ${
+                        validationErrors[parcel.id] && !parcel.height
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
                     />
                   </div>
 
@@ -567,7 +689,7 @@ export default function Step4ParcelDetails({
                     <input
                       type="number"
                       step="0.1"
-                      min="0"
+                      min="0.1"
                       value={parcel.weight || ""}
                       onChange={(e) =>
                         updateParcel(
@@ -576,7 +698,12 @@ export default function Step4ParcelDetails({
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                      placeholder={language === "ar" ? "مثال: 2.5" : "e.g., 2.5"}
+                      className={`w-full px-4 py-3 rounded-xl border-2 ${
+                        validationErrors[parcel.id] && !parcel.weight
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
                     />
                   </div>
 
@@ -837,7 +964,11 @@ export default function Step4ParcelDetails({
                           ? "مثال: iPhone 14 Pro - 256GB - أزرق"
                           : "e.g., iPhone 14 Pro - 256GB - Blue"
                       }
-                      className="w-full px-4 py-3 rounded-xl border-2 border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      className={`w-full px-4 py-3 rounded-xl border-2 ${
+                        validationErrors[parcel.id] && !parcel.electronicsName?.trim()
+                          ? "border-red-500"
+                          : "border-blue-300"
+                      } focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white`}
                     />
                   </div>
 
@@ -1003,19 +1134,24 @@ export default function Step4ParcelDetails({
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     {t.quantity} *
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={parcel.quantity || 1}
-                    onChange={(e) =>
-                      updateParcel(
-                        parcel.id,
-                        "quantity",
-                        parseInt(e.target.value) || 1
-                      )
-                    }
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-                  />
+                    <input
+                      type="number"
+                      min="1"
+                      value={parcel.quantity || 1}
+                      onChange={(e) =>
+                        updateParcel(
+                          parcel.id,
+                          "quantity",
+                          parseInt(e.target.value) || 1
+                        )
+                      }
+                      placeholder={language === "ar" ? "مثال: 1" : "e.g., 1"}
+                      className={`w-full px-4 py-3 rounded-xl border-2 ${
+                        validationErrors[parcel.id] && (!parcel.quantity || parcel.quantity < 1)
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
+                    />
                 </div>
               )}
 

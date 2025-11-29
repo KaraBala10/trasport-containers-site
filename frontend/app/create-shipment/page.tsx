@@ -194,7 +194,108 @@ export default function CreateShipmentPage() {
 
   const [isParcelDetailsValid, setIsParcelDetailsValid] =
     useState<boolean>(false);
-  useState<boolean>(false);
+
+  // Validation functions for each step
+  const isStep2Valid = useMemo(() => {
+    if (!sender || !receiver) return false;
+
+    // Validate sender
+    const senderValid =
+      sender.fullName?.trim() &&
+      sender.phone?.trim() &&
+      sender.email?.trim() &&
+      sender.street?.trim() &&
+      sender.city?.trim() &&
+      (direction === "eu-sy"
+        ? sender.country?.trim()
+        : sender.province?.trim());
+
+    // Validate receiver
+    const receiverValid =
+      receiver.fullName?.trim() &&
+      receiver.phone?.trim() &&
+      receiver.email?.trim() &&
+      receiver.street?.trim() &&
+      receiver.city?.trim() &&
+      (direction === "eu-sy"
+        ? receiver.province?.trim()
+        : receiver.country?.trim());
+
+    return senderValid && receiverValid;
+  }, [sender, receiver, direction]);
+
+  const isStep4Valid = useMemo(() => {
+    // Internal Transport is optional, but if user starts filling a card, all required fields must be filled
+
+    // Check if EU Transport card is started (any field filled)
+    const euTransportStarted =
+      euPickupAddress?.trim() ||
+      euPickupCity?.trim() ||
+      euPickupPostalCode?.trim() ||
+      euPickupCountry?.trim() ||
+      euPickupWeight > 0 ||
+      selectedEUShippingMethod !== null;
+
+    // If EU Transport is started, validate all required fields
+    if (euTransportStarted) {
+      const euTransportValid =
+        euPickupAddress?.trim() &&
+        euPickupCity?.trim() &&
+        euPickupPostalCode?.trim() &&
+        euPickupCountry?.trim() &&
+        euPickupWeight > 0 &&
+        selectedEUShippingMethod !== null;
+
+      if (!euTransportValid) return false;
+    }
+
+    // Check if Syria Transport card is started (any field filled)
+    const syriaTransportStarted = syriaProvince?.trim() || syriaWeight > 0;
+
+    // If Syria Transport is started, validate all required fields
+    if (syriaTransportStarted) {
+      const syriaTransportValid = syriaProvince?.trim() && syriaWeight > 0;
+      if (!syriaTransportValid) return false;
+    }
+
+    // If no transport is started, or all started transports are valid, return true
+    return true;
+  }, [
+    direction,
+    euPickupAddress,
+    euPickupCity,
+    euPickupPostalCode,
+    euPickupCountry,
+    euPickupWeight,
+    selectedEUShippingMethod,
+    syriaProvince,
+    syriaWeight,
+  ]);
+
+  const isStep5Valid = useMemo(() => {
+    return pricing !== null && pricing.grandTotal > 0;
+  }, [pricing]);
+
+  const isStep6Valid = useMemo(() => {
+    return acceptedTerms && acceptedPolicies;
+  }, [acceptedTerms, acceptedPolicies]);
+
+  const isStep7Valid = useMemo(() => {
+    // Payment method is required
+    if (!paymentMethod) return false;
+
+    // If internal-transfer is selected, validate required fields
+    if (paymentMethod === "internal-transfer") {
+      return (
+        transferSenderName?.trim() &&
+        transferReference?.trim() &&
+        transferSlip !== null
+      );
+    }
+
+    // For stripe and cash, just having payment method is enough
+    return true;
+  }, [paymentMethod, transferSenderName, transferReference, transferSlip]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -877,9 +978,14 @@ export default function CreateShipmentPage() {
                 {/* Continue Button */}
                 <motion.button
                   onClick={() => setCurrentStep(3)}
-                  className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                  whileHover={{ scale: 1.08, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
+                  disabled={!isStep2Valid}
+                  className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
+                    isStep2Valid
+                      ? "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  whileHover={isStep2Valid ? { scale: 1.08, y: -2 } : {}}
+                  whileTap={isStep2Valid ? { scale: 0.96 } : {}}
                 >
                   <span className="relative z-10 flex items-center gap-3">
                     {t.continue}
@@ -1105,9 +1211,14 @@ export default function CreateShipmentPage() {
                 {/* Continue Button */}
                 <motion.button
                   onClick={() => setCurrentStep(5)}
-                  className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                  whileHover={{ scale: 1.08, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
+                  disabled={!isStep4Valid}
+                  className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
+                    isStep4Valid
+                      ? "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  whileHover={isStep4Valid ? { scale: 1.08, y: -2 } : {}}
+                  whileTap={isStep4Valid ? { scale: 0.96 } : {}}
                 >
                   <span className="relative z-10 flex items-center gap-3">
                     {t.continue}
@@ -1230,9 +1341,14 @@ export default function CreateShipmentPage() {
                 {/* Continue Button */}
                 <motion.button
                   onClick={() => setCurrentStep(6)}
-                  className="relative px-20 py-5 bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark font-bold text-xl rounded-3xl shadow-2xl hover:shadow-primary-yellow/50 transition-all duration-500 overflow-hidden group"
-                  whileHover={{ scale: 1.08, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
+                  disabled={!isStep5Valid}
+                  className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
+                    isStep5Valid
+                      ? "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  whileHover={isStep5Valid ? { scale: 1.08, y: -2 } : {}}
+                  whileTap={isStep5Valid ? { scale: 0.96 } : {}}
                 >
                   <span className="relative z-10 flex items-center gap-3">
                     {t.continue}
@@ -1440,6 +1556,15 @@ export default function CreateShipmentPage() {
                       return;
                     }
 
+                    if (!isStep7Valid) {
+                      showWarning(
+                        language === "ar"
+                          ? "يرجى إكمال جميع بيانات الدفع المطلوبة"
+                          : "Please complete all required payment information"
+                      );
+                      return;
+                    }
+
                     setIsCreatingShipment(true);
                     try {
                       // Prepare shipment data for new API
@@ -1643,32 +1768,35 @@ export default function CreateShipmentPage() {
                   }}
                   disabled={
                     isCreatingShipment ||
-                    !paymentMethod ||
+                    !isStep7Valid ||
                     !acceptedTerms ||
                     !acceptedPolicies ||
                     !isRecaptchaValid
                   }
                   className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
                     isCreatingShipment ||
-                    !paymentMethod ||
+                    !isStep7Valid ||
                     !acceptedTerms ||
-                    !acceptedPolicies
+                    !acceptedPolicies ||
+                    !isRecaptchaValid
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
                   }`}
                   whileHover={
                     !isCreatingShipment &&
-                    paymentMethod &&
+                    isStep7Valid &&
                     acceptedTerms &&
-                    acceptedPolicies
+                    acceptedPolicies &&
+                    isRecaptchaValid
                       ? { scale: 1.08, y: -2 }
                       : {}
                   }
                   whileTap={
                     !isCreatingShipment &&
-                    paymentMethod &&
+                    isStep7Valid &&
                     acceptedTerms &&
-                    acceptedPolicies
+                    acceptedPolicies &&
+                    isRecaptchaValid
                       ? { scale: 0.96 }
                       : {}
                   }
