@@ -35,7 +35,7 @@ export default function Home() {
         trustTitle: "الثقة والامتثال",
         fclQuote: "عرض سعر FCL",
         partnersTitle: "شركاؤنا",
-        videoTitle: "رحلة الشحنة من أوروبا إلى سورية",
+        videoTitle: "رحلة الشحنة",
         videoDescription: "شاهد كيف ننقل شحنتك بأمان وسرعة",
         centersTitle: "مراكزنا الأوروبية",
         galleryTitle: "معرض الصور",
@@ -78,7 +78,7 @@ export default function Home() {
         trustTitle: "Trust & Compliance",
         fclQuote: "FCL Quote",
         partnersTitle: "Our Partners",
-        videoTitle: "Shipment Journey from Europe to Syria",
+        videoTitle: "Shipment Journey",
         videoDescription:
           "Watch how we transport your shipment safely and quickly",
         centersTitle: "Our European Centers",

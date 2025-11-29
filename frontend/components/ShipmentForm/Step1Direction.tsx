@@ -17,12 +17,12 @@ export default function Step1Direction({
   const translations = {
     ar: {
       euToSy: {
-        title: "من أوروبا إلى سورية",
+        title: "من أوروبا إلى الشرق الأوسط",
         description:
-          "تجميع من أوروبا، الشحن إلى Bergen op Zoom (هولندا)، ثم إلى سورية",
+          "تجميع من أوروبا، الشحن إلى Bergen op Zoom (هولندا)، ثم إلى الشرق الأوسط",
       },
       syToEu: {
-        title: "من سورية إلى أوروبا",
+        title: "من الشرق الأوسط إلى أوروبا",
         description:
           "تجميع من المحافظات، حلب، الشحن إلى Bergen op Zoom (هولندا)، ثم إلى أوروبا",
       },
@@ -30,12 +30,12 @@ export default function Step1Direction({
     },
     en: {
       euToSy: {
-        title: "Europe to Syria",
+        title: "Europe to Middle East",
         description:
-          "Collection from Europe, shipping to Bergen op Zoom (Netherlands), then to Syria",
+          "Collection from Europe, shipping to Bergen op Zoom (Netherlands), then to Middle East",
       },
       syToEu: {
-        title: "Syria to Europe",
+        title: "Middle East to Europe",
         description:
           "Collection from Provinces, Aleppo, shipping to Bergen op Zoom (Netherlands), then to Europe",
       },

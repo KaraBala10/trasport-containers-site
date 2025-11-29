@@ -50,8 +50,8 @@ export default function InteractiveMap({ language }: InteractiveMapProps) {
     },
     {
       id: 2,
-      country: "Syria",
-      countryAr: "سورية",
+      country: "Middle East",
+      countryAr: "الشرق الأوسط",
       city: "Aleppo - Ramousa",
       cityAr: "حلب – الراموسة",
       address: "Next to Pullman Garage",
@@ -59,14 +59,13 @@ export default function InteractiveMap({ language }: InteractiveMapProps) {
       services: [language === "ar" ? "توزيع LCL+FCL" : "Distribution LCL+FCL"],
       x: "65%",
       y: "55%",
-      flag: "🇸🇾",
-      useSvg: true,
-      svgPath: "/images/syrian_flag.svg",
+      flag: "🌐",
+      useSvg: false,
     },
     {
       id: 3,
-      country: "Syria",
-      countryAr: "سورية",
+      country: "Middle East",
+      countryAr: "الشرق الأوسط",
       city: "Aleppo - Sheikh Najjar",
       cityAr: "حلب – الشيخ نجار",
       address: "International Shipping Offices Area",
@@ -74,9 +73,8 @@ export default function InteractiveMap({ language }: InteractiveMapProps) {
       services: [language === "ar" ? "FCL التجاري" : "Commercial FCL"],
       x: "67%",
       y: "57%",
-      flag: "🇸🇾",
-      useSvg: true,
-      svgPath: "/images/syrian_flag.svg",
+      flag: "🌐",
+      useSvg: false,
     },
   ];
 
@@ -104,7 +102,7 @@ export default function InteractiveMap({ language }: InteractiveMapProps) {
               stroke="#9CA3AF"
               strokeWidth="2"
             />
-            {/* Middle East / Syria area */}
+            {/* Middle East area */}
             <path
               d="M 550 280 L 620 270 L 680 290 L 720 330 L 730 380 L 710 420 L 670 440 L 620 430 L 580 400 L 560 360 L 555 320 Z"
               fill="#E5E7EB"

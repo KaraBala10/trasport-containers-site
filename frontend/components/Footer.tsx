@@ -73,7 +73,7 @@ export default function Footer() {
             </p>
             <p className="text-gray-400 text-sm mt-4">
               {language === "ar"
-                ? "نوفّر شحنًا شهريًا من أوروبا إلى سورية ودول الشرق الأوسط بأسعار ثابتة."
+                ? "نوفّر شحنًا شهريًا من أوروبا إلى دول الشرق الأوسط بأسعار ثابتة."
                 : "Monthly EU→MENA sea freight with transparent pricing."}
             </p>
           </div>
