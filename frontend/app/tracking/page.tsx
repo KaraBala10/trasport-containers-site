@@ -43,7 +43,7 @@ interface LCLShipment {
 interface TrackingStep {
   key: string;
   label: { ar: string; en: string };
-  status: "completed" | "current" | "pending";
+  status?: "completed" | "current" | "pending";
 }
 
 export default function TrackingPage() {
@@ -59,7 +59,9 @@ export default function TrackingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedQuotes, setExpandedQuotes] = useState<Set<number>>(new Set());
-  const [expandedShipments, setExpandedShipments] = useState<Set<number>>(new Set());
+  const [expandedShipments, setExpandedShipments] = useState<Set<number>>(
+    new Set()
+  );
 
   const translations = useMemo(
     () => ({
@@ -99,9 +101,9 @@ export default function TrackingPage() {
         arrivedDestination: "وصل إلى سوريا",
         destinationSorting: "فرز في سوريا",
         // Status steps - Middle East to EU (sy-eu)
-        inTransitToEUHub: "في الطريق إلى مركز التجميع في أوروبا",
-        arrivedEUHub: "وصل إلى مركز التجميع في أوروبا",
-        sortingEUHub: "فرز في مركز التجميع في أوروبا",
+        inTransitToEUHub: "في الطريق إلى حلب",
+        arrivedEUHub: "وصل إلى حلب",
+        sortingEUHub: "فرز في حلب",
         readyForImport: "جاهز للاستيراد",
         inTransitToEurope: "في الطريق إلى أوروبا",
         arrivedEurope: "وصل إلى أوروبا",
@@ -143,9 +145,9 @@ export default function TrackingPage() {
         arrivedDestination: "Arrived in Syria",
         destinationSorting: "Sorting in Syria",
         // Status steps - Middle East to EU (sy-eu)
-        inTransitToEUHub: "In Transit to EU Hub",
-        arrivedEUHub: "Arrived at EU Hub",
-        sortingEUHub: "Sorting at EU Hub",
+        inTransitToEUHub: "In Transit to Aleppo",
+        arrivedEUHub: "Arrived at Aleppo",
+        sortingEUHub: "Sorting at Aleppo",
         readyForImport: "Ready for Import",
         inTransitToEurope: "In Transit to Europe",
         arrivedEurope: "Arrived in Europe",
@@ -163,7 +165,7 @@ export default function TrackingPage() {
     // Determine direction for LCL shipments
     const direction = "direction" in item ? item.direction : null;
     const isLCLShipment = "direction" in item;
-    
+
     // Common steps - different for FCL quotes and LCL shipments
     const commonSteps: TrackingStep[] = isLCLShipment
       ? [
@@ -192,7 +194,7 @@ export default function TrackingPage() {
 
     // Direction-specific steps
     let directionSteps: TrackingStep[] = [];
-    
+
     if (direction === "eu-sy") {
       // Europe to Middle East
       directionSteps = [
@@ -306,7 +308,8 @@ export default function TrackingPage() {
 
     const steps = [...commonSteps, ...directionSteps, ...finalSteps];
 
-    const currentStatus = item?.status || (isLCLShipment ? "PENDING_PAYMENT" : "CREATED");
+    const currentStatus =
+      item?.status || (isLCLShipment ? "PENDING_PAYMENT" : "CREATED");
     const statusIndex = steps.findIndex((step) => step.key === currentStatus);
 
     return steps.map((step, index) => {
@@ -335,41 +338,68 @@ export default function TrackingPage() {
       try {
         setLoading(true);
         setError(null);
-        
-        console.log("🔍 Fetching data - quoteId:", quoteId, "shipmentId:", shipmentId);
-        
+
+        console.log(
+          "🔍 Fetching data - quoteId:",
+          quoteId,
+          "shipmentId:",
+          shipmentId
+        );
+
         // Fetch FCL quotes
         const quotesResponse = await apiService.getFCLQuotes();
-        const quotesData = quotesResponse.data?.results || quotesResponse.data || [];
+        const quotesData =
+          quotesResponse.data?.results || quotesResponse.data || [];
         setQuotes(Array.isArray(quotesData) ? quotesData : []);
         console.log("✅ Fetched FCL quotes:", quotesData.length);
 
         // Fetch LCL shipments
         try {
           const shipmentsResponse = await apiService.getShipments();
-          const shipmentsData = shipmentsResponse.data?.results || shipmentsResponse.data || [];
-          const processedShipments = Array.isArray(shipmentsData) ? shipmentsData : [];
-          console.log("📦 Fetched LCL shipments:", processedShipments.length, processedShipments);
+          const shipmentsData =
+            shipmentsResponse.data?.results || shipmentsResponse.data || [];
+          const processedShipments = Array.isArray(shipmentsData)
+            ? shipmentsData
+            : [];
+          console.log(
+            "📦 Fetched LCL shipments:",
+            processedShipments.length,
+            processedShipments
+          );
           setShipments(processedShipments);
 
           // If there's a shipmentId in URL, expand it
           if (shipmentId) {
             const shipmentIdNum = parseInt(shipmentId);
-            console.log("🔍 Looking for shipment ID:", shipmentIdNum, "in shipments:", processedShipments.map(s => s.id));
+            console.log(
+              "🔍 Looking for shipment ID:",
+              shipmentIdNum,
+              "in shipments:",
+              processedShipments.map((s) => s.id)
+            );
             if (!isNaN(shipmentIdNum) && shipmentIdNum > 0) {
               // Check if shipment exists
-              const shipmentExists = processedShipments.some(s => s.id === shipmentIdNum);
+              const shipmentExists = processedShipments.some(
+                (s) => s.id === shipmentIdNum
+              );
               console.log("✅ Shipment exists:", shipmentExists);
               if (shipmentExists) {
                 setExpandedShipments(new Set([shipmentIdNum]));
                 // Scroll to the shipment after a short delay
                 setTimeout(() => {
-                  const element = document.getElementById(`shipment-${shipmentIdNum}`);
+                  const element = document.getElementById(
+                    `shipment-${shipmentIdNum}`
+                  );
                   console.log("📍 Scrolling to element:", element);
                   if (element) {
-                    element.scrollIntoView({ behavior: "smooth", block: "start" });
+                    element.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
                   } else {
-                    console.warn("⚠️ Element not found: shipment-" + shipmentIdNum);
+                    console.warn(
+                      "⚠️ Element not found: shipment-" + shipmentIdNum
+                    );
                   }
                 }, 500);
               } else {
@@ -728,7 +758,9 @@ export default function TrackingPage() {
                             {shipment.status}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600">{directionDisplay}</p>
+                        <p className="text-sm text-gray-600">
+                          {directionDisplay}
+                        </p>
                         <p className="text-xs text-gray-500 mt-1">
                           {shipment.sender_city}, {shipment.sender_country} →{" "}
                           {shipment.receiver_city}, {shipment.receiver_country}

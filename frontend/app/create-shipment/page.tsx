@@ -6,6 +6,26 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useMemo } from "react";
+
+// Extend Window interface for grecaptcha
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (callback: () => void) => void;
+      render: (
+        elementId: string,
+        options: {
+          sitekey: string;
+          size?: string;
+          theme?: string;
+          callback?: (token: string) => void;
+          "expired-callback"?: () => void;
+          "error-callback"?: () => void;
+        }
+      ) => number;
+    };
+  }
+}
 import Step1Direction from "@/components/ShipmentForm/Step1Direction";
 import Step3SenderReceiver from "@/components/ShipmentForm/Step3SenderReceiver";
 import Step4ParcelDetails from "@/components/ShipmentForm/Step4ParcelDetails";
@@ -21,15 +41,26 @@ import { ShippingDirection, Parcel, PersonInfo } from "@/types/shipment";
 import { PricingResult } from "@/types/pricing";
 import { apiService } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { useReCaptcha } from "@/components/ReCaptchaWrapper";
 
 const TOTAL_STEPS = 8;
 
 export default function CreateShipmentPage() {
   const router = useRouter();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, mounted } = useLanguage();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
+  const { executeRecaptcha } = useReCaptcha();
   const [currentStep, setCurrentStep] = useState(1);
+
+  // reCAPTCHA state
+  const recaptchaSiteKey =
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+      : "";
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [direction, setDirection] = useState<ShippingDirection | null>(null);
   const [sender, setSender] = useState<PersonInfo | null>(null);
   const [receiver, setReceiver] = useState<PersonInfo | null>(null);
@@ -72,10 +103,98 @@ export default function CreateShipmentPage() {
   const [pricing, setPricing] = useState<PricingResult | null>(null);
   const [pricingLoading, setPricingLoading] = useState<boolean>(false);
   const [isCreatingShipment, setIsCreatingShipment] = useState<boolean>(false);
-  const [isParcelDetailsValid, setIsParcelDetailsValid] =
-    useState<boolean>(false);
   const [isProcessingPayment, setIsProcessingPayment] =
     useState<boolean>(false);
+
+  // Initialize reCAPTCHA widget after component mounts and script loads
+  useEffect(() => {
+    if (!mounted || !isDevelopment || !recaptchaSiteKey) return;
+
+    const initRecaptcha = () => {
+      const widgetElement = document.getElementById(
+        "recaptcha-widget-shipment"
+      );
+      if (!widgetElement) {
+        setTimeout(initRecaptcha, 200);
+        return;
+      }
+
+      if (!window.grecaptcha) {
+        setTimeout(initRecaptcha, 200);
+        return;
+      }
+
+      // Check if already rendered
+      if (widgetElement.hasChildNodes()) {
+        setRecaptchaLoaded(true);
+        return;
+      }
+
+      window.grecaptcha.ready(() => {
+        try {
+          const widgetId = window.grecaptcha!.render(
+            "recaptcha-widget-shipment",
+            {
+              sitekey: recaptchaSiteKey,
+              size: "normal",
+              theme: "light",
+              callback: (token: string) => {
+                console.log(
+                  "reCAPTCHA verified:",
+                  token.substring(0, 20) + "..."
+                );
+                setRecaptchaToken(token);
+              },
+              "expired-callback": () => {
+                console.log("reCAPTCHA expired");
+                setRecaptchaToken("");
+              },
+              "error-callback": () => {
+                console.error("reCAPTCHA error");
+                setRecaptchaToken("");
+              },
+            }
+          );
+          console.log("reCAPTCHA widget rendered, widgetId:", widgetId);
+          setRecaptchaLoaded(true);
+        } catch (error) {
+          console.error("Error rendering reCAPTCHA:", error);
+          setRecaptchaLoaded(false);
+        }
+      });
+    };
+
+    // Start initialization after a delay to ensure script is loaded
+    const timer = setTimeout(initRecaptcha, 1000);
+    return () => clearTimeout(timer);
+  }, [mounted, isDevelopment, recaptchaSiteKey]);
+
+  // Check if reCAPTCHA is required and completed
+  const isRecaptchaValid = useMemo(() => {
+    // If no reCAPTCHA key is configured, it's not required
+    if (!recaptchaSiteKey) {
+      return true;
+    }
+
+    // In development mode with v2 widget (visible checkbox)
+    // Button should be disabled if widget is loaded but not checked
+    if (isDevelopment && recaptchaLoaded) {
+      return !!recaptchaToken; // Must have token if widget is loaded
+    }
+
+    // In production with v3 (invisible, executed on submit)
+    // Allow button to be enabled (v3 executes on submit)
+    if (!isDevelopment) {
+      return true;
+    }
+
+    // If widget hasn't loaded yet, allow button (will be disabled once loaded)
+    return true;
+  }, [recaptchaSiteKey, isDevelopment, recaptchaLoaded, recaptchaToken]);
+
+  const [isParcelDetailsValid, setIsParcelDetailsValid] =
+    useState<boolean>(false);
+  useState<boolean>(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -402,6 +521,40 @@ export default function CreateShipmentPage() {
 
     setIsProcessingPayment(true);
     try {
+      // Verify reCAPTCHA before creating shipment
+      let recaptchaToken = "";
+      const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+      const isDevelopment = process.env.NODE_ENV === "development";
+
+      if (executeRecaptcha) {
+        try {
+          recaptchaToken = await executeRecaptcha("create_shipment");
+        } catch (recaptchaError) {
+          if (isDevelopment) {
+            console.warn("reCAPTCHA verification failed:", recaptchaError);
+          }
+          // If reCAPTCHA key is configured, require it in production
+          if (recaptchaSiteKey && !isDevelopment) {
+            showError(
+              language === "ar"
+                ? "يرجى التحقق من reCAPTCHA"
+                : "Please complete the reCAPTCHA verification"
+            );
+            setIsProcessingPayment(false);
+            return;
+          }
+        }
+      } else if (recaptchaSiteKey && !isDevelopment) {
+        // reCAPTCHA is required but not available
+        showError(
+          language === "ar"
+            ? "يرجى التحقق من reCAPTCHA"
+            : "Please complete the reCAPTCHA verification"
+        );
+        setIsProcessingPayment(false);
+        return;
+      }
+
       // First, create the shipment
       // Set country based on direction: eu-sy means receiver is in Syria, sy-eu means sender is in Syria
       const receiverCountry =
@@ -491,7 +644,7 @@ export default function CreateShipmentPage() {
     } catch (error: any) {
       console.error("Error creating Stripe checkout:", error);
       console.error("Error response:", error.response?.data);
-      
+
       // Extract error message from backend response
       let errorMessage = "";
       if (error.response?.data) {
@@ -515,11 +668,13 @@ export default function CreateShipmentPage() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       showSuccess(
         language === "ar"
-          ? errorMessage || "حدث خطأ أثناء إنشاء جلسة الدفع. يرجى التحقق من البيانات والمحاولة مرة أخرى."
-          : errorMessage || "An error occurred while creating payment session. Please check your data and try again."
+          ? errorMessage ||
+              "حدث خطأ أثناء إنشاء جلسة الدفع. يرجى التحقق من البيانات والمحاولة مرة أخرى."
+          : errorMessage ||
+              "An error occurred while creating payment session. Please check your data and try again."
       );
       setIsProcessingPayment(false);
     }
@@ -1300,7 +1455,13 @@ export default function CreateShipmentPage() {
                         direction === "sy-eu" ? "Syria" : sender?.country || "";
 
                       // Validate required fields before sending
-                      if (!sender?.fullName || !sender?.email || !sender?.phone || !sender?.city || !senderCountry) {
+                      if (
+                        !sender?.fullName ||
+                        !sender?.email ||
+                        !sender?.phone ||
+                        !sender?.city ||
+                        !senderCountry
+                      ) {
                         showSuccess(
                           language === "ar"
                             ? "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
@@ -1310,7 +1471,13 @@ export default function CreateShipmentPage() {
                         return;
                       }
 
-                      if (!receiver?.fullName || !receiver?.email || !receiver?.phone || !receiver?.city || !receiverCountry) {
+                      if (
+                        !receiver?.fullName ||
+                        !receiver?.email ||
+                        !receiver?.phone ||
+                        !receiver?.city ||
+                        !receiverCountry
+                      ) {
                         showSuccess(
                           language === "ar"
                             ? "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
@@ -1331,10 +1498,51 @@ export default function CreateShipmentPage() {
                       }
 
                       if (parcels.length === 0) {
-                        showSuccess(
+                        showWarning(
                           language === "ar"
                             ? "يرجى إضافة طرد واحد على الأقل"
                             : "Please add at least one parcel"
+                        );
+                        setIsCreatingShipment(false);
+                        return;
+                      }
+
+                      // Verify reCAPTCHA before creating shipment
+                      let recaptchaToken = "";
+                      const recaptchaSiteKey =
+                        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+                      const isDevelopment =
+                        process.env.NODE_ENV === "development";
+
+                      if (executeRecaptcha) {
+                        try {
+                          recaptchaToken = await executeRecaptcha(
+                            "create_shipment"
+                          );
+                        } catch (recaptchaError) {
+                          if (isDevelopment) {
+                            console.warn(
+                              "reCAPTCHA verification failed:",
+                              recaptchaError
+                            );
+                          }
+                          // If reCAPTCHA key is configured, require it in production
+                          if (recaptchaSiteKey && !isDevelopment) {
+                            showError(
+                              language === "ar"
+                                ? "يرجى التحقق من reCAPTCHA"
+                                : "Please complete the reCAPTCHA verification"
+                            );
+                            setIsCreatingShipment(false);
+                            return;
+                          }
+                        }
+                      } else if (recaptchaSiteKey && !isDevelopment) {
+                        // reCAPTCHA is required but not available
+                        showError(
+                          language === "ar"
+                            ? "يرجى التحقق من reCAPTCHA"
+                            : "Please complete the reCAPTCHA verification"
                         );
                         setIsCreatingShipment(false);
                         return;
@@ -1402,7 +1610,7 @@ export default function CreateShipmentPage() {
                     } catch (error: any) {
                       console.error("Error creating shipment:", error);
                       console.error("Error response:", error.response?.data);
-                      
+
                       // Extract error message from backend response
                       let errorMessage = "";
                       if (error.response?.data) {
@@ -1424,11 +1632,13 @@ export default function CreateShipmentPage() {
                           errorMessage = String(errorData);
                         }
                       }
-                      
+
                       showSuccess(
                         language === "ar"
-                          ? errorMessage || "حدث خطأ أثناء إنشاء الشحنة. يرجى التحقق من البيانات والمحاولة مرة أخرى."
-                          : errorMessage || "An error occurred while creating the shipment. Please check your data and try again."
+                          ? errorMessage ||
+                              "حدث خطأ أثناء إنشاء الشحنة. يرجى التحقق من البيانات والمحاولة مرة أخرى."
+                          : errorMessage ||
+                              "An error occurred while creating the shipment. Please check your data and try again."
                       );
                     } finally {
                       setIsCreatingShipment(false);
@@ -1438,7 +1648,8 @@ export default function CreateShipmentPage() {
                     isCreatingShipment ||
                     !paymentMethod ||
                     !acceptedTerms ||
-                    !acceptedPolicies
+                    !acceptedPolicies ||
+                    !isRecaptchaValid
                   }
                   className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
                     isCreatingShipment ||
@@ -1494,6 +1705,66 @@ export default function CreateShipmentPage() {
                   </span>
                 </motion.button>
               </motion.div>
+
+              {/* reCAPTCHA Widget (Development Only) */}
+              {isDevelopment && recaptchaSiteKey && (
+                <div className="flex flex-col items-center justify-center py-4 mt-4">
+                  <div
+                    id="recaptcha-widget-shipment"
+                    className="flex justify-center items-center min-h-[78px] w-full"
+                    style={{ minWidth: "304px" }}
+                  ></div>
+                  {recaptchaSiteKey ===
+                    "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" && (
+                    <p className="mt-2 text-xs text-yellow-600 text-center">
+                      {language === "ar"
+                        ? "⚠️ استخدام مفتاح اختبار Google (localhost غير مدعوم)"
+                        : "⚠️ Using Google test key (localhost not supported)"}
+                    </p>
+                  )}
+                  {recaptchaLoaded && (
+                    <p className="mt-2 text-xs text-gray-500 text-center">
+                      {language === "ar"
+                        ? "reCAPTCHA v2 (وضع التطوير)"
+                        : "reCAPTCHA v2 (Development Mode)"}
+                    </p>
+                  )}
+                  {!recaptchaLoaded && (
+                    <p className="mt-2 text-xs text-gray-400 text-center animate-pulse">
+                      {language === "ar"
+                        ? "جاري تحميل reCAPTCHA..."
+                        : "Loading reCAPTCHA..."}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* reCAPTCHA Required Message */}
+              {isDevelopment &&
+                recaptchaSiteKey &&
+                recaptchaLoaded &&
+                !recaptchaToken && (
+                  <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded-r-lg flex items-start gap-3 mt-4">
+                    <svg
+                      className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium">
+                      {language === "ar"
+                        ? "يرجى التحقق من reCAPTCHA للمتابعة"
+                        : "Please complete the reCAPTCHA verification to continue"}
+                    </span>
+                  </div>
+                )}
             </motion.div>
           )}
 

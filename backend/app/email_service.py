@@ -36,9 +36,9 @@ STATUS_DISPLAY_NAMES_EU_SY = {
 }
 
 STATUS_DISPLAY_NAMES_SY_EU = {
-    "IN_TRANSIT_TO_WATTWEG_5": "In Transit to EU Hub",
-    "ARRIVED_WATTWEG_5": "Arrived at EU Hub",
-    "SORTING_WATTWEG_5": "Sorting at EU Hub",
+    "IN_TRANSIT_TO_WATTWEG_5": "In Transit to Aleppo",
+    "ARRIVED_WATTWEG_5": "Arrived at Aleppo",
+    "SORTING_WATTWEG_5": "Sorting at Aleppo",
     "READY_FOR_EXPORT": "Ready for Import",
     "IN_TRANSIT_TO_DESTINATION": "In Transit to Europe",
     "ARRIVED_DESTINATION": "Arrived in Europe",
@@ -49,24 +49,24 @@ STATUS_DISPLAY_NAMES_SY_EU = {
 def get_status_display_name(status, direction=None):
     """
     Get status display name based on status and direction (for LCL shipments)
-    
+
     Args:
         status: Status code (e.g., "IN_TRANSIT_TO_WATTWEG_5")
         direction: Direction for LCL shipments ("eu-sy" or "sy-eu"), None for FCL
-        
+
     Returns:
         str: Display name for the status
     """
     # First check base names (common for all)
     if status in STATUS_DISPLAY_NAMES:
         return STATUS_DISPLAY_NAMES[status]
-    
+
     # For LCL shipments, use direction-specific names
     if direction == "eu-sy":
         return STATUS_DISPLAY_NAMES_EU_SY.get(status, status)
     elif direction == "sy-eu":
         return STATUS_DISPLAY_NAMES_SY_EU.get(status, status)
-    
+
     # Default fallback (for FCL or unknown direction)
     return status
 
@@ -186,7 +186,9 @@ contact@medo-freight.eu
         return False
 
 
-def send_status_update_notification_to_admin(quote, old_status, new_status, offer_message=None):
+def send_status_update_notification_to_admin(
+    quote, old_status, new_status, offer_message=None
+):
     """
     Send email notification to admin when FCL quote status is updated
 
@@ -201,12 +203,18 @@ def send_status_update_notification_to_admin(quote, old_status, new_status, offe
     """
     # Check if email is configured
     if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-        logger.warning("Email not configured. Skipping status update notification to admin.")
+        logger.warning(
+            "Email not configured. Skipping status update notification to admin."
+        )
         return False
 
     try:
         # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
-        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
 
         # Get status display names
         old_status_display = STATUS_DISPLAY_NAMES.get(old_status, old_status)
@@ -299,7 +307,9 @@ You can view and manage this quote in the admin dashboard.
                     "Cannot send status update notification to admin: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
                 )
             else:
-                logger.warning(f"Cannot send status update notification to admin: {error_msg}")
+                logger.warning(
+                    f"Cannot send status update notification to admin: {error_msg}"
+                )
             return False
 
     except Exception as e:
@@ -323,7 +333,9 @@ def send_edit_request_confirmation_to_user(quote, edit_message):
     """
     # Check if email is configured
     if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-        logger.warning("Email not configured. Skipping edit request confirmation email.")
+        logger.warning(
+            "Email not configured. Skipping edit request confirmation email."
+        )
         return False
 
     if not quote.user or not quote.user.email:
@@ -335,7 +347,9 @@ def send_edit_request_confirmation_to_user(quote, edit_message):
         recipient_name = quote.user.get_full_name() or quote.user.username
 
         # Prepare email content
-        subject = f"Edit Request Submitted - FCL Quote #{quote.quote_number or quote.id}"
+        subject = (
+            f"Edit Request Submitted - FCL Quote #{quote.quote_number or quote.id}"
+        )
 
         # Build email body
         email_body = f"""
@@ -392,7 +406,9 @@ contact@medo-freight.eu
                     "Cannot send edit request confirmation email: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
                 )
             else:
-                logger.warning(f"Cannot send edit request confirmation email: {error_msg}")
+                logger.warning(
+                    f"Cannot send edit request confirmation email: {error_msg}"
+                )
             return False
 
     except Exception as e:
@@ -502,12 +518,18 @@ def send_payment_reminder_notification_to_admin(quote):
     """
     # Check if email is configured
     if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-        logger.warning("Email not configured. Skipping payment reminder notification to admin.")
+        logger.warning(
+            "Email not configured. Skipping payment reminder notification to admin."
+        )
         return False
 
     try:
         # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
-        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
 
         # Get user info
         user_name = (
@@ -584,7 +606,9 @@ A payment reminder email has been sent to the customer. You can track the paymen
                     "Cannot send payment reminder notification to admin: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
                 )
             else:
-                logger.warning(f"Cannot send payment reminder notification to admin: {error_msg}")
+                logger.warning(
+                    f"Cannot send payment reminder notification to admin: {error_msg}"
+                )
             return False
 
     except Exception as e:
@@ -721,7 +745,9 @@ def send_lcl_shipment_status_update_email(shipment, old_status, new_status):
         return False
 
     if not shipment.user or not shipment.user.email:
-        logger.warning(f"Cannot send email: Shipment {shipment.id} has no user or user email")
+        logger.warning(
+            f"Cannot send email: Shipment {shipment.id} has no user or user email"
+        )
         return False
 
     try:
@@ -733,9 +759,13 @@ def send_lcl_shipment_status_update_email(shipment, old_status, new_status):
         new_status_display = get_status_display_name(new_status, shipment.direction)
 
         # Prepare email content
-        subject = f"LCL Shipment #{shipment.shipment_number or shipment.id} - Status Updated"
+        subject = (
+            f"LCL Shipment #{shipment.shipment_number or shipment.id} - Status Updated"
+        )
 
-        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        direction_display = (
+            "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        )
         # Build email body
         email_body = f"""
 Dear {recipient_name},
@@ -816,7 +846,9 @@ contact@medo-freight.eu
         return False
 
 
-def send_lcl_shipment_status_update_notification_to_admin(shipment, old_status, new_status):
+def send_lcl_shipment_status_update_notification_to_admin(
+    shipment, old_status, new_status
+):
     """
     Send email notification to admin when LCL shipment status is updated
 
@@ -830,12 +862,18 @@ def send_lcl_shipment_status_update_notification_to_admin(shipment, old_status, 
     """
     # Check if email is configured
     if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-        logger.warning("Email not configured. Skipping status update notification to admin.")
+        logger.warning(
+            "Email not configured. Skipping status update notification to admin."
+        )
         return False
 
     try:
         # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
-        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
 
         # Get status display names (with direction support)
         old_status_display = get_status_display_name(old_status, shipment.direction)
@@ -852,7 +890,9 @@ def send_lcl_shipment_status_update_notification_to_admin(shipment, old_status, 
         # Prepare email content
         subject = f"LCL Shipment Status Updated - {shipment.shipment_number or f'#{shipment.id}'}"
 
-        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        direction_display = (
+            "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        )
         # Build email body
         email_body = f"""
 LCL Shipment status has been updated.
@@ -944,11 +984,15 @@ def send_lcl_shipment_confirmation_email(shipment):
     """
     # Check if email is configured
     if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-        logger.warning("Email not configured. Skipping LCL shipment confirmation email.")
+        logger.warning(
+            "Email not configured. Skipping LCL shipment confirmation email."
+        )
         return False
 
     if not shipment.user or not shipment.user.email:
-        logger.warning(f"Cannot send email: Shipment {shipment.id} has no user or user email")
+        logger.warning(
+            f"Cannot send email: Shipment {shipment.id} has no user or user email"
+        )
         return False
 
     try:
@@ -958,7 +1002,9 @@ def send_lcl_shipment_confirmation_email(shipment):
         # Prepare email content
         subject = f"LCL Shipment Confirmation - {shipment.shipment_number or f'#{shipment.id}'}"
 
-        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        direction_display = (
+            "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        )
         # Build email body
         email_body = f"""
 Dear {recipient_name},
@@ -1041,7 +1087,9 @@ contact@medo-freight.eu
                     "Cannot send LCL shipment confirmation email: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
                 )
             else:
-                logger.warning(f"Cannot send LCL shipment confirmation email: {error_msg}")
+                logger.warning(
+                    f"Cannot send LCL shipment confirmation email: {error_msg}"
+                )
             return False
 
     except Exception as e:
@@ -1069,7 +1117,11 @@ def send_lcl_shipment_notification_to_admin(shipment):
 
     try:
         # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
-        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
 
         # Prepare email content
         subject = f"New LCL Shipment Request - {shipment.shipment_number or f'#{shipment.id}'}"
@@ -1082,7 +1134,9 @@ def send_lcl_shipment_notification_to_admin(shipment):
         )
         user_email = shipment.user.email if shipment.user else "Unknown"
 
-        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        direction_display = (
+            "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        )
         # Build email body
         email_body = f"""
 A new LCL Shipment request has been received.
@@ -1186,7 +1240,9 @@ def send_lcl_shipment_payment_reminder_email(shipment):
         return False
 
     if not shipment.user or not shipment.user.email:
-        logger.warning(f"Cannot send email: Shipment {shipment.id} has no user or user email")
+        logger.warning(
+            f"Cannot send email: Shipment {shipment.id} has no user or user email"
+        )
         return False
 
     try:
@@ -1197,14 +1253,18 @@ def send_lcl_shipment_payment_reminder_email(shipment):
         payment_percentage = 0
         remaining_amount = 0
         if shipment.total_price and shipment.total_price > 0:
-            payment_percentage = ((shipment.amount_paid or 0) / shipment.total_price) * 100
+            payment_percentage = (
+                (shipment.amount_paid or 0) / shipment.total_price
+            ) * 100
             remaining_amount = shipment.total_price - (shipment.amount_paid or 0)
 
         # Prepare email content
         subject = f"Payment Reminder - LCL Shipment #{shipment.shipment_number or shipment.id}"
 
         # Build email body
-        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        direction_display = (
+            "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        )
         email_body = f"""
 Dear {recipient_name},
 
@@ -1289,12 +1349,18 @@ def send_lcl_shipment_payment_reminder_notification_to_admin(shipment):
     """
     # Check if email is configured
     if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-        logger.warning("Email not configured. Skipping payment reminder notification to admin.")
+        logger.warning(
+            "Email not configured. Skipping payment reminder notification to admin."
+        )
         return False
 
     try:
         # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
-        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
 
         # Get user info
         user_name = (
@@ -1308,13 +1374,17 @@ def send_lcl_shipment_payment_reminder_notification_to_admin(shipment):
         payment_percentage = 0
         remaining_amount = 0
         if shipment.total_price and shipment.total_price > 0:
-            payment_percentage = ((shipment.amount_paid or 0) / shipment.total_price) * 100
+            payment_percentage = (
+                (shipment.amount_paid or 0) / shipment.total_price
+            ) * 100
             remaining_amount = shipment.total_price - (shipment.amount_paid or 0)
 
         # Prepare email content
         subject = f"Payment Reminder Sent - LCL Shipment #{shipment.shipment_number or shipment.id}"
 
-        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        direction_display = (
+            "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        )
         # Build email body
         email_body = f"""
 A payment reminder has been sent to the customer.
@@ -1372,7 +1442,9 @@ A payment reminder email has been sent to the customer. You can track the paymen
                     "Cannot send payment reminder notification to admin: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
                 )
             else:
-                logger.warning(f"Cannot send payment reminder notification to admin: {error_msg}")
+                logger.warning(
+                    f"Cannot send payment reminder notification to admin: {error_msg}"
+                )
             return False
 
     except Exception as e:
@@ -1400,7 +1472,11 @@ def send_contact_form_notification(contact_message):
 
     try:
         # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
-        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
 
         # Prepare email content
         subject = f"New Contact Form Submission - {contact_message.subject}"
@@ -1487,7 +1563,9 @@ def send_fcl_quote_confirmation_email(quote):
         recipient_name = quote.user.get_full_name() or quote.user.username
 
         # Prepare email content
-        subject = f"FCL Quote Request Confirmation - {quote.quote_number or f'#{quote.id}'}"
+        subject = (
+            f"FCL Quote Request Confirmation - {quote.quote_number or f'#{quote.id}'}"
+        )
 
         # Build email body
         email_body = f"""
@@ -1588,7 +1666,11 @@ def send_fcl_quote_notification(quote):
 
     try:
         # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
-        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
 
         # Prepare email content
         subject = f"New FCL Quote Request - {quote.quote_number or f'#{quote.id}'}"
