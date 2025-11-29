@@ -4459,7 +4459,7 @@ export default function DashboardPage() {
                         {/* Summary Row */}
                         <div className="p-6 bg-gradient-to-br from-white to-gray-50/50">
                           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
                               {/* Shipment Number */}
                               <div className="sm:col-span-2 lg:col-span-2 min-w-0">
                                 <div className="flex items-center gap-2 mb-2">
@@ -4474,7 +4474,7 @@ export default function DashboardPage() {
                                 >
                                   {shipment.shipment_number}
                                 </p>
-                                {user?.is_superuser && shipment.user && (
+                                {isAdmin && shipment.user && (
                                   <div className="mt-3 pt-3 border-t border-gray-200">
                                     <p className="text-xs text-gray-500">
                                       {t.submittedBy}
@@ -4486,16 +4486,58 @@ export default function DashboardPage() {
                                 )}
                               </div>
 
-                              {/* Direction */}
-                              <div className="space-y-1">
+                              {/* Route (Direction) */}
+                              <div className="space-y-2">
                                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                   {t.direction}
                                 </p>
-                                <p className="text-sm font-semibold text-gray-900">
-                                  {shipment.direction === "eu-sy"
-                                    ? t.euToSy
-                                    : t.syToEu}
+                                <div className="flex flex-col gap-2">
+                                  <span
+                                    className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm ${
+                                      shipment.direction === "eu-sy"
+                                        ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300"
+                                        : "bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-300"
+                                    }`}
+                                  >
+                                    {shipment.direction === "eu-sy"
+                                      ? t.euToSy
+                                      : t.syToEu}
+                                  </span>
+                                  <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                    <span className="text-primary-dark font-bold">
+                                      {shipment.direction === "eu-sy"
+                                        ? shipment.sender_city || "Europe"
+                                        : shipment.sender_city || "Syria"}
+                                    </span>
+                                    <span className="text-primary-yellow text-lg font-bold">→</span>
+                                    <span className="text-primary-dark font-bold">
+                                      {shipment.direction === "eu-sy"
+                                        ? shipment.receiver_city || "Syria"
+                                        : shipment.receiver_city || "Europe"}
+                                    </span>
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Parcels Info (like Container Type in FCL) */}
+                              <div className="space-y-1">
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  {language === "ar" ? "الطرود" : "Parcels"}
                                 </p>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {shipment.parcels?.length || 0}{" "}
+                                  {language === "ar" ? "طرد" : "parcel(s)"}
+                                </p>
+                                {shipment.parcels && shipment.parcels.length > 0 && (
+                                  <p className="text-xs text-gray-600">
+                                    {shipment.parcels.reduce(
+                                      (sum: number, p: any) =>
+                                        sum + (Number(p.weight) || 0),
+                                      0
+                                    ).toFixed(2)}{" "}
+                                    kg
+                                  </p>
+                                )}
                               </div>
 
                               {/* Status */}
@@ -4512,97 +4554,143 @@ export default function DashboardPage() {
                                     shipment.status || "CREATED"
                                   )}
                                 </span>
-                                {shipment.tracking_number && (
-                                  <div className="mt-2">
-                                    <p className="text-xs text-gray-500 mb-1">
-                                      {t.trackingNumber}
-                                    </p>
-                                    <p className="text-xs font-mono font-semibold text-primary-dark">
-                                      {shipment.tracking_number}
-                                    </p>
-                                  </div>
-                                )}
                               </div>
 
-                              {/* Payment Progress - Show if total_price > 0 */}
-                              {Number(shipment.total_price) > 0 && (
-                                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                    {t.paymentProgress}
-                                  </p>
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-xs">
-                                      <span className="text-gray-600 font-medium">
-                                        {t.amountPaid}
-                                      </span>
-                                      <span className="font-bold text-primary-dark">
-                                        €
-                                        {Number(
-                                          shipment.amount_paid || 0
-                                        ).toFixed(2)}
-                                      </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                      <div
-                                        className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
-                                        style={{
-                                          width: `${Math.min(
-                                            100,
-                                            ((Number(shipment.amount_paid) ||
-                                              0) /
+                              {/* Payment Progress - Show for all statuses after CREATED */}
+                              {shipment.status !== "CREATED" &&
+                                Number(shipment.total_price) > 0 && (
+                                  <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                      {t.paymentProgress}
+                                    </p>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-center text-xs">
+                                        <span className="text-gray-600 font-medium">
+                                          {t.amountPaid}
+                                        </span>
+                                        <span className="font-bold text-primary-dark">
+                                          €{Number(shipment.amount_paid || 0).toFixed(2)}
+                                        </span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                        <div
+                                          className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
+                                          style={{
+                                            width: `${Math.min(
+                                              100,
+                                              ((Number(shipment.amount_paid) || 0) /
+                                                Number(shipment.total_price)) *
+                                                100
+                                            )}%`,
+                                          }}
+                                        ></div>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <p className="text-xs font-bold text-gray-700">
+                                          {Math.round(
+                                            ((Number(shipment.amount_paid) || 0) /
                                               Number(shipment.total_price)) *
                                               100
-                                          )}%`,
-                                        }}
-                                      ></div>
+                                          )}
+                                          %
+                                        </p>
+                                        <p className="text-xs text-gray-600">
+                                          {t.totalPrice}: €
+                                          {Number(shipment.total_price).toFixed(2)}
+                                        </p>
+                                      </div>
+                                      {/* Warning message if payment is not 100% */}
+                                      {((Number(shipment.amount_paid) || 0) /
+                                        Number(shipment.total_price)) *
+                                        100 <
+                                        100 && (
+                                        <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+                                          <p className="text-xs font-semibold text-yellow-800">
+                                            {language === "ar"
+                                              ? "⚠️ يرجى إكمال الدفع للمتابعة"
+                                              : "⚠️ Please complete payment to continue"}
+                                          </p>
+                                          <p className="text-xs text-yellow-700 mt-1">
+                                            {language === "ar"
+                                              ? `المبلغ المتبقي: €${(
+                                                  Number(shipment.total_price) -
+                                                  (Number(shipment.amount_paid) || 0)
+                                                ).toFixed(2)}`
+                                              : `Remaining amount: €${(
+                                                  Number(shipment.total_price) -
+                                                  (Number(shipment.amount_paid) || 0)
+                                                ).toFixed(2)}`}
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                      <p className="text-xs font-bold text-gray-700">
-                                        {Math.round(
-                                          ((Number(shipment.amount_paid) || 0) /
-                                            Number(shipment.total_price)) *
-                                            100
+                                    {isAdmin && (
+                                      <div className="mt-2 space-y-2">
+                                        <button
+                                          onClick={() =>
+                                            handleUpdateShipmentPaidAmount(
+                                              shipment.id
+                                            )
+                                          }
+                                          className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                        >
+                                          {t.updatePaidAmount}
+                                        </button>
+                                        {((Number(shipment.amount_paid) || 0) /
+                                          Number(shipment.total_price)) *
+                                          100 <
+                                          100 && (
+                                          <button
+                                            onClick={() =>
+                                              handleSendShipmentPaymentReminder(
+                                                shipment.id
+                                              )
+                                            }
+                                            className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                          >
+                                            <svg
+                                              className="w-4 h-4"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                              />
+                                            </svg>
+                                            <span>
+                                              {language === "ar"
+                                                ? "إرسال تذكير الدفع"
+                                                : "Send Payment Reminder"}
+                                            </span>
+                                          </button>
                                         )}
-                                        %
-                                      </p>
-                                      <p className="text-xs text-gray-600">
-                                        {t.totalPrice}: €
-                                        {Number(shipment.total_price).toFixed(
-                                          2
-                                        )}
-                                      </p>
-                                    </div>
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
-                              )}
+                                )}
                             </div>
 
-                            {/* Actions */}
-                            <div className="flex items-center gap-3 flex-wrap">
-                              {/* Track Button - Always visible */}
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2 flex-wrap lg:flex-col lg:items-stretch">
+                              <button
+                                onClick={() => toggleShipment(shipment.id)}
+                                className="px-5 py-2.5 text-sm font-semibold text-primary-dark bg-gradient-to-r from-primary-yellow/20 to-primary-yellow/30 hover:from-primary-yellow/30 hover:to-primary-yellow/40 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 border border-primary-yellow/30"
+                              >
+                                {isExpanded ? t.collapse : t.expand}
+                              </button>
                               <Link
                                 href={`/tracking?shipment_id=${shipment.id}`}
-                                className="px-4 py-2 text-xs font-semibold text-white bg-primary-dark hover:bg-primary-dark/90 rounded-lg transition-all flex items-center gap-2"
+                                className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-center"
                               >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                                  />
-                                </svg>
                                 {t.track}
                               </Link>
-
-                              {isAdmin && (
+                              {isAdmin ? (
                                 <>
-                                  {/* Status Dropdown */}
+                                  {/* Admin: Status dropdown */}
                                   <select
                                     value={shipment.status || "CREATED"}
                                     onChange={(e) =>
@@ -4611,7 +4699,7 @@ export default function DashboardPage() {
                                         e.target.value
                                       )
                                     }
-                                    className="px-3 py-2 text-sm font-semibold text-primary-dark bg-white border-2 border-primary-yellow/30 rounded-lg hover:border-primary-yellow transition-all focus:outline-none focus:ring-2 focus:ring-primary-yellow"
+                                    className="px-4 py-2.5 text-sm font-semibold text-primary-dark bg-white border-2 border-gray-300 rounded-xl hover:border-primary-yellow focus:border-primary-yellow focus:outline-none focus:ring-2 focus:ring-primary-yellow/20 transition-all duration-200 shadow-sm"
                                   >
                                     <option value="CREATED">
                                       {getStatusDisplay("CREATED")}
@@ -4663,71 +4751,37 @@ export default function DashboardPage() {
                                       {getStatusDisplay("CANCELLED")}
                                     </option>
                                   </select>
-                                  {/* Update Amount Paid Button */}
-                                  {Number(shipment.total_price) > 0 && (
-                                    <button
-                                      onClick={() =>
-                                        handleUpdateShipmentPaidAmount(
-                                          shipment.id
-                                        )
-                                      }
-                                      className="px-3 py-2 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-all"
-                                      title={
-                                        language === "ar"
-                                          ? "تحديث المبلغ المدفوع"
-                                          : "Update Amount Paid"
-                                      }
-                                    >
-                                      €
-                                    </button>
-                                  )}
-                                  {/* Payment Reminder Button */}
-                                  {isAdmin &&
-                                    Number(shipment.total_price) > 0 &&
-                                    Number(shipment.amount_paid || 0) <
-                                      Number(shipment.total_price) && (
-                                      <button
-                                        onClick={() =>
-                                          handleSendShipmentPaymentReminder(
-                                            shipment.id
-                                          )
-                                        }
-                                        className="px-3 py-2 text-xs font-semibold text-white bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-all"
-                                        title={
-                                          language === "ar"
-                                            ? "إرسال تذكير الدفع"
-                                            : "Send Payment Reminder"
-                                        }
-                                      >
-                                        {language === "ar" ? "تذكير" : "Remind"}
-                                      </button>
-                                    )}
-                                  {/* Delete Button */}
+                                  {/* Admin: Delete button */}
                                   <button
                                     onClick={() =>
                                       handleDeleteShipment(shipment.id)
                                     }
-                                    className="px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all"
-                                    title={language === "ar" ? "حذف" : "Delete"}
+                                    className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                   >
-                                    🗑️
+                                    {t.delete}
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  {/* Regular user: Delete */}
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteShipment(shipment.id)
+                                    }
+                                    className="px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 border text-red-700 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                  >
+                                    {t.delete}
                                   </button>
                                 </>
                               )}
-                              <button
-                                onClick={() => toggleShipment(shipment.id)}
-                                className="px-4 py-2 text-sm font-semibold text-primary-dark bg-primary-yellow/10 hover:bg-primary-yellow/20 rounded-lg transition-all"
-                              >
-                                {isExpanded ? t.collapse : t.expand}
-                              </button>
                             </div>
                           </div>
                         </div>
 
                         {/* Expanded Details */}
                         {isExpanded && (
-                          <div className="border-t border-gray-200 p-6 bg-gray-50/50">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="border-t-2 border-gray-200 bg-gradient-to-br from-gray-50 to-white p-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                               {/* Sender Info */}
                               <div className="space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
                                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
@@ -4829,43 +4883,376 @@ export default function DashboardPage() {
                                   </div>
                                 )}
 
-                              {/* Payment Info */}
-                              {Number(shipment.total_price) > 0 && (
-                                <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
-                                    <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
-                                    <h4 className="font-bold text-primary-dark text-lg">
-                                      {language === "ar"
-                                        ? "معلومات الدفع"
-                                        : "Payment Information"}
-                                    </h4>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <p className="text-xs text-gray-500 mb-1">
-                                        {t.totalPrice}
-                                      </p>
-                                      <p className="text-sm font-bold text-primary-dark">
-                                        €
-                                        {Number(shipment.total_price).toFixed(
-                                          2
+                              {/* Sendcloud Information */}
+                              <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <h4 className="font-bold text-primary-dark text-lg">
+                                    {language === "ar"
+                                      ? "معلومات Sendcloud"
+                                      : "Sendcloud Information"}
+                                  </h4>
+                                </div>
+                                <div className="space-y-3">
+                                  {shipment.selected_eu_shipping_method ? (
+                                    <>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-green-600 font-bold text-lg">✓</span>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                          {language === "ar"
+                                            ? "تم استخدام Sendcloud"
+                                            : "Sendcloud Used"}
+                                        </p>
+                                      </div>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-7">
+                                        <div>
+                                          <p className="text-xs text-gray-500 mb-1">
+                                            {language === "ar"
+                                              ? "اسم طريقة الشحن"
+                                              : "Shipping Method Name"}
+                                          </p>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {shipment.selected_eu_shipping_name || "N/A"}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-gray-500 mb-1">
+                                            {language === "ar"
+                                              ? "معرف طريقة الشحن"
+                                              : "Shipping Method ID"}
+                                          </p>
+                                          <p className="text-sm font-semibold text-gray-900 font-mono">
+                                            {shipment.selected_eu_shipping_method}
+                                          </p>
+                                        </div>
+                                        {shipment.sendcloud_id && (
+                                          <div>
+                                            <p className="text-xs text-gray-500 mb-1">
+                                              {language === "ar"
+                                                ? "معرف Sendcloud"
+                                                : "Sendcloud ID"}
+                                            </p>
+                                            <p className="text-sm font-semibold text-gray-900 font-mono">
+                                              {shipment.sendcloud_id}
+                                            </p>
+                                          </div>
                                         )}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-red-600 font-bold text-lg">✗</span>
+                                      <p className="text-sm font-semibold text-gray-900">
+                                        {language === "ar"
+                                          ? "لم يتم استخدام Sendcloud"
+                                          : "Sendcloud Not Used"}
                                       </p>
                                     </div>
-                                    {shipment.payment_method && (
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Payment Information - Complete Details */}
+                              <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <h4 className="font-bold text-primary-dark text-lg">
+                                    {language === "ar"
+                                      ? "معلومات الدفع الكاملة"
+                                      : "Complete Payment Information"}
+                                  </h4>
+                                </div>
+                                <div className="space-y-4">
+                                  {/* Total Price */}
+                                  {Number(shipment.total_price) > 0 && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                       <div>
                                         <p className="text-xs text-gray-500 mb-1">
-                                          {language === "ar"
-                                            ? "طريقة الدفع"
-                                            : "Payment Method"}
+                                          {t.totalPrice}
                                         </p>
-                                        <p className="text-sm font-semibold text-gray-900 capitalize">
-                                          {shipment.payment_method}
+                                        <p className="text-lg font-bold text-primary-dark">
+                                          €{Number(shipment.total_price).toFixed(2)}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">
+                                          {t.amountPaid}
+                                        </p>
+                                        <p className="text-lg font-bold text-green-600">
+                                          €{Number(shipment.amount_paid || 0).toFixed(2)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Payment Method */}
+                                  <div className="pt-3 border-t border-gray-200">
+                                    <p className="text-xs text-gray-500 mb-2">
+                                      {language === "ar"
+                                        ? "طريقة الدفع المختارة"
+                                        : "Selected Payment Method"}
+                                    </p>
+                                    {shipment.payment_method ? (
+                                      <div className="space-y-3">
+                                        {shipment.payment_method === "stripe" && (
+                                          <div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <span className="text-green-600 font-bold">✓</span>
+                                              <p className="text-sm font-semibold text-gray-900">
+                                                {language === "ar"
+                                                  ? "تم اختيار الدفع الإلكتروني (Stripe)"
+                                                  : "Electronic Payment (Stripe) Selected"}
+                                              </p>
+                                            </div>
+                                            {shipment.stripe_session_id && (
+                                              <div className="pl-7 mt-2">
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "معرف جلسة Stripe"
+                                                    : "Stripe Session ID"}
+                                                </p>
+                                                <p className="text-xs font-mono font-semibold text-gray-700 bg-gray-50 p-2 rounded border border-gray-200 break-all">
+                                                  {shipment.stripe_session_id}
+                                                </p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                        {shipment.payment_method === "cash" && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-blue-600 font-bold">✓</span>
+                                            <p className="text-sm font-semibold text-gray-900">
+                                              {language === "ar"
+                                                ? "تم اختيار الدفع النقدي"
+                                                : "Cash Payment Selected"}
+                                            </p>
+                                          </div>
+                                        )}
+                                        {shipment.payment_method === "internal-transfer" && (
+                                          <div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <span className="text-purple-600 font-bold">✓</span>
+                                              <p className="text-sm font-semibold text-gray-900">
+                                                {language === "ar"
+                                                  ? "تم اختيار الحوالة الداخلية"
+                                                  : "Internal Transfer Selected"}
+                                              </p>
+                                            </div>
+                                            {(shipment.transfer_sender_name || shipment.transfer_reference) && (
+                                              <div className="pl-7 mt-2 space-y-2">
+                                                {shipment.transfer_sender_name && (
+                                                  <div>
+                                                    <p className="text-xs text-gray-500 mb-1">
+                                                      {language === "ar"
+                                                        ? "اسم المرسل"
+                                                        : "Sender Name"}
+                                                    </p>
+                                                    <p className="text-sm font-semibold text-gray-900">
+                                                      {shipment.transfer_sender_name}
+                                                    </p>
+                                                  </div>
+                                                )}
+                                                {shipment.transfer_reference && (
+                                                  <div>
+                                                    <p className="text-xs text-gray-500 mb-1">
+                                                      {language === "ar"
+                                                        ? "رقم المرجع"
+                                                        : "Reference Number"}
+                                                    </p>
+                                                    <p className="text-sm font-mono font-semibold text-gray-700 bg-gray-50 p-2 rounded border border-gray-200">
+                                                      {shipment.transfer_reference}
+                                                    </p>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-orange-600 font-bold">⚠</span>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                          {language === "ar"
+                                            ? "لم يتم اختيار طريقة دفع"
+                                            : "No Payment Method Selected"}
                                         </p>
                                       </div>
                                     )}
                                   </div>
+
+                                  {/* Payment Status */}
+                                  {shipment.payment_status && (
+                                    <div className="pt-3 border-t border-gray-200">
+                                      <p className="text-xs text-gray-500 mb-1">
+                                        {language === "ar"
+                                          ? "حالة الدفع"
+                                          : "Payment Status"}
+                                      </p>
+                                      <span
+                                        className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-lg ${
+                                          shipment.payment_status === "paid"
+                                            ? "bg-green-100 text-green-800"
+                                            : shipment.payment_status === "pending"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : "bg-gray-100 text-gray-800"
+                                        }`}
+                                      >
+                                        {shipment.payment_status === "paid"
+                                          ? language === "ar"
+                                            ? "مدفوع"
+                                            : "Paid"
+                                          : shipment.payment_status === "pending"
+                                          ? language === "ar"
+                                            ? "قيد الانتظار"
+                                            : "Pending"
+                                          : shipment.payment_status}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
+                              </div>
+
+                              {/* EU Pickup Information */}
+                              {shipment.direction === "eu-sy" && (
+                                shipment.eu_pickup_address || shipment.eu_pickup_city ? (
+                                  <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                      <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                      <h4 className="font-bold text-primary-dark text-lg">
+                                        {language === "ar"
+                                          ? "معلومات الاستلام في أوروبا"
+                                          : "EU Pickup Information"}
+                                      </h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                      {shipment.eu_pickup_address && (
+                                        <div className="sm:col-span-2">
+                                          <p className="text-xs text-gray-500 mb-1">
+                                            {language === "ar" ? "العنوان" : "Address"}
+                                          </p>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {shipment.eu_pickup_address}
+                                          </p>
+                                        </div>
+                                      )}
+                                      {shipment.eu_pickup_city && (
+                                        <div>
+                                          <p className="text-xs text-gray-500 mb-1">
+                                            {language === "ar" ? "المدينة" : "City"}
+                                          </p>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {shipment.eu_pickup_city}
+                                          </p>
+                                        </div>
+                                      )}
+                                      {shipment.eu_pickup_postal_code && (
+                                        <div>
+                                          <p className="text-xs text-gray-500 mb-1">
+                                            {language === "ar" ? "الرمز البريدي" : "Postal Code"}
+                                          </p>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {shipment.eu_pickup_postal_code}
+                                          </p>
+                                        </div>
+                                      )}
+                                      {shipment.eu_pickup_country && (
+                                        <div>
+                                          <p className="text-xs text-gray-500 mb-1">
+                                            {language === "ar" ? "الدولة" : "Country"}
+                                          </p>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {shipment.eu_pickup_country}
+                                          </p>
+                                        </div>
+                                      )}
+                                      {Number(shipment.eu_pickup_weight) > 0 && (
+                                        <div>
+                                          <p className="text-xs text-gray-500 mb-1">
+                                            {language === "ar" ? "الوزن" : "Weight"}
+                                          </p>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {Number(shipment.eu_pickup_weight).toFixed(2)} kg
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                      <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                      <h4 className="font-bold text-primary-dark text-lg">
+                                        {language === "ar"
+                                          ? "معلومات الاستلام في أوروبا"
+                                          : "EU Pickup Information"}
+                                      </h4>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-gray-400 font-bold">—</span>
+                                      <p className="text-sm font-semibold text-gray-600">
+                                        {language === "ar"
+                                          ? "لا توجد معلومات استلام في أوروبا"
+                                          : "No EU Pickup Information"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+                              )}
+
+                              {/* Syria Transport Information */}
+                              {shipment.direction === "eu-sy" && (
+                                shipment.syria_province ? (
+                                  <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                      <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                      <h4 className="font-bold text-primary-dark text-lg">
+                                        {language === "ar"
+                                          ? "معلومات النقل الداخلي في سورية"
+                                          : "Syria Internal Transport Information"}
+                                      </h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                      <div>
+                                        <p className="text-xs text-gray-500 mb-1">
+                                          {language === "ar" ? "المحافظة" : "Province"}
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                          {shipment.syria_province}
+                                        </p>
+                                      </div>
+                                      {Number(shipment.syria_weight) > 0 && (
+                                        <div>
+                                          <p className="text-xs text-gray-500 mb-1">
+                                            {language === "ar" ? "الوزن" : "Weight"}
+                                          </p>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {Number(shipment.syria_weight).toFixed(2)} kg
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                      <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                      <h4 className="font-bold text-primary-dark text-lg">
+                                        {language === "ar"
+                                          ? "معلومات النقل الداخلي في سورية"
+                                          : "Syria Internal Transport Information"}
+                                      </h4>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-gray-400 font-bold">—</span>
+                                      <p className="text-sm font-semibold text-gray-600">
+                                        {language === "ar"
+                                          ? "لا توجد معلومات نقل داخلي في سورية"
+                                          : "No Syria Internal Transport Information"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
                               )}
 
                               {/* Tracking */}
