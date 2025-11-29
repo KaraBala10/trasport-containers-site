@@ -48,6 +48,7 @@ from .views import (
     sendcloud_webhook_view,
     stripe_webhook_view,
     update_fcl_quote_status_view,
+    update_lcl_shipment_status_view,
     update_product_request_view,
     user_product_requests_view,
 )
@@ -119,6 +120,11 @@ urlpatterns = [
         "shipments/<int:pk>/",
         LCLShipmentDetailView.as_view(),
         name="lcl_shipment_detail",
+    ),
+    path(
+        "shipments/<int:pk>/status/",
+        update_lcl_shipment_status_view,
+        name="lcl_shipment_status",
     ),
     # Stripe webhook
     path("stripe/webhook/", stripe_webhook_view, name="stripe_webhook"),

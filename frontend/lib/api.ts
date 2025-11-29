@@ -126,6 +126,19 @@ export const apiService = {
     return apiClient.delete(`/shipments/${id}/`);
   },
 
+  updateShipmentStatus: (
+    id: number,
+    status?: string,
+    amountPaid?: number,
+    trackingNumber?: string
+  ) => {
+    const payload: any = {};
+    if (status) payload.status = status;
+    if (amountPaid !== undefined) payload.amount_paid = amountPaid;
+    if (trackingNumber !== undefined) payload.tracking_number = trackingNumber;
+    return apiClient.patch(`/shipments/${id}/status/`, payload);
+  },
+
   trackShipment: (trackingNumber: string) => {
     return apiClient.get(`/shipments/track/${trackingNumber}/`);
   },

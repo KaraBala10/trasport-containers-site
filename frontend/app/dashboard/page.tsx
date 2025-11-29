@@ -152,12 +152,15 @@ export default function DashboardPage() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const { language, setLanguage, isRTL, mounted } = useLanguage();
   const router = useRouter();
+  const isAdmin = user?.is_superuser || false;
   const [fclQuotes, setFclQuotes] = useState<FCLQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
   const [expandedQuotes, setExpandedQuotes] = useState<Set<number>>(new Set());
   const [lclShipments, setLclShipments] = useState<LCLShipment[]>([]);
   const [shipmentsLoading, setShipmentsLoading] = useState(true);
-  const [expandedShipments, setExpandedShipments] = useState<Set<number>>(new Set());
+  const [expandedShipments, setExpandedShipments] = useState<Set<number>>(
+    new Set()
+  );
   const [editingQuote, setEditingQuote] = useState<FCLQuote | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -181,7 +184,9 @@ export default function DashboardPage() {
     null
   );
   const [productRequests, setProductRequests] = useState<ProductRequest[]>([]);
-  const [editingProductRequest, setEditingProductRequest] = useState<number | null>(null);
+  const [editingProductRequest, setEditingProductRequest] = useState<
+    number | null
+  >(null);
   const [productRequestStatus, setProductRequestStatus] = useState<string>("");
   const [productRequestNotes, setProductRequestNotes] = useState<string>("");
   const [updatingProductRequest, setUpdatingProductRequest] = useState(false);
@@ -467,7 +472,7 @@ export default function DashboardPage() {
       const paymentStatus = params.get("payment");
       const quoteId = params.get("quote_id");
       const type = params.get("type");
-      
+
       if (paymentStatus === "success" && type === "shipment") {
         // Refresh shipments to get updated payment status
         const fetchShipments = async () => {
@@ -475,25 +480,25 @@ export default function DashboardPage() {
             const response = await apiService.getShipments();
             const shipments = response.data?.results || response.data || [];
             setLclShipments(Array.isArray(shipments) ? shipments : []);
-            
+
             // Show success message
             alert(
               language === "ar"
                 ? "تم الدفع بنجاح! سيتم تحديث حالة الشحنة قريباً."
                 : "Payment successful! Shipment status will be updated shortly."
             );
-            
+
             // Clean URL
             window.history.replaceState({}, "", "/dashboard");
           } catch (error: any) {
             console.error("Error fetching shipments after payment:", error);
           }
         };
-        
+
         fetchShipments();
         return;
       }
-      
+
       if (paymentStatus === "success") {
         // Refresh quotes to get updated payment status
         const fetchQuotes = async () => {
@@ -501,16 +506,25 @@ export default function DashboardPage() {
             const response = await apiService.getFCLQuotes();
             const quotes = response.data?.results || response.data || [];
             setFclQuotes(Array.isArray(quotes) ? quotes : []);
-            
+
             // If we have a quote_id, try to get updated payment status
             if (quoteId) {
               try {
-                const paymentResponse = await apiService.getPaymentStatus(parseInt(quoteId));
+                const paymentResponse = await apiService.getPaymentStatus(
+                  parseInt(quoteId)
+                );
                 if (paymentResponse.data?.success) {
                   const paymentData = paymentResponse.data;
-                  const message = language === "ar"
-                    ? `تم استلام الدفعة بنجاح! المبلغ المدفوع: €${paymentData.amount_paid?.toFixed(2) || "0.00"} من إجمالي €${paymentData.total_price?.toFixed(2) || "0.00"}`
-                    : `Payment received successfully! Amount paid: €${paymentData.amount_paid?.toFixed(2) || "0.00"} of €${paymentData.total_price?.toFixed(2) || "0.00"}`;
+                  const message =
+                    language === "ar"
+                      ? `تم استلام الدفعة بنجاح! المبلغ المدفوع: €${
+                          paymentData.amount_paid?.toFixed(2) || "0.00"
+                        } من إجمالي €${
+                          paymentData.total_price?.toFixed(2) || "0.00"
+                        }`
+                      : `Payment received successfully! Amount paid: €${
+                          paymentData.amount_paid?.toFixed(2) || "0.00"
+                        } of €${paymentData.total_price?.toFixed(2) || "0.00"}`;
                   alert(message);
                 } else {
                   alert(
@@ -548,9 +562,7 @@ export default function DashboardPage() {
         window.history.replaceState({}, "", window.location.pathname);
       } else if (paymentStatus === "canceled") {
         alert(
-          language === "ar"
-            ? "تم إلغاء عملية الدفع."
-            : "Payment was canceled."
+          language === "ar" ? "تم إلغاء عملية الدفع." : "Payment was canceled."
         );
         // Remove query param from URL
         window.history.replaceState({}, "", window.location.pathname);
@@ -620,7 +632,7 @@ export default function DashboardPage() {
         const response = user?.is_superuser
           ? await apiService.getAllProductRequests()
           : await apiService.getUserProductRequests();
-          
+
         if (response.data?.success && Array.isArray(response.data.data)) {
           setProductRequests(response.data.data);
         } else {
@@ -762,7 +774,7 @@ export default function DashboardPage() {
     try {
       setProcessingPayment(quoteId);
       const response = await apiService.initiatePayment(quoteId);
-      
+
       if (response.data?.success && response.data?.checkout_url) {
         // Redirect to Stripe checkout
         window.location.href = response.data.checkout_url;
@@ -771,7 +783,13 @@ export default function DashboardPage() {
       }
     } catch (error: any) {
       console.error("Error initiating payment:", error);
-      alert(t.error + ": " + (error.response?.data?.error || error.response?.data?.message || error.message));
+      alert(
+        t.error +
+          ": " +
+          (error.response?.data?.error ||
+            error.response?.data?.message ||
+            error.message)
+      );
       setProcessingPayment(null);
     }
   };
@@ -809,6 +827,160 @@ export default function DashboardPage() {
       alert(t.error + ": " + (error.response?.data?.message || error.message));
     } finally {
       setUpdatingProductRequest(false);
+    }
+  };
+
+  // Handle update LCL shipment status (admin only)
+  const handleShipmentStatusChange = async (
+    shipmentId: number,
+    newStatus: string
+  ) => {
+    try {
+      const shipment = lclShipments.find((s) => s.id === shipmentId);
+      if (!shipment) return;
+
+      // Check if payment is 100% before allowing status updates to certain statuses
+      const restrictedStatuses = [
+        "IN_TRANSIT_TO_DESTINATION",
+        "ARRIVED_DESTINATION",
+        "DESTINATION_SORTING",
+        "READY_FOR_DELIVERY",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "IN_TRANSIT",
+      ];
+      if (restrictedStatuses.includes(newStatus)) {
+        if (shipment.total_price && shipment.total_price > 0) {
+          const paymentPercentage =
+            ((Number(shipment.amount_paid) || 0) /
+              Number(shipment.total_price)) *
+            100;
+          if (paymentPercentage < 100) {
+            alert(
+              language === "ar"
+                ? `لا يمكن تحديث الحالة إلى ${getStatusDisplay(
+                    newStatus
+                  )}. يجب إكمال الدفع بنسبة 100%. الدفع الحالي: ${paymentPercentage.toFixed(
+                    1
+                  )}%`
+                : `Cannot update status to ${getStatusDisplay(
+                    newStatus
+                  )}. Payment must be 100% complete. Current payment: ${paymentPercentage.toFixed(
+                    1
+                  )}%`
+            );
+            return;
+          }
+        }
+      }
+
+      const response = await apiService.updateShipmentStatus(
+        shipmentId,
+        newStatus
+      );
+
+      if (response.data?.data) {
+        setLclShipments((prevShipments) =>
+          prevShipments.map((s) =>
+            s.id === shipmentId ? { ...s, ...response.data.data } : s
+          )
+        );
+      }
+
+      // Refresh shipments list
+      const shipmentsResponse = await apiService.getShipments();
+      const shipments =
+        shipmentsResponse.data?.results || shipmentsResponse.data || [];
+      setLclShipments(Array.isArray(shipments) ? shipments : []);
+
+      alert(t.statusUpdated);
+    } catch (error: any) {
+      console.error("Error updating shipment status:", error);
+      alert(t.error + ": " + (error.response?.data?.error || error.message));
+    }
+  };
+
+  // Handle update LCL shipment paid amount (admin only)
+  const handleUpdateShipmentPaidAmount = async (shipmentId: number) => {
+    try {
+      const shipment = lclShipments.find((s) => s.id === shipmentId);
+      if (!shipment) return;
+
+      const currentAmountPaid = Number(shipment.amount_paid) || 0;
+      const totalPrice = Number(shipment.total_price) || 0;
+
+      const amountPaidInput = prompt(
+        language === "ar"
+          ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR):`
+          : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR):`
+      );
+      if (amountPaidInput === null) {
+        return;
+      }
+      const parsedAmount = parseFloat(amountPaidInput || "0");
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        alert(
+          language === "ar"
+            ? "يرجى إدخال مبلغ صحيح"
+            : "Please enter a valid amount"
+        );
+        return;
+      }
+      if (totalPrice > 0 && parsedAmount > totalPrice) {
+        alert(
+          language === "ar"
+            ? "المبلغ المدفوع لا يمكن أن يكون أكبر من السعر الإجمالي"
+            : "Amount paid cannot be greater than total price"
+        );
+        return;
+      }
+
+      const response = await apiService.updateShipmentStatus(
+        shipmentId,
+        undefined,
+        parsedAmount
+      );
+
+      if (response.data?.data) {
+        setLclShipments((prevShipments) =>
+          prevShipments.map((s) =>
+            s.id === shipmentId ? { ...s, ...response.data.data } : s
+          )
+        );
+      }
+
+      // Refresh shipments list
+      const shipmentsResponse = await apiService.getShipments();
+      const shipments =
+        shipmentsResponse.data?.results || shipmentsResponse.data || [];
+      setLclShipments(Array.isArray(shipments) ? shipments : []);
+
+      alert(
+        language === "ar"
+          ? "تم تحديث المبلغ المدفوع بنجاح"
+          : "Amount paid updated successfully"
+      );
+    } catch (error: any) {
+      console.error("Error updating paid amount:", error);
+      alert(t.error + ": " + (error.response?.data?.error || error.message));
+    }
+  };
+
+  // Handle delete LCL shipment
+  const handleDeleteShipment = async (shipmentId: number) => {
+    try {
+      await apiService.deleteShipment(shipmentId);
+      setLclShipments((prevShipments) =>
+        prevShipments.filter((s) => s.id !== shipmentId)
+      );
+      alert(
+        language === "ar"
+          ? "تم حذف الشحنة بنجاح"
+          : "Shipment deleted successfully"
+      );
+    } catch (error: any) {
+      console.error("Error deleting shipment:", error);
+      alert(t.error + ": " + (error.response?.data?.error || error.message));
     }
   };
 
@@ -1048,6 +1220,8 @@ export default function DashboardPage() {
         "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300",
       PENDING_PAYMENT:
         "bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300",
+      PAYMENT_PENDING:
+        "bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300",
       PENDING_PICKUP:
         "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300",
       IN_TRANSIT_TO_WATTWEG_5:
@@ -1072,6 +1246,11 @@ export default function DashboardPage() {
         "bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300",
       CANCELLED:
         "bg-gradient-to-r from-red-100 to-red-200 text-red-800 border border-red-300",
+      PAID: "bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300",
+      PROCESSING:
+        "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300",
+      IN_TRANSIT:
+        "bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-800 border border-indigo-300",
     };
     return (
       statusColors[status] ||
@@ -1323,7 +1502,6 @@ export default function DashboardPage() {
   const t = translations[language];
 
   // Check if user is admin
-  const isAdmin = user?.is_superuser || false;
 
   if (!isAuthenticated) {
     return null;
@@ -1366,7 +1544,7 @@ export default function DashboardPage() {
                   <h1 className="text-3xl md:text-4xl font-bold mb-2">
                     {t.welcome},{" "}
                     {user?.first_name || user?.username || t.welcomeBack}!
-              </h1>
+                  </h1>
                   <p className="text-white/90 text-lg">{user?.email}</p>
                   {memberSinceDate && (
                     <p className="text-white/80 text-sm mt-2">
@@ -1407,8 +1585,8 @@ export default function DashboardPage() {
                     </svg>
                     {t.goToHome}
                   </Link>
-              <button
-                onClick={logout}
+                  <button
+                    onClick={logout}
                     className="px-6 py-3 bg-red-600/90 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                   >
                     <svg
@@ -1425,7 +1603,7 @@ export default function DashboardPage() {
                       />
                     </svg>
                     {t.logout}
-              </button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1447,7 +1625,7 @@ export default function DashboardPage() {
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-yellow to-orange-400 rounded-full blur-3xl"></div>
                       <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-primary-dark to-primary-yellow rounded-full blur-3xl"></div>
-              </div>
+                    </div>
 
                     <div className="relative flex items-start gap-4">
                       {/* Icon Container with Gradient */}
@@ -1455,7 +1633,7 @@ export default function DashboardPage() {
                         <div className="w-16 h-16 bg-gradient-to-br from-primary-yellow via-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                           {/* Inner Glow */}
                           <div className="absolute inset-0 bg-gradient-to-br from-yellow-300 to-orange-300 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                          
+
                           <svg
                             className="w-8 h-8 text-white relative z-10 drop-shadow-lg"
                             fill="none"
@@ -1511,7 +1689,11 @@ export default function DashboardPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                            d={
+                              language === "ar"
+                                ? "M15 19l-7-7 7-7"
+                                : "M9 5l7 7-7 7"
+                            }
                           />
                         </svg>
                       </div>
@@ -1537,7 +1719,7 @@ export default function DashboardPage() {
                       <div className="relative">
                         <div className="w-16 h-16 bg-gradient-to-br from-primary-yellow to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                           <div className="absolute inset-0 bg-primary-yellow rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                          
+
                           <svg
                             className="w-8 h-8 text-white relative z-10 drop-shadow-lg"
                             fill="none"
@@ -1575,7 +1757,9 @@ export default function DashboardPage() {
                             {language === "ar" ? "النقل الداخلي" : "Domestic"}
                           </span>
                           <span className="text-xs bg-yellow-50 text-primary-dark px-2 py-1 rounded-full font-semibold border border-primary-yellow">
-                            {language === "ar" ? "حساب تلقائي" : "Auto Calculate"}
+                            {language === "ar"
+                              ? "حساب تلقائي"
+                              : "Auto Calculate"}
                           </span>
                         </div>
                       </div>
@@ -1592,7 +1776,11 @@ export default function DashboardPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                            d={
+                              language === "ar"
+                                ? "M15 19l-7-7 7-7"
+                                : "M9 5l7 7-7 7"
+                            }
                           />
                         </svg>
                       </div>
@@ -1618,7 +1806,7 @@ export default function DashboardPage() {
                       <div className="relative">
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                           <div className="absolute inset-0 bg-blue-400 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                          
+
                           <svg
                             className="w-8 h-8 text-white relative z-10 drop-shadow-lg"
                             fill="none"
@@ -1679,7 +1867,11 @@ export default function DashboardPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d={language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
+                            d={
+                              language === "ar"
+                                ? "M15 19l-7-7 7-7"
+                                : "M9 5l7 7-7 7"
+                            }
                           />
                         </svg>
                       </div>
@@ -1702,8 +1894,8 @@ export default function DashboardPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Create LCL Shipment */}
-                <Link
-                  href="/create-shipment"
+                  <Link
+                    href="/create-shipment"
                     className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-yellow transform hover:-translate-y-2"
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -1746,10 +1938,10 @@ export default function DashboardPage() {
                     <p className="text-gray-600 text-sm">
                       {t.createLCLShipmentDesc}
                     </p>
-                </Link>
+                  </Link>
 
                   {/* FCL Quote */}
-                <Link
+                  <Link
                     href="/fcl-quote"
                     className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
                   >
@@ -1791,11 +1983,11 @@ export default function DashboardPage() {
                       {t.fclQuote}
                     </h3>
                     <p className="text-gray-600 text-sm">{t.fclQuoteDesc}</p>
-                </Link>
+                  </Link>
 
                   {/* Track Shipment */}
-                <Link
-                  href="/tracking"
+                  <Link
+                    href="/tracking"
                     className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -1838,7 +2030,7 @@ export default function DashboardPage() {
                     <p className="text-gray-600 text-sm">
                       {t.trackShipmentDesc}
                     </p>
-                </Link>
+                  </Link>
                 </div>
               </div>
             )}
@@ -1872,14 +2064,14 @@ export default function DashboardPage() {
                   </svg>
                   <p className="text-gray-600 text-lg">{t.noQuotes}</p>
                   {!isAdmin && (
-                <Link
+                    <Link
                       href="/fcl-quote"
                       className="mt-4 inline-block px-6 py-3 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-all"
-                >
+                    >
                       {t.fclQuote}
-                </Link>
+                    </Link>
                   )}
-              </div>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {fclQuotes.map((quote) => {
@@ -1900,7 +2092,7 @@ export default function DashboardPage() {
                                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     {t.quoteNumber}
                                   </p>
-            </div>
+                                </div>
                                 <p
                                   className="font-bold text-primary-dark text-base sm:text-lg font-mono whitespace-nowrap overflow-hidden text-ellipsis"
                                   title={
@@ -1923,9 +2115,9 @@ export default function DashboardPage() {
                                     <p className="text-sm font-semibold text-gray-800 mt-0.5">
                                       {quote.user.username}
                                     </p>
-          </div>
+                                  </div>
                                 )}
-        </div>
+                              </div>
 
                               {/* Route */}
                               <div className="space-y-1">
@@ -1941,7 +2133,7 @@ export default function DashboardPage() {
                                     {quote.port_of_discharge}
                                   </span>
                                 </p>
-      </div>
+                              </div>
 
                               {/* Container Type */}
                               <div className="space-y-1">
@@ -1954,7 +2146,7 @@ export default function DashboardPage() {
                                 <p className="text-xs text-gray-600">
                                   {quote.number_of_containers} {t.containers}
                                 </p>
-    </div>
+                              </div>
 
                               {/* Status */}
                               <div className="space-y-2">
@@ -2568,7 +2760,9 @@ export default function DashboardPage() {
                                         )
                                       }
                                     >
-                                      {getStatusDisplay("IN_TRANSIT_TO_DESTINATION")}
+                                      {getStatusDisplay(
+                                        "IN_TRANSIT_TO_DESTINATION"
+                                      )}
                                       {quote.total_price &&
                                       quote.total_price > 0 &&
                                       ((quote.amount_paid || 0) /
@@ -4120,14 +4314,14 @@ export default function DashboardPage() {
                   </svg>
                   <p className="text-gray-600 text-lg">{t.noShipments}</p>
                   {!user?.is_superuser && (
-                <Link
+                    <Link
                       href="/create-shipment"
                       className="mt-4 inline-block px-6 py-3 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-all"
-                >
+                    >
                       {t.createLCLShipment}
-                </Link>
+                    </Link>
                   )}
-              </div>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {lclShipments.map((shipment) => {
@@ -4148,7 +4342,7 @@ export default function DashboardPage() {
                                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     {t.shipmentNumber}
                                   </p>
-            </div>
+                                </div>
                                 <p
                                   className="font-bold text-primary-dark text-base sm:text-lg font-mono whitespace-nowrap overflow-hidden text-ellipsis"
                                   title={shipment.shipment_number}
@@ -4163,9 +4357,9 @@ export default function DashboardPage() {
                                     <p className="text-sm font-semibold text-gray-800 mt-0.5">
                                       {shipment.user.username}
                                     </p>
-          </div>
+                                  </div>
                                 )}
-        </div>
+                              </div>
 
                               {/* Direction */}
                               <div className="space-y-1">
@@ -4173,9 +4367,11 @@ export default function DashboardPage() {
                                   {t.direction}
                                 </p>
                                 <p className="text-sm font-semibold text-gray-900">
-                                  {shipment.direction === "eu-sy" ? t.euToSy : t.syToEu}
+                                  {shipment.direction === "eu-sy"
+                                    ? t.euToSy
+                                    : t.syToEu}
                                 </p>
-      </div>
+                              </div>
 
                               {/* Status */}
                               <div className="space-y-2">
@@ -4187,7 +4383,9 @@ export default function DashboardPage() {
                                     shipment.status || "CREATED"
                                   )}`}
                                 >
-                                  {getStatusDisplay(shipment.status || "CREATED")}
+                                  {getStatusDisplay(
+                                    shipment.status || "CREATED"
+                                  )}
                                 </span>
                                 {shipment.tracking_number && (
                                   <div className="mt-2">
@@ -4200,10 +4398,119 @@ export default function DashboardPage() {
                                   </div>
                                 )}
                               </div>
+
+                              {/* Payment Progress - Show if total_price > 0 */}
+                              {Number(shipment.total_price) > 0 && (
+                                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    {t.paymentProgress}
+                                  </p>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between items-center text-xs">
+                                      <span className="text-gray-600 font-medium">
+                                        {t.amountPaid}
+                                      </span>
+                                      <span className="font-bold text-primary-dark">
+                                        €
+                                        {Number(
+                                          shipment.amount_paid || 0
+                                        ).toFixed(2)}
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                      <div
+                                        className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
+                                        style={{
+                                          width: `${Math.min(
+                                            100,
+                                            ((Number(shipment.amount_paid) ||
+                                              0) /
+                                              Number(shipment.total_price)) *
+                                              100
+                                          )}%`,
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <p className="text-xs font-bold text-gray-700">
+                                        {Math.round(
+                                          ((Number(shipment.amount_paid) || 0) /
+                                            Number(shipment.total_price)) *
+                                            100
+                                        )}
+                                        %
+                                      </p>
+                                      <p className="text-xs text-gray-600">
+                                        {t.totalPrice}: €
+                                        {Number(shipment.total_price).toFixed(
+                                          2
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {/* Actions */}
                             <div className="flex items-center gap-3">
+                              {isAdmin && (
+                                <>
+                                  {/* Status Dropdown */}
+                                  <select
+                                    value={shipment.status || "CREATED"}
+                                    onChange={(e) =>
+                                      handleShipmentStatusChange(
+                                        shipment.id,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="px-3 py-2 text-sm font-semibold text-primary-dark bg-white border-2 border-primary-yellow/30 rounded-lg hover:border-primary-yellow transition-all focus:outline-none focus:ring-2 focus:ring-primary-yellow"
+                                  >
+                                    <option value="CREATED">Created</option>
+                                    <option value="PAYMENT_PENDING">
+                                      Payment Pending
+                                    </option>
+                                    <option value="PAID">Paid</option>
+                                    <option value="PROCESSING">
+                                      Processing
+                                    </option>
+                                    <option value="IN_TRANSIT">
+                                      In Transit
+                                    </option>
+                                    <option value="DELIVERED">Delivered</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                  </select>
+                                  {/* Update Amount Paid Button */}
+                                  {Number(shipment.total_price) > 0 && (
+                                    <button
+                                      onClick={() =>
+                                        handleUpdateShipmentPaidAmount(
+                                          shipment.id
+                                        )
+                                      }
+                                      className="px-3 py-2 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-all"
+                                      title={
+                                        language === "ar"
+                                          ? "تحديث المبلغ المدفوع"
+                                          : "Update Amount Paid"
+                                      }
+                                    >
+                                      €
+                                    </button>
+                                  )}
+                                  {/* Delete Button */}
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteShipment(shipment.id)
+                                    }
+                                    className="px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all"
+                                    title={language === "ar" ? "حذف" : "Delete"}
+                                  >
+                                    🗑️
+                                  </button>
+                                </>
+                              )}
                               <button
                                 onClick={() => toggleShipment(shipment.id)}
                                 className="px-4 py-2 text-sm font-semibold text-primary-dark bg-primary-yellow/10 hover:bg-primary-yellow/20 rounded-lg transition-all"
@@ -4237,7 +4544,9 @@ export default function DashboardPage() {
                                     {shipment.sender_phone}
                                   </p>
                                   <p className="text-xs text-gray-600">
-                                    {shipment.sender_address}, {shipment.sender_city}, {shipment.sender_country}
+                                    {shipment.sender_address},{" "}
+                                    {shipment.sender_city},{" "}
+                                    {shipment.sender_country}
                                   </p>
                                 </div>
                               </div>
@@ -4261,39 +4570,61 @@ export default function DashboardPage() {
                                     {shipment.receiver_phone}
                                   </p>
                                   <p className="text-xs text-gray-600">
-                                    {shipment.receiver_address}, {shipment.receiver_city}, {shipment.receiver_country}
+                                    {shipment.receiver_address},{" "}
+                                    {shipment.receiver_city},{" "}
+                                    {shipment.receiver_country}
                                   </p>
                                 </div>
                               </div>
 
                               {/* Parcels */}
-                              {shipment.parcels && shipment.parcels.length > 0 && (
-                                <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
-                                    <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
-                                    <h4 className="font-bold text-primary-dark text-lg">
-                                      {language === "ar" ? "الطرود" : "Parcels"}
-                                    </h4>
+                              {shipment.parcels &&
+                                shipment.parcels.length > 0 && (
+                                  <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                      <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                      <h4 className="font-bold text-primary-dark text-lg">
+                                        {language === "ar"
+                                          ? "الطرود"
+                                          : "Parcels"}
+                                      </h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                      {shipment.parcels.map(
+                                        (parcel: any, idx: number) => (
+                                          <div
+                                            key={idx}
+                                            className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                                          >
+                                            <p className="text-sm font-semibold text-gray-900 mb-2">
+                                              {language === "ar"
+                                                ? `طرد ${idx + 1}`
+                                                : `Parcel ${idx + 1}`}
+                                            </p>
+                                            <div className="text-xs text-gray-600 space-y-1">
+                                              {parcel.weight && (
+                                                <p>
+                                                  {language === "ar"
+                                                    ? "الوزن"
+                                                    : "Weight"}
+                                                  : {parcel.weight} kg
+                                                </p>
+                                              )}
+                                              {parcel.cbm && (
+                                                <p>
+                                                  {language === "ar"
+                                                    ? "الحجم"
+                                                    : "CBM"}
+                                                  : {parcel.cbm} m³
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {shipment.parcels.map((parcel: any, idx: number) => (
-                                      <div key={idx} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                        <p className="text-sm font-semibold text-gray-900 mb-2">
-                                          {language === "ar" ? `طرد ${idx + 1}` : `Parcel ${idx + 1}`}
-                                        </p>
-                                        <div className="text-xs text-gray-600 space-y-1">
-                                          {parcel.weight && (
-                                            <p>{language === "ar" ? "الوزن" : "Weight"}: {parcel.weight} kg</p>
-                                          )}
-                                          {parcel.cbm && (
-                                            <p>{language === "ar" ? "الحجم" : "CBM"}: {parcel.cbm} m³</p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                                )}
 
                               {/* Payment Info */}
                               {Number(shipment.total_price) > 0 && (
@@ -4301,7 +4632,9 @@ export default function DashboardPage() {
                                   <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
                                     <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
                                     <h4 className="font-bold text-primary-dark text-lg">
-                                      {language === "ar" ? "معلومات الدفع" : "Payment Information"}
+                                      {language === "ar"
+                                        ? "معلومات الدفع"
+                                        : "Payment Information"}
                                     </h4>
                                   </div>
                                   <div className="grid grid-cols-2 gap-4">
@@ -4310,13 +4643,18 @@ export default function DashboardPage() {
                                         {t.totalPrice}
                                       </p>
                                       <p className="text-sm font-bold text-primary-dark">
-                                        €{Number(shipment.total_price).toFixed(2)}
+                                        €
+                                        {Number(shipment.total_price).toFixed(
+                                          2
+                                        )}
                                       </p>
                                     </div>
                                     {shipment.payment_method && (
                                       <div>
                                         <p className="text-xs text-gray-500 mb-1">
-                                          {language === "ar" ? "طريقة الدفع" : "Payment Method"}
+                                          {language === "ar"
+                                            ? "طريقة الدفع"
+                                            : "Payment Method"}
                                         </p>
                                         <p className="text-sm font-semibold text-gray-900 capitalize">
                                           {shipment.payment_method}
@@ -4352,8 +4690,8 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         )}
-    </div>
-  );
+                      </div>
+                    );
                   })}
                 </div>
               )}
@@ -4364,7 +4702,9 @@ export default function DashboardPage() {
               <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
                 <h2 className="text-2xl font-bold text-primary-dark mb-6 flex items-center gap-3">
                   <div className="w-1 h-8 bg-primary-yellow rounded-full"></div>
-                  {user?.is_superuser ? t.allProductRequests : t.myProductRequests}
+                  {user?.is_superuser
+                    ? t.allProductRequests
+                    : t.myProductRequests}
                 </h2>
 
                 <div className="overflow-x-auto">
@@ -4413,10 +4753,13 @@ export default function DashboardPage() {
                             <td className="py-4 px-4">
                               <div className="text-sm">
                                 <div className="font-medium text-gray-900">
-                                  {request.user_username || (language === "ar" ? "مجهول" : "Anonymous")}
+                                  {request.user_username ||
+                                    (language === "ar" ? "مجهول" : "Anonymous")}
                                 </div>
                                 {request.user_email && (
-                                  <div className="text-gray-500 text-xs">{request.user_email}</div>
+                                  <div className="text-gray-500 text-xs">
+                                    {request.user_email}
+                                  </div>
                                 )}
                               </div>
                             </td>
@@ -4451,18 +4794,32 @@ export default function DashboardPage() {
                               </span>
                             ) : (
                               <span className="text-gray-400 italic text-sm">
-                                {language === "ar" ? "لا توجد ملاحظات" : "No notes"}
+                                {language === "ar"
+                                  ? "لا توجد ملاحظات"
+                                  : "No notes"}
                               </span>
                             )}
                           </td>
                           {user?.is_superuser && (
                             <td className="py-4 px-4">
                               <button
-                                onClick={() => handleEditProductRequest(request)}
+                                onClick={() =>
+                                  handleEditProductRequest(request)
+                                }
                                 className="text-primary-yellow hover:text-primary-yellow/80 font-medium text-sm flex items-center gap-1"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
                                 </svg>
                                 {t.edit}
                               </button>
@@ -4487,7 +4844,7 @@ export default function DashboardPage() {
                       <h3 className="text-lg font-bold text-primary-dark mb-4">
                         {t.updateStatus}
                       </h3>
-                      
+
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -4495,7 +4852,9 @@ export default function DashboardPage() {
                           </label>
                           <select
                             value={productRequestStatus}
-                            onChange={(e) => setProductRequestStatus(e.target.value)}
+                            onChange={(e) =>
+                              setProductRequestStatus(e.target.value)
+                            }
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
                           >
                             <option value="PENDING">{t.PENDING}</option>
@@ -4510,10 +4869,16 @@ export default function DashboardPage() {
                           </label>
                           <textarea
                             value={productRequestNotes}
-                            onChange={(e) => setProductRequestNotes(e.target.value)}
+                            onChange={(e) =>
+                              setProductRequestNotes(e.target.value)
+                            }
                             rows={4}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-transparent"
-                            placeholder={language === "ar" ? "أضف ملاحظات..." : "Add notes..."}
+                            placeholder={
+                              language === "ar"
+                                ? "أضف ملاحظات..."
+                                : "Add notes..."
+                            }
                           />
                         </div>
                       </div>

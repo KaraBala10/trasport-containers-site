@@ -2884,6 +2884,127 @@ class LCLShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         return context
 
 
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def update_lcl_shipment_status_view(request, pk):
+    """API endpoint for admin to update LCL shipment status and amount_paid"""
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only superusers can update shipment status."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        shipment = LCLShipment.objects.get(pk=pk)
+        new_status = request.data.get("status")
+        amount_paid = request.data.get("amount_paid")
+        tracking_number = request.data.get("tracking_number")
+
+        # Update status if provided
+        if new_status:
+            # Validate status
+            valid_statuses = [choice[0] for choice in LCLShipment.STATUS_CHOICES]
+            if new_status not in valid_statuses:
+                return Response(
+                    {
+                        "success": False,
+                        "error": f"Invalid status. Valid statuses are: {', '.join(valid_statuses)}",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Check if payment is 100% before allowing status updates to certain statuses
+            restricted_statuses = [
+                "IN_TRANSIT_TO_DESTINATION",
+                "ARRIVED_DESTINATION",
+                "DESTINATION_SORTING",
+                "READY_FOR_DELIVERY",
+                "OUT_FOR_DELIVERY",
+                "DELIVERED",
+            ]
+            if new_status in restricted_statuses:
+                if shipment.total_price and shipment.total_price > 0:
+                    payment_percentage = (
+                        (shipment.amount_paid or 0) / shipment.total_price * 100
+                        if shipment.amount_paid
+                        else 0
+                    )
+                    if payment_percentage < 100:
+                        return Response(
+                            {
+                                "success": False,
+                                "error": f"Cannot update status to {new_status}. Payment must be 100% complete. Current payment: {payment_percentage:.1f}%",
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+            shipment.status = new_status
+
+        # Update amount_paid if provided
+        if amount_paid is not None:
+            try:
+                amount_paid_decimal = float(amount_paid)
+                if amount_paid_decimal < 0:
+                    return Response(
+                        {
+                            "success": False,
+                            "error": "Amount paid cannot be negative.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if shipment.total_price and amount_paid_decimal > shipment.total_price:
+                    return Response(
+                        {
+                            "success": False,
+                            "error": "Amount paid cannot be greater than total price.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                shipment.amount_paid = amount_paid_decimal
+            except (ValueError, TypeError):
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Invalid amount_paid value.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Update tracking_number if provided
+        if tracking_number is not None:
+            shipment.tracking_number = tracking_number
+
+        shipment.save()
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"Admin {request.user.id} updated LCL shipment {shipment.id} - Status: {new_status or shipment.status}, Amount Paid: {amount_paid or shipment.amount_paid}"
+        )
+
+        serializer = LCLShipmentSerializer(shipment)
+        return Response(
+            {
+                "success": True,
+                "message": "Shipment updated successfully",
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except LCLShipment.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Shipment not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error updating LCL shipment status: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": f"An error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_shipment_checkout_session(request):
