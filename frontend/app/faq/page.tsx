@@ -222,7 +222,7 @@ export default function FAQPage() {
       ],
       lcl: [
         {
-          question: "What is LCL Shipping to Syria?",
+          question: "What is LCL Partial Shipping?",
           answer:
             "LCL shipping means consolidating several parcels or small shipments from multiple customers into one container headed to Syria. You don't book a full container, you only pay for your shipment's weight or volume.",
         },

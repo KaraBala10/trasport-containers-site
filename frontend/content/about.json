@@ -153,7 +153,7 @@
     "pageTitle": "About Us",
     "pageDescription": "Learn about MEDO-FREIGHT and our offices in Europe and Syria",
     "mainTitle": "About Us",
-    "intro": "We are a European shipping company based in the Netherlands, specialized in consolidating and shipping LCL parcels to Syria from all European countries, in addition to FCL sea freight services to the Middle East and worldwide. We provide integrated logistics services with full focus on accuracy, security, and punctuality.",
+    "intro": "We are a European shipping company based in the Netherlands, specialized in consolidating and shipping LCL partial parcels from all European countries, in addition to FCL sea freight services to the Middle East and worldwide. We provide integrated logistics services with full focus on accuracy, security, and punctuality.",
     "description": "We fully understand the challenges of shipping to Syria: restrictions, inspections, different systems, and supply delays. That's why we built an integrated shipping system with a clear and simple process, starting from receiving the parcel in Europe... and ending with its arrival to the customer's hand inside Syria with complete transparency.",
     "vision": {
       "title": "Our Vision",
@@ -167,7 +167,7 @@
       "title": "What We Offer?",
       "items": [
         {
-          "title": "LCL Shipping to Syria",
+          "title": "LCL Partial Shipping",
           "description": "Consolidating parcels from all over Europe inside our center in the Netherlands, then shipping them in our own container to Syria. Perfect service for individuals, companies, and small orders.",
           "icon": "📦"
         },
