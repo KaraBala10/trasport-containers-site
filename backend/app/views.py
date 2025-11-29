@@ -1855,6 +1855,102 @@ def stripe_webhook_view(request):
                                 f"status: {old_status} -> {shipment.status}"
                             )
 
+                            # ✅ Create Sendcloud parcel if payment is paid and Sendcloud is configured
+                            if payment_status == "paid" and not shipment.sendcloud_id:
+                                try:
+                                    from .sendcloud_service import (
+                                        SendcloudAPIError,
+                                        SendcloudValidationError,
+                                        create_parcel,
+                                    )
+
+                                    # Check if Sendcloud is needed (EU pickup with shipping method selected)
+                                    if (
+                                        shipment.selected_eu_shipping_method
+                                        and shipment.eu_pickup_country
+                                        and shipment.eu_pickup_address
+                                        and shipment.eu_pickup_weight
+                                        and shipment.eu_pickup_weight > 0
+                                    ):
+                                        logger.info(
+                                            f"🚀 Attempting to create Sendcloud parcel for shipment {shipment.id}"
+                                        )
+
+                                        # Prepare shipment data for Sendcloud
+                                        shipment_data = {
+                                            "receiver_name": shipment.receiver_name,
+                                            "receiver_address": shipment.eu_pickup_address,
+                                            "receiver_city": shipment.eu_pickup_city,
+                                            "receiver_postal_code": shipment.eu_pickup_postal_code,
+                                            "receiver_country": shipment.eu_pickup_country,
+                                            "weight": float(shipment.eu_pickup_weight),
+                                        }
+
+                                        # Add optional fields if available
+                                        if shipment.receiver_email:
+                                            shipment_data["receiver_email"] = shipment.receiver_email
+                                        if shipment.receiver_phone:
+                                            shipment_data["receiver_phone"] = shipment.receiver_phone
+                                        if shipment.shipment_number:
+                                            shipment_data["order_number"] = shipment.shipment_number
+
+                                        # Create parcel in Sendcloud
+                                        sendcloud_result = create_parcel(
+                                            shipment_data=shipment_data,
+                                            selected_shipping_method=shipment.selected_eu_shipping_method,
+                                        )
+
+                                        # Update shipment with Sendcloud data
+                                        shipment.sendcloud_id = sendcloud_result.get("sendcloud_id")
+                                        shipment.tracking_number = sendcloud_result.get(
+                                            "tracking_number", ""
+                                        )
+                                        shipment.sendcloud_label_url = sendcloud_result.get(
+                                            "label_url"
+                                        )
+
+                                        # Update status to PENDING_PICKUP if parcel was created
+                                        if shipment.sendcloud_id:
+                                            shipment.status = "PENDING_PICKUP"
+                                            shipment.save()
+
+                                            logger.info(
+                                                f"✅ Successfully created Sendcloud parcel for shipment {shipment.id}: "
+                                                f"sendcloud_id={shipment.sendcloud_id}, "
+                                                f"tracking_number={shipment.tracking_number}"
+                                            )
+
+                                            # TODO: Send email to user with tracking number and label URL
+                                        else:
+                                            logger.warning(
+                                                f"⚠️ Sendcloud parcel creation returned no sendcloud_id for shipment {shipment.id}"
+                                            )
+
+                                    else:
+                                        logger.info(
+                                            f"ℹ️ Skipping Sendcloud parcel creation for shipment {shipment.id}: "
+                                            f"missing required fields (shipping_method={shipment.selected_eu_shipping_method}, "
+                                            f"eu_pickup_country={shipment.eu_pickup_country}, "
+                                            f"eu_pickup_weight={shipment.eu_pickup_weight})"
+                                        )
+
+                                except SendcloudValidationError as e:
+                                    logger.warning(
+                                        f"⚠️ Sendcloud validation error for shipment {shipment.id}: {str(e)}"
+                                    )
+                                    # Don't fail webhook - payment is still processed
+                                except SendcloudAPIError as e:
+                                    logger.error(
+                                        f"❌ Sendcloud API error for shipment {shipment.id}: {str(e)}"
+                                    )
+                                    # Don't fail webhook - payment is still processed
+                                except Exception as e:
+                                    logger.error(
+                                        f"❌ Unexpected error creating Sendcloud parcel for shipment {shipment.id}: {str(e)}",
+                                        exc_info=True,
+                                    )
+                                    # Don't fail webhook - payment is still processed
+
                             # Return success response immediately for shipment payments
                             return Response(
                                 {

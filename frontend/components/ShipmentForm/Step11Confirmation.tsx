@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShippingDirection } from '@/types/shipment';
 import { PricingResult } from '@/types/pricing';
@@ -14,6 +14,11 @@ interface Step11ConfirmationProps {
   pricing: PricingResult | null;
   language: 'ar' | 'en';
   grandTotalWithTransport?: number;
+}
+
+interface ShipmentData {
+  sendcloud_label_url?: string;
+  tracking_number?: string;
 }
 
 export default function Step11Confirmation({
@@ -40,6 +45,9 @@ export default function Step11Confirmation({
       nextStepsDesc: 'سيتم التواصل معك قريباً لتأكيد تفاصيل الشحنة',
       backToHome: 'العودة إلى الصفحة الرئيسية',
       totalPrice: 'السعر الإجمالي',
+      downloadLabel: 'تحميل Label',
+      shippingLabel: 'Label الشحن',
+      labelAvailable: 'Label الشحن متاح للتحميل',
     },
     en: {
       title: 'Shipment Created Successfully',
@@ -56,6 +64,9 @@ export default function Step11Confirmation({
       nextStepsDesc: 'We will contact you soon to confirm shipment details',
       backToHome: 'Back to Home',
       totalPrice: 'Total Price',
+      downloadLabel: 'Download Label',
+      shippingLabel: 'Shipping Label',
+      labelAvailable: 'Shipping label is available for download',
     },
   };
 
@@ -63,6 +74,69 @@ export default function Step11Confirmation({
   const isEUtoSY = direction === 'eu-sy';
   const [downloadingPackingList, setDownloadingPackingList] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [shipmentData, setShipmentData] = useState<ShipmentData | null>(null);
+  const [loadingShipment, setLoadingShipment] = useState(false);
+
+  // Fetch shipment data to check for label
+  useEffect(() => {
+    const fetchShipmentData = async () => {
+      if (!shipmentId) return;
+      
+      try {
+        setLoadingShipment(true);
+        // Try to parse shipmentId as number
+        const id = parseInt(shipmentId);
+        if (isNaN(id)) {
+          console.error('Invalid shipment ID:', shipmentId);
+          return;
+        }
+        
+        const response = await apiService.getShipment(id);
+        if (response.data) {
+          setShipmentData({
+            sendcloud_label_url: response.data.sendcloud_label_url,
+            tracking_number: response.data.tracking_number,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching shipment data:', error);
+        // Don't show error to user, just silently fail
+      } finally {
+        setLoadingShipment(false);
+      }
+    };
+
+    fetchShipmentData();
+    
+    // Poll for label if not available yet (check every 3 seconds, max 10 times)
+    let pollCount = 0;
+    const maxPolls = 10;
+    const pollInterval = setInterval(async () => {
+      if (pollCount >= maxPolls || shipmentData?.sendcloud_label_url) {
+        clearInterval(pollInterval);
+        return;
+      }
+      
+      pollCount++;
+      try {
+        const id = parseInt(shipmentId);
+        if (isNaN(id)) return;
+        
+        const response = await apiService.getShipment(id);
+        if (response.data?.sendcloud_label_url) {
+          setShipmentData({
+            sendcloud_label_url: response.data.sendcloud_label_url,
+            tracking_number: response.data.tracking_number,
+          });
+          clearInterval(pollInterval);
+        }
+      } catch (error) {
+        // Silently fail
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [shipmentId]);
 
   const handleDownloadPackingList = async () => {
     try {
@@ -202,6 +276,51 @@ export default function Step11Confirmation({
       >
         <p className="text-sm text-blue-800">{t.emailSent}</p>
       </motion.div>
+
+      {/* Shipping Label (if available) */}
+      {shipmentData?.sendcloud_label_url && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.85 }}
+          className="bg-white rounded-2xl p-6 shadow-lg border-2 border-blue-200"
+        >
+          <h3 className="text-xl font-bold text-primary-dark mb-2">{t.shippingLabel}</h3>
+          <p className="text-sm text-gray-600 mb-4">{t.labelAvailable}</p>
+          {shipmentData.tracking_number && (
+            <p className="text-sm text-gray-700 mb-4">
+              <span className="font-semibold">
+                {language === 'ar' ? 'رقم التتبع:' : 'Tracking Number:'}
+              </span>{' '}
+              {shipmentData.tracking_number}
+            </p>
+          )}
+          <div className="flex justify-center">
+            <motion.a
+              href={shipmentData.sendcloud_label_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {t.downloadLabel}
+            </motion.a>
+          </div>
+        </motion.div>
+      )}
 
       {/* Documents (EU→SY only) */}
       {isEUtoSY && (

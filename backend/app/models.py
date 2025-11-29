@@ -814,6 +814,7 @@ class LCLShipment(models.Model):
     # Tracking
     tracking_number = models.CharField(max_length=255, blank=True, default="")
     sendcloud_id = models.IntegerField(null=True, blank=True)
+    sendcloud_label_url = models.URLField(max_length=500, blank=True, null=True, help_text="URL to download shipping label from Sendcloud")
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

@@ -136,8 +136,10 @@ interface LCLShipment {
   status: string;
   tracking_number?: string;
   sendcloud_id?: number;
+  sendcloud_label_url?: string;
   transfer_sender_name?: string;
   transfer_reference?: string;
+  transfer_slip?: string;
   created_at: string;
   updated_at: string;
   paid_at?: string;
@@ -5120,7 +5122,46 @@ export default function DashboardPage() {
                                             </p>
                                           </div>
                                         )}
+                                        {shipment.tracking_number && (
+                                          <div>
+                                            <p className="text-xs text-gray-500 mb-1">
+                                              {language === "ar"
+                                                ? "رقم التتبع"
+                                                : "Tracking Number"}
+                                            </p>
+                                            <p className="text-sm font-semibold text-gray-900 font-mono">
+                                              {shipment.tracking_number}
+                                            </p>
+                                          </div>
+                                        )}
                                       </div>
+                                      {shipment.sendcloud_label_url && (
+                                        <div className="mt-4 pt-4 border-t border-gray-200">
+                                          <a
+                                            href={shipment.sendcloud_label_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-colors shadow-sm hover:shadow-md"
+                                          >
+                                            <svg
+                                              className="w-5 h-5"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                              />
+                                            </svg>
+                                            {language === "ar"
+                                              ? "تحميل Label"
+                                              : "Download Label"}
+                                          </a>
+                                        </div>
+                                      )}
                                     </>
                                   ) : (
                                     <div className="flex items-center gap-2">
