@@ -488,10 +488,36 @@ export default function CreateShipmentPage() {
       }
     } catch (error: any) {
       console.error("Error creating Stripe checkout:", error);
+      console.error("Error response:", error.response?.data);
+      
+      // Extract error message from backend response
+      let errorMessage = "";
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        // Handle Django REST Framework validation errors
+        if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === "object") {
+          // Get first validation error
+          const firstError = Object.values(errorData)[0];
+          if (Array.isArray(firstError)) {
+            errorMessage = firstError[0];
+          } else if (typeof firstError === "string") {
+            errorMessage = firstError;
+          }
+        } else {
+          errorMessage = String(errorData);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       alert(
         language === "ar"
-          ? "حدث خطأ أثناء إنشاء جلسة الدفع. يرجى المحاولة مرة أخرى."
-          : "An error occurred while creating payment session. Please try again."
+          ? errorMessage || "حدث خطأ أثناء إنشاء جلسة الدفع. يرجى التحقق من البيانات والمحاولة مرة أخرى."
+          : errorMessage || "An error occurred while creating payment session. Please check your data and try again."
       );
       setIsProcessingPayment(false);
     }
@@ -1271,6 +1297,47 @@ export default function CreateShipmentPage() {
                       const senderCountry =
                         direction === "sy-eu" ? "Syria" : sender?.country || "";
 
+                      // Validate required fields before sending
+                      if (!sender?.fullName || !sender?.email || !sender?.phone || !sender?.city || !senderCountry) {
+                        alert(
+                          language === "ar"
+                            ? "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
+                            : "Please complete all required sender information (name, email, phone, city, country)"
+                        );
+                        setIsCreatingShipment(false);
+                        return;
+                      }
+
+                      if (!receiver?.fullName || !receiver?.email || !receiver?.phone || !receiver?.city || !receiverCountry) {
+                        alert(
+                          language === "ar"
+                            ? "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
+                            : "Please complete all required receiver information (name, email, phone, city, country)"
+                        );
+                        setIsCreatingShipment(false);
+                        return;
+                      }
+
+                      if (!sender?.street || !receiver?.street) {
+                        alert(
+                          language === "ar"
+                            ? "يرجى إدخال عنوان المرسل والمستقبل"
+                            : "Please enter sender and receiver addresses"
+                        );
+                        setIsCreatingShipment(false);
+                        return;
+                      }
+
+                      if (parcels.length === 0) {
+                        alert(
+                          language === "ar"
+                            ? "يرجى إضافة طرد واحد على الأقل"
+                            : "Please add at least one parcel"
+                        );
+                        setIsCreatingShipment(false);
+                        return;
+                      }
+
                       const shipmentData = {
                         direction: direction,
                         sender_name: sender?.fullName || "",
@@ -1330,12 +1397,36 @@ export default function CreateShipmentPage() {
                             : "Failed to create shipment. Please try again."
                         );
                       }
-                    } catch (error) {
+                    } catch (error: any) {
                       console.error("Error creating shipment:", error);
+                      console.error("Error response:", error.response?.data);
+                      
+                      // Extract error message from backend response
+                      let errorMessage = "";
+                      if (error.response?.data) {
+                        const errorData = error.response.data;
+                        // Handle Django REST Framework validation errors
+                        if (errorData.detail) {
+                          errorMessage = errorData.detail;
+                        } else if (typeof errorData === "object") {
+                          // Get first validation error
+                          const firstError = Object.values(errorData)[0];
+                          if (Array.isArray(firstError)) {
+                            errorMessage = firstError[0];
+                          } else if (typeof firstError === "string") {
+                            errorMessage = firstError;
+                          } else {
+                            errorMessage = JSON.stringify(errorData);
+                          }
+                        } else {
+                          errorMessage = String(errorData);
+                        }
+                      }
+                      
                       alert(
                         language === "ar"
-                          ? "حدث خطأ أثناء إنشاء الشحنة. يرجى المحاولة مرة أخرى."
-                          : "An error occurred while creating the shipment. Please try again."
+                          ? errorMessage || "حدث خطأ أثناء إنشاء الشحنة. يرجى التحقق من البيانات والمحاولة مرة أخرى."
+                          : errorMessage || "An error occurred while creating the shipment. Please check your data and try again."
                       );
                     } finally {
                       setIsCreatingShipment(false);

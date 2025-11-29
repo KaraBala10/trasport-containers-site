@@ -51,11 +51,11 @@ export default function ContractsPage() {
   const t = translations[language];
 
   const handleDownloadLCL = () => {
-    window.open("/documents/LCL Shipping Agreement - Medo-Freight EU.pdf", "_blank");
+    window.open(`/documents/${encodeURIComponent("LCL Shipping Agreement - Medo-Freight EU.pdf")}`, "_blank");
   };
 
   const handleDownloadFCL = () => {
-    window.open("/documents/FCL Shipping Agreement - Medo-Freight EU.pdf", "_blank");
+    window.open(`/documents/${encodeURIComponent("FCL Shipping Agreement - Medo-Freight EU.pdf")}`, "_blank");
   };
 
   return (
