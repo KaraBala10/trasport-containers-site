@@ -217,6 +217,7 @@ export const apiService = {
   },
 
   createShipmentCheckout: (data: {
+    shipment_id: number;
     amount: number;
     currency: string;
     metadata?: Record<string, string>;

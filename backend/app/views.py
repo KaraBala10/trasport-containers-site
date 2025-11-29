@@ -2905,9 +2905,16 @@ def create_shipment_checkout_session(request):
         )
 
     try:
+        shipment_id = request.data.get("shipment_id")
         amount = float(request.data.get("amount", 0))
         currency = request.data.get("currency", "eur")
         metadata = request.data.get("metadata", {})
+
+        if not shipment_id:
+            return Response(
+                {"success": False, "error": "Shipment ID is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if amount <= 0:
             return Response(
@@ -2935,8 +2942,10 @@ def create_shipment_checkout_session(request):
                 }
             ],
             mode="payment",
-            success_url=settings.STRIPE_REDIRECT_SUCCESS_URL + "&type=shipment",
-            cancel_url=settings.STRIPE_REDIRECT_CANCEL_URL + "&type=shipment",
+            success_url=settings.STRIPE_REDIRECT_SUCCESS_URL
+            + f"&type=shipment&shipment_id={shipment_id}",
+            cancel_url=settings.STRIPE_REDIRECT_CANCEL_URL
+            + f"&type=shipment&shipment_id={shipment_id}",
             metadata={
                 "user_id": str(request.user.id),
                 "amount": str(amount),
@@ -2947,6 +2956,20 @@ def create_shipment_checkout_session(request):
             expires_at=int(timezone.now().timestamp())
             + (24 * 60 * 60),  # Expire in 24 hours
         )
+
+        # Update the LCLShipment with the Stripe session ID
+        try:
+            lcl_shipment = LCLShipment.objects.get(pk=shipment_id)
+            lcl_shipment.stripe_session_id = checkout_session.id
+            lcl_shipment.payment_status = "pending"
+            lcl_shipment.save()
+            logger.info(
+                f"Updated LCLShipment {shipment_id} with Stripe session ID {checkout_session.id}"
+            )
+        except LCLShipment.DoesNotExist:
+            logger.warning(
+                f"LCLShipment with ID {shipment_id} not found for Stripe checkout session."
+            )
 
         logger.info(
             f"Created shipment checkout session {checkout_session.id} for user {request.user.id}, amount: €{amount}"

@@ -17,11 +17,7 @@ import Step11Confirmation from "@/components/ShipmentForm/Step11Confirmation";
 import ProgressBar from "@/components/ShipmentForm/ProgressBar";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import {
-  ShippingDirection,
-  Parcel,
-  PersonInfo,
-} from "@/types/shipment";
+import { ShippingDirection, Parcel, PersonInfo } from "@/types/shipment";
 import { PricingResult } from "@/types/pricing";
 import { apiService } from "@/lib/api";
 
@@ -109,9 +105,7 @@ export default function CreateShipmentPage() {
         );
 
         // Regular Parcels: all other parcels (non-electronics)
-        const regularParcels = parcels.filter(
-          (p) => !p.isElectronicsShipment
-        );
+        const regularParcels = parcels.filter((p) => !p.isElectronicsShipment);
 
         // Prepare parcels data for API
         // Include parcels with productCategory OR packagingType (to calculate packaging costs)
@@ -407,6 +401,12 @@ export default function CreateShipmentPage() {
     setIsProcessingPayment(true);
     try {
       // First, create the shipment
+      // Set country based on direction: eu-sy means receiver is in Syria, sy-eu means sender is in Syria
+      const receiverCountry =
+        direction === "eu-sy" ? "Syria" : receiver.country || "";
+      const senderCountry =
+        direction === "sy-eu" ? "Syria" : sender.country || "";
+
       const shipmentData = {
         direction: direction,
         sender_name: sender.fullName,
@@ -415,14 +415,14 @@ export default function CreateShipmentPage() {
         sender_address: `${sender.street} ${sender.streetNumber}`.trim(),
         sender_city: sender.city,
         sender_postal_code: sender.postalCode || "",
-        sender_country: sender.country,
+        sender_country: senderCountry,
         receiver_name: receiver.fullName,
         receiver_email: receiver.email,
         receiver_phone: receiver.phone,
         receiver_address: `${receiver.street} ${receiver.streetNumber}`.trim(),
         receiver_city: receiver.city,
         receiver_postal_code: receiver.postalCode || "",
-        receiver_country: receiver.country || "",
+        receiver_country: receiverCountry,
         parcels: parcels,
         eu_pickup_address: euPickupAddress,
         eu_pickup_weight: euPickupWeight,
@@ -446,6 +446,7 @@ export default function CreateShipmentPage() {
 
       // Then create checkout session with shipment ID in metadata
       const checkoutResponse = await apiService.createShipmentCheckout({
+        shipment_id: shipmentId,
         amount: grandTotalWithTransport,
         currency: "eur",
         metadata: {
@@ -454,21 +455,33 @@ export default function CreateShipmentPage() {
         },
       });
 
+      console.log("✅ Checkout response:", checkoutResponse.data);
+
       if (
         checkoutResponse.data?.success &&
         checkoutResponse.data?.checkout_url
       ) {
         // Update shipment with stripe_session_id
         if (checkoutResponse.data?.session_id) {
-          await apiService.updateShipment(shipmentId, {
-            stripe_session_id: checkoutResponse.data.session_id,
-            payment_status: "pending",
-          });
+          try {
+            await apiService.updateShipment(shipmentId, {
+              stripe_session_id: checkoutResponse.data.session_id,
+              payment_status: "pending",
+            });
+          } catch (updateError) {
+            console.error(
+              "⚠️ Failed to update shipment with session ID:",
+              updateError
+            );
+            // Continue anyway - the checkout session is created
+          }
         }
 
         // Redirect to Stripe checkout
+        console.log("🔗 Redirecting to:", checkoutResponse.data.checkout_url);
         window.location.href = checkoutResponse.data.checkout_url;
       } else {
+        console.error("❌ Checkout failed:", checkoutResponse.data);
         throw new Error(
           checkoutResponse.data?.error || "Failed to create checkout session"
         );
@@ -1250,26 +1263,36 @@ export default function CreateShipmentPage() {
                     setIsCreatingShipment(true);
                     try {
                       // Prepare shipment data for new API
+                      // Set country based on direction: eu-sy means receiver is in Syria, sy-eu means sender is in Syria
+                      const receiverCountry =
+                        direction === "eu-sy"
+                          ? "Syria"
+                          : receiver?.country || "";
+                      const senderCountry =
+                        direction === "sy-eu" ? "Syria" : sender?.country || "";
+
                       const shipmentData = {
                         direction: direction,
                         sender_name: sender?.fullName || "",
                         sender_email: sender?.email || "",
                         sender_phone: sender?.phone || "",
-                        sender_address: sender?.street && sender?.streetNumber 
-                          ? `${sender.street} ${sender.streetNumber}`.trim()
-                          : sender?.street || "",
+                        sender_address:
+                          sender?.street && sender?.streetNumber
+                            ? `${sender.street} ${sender.streetNumber}`.trim()
+                            : sender?.street || "",
                         sender_city: sender?.city || "",
                         sender_postal_code: sender?.postalCode || "",
-                        sender_country: sender?.country || "",
+                        sender_country: senderCountry,
                         receiver_name: receiver?.fullName || "",
                         receiver_email: receiver?.email || "",
                         receiver_phone: receiver?.phone || "",
-                        receiver_address: receiver?.street && receiver?.streetNumber
-                          ? `${receiver.street} ${receiver.streetNumber}`.trim()
-                          : receiver?.street || "",
+                        receiver_address:
+                          receiver?.street && receiver?.streetNumber
+                            ? `${receiver.street} ${receiver.streetNumber}`.trim()
+                            : receiver?.street || "",
                         receiver_city: receiver?.city || "",
                         receiver_postal_code: receiver?.postalCode || "",
-                        receiver_country: receiver?.country || "",
+                        receiver_country: receiverCountry,
                         parcels: parcels,
                         eu_pickup_address: euPickupAddress,
                         eu_pickup_weight: euPickupWeight,

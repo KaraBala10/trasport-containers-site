@@ -1795,7 +1795,7 @@ export default function DashboardPage() {
 
                   {/* Track Shipment */}
                 <Link
-                    href="/tracking"
+                  href="/tracking"
                     className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border-t-4 border-primary-dark transform hover:-translate-y-2"
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -4120,14 +4120,14 @@ export default function DashboardPage() {
                   </svg>
                   <p className="text-gray-600 text-lg">{t.noShipments}</p>
                   {!user?.is_superuser && (
-                    <Link
+                <Link
                       href="/create-shipment"
                       className="mt-4 inline-block px-6 py-3 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-all"
-                    >
+                >
                       {t.createLCLShipment}
-                    </Link>
+                </Link>
                   )}
-                </div>
+              </div>
               ) : (
                 <div className="space-y-4">
                   {lclShipments.map((shipment) => {
@@ -4148,7 +4148,7 @@ export default function DashboardPage() {
                                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     {t.shipmentNumber}
                                   </p>
-                                </div>
+            </div>
                                 <p
                                   className="font-bold text-primary-dark text-base sm:text-lg font-mono whitespace-nowrap overflow-hidden text-ellipsis"
                                   title={shipment.shipment_number}
@@ -4163,9 +4163,9 @@ export default function DashboardPage() {
                                     <p className="text-sm font-semibold text-gray-800 mt-0.5">
                                       {shipment.user.username}
                                     </p>
-                                  </div>
+          </div>
                                 )}
-                              </div>
+        </div>
 
                               {/* Direction */}
                               <div className="space-y-1">
@@ -4175,7 +4175,7 @@ export default function DashboardPage() {
                                 <p className="text-sm font-semibold text-gray-900">
                                   {shipment.direction === "eu-sy" ? t.euToSy : t.syToEu}
                                 </p>
-                              </div>
+      </div>
 
                               {/* Status */}
                               <div className="space-y-2">
@@ -4352,8 +4352,8 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         )}
-                      </div>
-                    );
+    </div>
+  );
                   })}
                 </div>
               )}

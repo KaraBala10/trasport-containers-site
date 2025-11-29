@@ -2,7 +2,19 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import ContactMessage, EditRequestMessage, FCLQuote, PackagingPrice, Price, Country, City, Port, ProductRequest, SyrianProvincePrice, LCLShipment
+from .models import (
+    City,
+    ContactMessage,
+    Country,
+    EditRequestMessage,
+    FCLQuote,
+    LCLShipment,
+    PackagingPrice,
+    Port,
+    Price,
+    ProductRequest,
+    SyrianProvincePrice,
+)
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -395,7 +407,14 @@ class CitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = City
-        fields = ("id", "name_en", "name_ar", "country", "country_name_en", "country_name_ar")
+        fields = (
+            "id",
+            "name_en",
+            "name_ar",
+            "country",
+            "country_name_en",
+            "country_name_ar",
+        )
 
 
 class PortSerializer(serializers.ModelSerializer):
@@ -404,14 +423,23 @@ class PortSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Port
-        fields = ("id", "name_en", "name_ar", "code", "country", "country_name_en", "country_name_ar")
+        fields = (
+            "id",
+            "name_en",
+            "name_ar",
+            "code",
+            "country",
+            "country_name_en",
+            "country_name_ar",
+        )
 
 
 class ProductRequestSerializer(serializers.ModelSerializer):
     """Serializer for Product Request"""
+
     user_username = serializers.CharField(source="user.username", read_only=True)
     user_email = serializers.CharField(source="user.email", read_only=True)
-    
+
     class Meta:
         model = ProductRequest
         fields = (
@@ -426,12 +454,19 @@ class ProductRequestSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "user", "user_username", "user_email", "created_at", "updated_at")
+        read_only_fields = (
+            "id",
+            "user",
+            "user_username",
+            "user_email",
+            "created_at",
+            "updated_at",
+        )
 
 
 class SyrianProvincePriceSerializer(serializers.ModelSerializer):
     """Serializer for Syrian Province Pricing"""
-    
+
     class Meta:
         model = SyrianProvincePrice
         fields = (
@@ -447,15 +482,17 @@ class SyrianProvincePriceSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = ("id", "created_at", "updated_at")
-    
+
     def validate_min_price(self, value):
         """Validate minimum price is non-negative"""
         if value < 0:
             raise serializers.ValidationError("Minimum price cannot be negative")
         if value > 1000:
-            raise serializers.ValidationError("Minimum price seems too high (max 1000€)")
+            raise serializers.ValidationError(
+                "Minimum price seems too high (max 1000€)"
+            )
         return value
-    
+
     def validate_rate_per_kg(self, value):
         """Validate rate per kg is non-negative"""
         if value < 0:
@@ -463,19 +500,19 @@ class SyrianProvincePriceSerializer(serializers.ModelSerializer):
         if value > 10:
             raise serializers.ValidationError("Rate per kg seems too high (max 10€)")
         return value
-    
+
     def validate_province_code(self, value):
         """Validate and normalize province code"""
         if not value or not value.strip():
             raise serializers.ValidationError("Province code is required")
         return value.strip().upper()
-    
+
     def validate_province_name_ar(self, value):
         """Validate Arabic province name"""
         if not value or not value.strip():
             raise serializers.ValidationError("Arabic province name is required")
         return value.strip()
-    
+
     def validate_province_name_en(self, value):
         """Validate English province name"""
         if not value or not value.strip():
@@ -485,9 +522,10 @@ class SyrianProvincePriceSerializer(serializers.ModelSerializer):
 
 class LCLShipmentSerializer(serializers.ModelSerializer):
     """Serializer for LCL Shipments"""
+
     user_username = serializers.CharField(source="user.username", read_only=True)
     user_email = serializers.EmailField(source="user.email", read_only=True)
-    
+
     class Meta:
         model = LCLShipment
         fields = (
