@@ -13,32 +13,45 @@ interface Step3SenderReceiverProps {
   language: 'ar' | 'en';
 }
 
-// European countries
+// European countries - Complete list
 const europeanCountries = [
-  { code: 'NL', name: 'Netherlands', nameAr: 'هولندا' },
-  { code: 'BE', name: 'Belgium', nameAr: 'بلجيكا' },
-  { code: 'DE', name: 'Germany', nameAr: 'ألمانيا' },
-  { code: 'FR', name: 'France', nameAr: 'فرنسا' },
-  { code: 'ES', name: 'Spain', nameAr: 'إسبانيا' },
-  { code: 'IT', name: 'Italy', nameAr: 'إيطاليا' },
   { code: 'AT', name: 'Austria', nameAr: 'النمسا' },
-  { code: 'CH', name: 'Switzerland', nameAr: 'سويسرا' },
-  { code: 'UK', name: 'United Kingdom', nameAr: 'المملكة المتحدة' },
-  { code: 'SE', name: 'Sweden', nameAr: 'السويد' },
-  { code: 'NO', name: 'Norway', nameAr: 'النرويج' },
-  { code: 'DK', name: 'Denmark', nameAr: 'الدنمارك' },
-  { code: 'FI', name: 'Finland', nameAr: 'فنلندا' },
-  { code: 'PL', name: 'Poland', nameAr: 'بولندا' },
+  { code: 'BE', name: 'Belgium', nameAr: 'بلجيكا' },
+  { code: 'BG', name: 'Bulgaria', nameAr: 'بلغاريا' },
+  { code: 'HR', name: 'Croatia', nameAr: 'كرواتيا' },
+  { code: 'CY', name: 'Cyprus', nameAr: 'قبرص' },
   { code: 'CZ', name: 'Czech Republic', nameAr: 'جمهورية التشيك' },
-  { code: 'PT', name: 'Portugal', nameAr: 'البرتغال' },
+  { code: 'DK', name: 'Denmark', nameAr: 'الدنمارك' },
+  { code: 'EE', name: 'Estonia', nameAr: 'إستونيا' },
+  { code: 'FI', name: 'Finland', nameAr: 'فنلندا' },
+  { code: 'FR', name: 'France', nameAr: 'فرنسا' },
+  { code: 'DE', name: 'Germany', nameAr: 'ألمانيا' },
   { code: 'GR', name: 'Greece', nameAr: 'اليونان' },
+  { code: 'HU', name: 'Hungary', nameAr: 'هنغاريا' },
   { code: 'IE', name: 'Ireland', nameAr: 'أيرلندا' },
+  { code: 'IT', name: 'Italy', nameAr: 'إيطاليا' },
+  { code: 'LV', name: 'Latvia', nameAr: 'لاتفيا' },
+  { code: 'LT', name: 'Lithuania', nameAr: 'ليتوانيا' },
+  { code: 'LU', name: 'Luxembourg', nameAr: 'لوكسمبورغ' },
+  { code: 'MT', name: 'Malta', nameAr: 'مالطا' },
+  { code: 'NL', name: 'Netherlands', nameAr: 'هولندا' },
+  { code: 'NO', name: 'Norway', nameAr: 'النرويج' },
+  { code: 'PL', name: 'Poland', nameAr: 'بولندا' },
+  { code: 'PT', name: 'Portugal', nameAr: 'البرتغال' },
+  { code: 'RO', name: 'Romania', nameAr: 'رومانيا' },
+  { code: 'SK', name: 'Slovakia', nameAr: 'سلوفاكيا' },
+  { code: 'SI', name: 'Slovenia', nameAr: 'سلوفينيا' },
+  { code: 'ES', name: 'Spain', nameAr: 'إسبانيا' },
+  { code: 'SE', name: 'Sweden', nameAr: 'السويد' },
+  { code: 'CH', name: 'Switzerland', nameAr: 'سويسرا' },
+  { code: 'GB', name: 'United Kingdom', nameAr: 'المملكة المتحدة' },
 ];
 
-// Syrian provinces
+// Syrian provinces - Complete list (all 14 governorates)
 const syrianProvinces = [
   { code: 'ALEPPO', name: 'Aleppo', nameAr: 'حلب' },
   { code: 'DAMASCUS', name: 'Damascus', nameAr: 'دمشق' },
+  { code: 'RIF_DIMASHQ', name: 'Rif Dimashq', nameAr: 'ريف دمشق' },
   { code: 'LATAKIA', name: 'Latakia', nameAr: 'اللاذقية' },
   { code: 'TARTOUS', name: 'Tartous', nameAr: 'طرطوس' },
   { code: 'HOMS', name: 'Homs', nameAr: 'حمص' },

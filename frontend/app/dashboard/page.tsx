@@ -792,6 +792,17 @@ export default function DashboardPage() {
     return statusesBeforePayment.includes(status);
   };
 
+  // Check if shipment can be edited/deleted (same logic as quotes)
+  const canEditOrDeleteShipment = (status: string): boolean => {
+    // Admins can always edit/delete
+    if (user?.is_superuser) {
+      return true;
+    }
+    // Regular users can only edit/delete shipments with these statuses
+    const statusesBeforePayment = ["CREATED", "OFFER_SENT"];
+    return statusesBeforePayment.includes(status);
+  };
+
   // Handle delete
   const handleDelete = async (quoteId: number) => {
     try {
@@ -1098,6 +1109,7 @@ export default function DashboardPage() {
       setLclShipments((prevShipments) =>
         prevShipments.filter((s) => s.id !== shipmentId)
       );
+      setDeleteConfirm(null);
       alert(
         language === "ar"
           ? "تم حذف الشحنة بنجاح"
@@ -1106,6 +1118,7 @@ export default function DashboardPage() {
     } catch (error: any) {
       console.error("Error deleting shipment:", error);
       alert(t.error + ": " + (error.response?.data?.error || error.message));
+      setDeleteConfirm(null);
     }
   };
 
@@ -4399,7 +4412,15 @@ export default function DashboardPage() {
                         {language === "ar" ? "إلغاء" : "Cancel"}
                       </button>
                       <button
-                        onClick={() => handleDelete(deleteConfirm)}
+                        onClick={() => {
+                          // Check if it's a quote or shipment
+                          const isQuote = fclQuotes.some(q => q.id === deleteConfirm);
+                          if (isQuote) {
+                            handleDelete(deleteConfirm);
+                          } else {
+                            handleDeleteShipment(deleteConfirm);
+                          }
+                        }}
                         className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
                       >
                         {t.delete}
@@ -4753,10 +4774,23 @@ export default function DashboardPage() {
                                   </select>
                                   {/* Admin: Delete button */}
                                   <button
-                                    onClick={() =>
-                                      handleDeleteShipment(shipment.id)
-                                    }
-                                    className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                    onClick={() => {
+                                      if (!canEditOrDeleteShipment(shipment.status)) {
+                                        alert(
+                                          language === "ar"
+                                            ? "لا يمكن حذف الشحنة بعد بدء عملية الدفع"
+                                            : "Cannot delete shipment after payment process has started"
+                                        );
+                                        return;
+                                      }
+                                      setDeleteConfirm(shipment.id);
+                                    }}
+                                    disabled={!canEditOrDeleteShipment(shipment.status)}
+                                    className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                                      canEditOrDeleteShipment(shipment.status)
+                                        ? "text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 cursor-pointer"
+                                        : "text-gray-400 bg-gray-200 cursor-not-allowed opacity-60"
+                                    }`}
                                   >
                                     {t.delete}
                                   </button>
@@ -4765,10 +4799,23 @@ export default function DashboardPage() {
                                 <>
                                   {/* Regular user: Delete */}
                                   <button
-                                    onClick={() =>
-                                      handleDeleteShipment(shipment.id)
-                                    }
-                                    className="px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 border text-red-700 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                    onClick={() => {
+                                      if (!canEditOrDeleteShipment(shipment.status)) {
+                                        alert(
+                                          language === "ar"
+                                            ? "لا يمكن حذف الشحنة بعد بدء عملية الدفع"
+                                            : "Cannot delete shipment after payment process has started"
+                                        );
+                                        return;
+                                      }
+                                      setDeleteConfirm(shipment.id);
+                                    }}
+                                    disabled={!canEditOrDeleteShipment(shipment.status)}
+                                    className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 border ${
+                                      canEditOrDeleteShipment(shipment.status)
+                                        ? "text-red-700 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 cursor-pointer"
+                                        : "text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed opacity-60"
+                                    }`}
                                   >
                                     {t.delete}
                                   </button>

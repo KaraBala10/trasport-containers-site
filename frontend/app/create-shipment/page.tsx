@@ -1512,6 +1512,7 @@ export default function CreateShipmentPage() {
                 direction={direction}
                 pricing={pricing}
                 language={language}
+                grandTotalWithTransport={grandTotalWithTransport}
               />
             </motion.div>
           )}

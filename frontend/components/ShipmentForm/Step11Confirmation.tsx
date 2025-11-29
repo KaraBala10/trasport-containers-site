@@ -12,6 +12,7 @@ interface Step11ConfirmationProps {
   direction: ShippingDirection;
   pricing: PricingResult | null;
   language: 'ar' | 'en';
+  grandTotalWithTransport?: number;
 }
 
 export default function Step11Confirmation({
@@ -19,6 +20,7 @@ export default function Step11Confirmation({
   direction,
   pricing,
   language,
+  grandTotalWithTransport,
 }: Step11ConfirmationProps) {
   const translations = {
     ar: {
@@ -175,7 +177,7 @@ export default function Step11Confirmation({
       </motion.div>
 
       {/* Total Price */}
-      {pricing && (
+      {(pricing || grandTotalWithTransport) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -183,7 +185,9 @@ export default function Step11Confirmation({
           className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
         >
           <p className="text-sm font-semibold text-gray-700 mb-2">{t.totalPrice}</p>
-          <p className="text-3xl font-bold text-primary-dark">{pricing.grandTotal.toFixed(2)} €</p>
+          <p className="text-3xl font-bold text-primary-dark">
+            {(grandTotalWithTransport || pricing?.grandTotal || 0).toFixed(2)} €
+          </p>
         </motion.div>
       )}
 

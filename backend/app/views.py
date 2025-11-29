@@ -3078,6 +3078,42 @@ class LCLShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         return Response(serializer.data)
 
+    def destroy(self, request, *args, **kwargs):
+        """Delete LCL shipment"""
+        instance = self.get_object()
+
+        # Check if user is not admin and shipment status is PENDING_PAYMENT or later
+        if not request.user.is_superuser:
+            locked_statuses = [
+                "PENDING_PAYMENT",
+                "PENDING_PICKUP",
+                "IN_TRANSIT_TO_WATTWEG_5",
+                "ARRIVED_WATTWEG_5",
+                "SORTING_WATTWEG_5",
+                "READY_FOR_EXPORT",
+                "IN_TRANSIT_TO_DESTINATION",
+                "ARRIVED_DESTINATION",
+                "DESTINATION_SORTING",
+                "READY_FOR_DELIVERY",
+                "OUT_FOR_DELIVERY",
+                "DELIVERED",
+                "CANCELLED",
+            ]
+            if instance.status in locked_statuses:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Cannot delete shipment after payment process has started. Only admins can delete shipments in this status.",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        self.perform_destroy(instance)
+        return Response(
+            {"success": True, "message": "LCL shipment deleted successfully."},
+            status=status.HTTP_200_OK,
+        )
+
 
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
