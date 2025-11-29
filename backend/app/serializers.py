@@ -526,6 +526,22 @@ class LCLShipmentSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source="user.username", read_only=True)
     user_email = serializers.EmailField(source="user.email", read_only=True)
 
+    def to_representation(self, instance):
+        """Convert DecimalField to float for JSON serialization"""
+        representation = super().to_representation(instance)
+        # Convert DecimalField to float for amount_paid and total_price
+        if (
+            "amount_paid" in representation
+            and representation["amount_paid"] is not None
+        ):
+            representation["amount_paid"] = float(representation["amount_paid"])
+        if (
+            "total_price" in representation
+            and representation["total_price"] is not None
+        ):
+            representation["total_price"] = float(representation["total_price"])
+        return representation
+
     class Meta:
         model = LCLShipment
         fields = (
@@ -584,3 +600,26 @@ class LCLShipmentSerializer(serializers.ModelSerializer):
             "updated_at",
             "paid_at",
         )
+        # Allow updating payment_status and stripe_session_id (for Stripe integration)
+        # Make all fields optional for partial updates
+        extra_kwargs = {
+            "payment_status": {"required": False},
+            "stripe_session_id": {"required": False, "allow_blank": True},
+            "sender_country": {"required": False},
+            "receiver_country": {"required": False},
+            "direction": {"required": False},
+            "sender_name": {"required": False},
+            "sender_email": {"required": False},
+            "sender_phone": {"required": False},
+            "sender_address": {"required": False},
+            "sender_city": {"required": False},
+            "receiver_name": {"required": False},
+            "receiver_email": {"required": False},
+            "receiver_phone": {"required": False},
+            "receiver_address": {"required": False},
+            "receiver_city": {"required": False},
+            "parcels": {"required": False},
+            "total_price": {"required": False},
+            "amount_paid": {"required": False},
+            "status": {"required": False},
+        }

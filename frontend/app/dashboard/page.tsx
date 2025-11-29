@@ -474,24 +474,123 @@ export default function DashboardPage() {
       const type = params.get("type");
 
       if (paymentStatus === "success" && type === "shipment") {
+        const shipmentId = params.get("shipment_id");
+
         // Refresh shipments to get updated payment status
-        const fetchShipments = async () => {
+        const fetchShipments = async (retryCount = 0) => {
           try {
+            // Wait a bit for webhook to process (first retry after 2 seconds, then 5 seconds, then 10 seconds)
+            if (retryCount > 0) {
+              const delay =
+                retryCount === 1 ? 2000 : retryCount === 2 ? 5000 : 10000;
+              console.log(
+                `⏳ Waiting ${delay}ms before retry ${retryCount + 1}...`
+              );
+              await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+
             const response = await apiService.getShipments();
             const shipments = response.data?.results || response.data || [];
-            setLclShipments(Array.isArray(shipments) ? shipments : []);
+            // Ensure amount_paid and total_price are numbers
+            const processedShipments = Array.isArray(shipments)
+              ? shipments.map((shipment: LCLShipment) => ({
+                  ...shipment,
+                  amount_paid: Number(shipment.amount_paid || 0),
+                  total_price: Number(shipment.total_price || 0),
+                }))
+              : [];
+            setLclShipments(processedShipments);
 
-            // Show success message
-            alert(
-              language === "ar"
-                ? "تم الدفع بنجاح! سيتم تحديث حالة الشحنة قريباً."
-                : "Payment successful! Shipment status will be updated shortly."
-            );
+            // If we have shipment_id, check if payment was updated
+            if (shipmentId) {
+              const updatedShipment = shipments.find(
+                (s: LCLShipment) => s.id === parseInt(shipmentId)
+              );
 
-            // Clean URL
-            window.history.replaceState({}, "", "/dashboard");
+              if (updatedShipment) {
+                const amountPaid = Number(updatedShipment.amount_paid || 0);
+                const totalPrice = Number(updatedShipment.total_price || 0);
+
+                console.log(
+                  `🔍 Checking payment - shipment_id: ${shipmentId}, amount_paid: ${amountPaid}, total_price: ${totalPrice}`
+                );
+
+                // If payment was updated (amount_paid > 0), show success message
+                if (amountPaid > 0) {
+                  const paymentPercentage =
+                    totalPrice > 0 ? (amountPaid / totalPrice) * 100 : 0;
+
+                  console.log(
+                    `✅ Payment found! amount_paid: ${amountPaid}, percentage: ${paymentPercentage}%`
+                  );
+
+                  alert(
+                    language === "ar"
+                      ? `تم استلام الدفعة بنجاح! المبلغ المدفوع: €${amountPaid.toFixed(
+                          2
+                        )} من إجمالي €${totalPrice.toFixed(
+                          2
+                        )} (${paymentPercentage.toFixed(1)}%)`
+                      : `Payment received successfully! Amount paid: €${amountPaid.toFixed(
+                          2
+                        )} of €${totalPrice.toFixed(
+                          2
+                        )} (${paymentPercentage.toFixed(1)}%)`
+                  );
+
+                  // Clean URL
+                  window.history.replaceState({}, "", "/dashboard");
+                  return;
+                } else {
+                  console.log(
+                    `⚠️ Payment not updated yet. amount_paid: ${amountPaid}, retry: ${
+                      retryCount + 1
+                    }/5`
+                  );
+                }
+              } else {
+                console.log(
+                  `⚠️ Shipment not found with id: ${shipmentId}, retry: ${
+                    retryCount + 1
+                  }/5`
+                );
+              }
+            }
+
+            // If payment not updated yet and we haven't retried too many times, retry
+            if (retryCount < 5) {
+              // Increase retries to 5
+              console.log(
+                `🔄 Retrying fetch shipments (attempt ${retryCount + 1}/5)...`
+              );
+              fetchShipments(retryCount + 1);
+            } else {
+              // After 5 retries, show generic success message and force refresh
+              console.log(
+                "⚠️ Payment not updated after 5 retries, forcing page refresh..."
+              );
+              alert(
+                language === "ar"
+                  ? "تم الدفع بنجاح! سيتم تحديث الصفحة لعرض المبلغ المدفوع."
+                  : "Payment successful! Refreshing page to show paid amount."
+              );
+              // Force page refresh to get latest data
+              window.location.reload();
+            }
           } catch (error: any) {
             console.error("Error fetching shipments after payment:", error);
+            if (retryCount < 2) {
+              // Retry on error
+              fetchShipments(retryCount + 1);
+            } else {
+              alert(
+                language === "ar"
+                  ? "تم الدفع بنجاح! سيتم تحديث حالة الشحنة قريباً."
+                  : "Payment successful! Shipment status will be updated shortly."
+              );
+              // Clean URL
+              window.history.replaceState({}, "", "/dashboard");
+            }
           }
         };
 
@@ -606,7 +705,15 @@ export default function DashboardPage() {
         setShipmentsLoading(true);
         const response = await apiService.getShipments();
         const shipments = response.data?.results || response.data || [];
-        setLclShipments(Array.isArray(shipments) ? shipments : []);
+        // Ensure amount_paid and total_price are numbers
+        const processedShipments = Array.isArray(shipments)
+          ? shipments.map((shipment: LCLShipment) => ({
+              ...shipment,
+              amount_paid: Number(shipment.amount_paid || 0),
+              total_price: Number(shipment.total_price || 0),
+            }))
+          : [];
+        setLclShipments(processedShipments);
       } catch (error: any) {
         console.error("Error fetching LCL shipments:", error);
         if (error.response?.status === 401) {
@@ -769,6 +876,21 @@ export default function DashboardPage() {
     }
   };
 
+  // Handle send shipment payment reminder (admin only)
+  const handleSendShipmentPaymentReminder = async (shipmentId: number) => {
+    try {
+      await apiService.sendShipmentPaymentReminder(shipmentId);
+      alert(
+        language === "ar"
+          ? "تم إرسال تذكير الدفع بنجاح"
+          : "Payment reminder sent successfully"
+      );
+    } catch (error: any) {
+      console.error("Error sending payment reminder:", error);
+      alert(t.error + ": " + (error.response?.data?.message || error.message));
+    }
+  };
+
   // Handle initiate payment (for users)
   const handleInitiatePayment = async (quoteId: number) => {
     try {
@@ -841,13 +963,16 @@ export default function DashboardPage() {
 
       // Check if payment is 100% before allowing status updates to certain statuses
       const restrictedStatuses = [
+        "IN_TRANSIT_TO_WATTWEG_5",
+        "ARRIVED_WATTWEG_5",
+        "SORTING_WATTWEG_5",
+        "READY_FOR_EXPORT",
         "IN_TRANSIT_TO_DESTINATION",
         "ARRIVED_DESTINATION",
         "DESTINATION_SORTING",
         "READY_FOR_DELIVERY",
         "OUT_FOR_DELIVERY",
         "DELIVERED",
-        "IN_TRANSIT",
       ];
       if (restrictedStatuses.includes(newStatus)) {
         if (shipment.total_price && shipment.total_price > 0) {
@@ -4395,6 +4520,12 @@ export default function DashboardPage() {
                                     <p className="text-xs font-mono font-semibold text-primary-dark">
                                       {shipment.tracking_number}
                                     </p>
+                                    <Link
+                                      href={`/tracking?shipment_id=${shipment.id}`}
+                                      className="mt-1 inline-block px-3 py-1 text-xs font-semibold text-white bg-primary-dark hover:bg-primary-dark/90 rounded-lg transition-all"
+                                    >
+                                      {t.track}
+                                    </Link>
                                   </div>
                                 )}
                               </div>
@@ -4467,19 +4598,55 @@ export default function DashboardPage() {
                                     }
                                     className="px-3 py-2 text-sm font-semibold text-primary-dark bg-white border-2 border-primary-yellow/30 rounded-lg hover:border-primary-yellow transition-all focus:outline-none focus:ring-2 focus:ring-primary-yellow"
                                   >
-                                    <option value="CREATED">Created</option>
-                                    <option value="PAYMENT_PENDING">
-                                      Payment Pending
+                                    <option value="CREATED">
+                                      {getStatusDisplay("CREATED")}
                                     </option>
-                                    <option value="PAID">Paid</option>
-                                    <option value="PROCESSING">
-                                      Processing
+                                    <option value="OFFER_SENT">
+                                      {getStatusDisplay("OFFER_SENT")}
                                     </option>
-                                    <option value="IN_TRANSIT">
-                                      In Transit
+                                    <option value="PENDING_PAYMENT">
+                                      {getStatusDisplay("PENDING_PAYMENT")}
                                     </option>
-                                    <option value="DELIVERED">Delivered</option>
-                                    <option value="CANCELLED">Cancelled</option>
+                                    <option value="PENDING_PICKUP">
+                                      {getStatusDisplay("PENDING_PICKUP")}
+                                    </option>
+                                    <option value="IN_TRANSIT_TO_WATTWEG_5">
+                                      {getStatusDisplay(
+                                        "IN_TRANSIT_TO_WATTWEG_5"
+                                      )}
+                                    </option>
+                                    <option value="ARRIVED_WATTWEG_5">
+                                      {getStatusDisplay("ARRIVED_WATTWEG_5")}
+                                    </option>
+                                    <option value="SORTING_WATTWEG_5">
+                                      {getStatusDisplay("SORTING_WATTWEG_5")}
+                                    </option>
+                                    <option value="READY_FOR_EXPORT">
+                                      {getStatusDisplay("READY_FOR_EXPORT")}
+                                    </option>
+                                    <option value="IN_TRANSIT_TO_DESTINATION">
+                                      {getStatusDisplay(
+                                        "IN_TRANSIT_TO_DESTINATION"
+                                      )}
+                                    </option>
+                                    <option value="ARRIVED_DESTINATION">
+                                      {getStatusDisplay("ARRIVED_DESTINATION")}
+                                    </option>
+                                    <option value="DESTINATION_SORTING">
+                                      {getStatusDisplay("DESTINATION_SORTING")}
+                                    </option>
+                                    <option value="READY_FOR_DELIVERY">
+                                      {getStatusDisplay("READY_FOR_DELIVERY")}
+                                    </option>
+                                    <option value="OUT_FOR_DELIVERY">
+                                      {getStatusDisplay("OUT_FOR_DELIVERY")}
+                                    </option>
+                                    <option value="DELIVERED">
+                                      {getStatusDisplay("DELIVERED")}
+                                    </option>
+                                    <option value="CANCELLED">
+                                      {getStatusDisplay("CANCELLED")}
+                                    </option>
                                   </select>
                                   {/* Update Amount Paid Button */}
                                   {Number(shipment.total_price) > 0 && (
@@ -4499,6 +4666,27 @@ export default function DashboardPage() {
                                       €
                                     </button>
                                   )}
+                                  {/* Payment Reminder Button */}
+                                  {isAdmin &&
+                                    Number(shipment.total_price) > 0 &&
+                                    Number(shipment.amount_paid || 0) <
+                                      Number(shipment.total_price) && (
+                                      <button
+                                        onClick={() =>
+                                          handleSendShipmentPaymentReminder(
+                                            shipment.id
+                                          )
+                                        }
+                                        className="px-3 py-2 text-xs font-semibold text-white bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-all"
+                                        title={
+                                          language === "ar"
+                                            ? "إرسال تذكير الدفع"
+                                            : "Send Payment Reminder"
+                                        }
+                                      >
+                                        {language === "ar" ? "تذكير" : "Remind"}
+                                      </button>
+                                    )}
                                   {/* Delete Button */}
                                   <button
                                     onClick={() =>

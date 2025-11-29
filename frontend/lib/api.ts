@@ -225,6 +225,10 @@ export const apiService = {
     return apiClient.post(`/fcl/quotes/${id}/send-payment-reminder/`);
   },
 
+  sendShipmentPaymentReminder: (id: number) => {
+    return apiClient.post(`/shipments/${id}/send-payment-reminder/`);
+  },
+
   initiatePayment: (id: number) => {
     return apiClient.post(`/fcl/quotes/${id}/initiate-stripe-payment/`);
   },

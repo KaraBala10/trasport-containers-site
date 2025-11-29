@@ -662,6 +662,219 @@ contact@medo-freight.eu
         return False
 
 
+def send_lcl_shipment_payment_reminder_email(shipment):
+    """
+    Send email reminder to user to complete payment for LCL shipment
+
+    Args:
+        shipment: LCLShipment instance
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping payment reminder.")
+        return False
+
+    if not shipment.user or not shipment.user.email:
+        logger.warning(f"Cannot send email: Shipment {shipment.id} has no user or user email")
+        return False
+
+    try:
+        recipient_email = shipment.user.email
+        recipient_name = shipment.user.get_full_name() or shipment.user.username
+
+        # Calculate payment percentage
+        payment_percentage = 0
+        remaining_amount = 0
+        if shipment.total_price and shipment.total_price > 0:
+            payment_percentage = ((shipment.amount_paid or 0) / shipment.total_price) * 100
+            remaining_amount = shipment.total_price - (shipment.amount_paid or 0)
+
+        # Prepare email content
+        subject = f"Payment Reminder - LCL Shipment #{shipment.shipment_number or shipment.id}"
+
+        # Build email body
+        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        email_body = f"""
+Dear {recipient_name},
+
+This is a friendly reminder to complete the payment for your LCL Shipment.
+
+Shipment Number: {shipment.shipment_number or f'#{shipment.id}'}
+Direction: {direction_display}
+Sender: {shipment.sender_name}, {shipment.sender_city}, {shipment.sender_country}
+Receiver: {shipment.receiver_name}, {shipment.receiver_city}, {shipment.receiver_country}
+Current Status: {STATUS_DISPLAY_NAMES.get(shipment.status, shipment.status)}
+
+Payment Information:
+Total Price: €{shipment.total_price:.2f}
+Amount Paid: €{shipment.amount_paid or 0:.2f}
+Payment Progress: {payment_percentage:.1f}%
+"""
+
+        if remaining_amount > 0:
+            email_body += f"""
+Remaining Amount: €{remaining_amount:.2f}
+
+Please complete the payment to continue with your shipment. Once payment is received, we will proceed with the next steps of your shipment process.
+"""
+
+        email_body += """
+You can view your shipment and payment details by logging into your dashboard.
+
+If you have any questions or need assistance, please don't hesitate to contact us.
+
+Best regards,
+Medo-Freight.eu Team
+contact@medo-freight.eu
+"""
+
+        # Send email with fail_silently=True to prevent exceptions
+        try:
+            send_mail(
+                subject=subject,
+                message=strip_tags(email_body),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient_email],
+                fail_silently=True,
+            )
+            logger.info(
+                f"Payment reminder email sent successfully to {recipient_email} for shipment {shipment.id}"
+            )
+            return True
+        except (smtplib.SMTPException, gaierror, OSError) as smtp_error:
+            error_msg = str(smtp_error)
+            if "Network is unreachable" in error_msg:
+                logger.warning(
+                    "Cannot send payment reminder: SMTP server unreachable. Check network connection and EMAIL_HOST setting."
+                )
+            elif (
+                "Username and Password not accepted" in error_msg
+                or "BadCredentials" in error_msg
+            ):
+                logger.warning(
+                    "Cannot send payment reminder: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
+                )
+            else:
+                logger.warning(f"Cannot send payment reminder: {error_msg}")
+            return False
+
+    except Exception as e:
+        logger.error(
+            f"Unexpected error sending payment reminder email: {str(e)}",
+            exc_info=True,
+        )
+        return False
+
+
+def send_lcl_shipment_payment_reminder_notification_to_admin(shipment):
+    """
+    Send email notification to admin when payment reminder is sent to user for LCL shipment
+
+    Args:
+        shipment: LCLShipment instance
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping payment reminder notification to admin.")
+        return False
+
+    try:
+        # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
+        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+
+        # Get user info
+        user_name = (
+            shipment.user.get_full_name() or shipment.user.username
+            if shipment.user
+            else "Unknown"
+        )
+        user_email = shipment.user.email if shipment.user else "Unknown"
+
+        # Calculate payment percentage
+        payment_percentage = 0
+        remaining_amount = 0
+        if shipment.total_price and shipment.total_price > 0:
+            payment_percentage = ((shipment.amount_paid or 0) / shipment.total_price) * 100
+            remaining_amount = shipment.total_price - (shipment.amount_paid or 0)
+
+        # Prepare email content
+        subject = f"Payment Reminder Sent - LCL Shipment #{shipment.shipment_number or shipment.id}"
+
+        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        # Build email body
+        email_body = f"""
+A payment reminder has been sent to the customer.
+
+Shipment Details:
+-------------------
+Shipment Number: {shipment.shipment_number or f'#{shipment.id}'}
+Customer: {user_name} ({user_email})
+Direction: {direction_display}
+Sender: {shipment.sender_name}, {shipment.sender_city}, {shipment.sender_country}
+Receiver: {shipment.receiver_name}, {shipment.receiver_city}, {shipment.receiver_country}
+Current Status: {STATUS_DISPLAY_NAMES.get(shipment.status, shipment.status)}
+
+Payment Information:
+-------------------
+Total Price: €{shipment.total_price:.2f}
+Amount Paid: €{shipment.amount_paid or 0:.2f}
+Payment Progress: {payment_percentage:.1f}%
+"""
+
+        if remaining_amount > 0:
+            email_body += f"""
+Remaining Amount: €{remaining_amount:.2f}
+"""
+
+        email_body += """
+
+A payment reminder email has been sent to the customer. You can track the payment status in the admin dashboard.
+"""
+
+        # Send email with fail_silently=True to prevent exceptions
+        try:
+            send_mail(
+                subject=subject,
+                message=strip_tags(email_body),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[admin_email],
+                fail_silently=True,
+            )
+            logger.info(
+                f"Payment reminder notification sent successfully to {admin_email} for shipment {shipment.shipment_number or shipment.id}"
+            )
+            return True
+        except (smtplib.SMTPException, gaierror, OSError) as smtp_error:
+            error_msg = str(smtp_error)
+            if "Network is unreachable" in error_msg:
+                logger.warning(
+                    "Cannot send payment reminder notification to admin: SMTP server unreachable. Check network connection and EMAIL_HOST setting."
+                )
+            elif (
+                "Username and Password not accepted" in error_msg
+                or "BadCredentials" in error_msg
+            ):
+                logger.warning(
+                    "Cannot send payment reminder notification to admin: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
+                )
+            else:
+                logger.warning(f"Cannot send payment reminder notification to admin: {error_msg}")
+            return False
+
+    except Exception as e:
+        logger.error(
+            f"Unexpected error sending payment reminder notification to admin: {str(e)}",
+            exc_info=True,
+        )
+        return False
+
+
 def send_contact_form_notification(contact_message):
     """
     Send email notification to admin when a contact form is submitted

@@ -45,6 +45,7 @@ from .views import (
     respond_to_offer_view,
     send_edit_request_reply_view,
     send_payment_reminder_view,
+    send_lcl_shipment_payment_reminder_view,
     sendcloud_webhook_view,
     stripe_webhook_view,
     update_fcl_quote_status_view,
@@ -211,5 +212,11 @@ urlpatterns = [
         "shipments/create-checkout-session/",
         create_shipment_checkout_session,
         name="create-shipment-checkout-session",
+    ),
+    # Shipment payment reminder
+    path(
+        "shipments/<int:pk>/send-payment-reminder/",
+        send_lcl_shipment_payment_reminder_view,
+        name="lcl_shipment_send_payment_reminder",
     ),
 ]

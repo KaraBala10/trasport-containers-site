@@ -720,10 +720,18 @@ class LCLShipment(models.Model):
 
     STATUS_CHOICES = [
         ("CREATED", "Created"),
-        ("PAYMENT_PENDING", "Payment Pending"),
-        ("PAID", "Paid"),
-        ("PROCESSING", "Processing"),
-        ("IN_TRANSIT", "In Transit"),
+        ("OFFER_SENT", "Offer Sent"),
+        ("PENDING_PAYMENT", "Pending Payment"),
+        ("PENDING_PICKUP", "Pending Pickup"),
+        ("IN_TRANSIT_TO_WATTWEG_5", "In Transit to Wattweg 5"),
+        ("ARRIVED_WATTWEG_5", "Arrived Wattweg 5"),
+        ("SORTING_WATTWEG_5", "Sorting Wattweg 5"),
+        ("READY_FOR_EXPORT", "Ready for Export"),
+        ("IN_TRANSIT_TO_DESTINATION", "In Transit to Destination"),
+        ("ARRIVED_DESTINATION", "Arrived at Destination"),
+        ("DESTINATION_SORTING", "Sorting at Destination"),
+        ("READY_FOR_DELIVERY", "Ready for Delivery"),
+        ("OUT_FOR_DELIVERY", "Out for Delivery"),
         ("DELIVERED", "Delivered"),
         ("CANCELLED", "Cancelled"),
     ]
@@ -801,7 +809,7 @@ class LCLShipment(models.Model):
     transfer_slip = models.FileField(upload_to="transfer_slips/", blank=True, null=True)
 
     # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="CREATED")
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="CREATED")
 
     # Tracking
     tracking_number = models.CharField(max_length=255, blank=True, default="")

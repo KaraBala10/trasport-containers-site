@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
@@ -34,6 +35,8 @@ from .email_service import (
     send_edit_request_confirmation_to_user,
     send_fcl_quote_confirmation_email,
     send_fcl_quote_notification,
+    send_lcl_shipment_payment_reminder_email,
+    send_lcl_shipment_payment_reminder_notification_to_admin,
     send_payment_reminder_email,
     send_payment_reminder_notification_to_admin,
     send_status_update_email,
@@ -1630,9 +1633,21 @@ def initiate_stripe_payment_view(request, pk):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])  # Stripe webhook doesn't use JWT
+@csrf_exempt  # Stripe webhooks don't include CSRF tokens
 def stripe_webhook_view(request):
     """API endpoint to receive webhook notifications from Stripe"""
     logger = logging.getLogger(__name__)
+
+    # Log immediately when endpoint is hit (before any checks)
+    logger.info("=" * 80)
+    logger.info(
+        "🔔 WEBHOOK ENDPOINT HIT - Method: %s, Path: %s, Full Path: %s",
+        request.method,
+        request.path,
+        request.get_full_path(),
+    )
+    logger.info("🔔 Request META keys: %s", list(request.META.keys())[:20])
+    logger.info("=" * 80)
 
     if not STRIPE_AVAILABLE:
         logger.error("Stripe webhook received but Stripe API is not available")
@@ -1644,6 +1659,12 @@ def stripe_webhook_view(request):
         payload = request.body
         sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
 
+        logger.info(
+            "🔔 Webhook received - Payload size: %d bytes, Signature header: %s",
+            len(payload),
+            "Present" if sig_header else "Missing",
+        )
+
         if not sig_header:
             return Response(
                 {"error": "Missing Stripe signature"},
@@ -1651,19 +1672,45 @@ def stripe_webhook_view(request):
             )
 
         # Verify webhook signature
+        webhook_secret = settings.STRIPE_WEBHOOK_SECRET
+        if not webhook_secret:
+            logger.error("❌ STRIPE_WEBHOOK_SECRET is not configured in settings")
+            logger.error("❌ Please set STRIPE_WEBHOOK_SECRET in .env file")
+            return Response(
+                {"error": "Webhook secret not configured"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        logger.info(
+            "🔍 Verifying webhook signature - Secret length: %d, First 10 chars: %s...",
+            len(webhook_secret),
+            webhook_secret[:10] if len(webhook_secret) > 10 else webhook_secret,
+        )
+
         try:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+            logger.info(
+                "✅ Webhook signature verified successfully - Event type: %s",
+                event.get("type", "unknown"),
             )
         except ValueError as e:
-            logger.error(f"Invalid payload: {str(e)}")
+            logger.error(f"❌ Invalid payload: {str(e)}")
+            logger.error(
+                f"❌ Payload preview: {payload[:200] if len(payload) > 200 else payload}"
+            )
             return Response(
                 {"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST
             )
         except stripe.error.SignatureVerificationError as e:
-            logger.error(f"Invalid signature: {str(e)}")
+            logger.error(f"❌ Invalid signature: {str(e)}")
+            logger.error(f"❌ Expected secret starts with: {webhook_secret[:10]}...")
+            logger.error(
+                f"❌ Signature header: {sig_header[:50] if sig_header else 'None'}..."
+            )
+            # Still return 200 to prevent Stripe from retrying with wrong secret
             return Response(
-                {"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Invalid signature", "received": True},
+                status=status.HTTP_200_OK,
             )
 
         # Handle the event
@@ -1674,34 +1721,157 @@ def stripe_webhook_view(request):
             metadata = session.get("metadata", {})
             event_type = metadata.get("type", "")
 
+            logger.info(
+                f"🔔 Webhook received - event_type: {event['type']}, session_id: {session_id}, payment_status: {payment_status}, metadata: {metadata}"
+            )
+
             # Check if this is a shipment payment
             if event_type == "shipment":
-                try:
-                    shipment = LCLShipment.objects.get(stripe_session_id=session_id)
-                    shipment.payment_status = payment_status
+                shipment_id = metadata.get("shipment_id")
 
-                    if payment_status == "paid" and session.get("amount_total"):
-                        paid_amount = Decimal(session["amount_total"]) / 100
-                        shipment.amount_paid = paid_amount
-                        shipment.status = "PAID"
-                        shipment.paid_at = timezone.now()
+                logger.info(
+                    f"🔍 Processing shipment webhook - session_id: {session_id}, shipment_id from metadata: {shipment_id}, payment_status: {payment_status}"
+                )
 
-                        logger.info(
-                            f"Payment received for shipment {shipment.id}: €{paid_amount:.2f}"
-                        )
-
-                    shipment.save()
-                    logger.info(
-                        f"Webhook processed for shipment {shipment.id}: Stripe session {session_id} status updated to {payment_status}"
-                    )
-                except LCLShipment.DoesNotExist:
+                if not shipment_id:
                     logger.warning(
-                        f"Shipment not found for Stripe session ID: {session_id}"
+                        f"⚠️ Shipment ID missing in metadata for session {session_id}. Trying to find by stripe_session_id..."
                     )
-                except Exception as e:
-                    logger.error(
-                        f"Error processing shipment webhook: {str(e)}", exc_info=True
-                    )
+                    # Try to find by stripe_session_id as fallback
+                    try:
+                        shipment = LCLShipment.objects.get(stripe_session_id=session_id)
+                        logger.info(
+                            f"✅ Found shipment by stripe_session_id: {shipment.id}"
+                        )
+                    except LCLShipment.DoesNotExist:
+                        logger.error(
+                            f"❌ LCL Shipment not found for Stripe session ID: {session_id}"
+                        )
+                        shipment = None
+                else:
+                    try:
+                        # Convert shipment_id to int if it's a string
+                        try:
+                            shipment_id_int = int(shipment_id)
+                        except (ValueError, TypeError):
+                            logger.warning(
+                                f"⚠️ Invalid shipment_id format: {shipment_id}, trying as string..."
+                            )
+                            shipment_id_int = shipment_id
+
+                        # Try to get shipment by ID first (more reliable)
+                        try:
+                            shipment = LCLShipment.objects.get(pk=shipment_id_int)
+                            logger.info(f"✅ Found shipment by ID: {shipment.id}")
+                        except LCLShipment.DoesNotExist:
+                            # Fallback to stripe_session_id if shipment_id doesn't work
+                            logger.warning(
+                                f"⚠️ Shipment not found by ID {shipment_id_int}, trying stripe_session_id..."
+                            )
+                            try:
+                                shipment = LCLShipment.objects.get(
+                                    stripe_session_id=session_id
+                                )
+                                logger.info(
+                                    f"✅ Found shipment by stripe_session_id: {shipment.id}"
+                                )
+                            except LCLShipment.DoesNotExist:
+                                logger.error(
+                                    f"❌ LCL Shipment not found for ID {shipment_id_int} or Stripe session ID: {session_id}"
+                                )
+                                shipment = None
+
+                        if shipment:
+                            old_amount_paid = shipment.amount_paid or Decimal("0")
+                            old_status = shipment.status
+                            old_payment_status = shipment.payment_status
+
+                            logger.info(
+                                f"📦 Found shipment {shipment.id} - Current state: amount_paid={old_amount_paid}, status={old_status}, payment_status={old_payment_status}"
+                            )
+
+                            # Update payment_status
+                            shipment.payment_status = payment_status
+
+                            # Update amount_paid and status if payment is completed
+                            if payment_status == "paid":
+                                # Get amount from session
+                                amount_total = session.get("amount_total")
+                                amount_subtotal = session.get("amount_subtotal")
+
+                                logger.info(
+                                    f"💰 Payment is PAID - amount_total: {amount_total}, amount_subtotal: {amount_subtotal}"
+                                )
+
+                                if amount_total:
+                                    # Convert from cents to decimal
+                                    paid_amount = Decimal(str(amount_total)) / 100
+                                    shipment.amount_paid = paid_amount
+                                    # Update status to PENDING_PAYMENT if payment is complete
+                                    shipment.status = "PENDING_PAYMENT"
+                                    shipment.paid_at = timezone.now()
+
+                                    logger.info(
+                                        f"✅ Updated shipment {shipment.id} - amount_paid: {old_amount_paid} -> {paid_amount}, status: {old_status} -> PENDING_PAYMENT"
+                                    )
+                                elif amount_subtotal:
+                                    # Fallback to subtotal if total is missing
+                                    paid_amount = Decimal(str(amount_subtotal)) / 100
+                                    shipment.amount_paid = paid_amount
+                                    shipment.status = "PENDING_PAYMENT"
+                                    shipment.paid_at = timezone.now()
+
+                                    logger.info(
+                                        f"✅ Updated shipment {shipment.id} using subtotal - amount_paid: {old_amount_paid} -> {paid_amount}, status: {old_status} -> PENDING_PAYMENT"
+                                    )
+                                elif shipment.total_price and shipment.total_price > 0:
+                                    # Final fallback: use total_price
+                                    shipment.amount_paid = shipment.total_price
+                                    shipment.status = "PENDING_PAYMENT"
+                                    shipment.paid_at = timezone.now()
+
+                                    logger.warning(
+                                        f"⚠️ Using total_price as fallback for shipment {shipment.id} - amount_paid: {old_amount_paid} -> {shipment.total_price}"
+                                    )
+                                else:
+                                    logger.error(
+                                        f"❌ Cannot determine payment amount for shipment {shipment.id} - no amount_total, amount_subtotal, or total_price"
+                                    )
+                            else:
+                                logger.warning(
+                                    f"⚠️ Payment status is '{payment_status}' (not paid) for shipment {shipment.id}. Not updating amount_paid."
+                                )
+
+                            # Save changes
+                            shipment.save()
+
+                            # Refresh from database to ensure we have the latest values
+                            shipment.refresh_from_db()
+
+                            logger.info(
+                                f"✅ Webhook processed successfully for LCL shipment {shipment.id}: "
+                                f"payment_status: {old_payment_status} -> {shipment.payment_status}, "
+                                f"amount_paid: {old_amount_paid} -> {shipment.amount_paid}, "
+                                f"status: {old_status} -> {shipment.status}"
+                            )
+
+                            # Return success response immediately for shipment payments
+                            return Response(
+                                {
+                                    "success": True,
+                                    "message": "Shipment payment processed",
+                                },
+                                status=status.HTTP_200_OK,
+                            )
+                        else:
+                            logger.error(
+                                f"❌ Shipment is None - cannot process payment for session {session_id}, shipment_id: {shipment_id}"
+                            )
+                    except Exception as e:
+                        logger.error(
+                            f"❌ Error processing shipment webhook: {str(e)}",
+                            exc_info=True,
+                        )
 
             # Find quote by session_id (stored in payment_id) - for FCL quotes
             try:
@@ -1830,13 +2000,20 @@ def stripe_webhook_view(request):
                     f"Payment intent succeeded: {payment_intent_id} (no quote_id in metadata)"
                 )
 
+        logger.info("✅ Webhook processing completed, returning 200 OK")
         return Response({"success": True}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"Error processing Stripe webhook: {str(e)}", exc_info=True)
+        logger.error(f"❌ Error processing Stripe webhook: {str(e)}", exc_info=True)
+        logger.error(f"❌ Exception type: {type(e).__name__}")
+        import traceback
+
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
+        # Always return 200 OK to Stripe even on error (to prevent retries)
+        # But log the error for debugging
         return Response(
-            {"error": "Internal server error"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            {"error": "Internal server error", "received": True},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -2883,6 +3060,24 @@ class LCLShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         context["request"] = self.request
         return context
 
+    def update(self, request, *args, **kwargs):
+        """Override update to support partial updates"""
+        partial = kwargs.pop("partial", True)  # Always allow partial updates
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_object_cache", None):
+            instance._prefetched_object_cache = {}
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"Updated LCL shipment {instance.id} - {instance.shipment_number} by user {request.user.id}"
+        )
+
+        return Response(serializer.data)
+
 
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
@@ -2915,6 +3110,10 @@ def update_lcl_shipment_status_view(request, pk):
 
             # Check if payment is 100% before allowing status updates to certain statuses
             restricted_statuses = [
+                "IN_TRANSIT_TO_WATTWEG_5",
+                "ARRIVED_WATTWEG_5",
+                "SORTING_WATTWEG_5",
+                "READY_FOR_EXPORT",
                 "IN_TRANSIT_TO_DESTINATION",
                 "ARRIVED_DESTINATION",
                 "DESTINATION_SORTING",
@@ -3007,6 +3206,83 @@ def update_lcl_shipment_status_view(request, pk):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+def send_lcl_shipment_payment_reminder_view(request, pk):
+    """API endpoint for admin to send payment reminder email to user for LCL shipment"""
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only admins can send payment reminders."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        shipment = LCLShipment.objects.get(pk=pk)
+
+        # Check if shipment has total price set
+        if not shipment.total_price or shipment.total_price <= 0:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Cannot send payment reminder. Total price must be set first.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if payment is already 100%
+        if shipment.total_price > 0:
+            payment_percentage = (
+                (shipment.amount_paid or 0) / shipment.total_price * 100
+                if shipment.amount_paid
+                else 0
+            )
+            if payment_percentage >= 100:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Payment is already 100% complete. No reminder needed.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Send payment reminder emails
+        email_sent = send_lcl_shipment_payment_reminder_email(shipment)
+        # Also send notification to admin
+        send_lcl_shipment_payment_reminder_notification_to_admin(shipment)
+
+        if email_sent:
+            return Response(
+                {
+                    "success": True,
+                    "message": "Payment reminder email sent successfully.",
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Failed to send payment reminder email. Please check email configuration.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+    except LCLShipment.DoesNotExist:
+        return Response(
+            {"success": False, "error": "LCL shipment not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error sending payment reminder: {str(e)}")
+        return Response(
+            {
+                "success": False,
+                "error": "An error occurred while processing the request.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def create_shipment_checkout_session(request):
     """
     Create Stripe checkout session for shipment payment
@@ -3023,6 +3299,19 @@ def create_shipment_checkout_session(request):
         return Response(
             {"success": False, "error": "Stripe API key is not configured"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    # Log API key type (test vs live)
+    api_key_type = (
+        "TEST" if settings.STRIPE_SECRET_KEY.startswith("sk_test_") else "LIVE"
+    )
+    logger.info(
+        f"🔑 Using Stripe {api_key_type} API key (first 10 chars: {settings.STRIPE_SECRET_KEY[:10]}...)"
+    )
+
+    if api_key_type == "LIVE":
+        logger.warning(
+            "⚠️ WARNING: Using LIVE Stripe API key! stripe listen only works with TEST keys!"
         )
 
     try:
@@ -3046,37 +3335,110 @@ def create_shipment_checkout_session(request):
         # Ensure minimum amount (0.50 EUR = 50 cents)
         amount_in_cents = max(50, int(amount * 100))
 
-        # Create Stripe Checkout Session
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": currency,
-                        "product_data": {
-                            "name": "Shipment Payment",
-                            "description": f"Payment for shipment - {metadata.get('direction', 'N/A')}",
-                        },
-                        "unit_amount": amount_in_cents,
-                    },
-                    "quantity": 1,
-                }
-            ],
-            mode="payment",
-            success_url=settings.STRIPE_REDIRECT_SUCCESS_URL
-            + f"&type=shipment&shipment_id={shipment_id}",
-            cancel_url=settings.STRIPE_REDIRECT_CANCEL_URL
-            + f"&type=shipment&shipment_id={shipment_id}",
-            metadata={
-                "user_id": str(request.user.id),
-                "amount": str(amount),
-                "type": "shipment",
-                **metadata,
-            },
-            customer_email=request.user.email if request.user.email else None,
-            expires_at=int(timezone.now().timestamp())
-            + (24 * 60 * 60),  # Expire in 24 hours
+        # Validate amount (Stripe has maximum limits)
+        if amount_in_cents > 99999999:  # 999,999.99 EUR
+            return Response(
+                {"success": False, "error": "Amount exceeds maximum limit"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Ensure shipment_id is in metadata (override if exists in metadata dict)
+        # Limit metadata to 20 keys (Stripe limit) and 500 chars per value
+        final_metadata = {
+            "user_id": str(request.user.id),
+            "amount": str(amount)[:500],
+            "type": "shipment",
+            "shipment_id": str(shipment_id)[
+                :500
+            ],  # Ensure shipment_id is always in metadata
+        }
+
+        # Add additional metadata from request (limit to prevent exceeding Stripe limits)
+        if metadata:
+            for key, value in list(metadata.items())[
+                :15
+            ]:  # Limit to 15 additional keys
+                if key not in final_metadata:  # Don't override existing keys
+                    final_metadata[key] = str(value)[:500]  # Limit value length
+
+        # Ensure shipment_id is still set correctly after merge
+        final_metadata["shipment_id"] = str(shipment_id)[:500]
+
+        # Build URLs - ensure they're valid
+        success_url = settings.STRIPE_REDIRECT_SUCCESS_URL
+        cancel_url = settings.STRIPE_REDIRECT_CANCEL_URL
+
+        # Add query parameters
+        success_url += (
+            "&" if "?" in success_url else "?"
+        ) + f"type=shipment&shipment_id={shipment_id}"
+        cancel_url += (
+            "&" if "?" in cancel_url else "?"
+        ) + f"type=shipment&shipment_id={shipment_id}"
+
+        # Validate URLs
+        if not success_url.startswith(("http://", "https://")):
+            logger.error(f"❌ Invalid success_url: {success_url}")
+            return Response(
+                {"success": False, "error": "Invalid success URL configuration"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if not cancel_url.startswith(("http://", "https://")):
+            logger.error(f"❌ Invalid cancel_url: {cancel_url}")
+            return Response(
+                {"success": False, "error": "Invalid cancel URL configuration"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        logger.info(
+            f"🔍 Creating checkout session for shipment {shipment_id}, amount: €{amount} ({amount_in_cents} cents), currency: {currency}"
         )
+        logger.info(f"🔍 Success URL: {success_url}")
+        logger.info(f"🔍 Cancel URL: {cancel_url}")
+        logger.info(f"🔍 Metadata keys: {list(final_metadata.keys())}")
+
+        # Create Stripe Checkout Session
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                line_items=[
+                    {
+                        "price_data": {
+                            "currency": currency.lower(),
+                            "product_data": {
+                                "name": f"Shipment Payment #{shipment_id}",
+                                "description": f"Payment for LCL shipment {shipment_id}",
+                            },
+                            "unit_amount": amount_in_cents,
+                        },
+                        "quantity": 1,
+                    }
+                ],
+                mode="payment",
+                success_url=success_url,
+                cancel_url=cancel_url,
+                metadata=final_metadata,
+                customer_email=request.user.email if request.user.email else None,
+                expires_at=int(timezone.now().timestamp())
+                + (24 * 60 * 60),  # Expire in 24 hours
+            )
+
+            logger.info(
+                f"✅ Checkout session created: {checkout_session.id}, URL: {checkout_session.url}"
+            )
+            logger.info(
+                f"📝 Session details - mode: {checkout_session.mode}, payment_status: {checkout_session.payment_status}"
+            )
+        except stripe.error.StripeError as e:
+            logger.error(
+                f"❌ Stripe API error creating checkout session: {str(e)}",
+                exc_info=True,
+            )
+            return Response(
+                {"success": False, "error": f"Stripe payment error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         # Update the LCLShipment with the Stripe session ID
         try:
