@@ -4296,7 +4296,7 @@ export default function DashboardPage() {
                               )}
 
                               {/* Payment Info */}
-                              {shipment.total_price > 0 && (
+                              {Number(shipment.total_price) > 0 && (
                                 <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
                                   <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
                                     <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
@@ -4310,7 +4310,7 @@ export default function DashboardPage() {
                                         {t.totalPrice}
                                       </p>
                                       <p className="text-sm font-bold text-primary-dark">
-                                        €{shipment.total_price.toFixed(2)}
+                                        €{Number(shipment.total_price).toFixed(2)}
                                       </p>
                                     </div>
                                     {shipment.payment_method && (
