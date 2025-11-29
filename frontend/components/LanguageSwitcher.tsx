@@ -7,20 +7,8 @@ interface LanguageSwitcherProps {
   setLanguage: (lang: "ar" | "en") => void;
 }
 
-// Syrian green flag component using the SVG file
-const SyrianGreenFlag = ({ className = "w-5 h-5" }: { className?: string }) => {
-  return (
-    <img
-      src="/images/syrian_flag.svg"
-      alt="Syrian Flag"
-      className={className}
-      style={{ objectFit: "contain", display: "inline-block" }}
-    />
-  );
-};
-
 const languages = [
-  { code: "ar" as const, name: "العربية", nativeName: "عربي", flag: "🇸🇾" },
+  { code: "ar" as const, name: "العربية", nativeName: "عربي", flag: "🌐" },
   { code: "en" as const, name: "English", nativeName: "English", flag: "🇬🇧" },
 ];
 
@@ -85,54 +73,33 @@ export default function LanguageSwitcher({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg
-          bg-white border border-gray-200 shadow-sm
-          hover:bg-gray-50 hover:border-gray-300
-          focus:outline-none focus:ring-2 focus:ring-primary-yellow/50 focus:ring-offset-2
-          transition-all duration-200
-          ${isOpen ? "bg-gray-50 border-gray-300 shadow-md" : ""}
+          group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
+          bg-white/80 backdrop-blur-sm
+          border transition-all duration-200
+          ${isOpen 
+            ? "border-primary-yellow/50 bg-white shadow-sm" 
+            : "border-gray-200/60 hover:border-primary-yellow/30 hover:bg-white"
+          }
+          focus:outline-none focus:ring-1 focus:ring-primary-yellow/30
         `}
         aria-label="Select language"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        {/* Globe Icon */}
-        <svg
-          className="w-5 h-5 text-gray-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-          />
-        </svg>
-
-        {/* Current Language */}
-        <span className="text-sm font-medium text-gray-700 hidden sm:inline flex items-center gap-1.5">
-          {currentLanguage.code === "ar" ? (
-            <SyrianGreenFlag className="w-4 h-4" />
-          ) : (
-            <span>{currentLanguage.flag}</span>
-          )}
-          {currentLanguage.nativeName}
+        {/* Current Language Flag */}
+        <span className="text-base leading-none">
+          {currentLanguage.flag}
         </span>
-        <span className="text-sm font-medium text-gray-700 sm:hidden flex items-center">
-          {currentLanguage.code === "ar" ? (
-            <SyrianGreenFlag className="w-4 h-4" />
-          ) : (
-            <span>{currentLanguage.flag}</span>
-          )}
+
+        {/* Language Code */}
+        <span className="text-xs font-medium text-gray-700 hidden sm:inline">
+          {currentLanguage.code.toUpperCase()}
         </span>
 
         {/* Dropdown Arrow */}
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
+          className={`w-3 h-3 transition-all duration-200 text-gray-400 ${
+            isOpen ? "rotate-180 text-primary-yellow" : ""
           }`}
           fill="none"
           stroke="currentColor"
@@ -150,13 +117,11 @@ export default function LanguageSwitcher({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="absolute top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] max-h-[300px] overflow-y-auto z-[9999] transform transition-all duration-200 ease-out origin-top-right opacity-100 scale-100"
+          className="absolute top-full mt-1.5 bg-white/95 backdrop-blur-md rounded-lg shadow-lg border border-gray-100/80 py-1.5 min-w-[140px] z-[9999] transform transition-all duration-200 ease-out origin-top-right"
           role="menu"
           aria-orientation="vertical"
           style={{
             [language === 'ar' ? 'left' : 'right']: 0,
-            maxHeight: '300px',
-            overflowY: 'auto',
           }}
         >
           {languages.map((lang) => (
@@ -165,37 +130,35 @@ export default function LanguageSwitcher({
               type="button"
               onClick={() => handleLanguageChange(lang.code)}
               className={`
-                w-full flex items-center gap-3 px-4 py-2.5 text-left
-                transition-colors duration-150
+                w-full flex items-center gap-2 px-3 py-2 text-left
+                transition-all duration-150
                 ${
                   language === lang.code
-                    ? "bg-primary-yellow/10 text-primary-dark font-semibold"
-                    : "text-gray-700 hover:bg-gray-50"
+                    ? "bg-primary-yellow/10 text-primary-dark"
+                    : "text-gray-700 hover:bg-gray-50/80"
                 }
-                focus:outline-none focus:bg-gray-50
+                focus:outline-none
+                first:rounded-t-lg last:rounded-b-lg
               `}
               role="menuitem"
               aria-label={`Switch to ${lang.name}`}
             >
               {/* Flag */}
-              {lang.code === "ar" ? (
-                <SyrianGreenFlag className="w-6 h-6" />
-              ) : (
-                <span className="text-xl" role="img" aria-label={lang.name}>
-                  {lang.flag}
-                </span>
-              )}
+              <span className="text-sm" role="img" aria-label={lang.name}>
+                {lang.flag}
+              </span>
 
               {/* Language Name */}
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">{lang.nativeName}</span>
-                <span className="text-xs text-gray-500">{lang.name}</span>
-              </div>
+              <span className={`text-xs font-medium flex-1 ${
+                language === lang.code ? "text-primary-dark" : ""
+              }`}>
+                {lang.nativeName}
+              </span>
 
               {/* Checkmark for selected language */}
               {language === lang.code && (
                 <svg
-                  className="w-5 h-5 text-primary-dark ml-auto"
+                  className="w-3.5 h-3.5 text-primary-yellow"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -203,7 +166,7 @@ export default function LanguageSwitcher({
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
