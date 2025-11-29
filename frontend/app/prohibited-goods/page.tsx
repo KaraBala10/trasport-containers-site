@@ -133,8 +133,7 @@ export default function ProhibitedGoodsPage() {
   const content = prohibitedGoodsContent[language];
 
   const handleDownload = () => {
-    // يمكن استبدال هذا برابط ملف حقيقي
-    window.open("/documents/shipping-annexes.pdf", "_blank");
+    window.open("/documents/Prohibited Cargo Policy - Medo-Freight EU.pdf", "_blank");
   };
 
   return (

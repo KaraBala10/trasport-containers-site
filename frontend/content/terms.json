@@ -47,9 +47,9 @@
     ],
     
     "contractSection": {
-      "title": "عقد الشحن",
-      "description": "للحصول على عقد الشحن الكامل بصيغة PDF، يمكنكم تحميله من الزر أدناه. يحتوي العقد على جميع الشروط والأحكام التفصيلية.",
-      "downloadButton": "تحميل عقد الشحن PDF",
+      "title": "الشروط والأحكام",
+      "description": "للحصول على الشروط والأحكام الكاملة بصيغة PDF، يمكنكم تحميلها من الزر أدناه. تحتوي على جميع الشروط والأحكام التفصيلية.",
+      "downloadButton": "تحميل الشروط والأحكام PDF",
       "fileSize": "PDF - 1.8 MB"
     },
     
@@ -112,9 +112,9 @@
     ],
     
     "contractSection": {
-      "title": "Shipping Contract",
-      "description": "To obtain the complete shipping contract in PDF format, you can download it from the button below. The contract contains all detailed terms and conditions.",
-      "downloadButton": "Download Shipping Contract PDF",
+      "title": "Terms & Conditions",
+      "description": "To obtain the complete terms and conditions in PDF format, you can download them from the button below. They contain all detailed terms and conditions.",
+      "downloadButton": "Download Terms & Conditions PDF",
       "fileSize": "PDF - 1.8 MB"
     },
     

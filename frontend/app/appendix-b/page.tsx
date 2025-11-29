@@ -10,7 +10,7 @@ export default function AppendixBPage() {
   const content = appendixBContent[language];
 
   const handleDownload = () => {
-    window.open("/documents/shipping-annexes.pdf", "_blank");
+    window.open("/documents/Prohibited Cargo Policy - Medo-Freight EU.pdf", "_blank");
   };
 
   return (

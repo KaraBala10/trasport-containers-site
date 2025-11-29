@@ -12,24 +12,17 @@ export default function ContractsPage() {
       title: "العقود والمستندات",
       description: "جميع العقود والنماذج والملاحق متاحة للتحميل",
       subtitle: "تحميل المستندات الرسمية",
-      contract: {
-        title: "العقد الكامل",
-        description: "عقد الشحن الدولي الكامل مع جميع الملاحق (أ-ح)",
-        size: "~1.5 ميجابايت",
-        button: "تحميل العقد",
+      lclContract: {
+        title: "عقد الشحن LCL",
+        description: "عقد الشحن الدولي لـ LCL (Less than Container Load) مع جميع الشروط والأحكام",
+        size: "PDF",
+        button: "تحميل عقد LCL",
       },
-      annexes: {
-        title: "الملاحق",
-        description:
-          "الملاحق الرسمية من (أ) إلى (ح) - المواد المحظورة، الأسعار، والتخليص",
-        size: "~0.8 ميجابايت",
-        button: "تحميل الملاحق",
-      },
-      form: {
-        title: "نموذج طلب الشحن",
-        description: "نموذج تفاعلي لطلب خدمات الشحن مع جميع البيانات المطلوبة",
-        size: "~0.5 ميجابايت",
-        button: "تحميل النموذج",
+      fclContract: {
+        title: "عقد الشحن FCL",
+        description: "عقد الشحن الدولي لـ FCL (Full Container Load) مع جميع الشروط والأحكام",
+        size: "PDF",
+        button: "تحميل عقد FCL",
       },
       warning: "⚠️ يُرجى قراءة جميع المستندات بعناية قبل التوقيع",
       note: "جميع المستندات متوفرة بصيغة PDF ويمكن طباعتها",
@@ -38,26 +31,17 @@ export default function ContractsPage() {
       title: "Contracts & Documents",
       description: "All contracts, forms and annexes available for download",
       subtitle: "Download Official Documents",
-      contract: {
-        title: "Full Contract",
-        description:
-          "Complete international shipping contract with all annexes (A-H)",
-        size: "~1.5 MB",
-        button: "Download Contract",
+      lclContract: {
+        title: "LCL Shipping Agreement",
+        description: "International shipping agreement for LCL (Less than Container Load) with all terms and conditions",
+        size: "PDF",
+        button: "Download LCL Agreement",
       },
-      annexes: {
-        title: "Annexes",
-        description:
-          "Official annexes from (A) to (H) - Prohibited goods, prices, and clearance",
-        size: "~0.8 MB",
-        button: "Download Annexes",
-      },
-      form: {
-        title: "Shipping Request Form",
-        description:
-          "Interactive form for shipping services with all required data",
-        size: "~0.5 MB",
-        button: "Download Form",
+      fclContract: {
+        title: "FCL Shipping Agreement",
+        description: "International shipping agreement for FCL (Full Container Load) with all terms and conditions",
+        size: "PDF",
+        button: "Download FCL Agreement",
       },
       warning: "⚠️ Please read all documents carefully before signing",
       note: "All documents are available in PDF format and can be printed",
@@ -66,16 +50,12 @@ export default function ContractsPage() {
 
   const t = translations[language];
 
-  const handleDownloadContract = () => {
-    window.open("/documents/shipping-contract-full.pdf", "_blank");
+  const handleDownloadLCL = () => {
+    window.open("/documents/LCL Shipping Agreement - Medo-Freight EU.pdf", "_blank");
   };
 
-  const handleDownloadAnnexes = () => {
-    window.open("/documents/shipping-annexes.pdf", "_blank");
-  };
-
-  const handleDownloadForm = () => {
-    window.open("/documents/shipping-request-form.pdf", "_blank");
+  const handleDownloadFCL = () => {
+    window.open("/documents/FCL Shipping Agreement - Medo-Freight EU.pdf", "_blank");
   };
 
   return (
@@ -114,8 +94,8 @@ export default function ContractsPage() {
             </h2>
 
             {/* Cards Grid */}
-            <div className="grid md:grid-cols-3 gap-8">
-              {/* Contract Card */}
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {/* LCL Contract Card */}
               <div className="bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 border-t-4 border-primary-yellow">
                 <div className="p-8">
                   <div className="w-20 h-20 bg-primary-yellow rounded-full flex items-center justify-center mx-auto mb-6">
@@ -134,18 +114,18 @@ export default function ContractsPage() {
                     </svg>
                   </div>
                   <h3 className="text-2xl font-bold text-primary-dark text-center mb-3">
-                    {t.contract.title}
+                    {t.lclContract.title}
                   </h3>
                   <p className="text-gray-600 text-center mb-6 leading-relaxed">
-                    {t.contract.description}
+                    {t.lclContract.description}
                   </p>
                   <div className="text-center mb-6">
                     <span className="inline-block bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-medium">
-                      📄 PDF • {t.contract.size}
+                      📄 PDF • {t.lclContract.size}
                     </span>
                   </div>
                   <button
-                    onClick={handleDownloadContract}
+                    onClick={handleDownloadLCL}
                     className="w-full bg-primary-dark text-white px-6 py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
                   >
                     <svg
@@ -161,12 +141,12 @@ export default function ContractsPage() {
                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    {t.contract.button}
+                    {t.lclContract.button}
                   </button>
                 </div>
               </div>
 
-              {/* Annexes Card */}
+              {/* FCL Contract Card */}
               <div className="bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 border-t-4 border-primary-dark">
                 <div className="p-8">
                   <div className="w-20 h-20 bg-primary-dark rounded-full flex items-center justify-center mx-auto mb-6">
@@ -180,23 +160,23 @@ export default function ContractsPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
                   </div>
                   <h3 className="text-2xl font-bold text-primary-dark text-center mb-3">
-                    {t.annexes.title}
+                    {t.fclContract.title}
                   </h3>
                   <p className="text-gray-600 text-center mb-6 leading-relaxed">
-                    {t.annexes.description}
+                    {t.fclContract.description}
                   </p>
                   <div className="text-center mb-6">
                     <span className="inline-block bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-medium">
-                      📎 PDF • {t.annexes.size}
+                      📄 PDF • {t.fclContract.size}
                     </span>
                   </div>
                   <button
-                    onClick={handleDownloadAnnexes}
+                    onClick={handleDownloadFCL}
                     className="w-full bg-primary-dark text-white px-6 py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
                   >
                     <svg
@@ -212,58 +192,7 @@ export default function ContractsPage() {
                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    {t.annexes.button}
-                  </button>
-                </div>
-              </div>
-
-              {/* Form Card */}
-              <div className="bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 border-t-4 border-primary-yellow">
-                <div className="p-8">
-                  <div className="w-20 h-20 bg-primary-yellow rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg
-                      className="w-10 h-10 text-primary-dark"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-2xl font-bold text-primary-dark text-center mb-3">
-                    {t.form.title}
-                  </h3>
-                  <p className="text-gray-600 text-center mb-6 leading-relaxed">
-                    {t.form.description}
-                  </p>
-                  <div className="text-center mb-6">
-                    <span className="inline-block bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-medium">
-                      📝 PDF • {t.form.size}
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleDownloadForm}
-                    className="w-full bg-primary-dark text-white px-6 py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    {t.form.button}
+                    {t.fclContract.button}
                   </button>
                 </div>
               </div>

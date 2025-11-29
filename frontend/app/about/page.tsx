@@ -314,7 +314,7 @@ export default function AboutPage() {
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
-              className="text-8xl mb-8"
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-6 md:mb-8"
             >
               🚢
             </motion.div>
@@ -323,7 +323,7 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-5xl md:text-7xl font-bold mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 md:mb-6 px-2"
             >
               {content.mainTitle}
             </motion.h1>
@@ -341,7 +341,7 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="text-xl md:text-2xl max-w-4xl mx-auto leading-relaxed"
+              className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-4xl mx-auto leading-relaxed px-4"
             >
               {content.intro}
             </motion.p>
@@ -351,16 +351,16 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
-              className="flex justify-center gap-6 mt-12 flex-wrap"
+              className="flex justify-center gap-3 sm:gap-4 md:gap-6 mt-8 md:mt-12 flex-wrap px-4"
             >
               {achievements.map((achievement, index) => (
                 <motion.div
                   key={index}
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20"
+                  className="bg-white/10 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 rounded-full border border-white/20"
                 >
-                  <span className="text-2xl mr-2">{achievement.icon}</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-lg sm:text-xl md:text-2xl mr-1 sm:mr-2">{achievement.icon}</span>
+                  <span className="text-xs sm:text-sm font-semibold">
                     {achievement.label}
                   </span>
                 </motion.div>
@@ -403,7 +403,7 @@ export default function AboutPage() {
           </div>
 
           <div className="container mx-auto px-4 relative z-10">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               {content.stats.map((stat, index) => (
                 <motion.div
                   key={index}
@@ -412,12 +412,12 @@ export default function AboutPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.8, delay: index * 0.1 }}
                   whileHover={{ scale: 1.1, y: -10 }}
-                  className="text-center bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
+                  className="text-center bg-white/5 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 sm:p-5 md:p-6 border border-white/10"
                 >
-                  <div className="text-5xl md:text-7xl font-bold text-primary-yellow mb-2">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-primary-yellow mb-1 sm:mb-2">
                     <AnimatedCounter end={stat.number} suffix={stat.suffix} />
                   </div>
-                  <div className="text-white text-lg font-semibold">
+                  <div className="text-white text-xs sm:text-sm md:text-base lg:text-lg font-semibold">
                     {stat.label}
                   </div>
                 </motion.div>
@@ -427,26 +427,26 @@ export default function AboutPage() {
         </div>
 
         {/* Vision & Mission with 3D Flip Cards */}
-        <div className="container mx-auto px-4 py-24">
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="container mx-auto px-4 py-12 sm:py-16 md:py-20 lg:py-24">
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="h-80"
+              className="h-64 sm:h-72 md:h-80"
             >
               <FlipCard
                 front={
-                  <div className="bg-gradient-to-br from-primary-yellow/20 to-primary-yellow/10 rounded-3xl p-10 h-full border-2 border-primary-yellow/30 flex flex-col items-center justify-center">
-                    <div className="text-8xl mb-4">🎯</div>
-                    <h2 className="text-4xl font-bold text-primary-dark">
+                  <div className="bg-gradient-to-br from-primary-yellow/20 to-primary-yellow/10 rounded-2xl md:rounded-3xl p-6 sm:p-8 md:p-10 h-full border-2 border-primary-yellow/30 flex flex-col items-center justify-center">
+                    <div className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-3 sm:mb-4">🎯</div>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-dark text-center">
                       {content.vision.title}
                     </h2>
                   </div>
                 }
                 back={
-                  <div className="bg-gradient-to-br from-primary-yellow to-primary-yellow/80 rounded-3xl p-10 h-full flex items-center justify-center">
-                    <p className="text-lg text-primary-dark leading-relaxed text-center font-semibold">
+                  <div className="bg-gradient-to-br from-primary-yellow to-primary-yellow/80 rounded-2xl md:rounded-3xl p-6 sm:p-8 md:p-10 h-full flex items-center justify-center">
+                    <p className="text-sm sm:text-base md:text-lg text-primary-dark leading-relaxed text-center font-semibold">
                       {content.vision.text}
                     </p>
                   </div>
@@ -458,20 +458,20 @@ export default function AboutPage() {
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="h-80"
+              className="h-64 sm:h-72 md:h-80"
             >
               <FlipCard
                 front={
-                  <div className="bg-gradient-to-br from-primary-dark/10 to-primary-dark/5 rounded-3xl p-10 h-full border-2 border-primary-dark/30 flex flex-col items-center justify-center">
-                    <div className="text-8xl mb-4">🚀</div>
-                    <h2 className="text-4xl font-bold text-primary-dark">
+                  <div className="bg-gradient-to-br from-primary-dark/10 to-primary-dark/5 rounded-2xl md:rounded-3xl p-6 sm:p-8 md:p-10 h-full border-2 border-primary-dark/30 flex flex-col items-center justify-center">
+                    <div className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-3 sm:mb-4">🚀</div>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-dark text-center">
                       {content.mission.title}
                     </h2>
                   </div>
                 }
                 back={
-                  <div className="bg-gradient-to-br from-primary-dark to-primary-dark/90 rounded-3xl p-10 h-full flex items-center justify-center">
-                    <p className="text-lg text-white leading-relaxed text-center font-semibold">
+                  <div className="bg-gradient-to-br from-primary-dark to-primary-dark/90 rounded-2xl md:rounded-3xl p-6 sm:p-8 md:p-10 h-full flex items-center justify-center">
+                    <p className="text-sm sm:text-base md:text-lg text-white leading-relaxed text-center font-semibold">
                       {content.mission.text}
                     </p>
                   </div>
@@ -499,8 +499,8 @@ export default function AboutPage() {
             </motion.div>
 
             <div className="max-w-6xl mx-auto relative">
-              {/* Timeline Line */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-primary-yellow/30" />
+              {/* Timeline Line - Hidden on mobile, visible on md+ */}
+              <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-primary-yellow/30" />
 
               {timeline.map((item, index) => (
                 <motion.div
@@ -509,37 +509,34 @@ export default function AboutPage() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className={`flex items-center mb-12 ${
-                    index % 2 === 0 ? "flex-row" : "flex-row-reverse"
-                  }`}
+                  className="flex flex-col md:flex-row items-center mb-8 sm:mb-10 md:mb-12"
                 >
-                  <div
-                    className={`w-1/2 ${
-                      index % 2 === 0 ? "text-right pr-12" : "text-left pl-12"
-                    }`}
-                  >
+                  {/* Mobile: Full width, Desktop: Half width */}
+                  <div className="w-full md:w-1/2 mb-4 md:mb-0 md:pr-12 md:pl-0 md:text-right">
                     <motion.div
                       whileHover={{ scale: 1.05 }}
-                      className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-primary-yellow"
+                      className="bg-white rounded-xl md:rounded-2xl p-4 sm:p-5 md:p-6 shadow-lg border-l-4 border-primary-yellow"
                     >
-                      <div className="text-3xl font-bold text-primary-yellow mb-2">
+                      <div className="text-2xl sm:text-3xl font-bold text-primary-yellow mb-2">
                         {item.year}
                       </div>
-                      <h3 className="text-2xl font-bold text-primary-dark mb-2">
+                      <h3 className="text-xl sm:text-2xl font-bold text-primary-dark mb-2">
                         {item.title}
                       </h3>
-                      <p className="text-gray-600">{item.description}</p>
+                      <p className="text-sm sm:text-base text-gray-600">{item.description}</p>
                     </motion.div>
                   </div>
 
-                  <div className="relative z-10">
+                  {/* Timeline Dot - Centered on mobile, positioned on desktop */}
+                  <div className="relative z-10 my-2 md:my-0">
                     <motion.div
                       whileHover={{ scale: 1.3, rotate: 180 }}
-                      className="w-6 h-6 bg-primary-yellow rounded-full border-4 border-white shadow-lg"
+                      className="w-5 h-5 sm:w-6 sm:h-6 bg-primary-yellow rounded-full border-4 border-white shadow-lg"
                     />
                   </div>
 
-                  <div className="w-1/2" />
+                  {/* Spacer for desktop layout */}
+                  <div className="hidden md:block w-1/2" />
                 </motion.div>
               ))}
             </div>
@@ -553,17 +550,17 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-8 sm:mb-12 md:mb-16"
             >
-              <h2 className="text-5xl font-bold text-primary-dark mb-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-dark mb-3 sm:mb-4 px-4">
                 {content.services.title}
               </h2>
               <div className="flex justify-center">
-                <div className="w-32 h-1.5 bg-primary-yellow rounded-full" />
+                <div className="w-24 sm:w-32 h-1 sm:h-1.5 bg-primary-yellow rounded-full" />
               </div>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-7xl mx-auto">
               {content.services.items.map((service, index) => (
                 <motion.div
                   key={index}
@@ -576,7 +573,7 @@ export default function AboutPage() {
                     rotateY: 5,
                     rotateX: 5,
                   }}
-                  className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-t-4 border-primary-yellow relative overflow-hidden group"
+                  className="bg-white rounded-xl md:rounded-2xl p-5 sm:p-6 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-t-4 border-primary-yellow relative overflow-hidden group"
                 >
                   {/* Hover Effect Background */}
                   <div className="absolute inset-0 bg-gradient-to-br from-primary-yellow/0 to-primary-yellow/0 group-hover:from-primary-yellow/10 group-hover:to-primary-yellow/5 transition-all duration-300" />
@@ -584,15 +581,15 @@ export default function AboutPage() {
                   <motion.div
                     whileHover={{ scale: 1.2, rotate: 360 }}
                     transition={{ duration: 0.6 }}
-                    className="text-7xl mb-6 relative z-10"
+                    className="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 relative z-10"
                   >
                     {service.icon}
                   </motion.div>
 
-                  <h3 className="text-2xl font-bold text-primary-dark mb-4 relative z-10">
+                  <h3 className="text-xl sm:text-2xl font-bold text-primary-dark mb-3 sm:mb-4 relative z-10">
                     {service.title}
                   </h3>
-                  <p className="text-gray-700 leading-relaxed relative z-10">
+                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed relative z-10">
                     {service.description}
                   </p>
                 </motion.div>
@@ -608,17 +605,17 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-8 sm:mb-12 md:mb-16"
             >
-              <h2 className="text-5xl font-bold text-primary-dark mb-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-dark mb-3 sm:mb-4 px-4">
                 {content.whyUs.title}
               </h2>
               <div className="flex justify-center">
-                <div className="w-32 h-1.5 bg-primary-yellow rounded-full" />
+                <div className="w-24 sm:w-32 h-1 sm:h-1.5 bg-primary-yellow rounded-full" />
               </div>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 max-w-6xl mx-auto">
               {content.whyUs.items.map((item, index) => (
                 <motion.div
                   key={index}
@@ -627,17 +624,17 @@ export default function AboutPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   whileHover={{ y: -10 }}
-                  className="bg-white rounded-xl p-6 shadow-md hover:shadow-2xl transition-all duration-300 border-l-4 border-primary-yellow"
+                  className="bg-white rounded-lg md:rounded-xl p-4 sm:p-5 md:p-6 shadow-md hover:shadow-2xl transition-all duration-300 border-l-4 border-primary-yellow"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3 sm:gap-4">
                     <motion.div
                       whileHover={{ scale: 1.2, rotate: 360 }}
                       transition={{ duration: 0.5 }}
                       className="flex-shrink-0"
                     >
-                      <div className="w-14 h-14 bg-gradient-to-br from-primary-yellow to-primary-yellow/80 rounded-full flex items-center justify-center shadow-lg">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary-yellow to-primary-yellow/80 rounded-full flex items-center justify-center shadow-lg">
                         <svg
-                          className="w-7 h-7 text-primary-dark"
+                          className="w-6 h-6 sm:w-7 sm:h-7 text-primary-dark"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -652,10 +649,10 @@ export default function AboutPage() {
                       </div>
                     </motion.div>
                     <div>
-                      <h3 className="text-xl font-bold text-primary-dark mb-2">
+                      <h3 className="text-lg sm:text-xl font-bold text-primary-dark mb-1 sm:mb-2">
                         {item.title}
                       </h3>
-                      <p className="text-gray-600">{item.description}</p>
+                      <p className="text-sm sm:text-base text-gray-600">{item.description}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -671,17 +668,17 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-8 sm:mb-12 md:mb-16"
             >
-              <h2 className="text-5xl font-bold text-primary-dark mb-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-dark mb-3 sm:mb-4 px-4">
                 {language === "ar" ? "فريقنا" : "Our Team"}
               </h2>
               <div className="flex justify-center">
-                <div className="w-32 h-1.5 bg-primary-yellow rounded-full" />
+                <div className="w-24 sm:w-32 h-1 sm:h-1.5 bg-primary-yellow rounded-full" />
               </div>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto">
               {team.map((member, index) => (
                 <motion.div
                   key={index}
@@ -692,20 +689,20 @@ export default function AboutPage() {
                   whileHover={{ y: -15, scale: 1.05 }}
                   className="text-center"
                 >
-                  <div className="relative mb-6">
+                  <div className="relative mb-4 sm:mb-5 md:mb-6">
                     <motion.div
                       whileHover={{ scale: 1.1, rotate: 5 }}
-                      className="w-48 h-48 mx-auto rounded-full bg-gradient-to-br from-primary-yellow to-primary-dark/80 p-1 shadow-xl"
+                      className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 mx-auto rounded-full bg-gradient-to-br from-primary-yellow to-primary-dark/80 p-1 shadow-xl"
                     >
-                      <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center text-6xl">
+                      <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center text-4xl sm:text-5xl md:text-6xl">
                         👤
                       </div>
                     </motion.div>
                   </div>
-                  <h3 className="text-2xl font-bold text-primary-dark mb-2">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-dark mb-1 sm:mb-2">
                     {member.name}
                   </h3>
-                  <p className="text-primary-yellow font-semibold text-lg">
+                  <p className="text-primary-yellow font-semibold text-sm sm:text-base md:text-lg">
                     {member.role}
                   </p>
                 </motion.div>
@@ -721,17 +718,17 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-8 sm:mb-12 md:mb-16"
             >
-              <h2 className="text-5xl font-bold text-white mb-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4 px-4">
                 {language === "ar" ? "آراء عملائنا" : "Client Testimonials"}
               </h2>
               <div className="flex justify-center">
-                <div className="w-32 h-1.5 bg-primary-yellow rounded-full" />
+                <div className="w-24 sm:w-32 h-1 sm:h-1.5 bg-primary-yellow rounded-full" />
               </div>
             </motion.div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto">
               {testimonials.map((testimonial, index) => (
                 <motion.div
                   key={index}
@@ -740,42 +737,206 @@ export default function AboutPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.2 }}
                   whileHover={{ y: -10, scale: 1.03 }}
-                  className="bg-white rounded-2xl p-8 shadow-xl relative"
+                  className="bg-white rounded-xl md:rounded-2xl p-5 sm:p-6 md:p-8 shadow-xl relative"
                 >
                   {/* Quote Icon */}
-                  <div className="absolute top-4 right-4 text-6xl text-primary-yellow/20">
+                  <div className="absolute top-3 right-3 sm:top-4 sm:right-4 text-4xl sm:text-5xl md:text-6xl text-primary-yellow/20">
                     &ldquo;
                   </div>
 
                   {/* Rating Stars */}
-                  <div className="flex gap-1 mb-4">
+                  <div className="flex gap-1 mb-3 sm:mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
                       <motion.span
                         key={i}
                         initial={{ opacity: 0, scale: 0 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.2 + i * 0.1 }}
-                        className="text-2xl text-primary-yellow"
+                        className="text-lg sm:text-xl md:text-2xl text-primary-yellow"
                       >
                         ⭐
                       </motion.span>
                     ))}
                   </div>
 
-                  <p className="text-gray-700 mb-6 leading-relaxed italic">
+                  <p className="text-sm sm:text-base text-gray-700 mb-4 sm:mb-5 md:mb-6 leading-relaxed italic">
                     &ldquo;{testimonial.text}&rdquo;
                   </p>
 
-                  <div className="border-t border-gray-200 pt-4">
-                    <p className="font-bold text-primary-dark text-lg">
+                  <div className="border-t border-gray-200 pt-3 sm:pt-4">
+                    <p className="font-bold text-primary-dark text-base sm:text-lg">
                       {testimonial.name}
                     </p>
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 text-xs sm:text-sm">
                       {testimonial.company}
                     </p>
                   </div>
                 </motion.div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Collection Centers Section */}
+        <div className="py-24 bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-8 sm:mb-12 md:mb-16"
+            >
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-dark mb-3 sm:mb-4 px-4">
+                {content.offices.collectionCenters.title}
+              </h2>
+              <div className="flex justify-center">
+                <div className="w-24 sm:w-32 h-1 sm:h-1.5 bg-primary-yellow rounded-full" />
+              </div>
+            </motion.div>
+
+            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-12 max-w-6xl mx-auto mb-12 sm:mb-16 md:mb-20 lg:mb-24">
+              {/* Large Parcels Center */}
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                whileHover={{ scale: 1.03, rotateY: 2 }}
+                className="bg-white rounded-2xl md:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 border-t-4 border-primary-yellow hover:shadow-3xl transition-all duration-300"
+              >
+                <motion.div
+                  animate={{
+                    rotate: [0, 10, -10, 10, 0],
+                    scale: [1, 1.1, 1, 1.1, 1],
+                  }}
+                  transition={{ duration: 5, repeat: Infinity }}
+                  className="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-center"
+                >
+                  📦
+                </motion.div>
+
+                <div className="mb-6 sm:mb-7 md:mb-8">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-dark mb-2 sm:mb-3 text-center">
+                    {content.offices.collectionCenters.largeParcels.title}
+                  </h3>
+                  <p className="text-gray-600 text-xs sm:text-sm text-center mb-2 sm:mb-3">
+                    {content.offices.collectionCenters.largeParcels.description}
+                  </p>
+                  <div className="text-primary-yellow font-bold text-lg sm:text-xl md:text-2xl mb-1 sm:mb-2 text-center">
+                    {content.offices.collectionCenters.largeParcels.companyName}
+                  </div>
+                  <div className="text-gray-600 text-xs sm:text-sm italic text-center">
+                    {content.offices.collectionCenters.largeParcels.tagline}
+                  </div>
+                </div>
+
+                <div className="space-y-4 sm:space-y-5 md:space-y-6">
+                  <motion.div
+                    whileHover={{ x: 10 }}
+                    className="flex items-start gap-3 sm:gap-4"
+                  >
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 sm:w-6 sm:h-6 text-primary-dark"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-gray-700 text-sm sm:text-base md:text-lg">
+                        {content.offices.collectionCenters.largeParcels.address}
+                      </p>
+                      <p className="text-primary-dark font-semibold mt-1 sm:mt-2 text-xs sm:text-sm md:text-base">
+                        {content.offices.collectionCenters.largeParcels.storagePoint}
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+
+              {/* Small Parcels Center */}
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                whileHover={{ scale: 1.03, rotateY: -2 }}
+                className="bg-white rounded-2xl md:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 border-t-4 border-primary-dark hover:shadow-3xl transition-all duration-300"
+              >
+                <motion.div
+                  animate={{
+                    rotate: [0, -10, 10, -10, 0],
+                    scale: [1, 1.1, 1, 1.1, 1],
+                  }}
+                  transition={{ duration: 5, repeat: Infinity }}
+                  className="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-center"
+                >
+                  📮
+                </motion.div>
+
+                <div className="mb-6 sm:mb-7 md:mb-8">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-dark mb-2 sm:mb-3 text-center">
+                    {content.offices.collectionCenters.smallParcels.title}
+                  </h3>
+                  <p className="text-gray-600 text-xs sm:text-sm text-center mb-2 sm:mb-3">
+                    {content.offices.collectionCenters.smallParcels.description}
+                  </p>
+                  <div className="text-primary-dark font-bold text-lg sm:text-xl md:text-2xl mb-1 sm:mb-2 text-center">
+                    {content.offices.collectionCenters.smallParcels.companyName}
+                  </div>
+                </div>
+
+                <div className="space-y-4 sm:space-y-5 md:space-y-6">
+                  <motion.div
+                    whileHover={{ x: 10 }}
+                    className="flex items-start gap-3 sm:gap-4"
+                  >
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-primary-dark/10 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 sm:w-6 sm:h-6 text-primary-dark"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-gray-700 text-sm sm:text-base md:text-lg">
+                        {content.offices.collectionCenters.smallParcels.address}
+                      </p>
+                      <p className="text-primary-dark font-semibold mt-1 sm:mt-2 text-xs sm:text-sm md:text-base">
+                        {content.offices.collectionCenters.smallParcels.storagePoint}
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>
@@ -787,17 +948,17 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-8 sm:mb-12 md:mb-16"
             >
-              <h2 className="text-5xl font-bold text-primary-dark mb-4">
-            {content.offices.title}
-          </h2>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-dark mb-3 sm:mb-4 px-4">
+                {content.offices.title}
+              </h2>
               <div className="flex justify-center">
-                <div className="w-32 h-1.5 bg-primary-yellow rounded-full" />
+                <div className="w-24 sm:w-32 h-1 sm:h-1.5 bg-primary-yellow rounded-full" />
               </div>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
+            <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-12 max-w-6xl mx-auto">
             {/* Europe Office */}
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
@@ -805,7 +966,7 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
                 whileHover={{ scale: 1.03, rotateY: 2 }}
-                className="bg-white rounded-3xl shadow-2xl p-10 border-t-4 border-primary-yellow hover:shadow-3xl transition-all duration-300"
+                className="bg-white rounded-2xl md:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 border-t-4 border-primary-yellow hover:shadow-3xl transition-all duration-300"
               >
                 <motion.div
                   animate={{
@@ -813,31 +974,31 @@ export default function AboutPage() {
                     scale: [1, 1.1, 1, 1.1, 1],
                   }}
                   transition={{ duration: 5, repeat: Infinity }}
-                  className="text-7xl mb-6 text-center"
+                  className="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-center"
                 >
                   🇪🇺
                 </motion.div>
 
-                <div className="mb-8">
-                  <h3 className="text-3xl font-bold text-primary-dark mb-3 text-center">
+                <div className="mb-6 sm:mb-7 md:mb-8">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-dark mb-2 sm:mb-3 text-center">
                   {content.offices.europe.title}
                 </h3>
-                  <div className="text-primary-yellow font-bold text-2xl mb-2 text-center">
+                  <div className="text-primary-yellow font-bold text-lg sm:text-xl md:text-2xl mb-1 sm:mb-2 text-center">
                   {content.offices.europe.companyName}
                 </div>
-                  <div className="text-gray-600 text-sm italic text-center">
+                  <div className="text-gray-600 text-xs sm:text-sm italic text-center">
                   {content.offices.europe.tagline}
                 </div>
               </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-5 md:space-y-6">
                   <motion.div
                     whileHover={{ x: 10 }}
-                    className="flex items-start gap-4"
+                    className="flex items-start gap-3 sm:gap-4"
                   >
-                    <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
                       <svg
-                        className="w-6 h-6 text-primary-dark"
+                        className="w-5 h-5 sm:w-6 sm:h-6 text-primary-dark"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -856,18 +1017,18 @@ export default function AboutPage() {
                     />
                   </svg>
                     </div>
-                    <p className="text-gray-700 text-lg">
+                    <p className="text-gray-700 text-sm sm:text-base md:text-lg">
                     {content.offices.europe.address}
                   </p>
                   </motion.div>
 
                   <motion.div
                     whileHover={{ x: 10 }}
-                    className="flex items-center gap-4"
+                    className="flex items-center gap-3 sm:gap-4"
                   >
-                    <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
                       <svg
-                        className="w-6 h-6 text-primary-dark"
+                        className="w-5 h-5 sm:w-6 sm:h-6 text-primary-dark"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -882,7 +1043,7 @@ export default function AboutPage() {
                     </div>
                   <a
                     href={`tel:${content.offices.europe.phone}`}
-                      className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
+                      className="text-gray-700 text-sm sm:text-base md:text-lg hover:text-primary-yellow transition-colors font-semibold break-all"
                   >
                     {content.offices.europe.phone}
                   </a>
@@ -890,11 +1051,11 @@ export default function AboutPage() {
 
                   <motion.div
                     whileHover={{ x: 10 }}
-                    className="flex items-center gap-4"
+                    className="flex items-center gap-3 sm:gap-4"
                   >
-                    <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
                       <svg
-                        className="w-6 h-6 text-primary-dark"
+                        className="w-5 h-5 sm:w-6 sm:h-6 text-primary-dark"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -909,7 +1070,7 @@ export default function AboutPage() {
                     </div>
                   <a
                     href={`mailto:${content.offices.europe.email}`}
-                      className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
+                      className="text-gray-700 text-sm sm:text-base md:text-lg hover:text-primary-yellow transition-colors font-semibold break-all"
                   >
                     {content.offices.europe.email}
                   </a>
@@ -917,11 +1078,11 @@ export default function AboutPage() {
 
                   <motion.div
                     whileHover={{ x: 10 }}
-                    className="flex items-center gap-4"
+                    className="flex items-center gap-3 sm:gap-4"
                   >
-                    <div className="flex-shrink-0 w-12 h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-primary-yellow/20 rounded-full flex items-center justify-center">
                       <svg
-                        className="w-6 h-6 text-primary-dark"
+                        className="w-5 h-5 sm:w-6 sm:h-6 text-primary-dark"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -938,7 +1099,7 @@ export default function AboutPage() {
                     href={`https://${content.offices.europe.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                      className="text-gray-700 text-lg hover:text-primary-yellow transition-colors font-semibold"
+                      className="text-gray-700 text-sm sm:text-base md:text-lg hover:text-primary-yellow transition-colors font-semibold break-all"
                   >
                     {content.offices.europe.website}
                   </a>
@@ -953,7 +1114,7 @@ export default function AboutPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
                 whileHover={{ scale: 1.03, rotateY: -2 }}
-                className="bg-white rounded-3xl shadow-2xl p-10 border-t-4 border-primary-dark hover:shadow-3xl transition-all duration-300"
+                className="bg-white rounded-2xl md:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 border-t-4 border-primary-dark hover:shadow-3xl transition-all duration-300"
               >
                 <motion.div
                   animate={{
@@ -961,19 +1122,19 @@ export default function AboutPage() {
                     scale: [1, 1.1, 1, 1.1, 1],
                   }}
                   transition={{ duration: 5, repeat: Infinity }}
-                  className="text-7xl mb-6 text-center"
+                  className="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-center"
                 >
                   🇸🇾
                 </motion.div>
 
-                <div className="mb-8">
-                  <h3 className="text-3xl font-bold text-primary-dark mb-3 text-center">
+                <div className="mb-6 sm:mb-7 md:mb-8">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-dark mb-2 sm:mb-3 text-center">
                   {content.offices.syria.title}
                 </h3>
-                  <div className="text-primary-dark font-bold text-2xl mb-2 text-center">
+                  <div className="text-primary-dark font-bold text-lg sm:text-xl md:text-2xl mb-1 sm:mb-2 text-center">
                   {content.offices.syria.companyName}
                 </div>
-                  <div className="text-gray-600 text-sm italic text-center">
+                  <div className="text-gray-600 text-xs sm:text-sm italic text-center">
                   {content.offices.syria.companyNameEn}
                 </div>
               </div>
@@ -1082,10 +1243,10 @@ export default function AboutPage() {
           transition={{ duration: 0.8 }}
           className="container mx-auto px-4 py-24"
         >
-          <div className="max-w-5xl mx-auto bg-gradient-to-br from-primary-dark via-primary-dark/95 to-primary-dark/90 rounded-3xl p-16 md:p-20 text-white text-center shadow-2xl relative overflow-hidden">
+          <div className="max-w-5xl mx-auto bg-gradient-to-br from-primary-dark via-primary-dark/95 to-primary-dark/90 rounded-2xl md:rounded-3xl p-8 sm:p-12 md:p-16 lg:p-20 text-white text-center shadow-2xl relative overflow-hidden">
             {/* Animated Background Elements */}
             <motion.div
-              className="absolute top-0 right-0 w-96 h-96 bg-primary-yellow/10 rounded-full blur-3xl"
+              className="absolute top-0 right-0 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 bg-primary-yellow/10 rounded-full blur-3xl"
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.1, 0.2, 0.1],
@@ -1096,7 +1257,7 @@ export default function AboutPage() {
               }}
             />
             <motion.div
-              className="absolute bottom-0 left-0 w-96 h-96 bg-primary-yellow/10 rounded-full blur-3xl"
+              className="absolute bottom-0 left-0 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 bg-primary-yellow/10 rounded-full blur-3xl"
               animate={{
                 scale: [1.2, 1, 1.2],
                 opacity: [0.2, 0.1, 0.2],
@@ -1117,7 +1278,7 @@ export default function AboutPage() {
                   duration: 3,
                   repeat: Infinity,
                 }}
-                className="text-8xl mb-8"
+                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-4 sm:mb-6 md:mb-8"
               >
                 🎉
               </motion.div>
@@ -1127,7 +1288,7 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="text-4xl md:text-6xl font-bold mb-8"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6 md:mb-8 px-4"
               >
                 {content.cta.title}
               </motion.h2>
@@ -1137,7 +1298,7 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-xl md:text-2xl mb-12 text-white/90 leading-relaxed"
+                className="text-base sm:text-lg md:text-xl lg:text-2xl mb-8 sm:mb-10 md:mb-12 text-white/90 leading-relaxed px-4"
               >
                 {content.cta.subtitle}
               </motion.p>
@@ -1152,7 +1313,7 @@ export default function AboutPage() {
                   <motion.div
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className="bg-primary-yellow text-primary-dark px-12 py-6 rounded-xl font-bold text-xl shadow-2xl hover:shadow-3xl transition-all relative overflow-hidden group"
+                    className="bg-primary-yellow text-primary-dark px-6 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 rounded-lg md:rounded-xl font-bold text-base sm:text-lg md:text-xl shadow-2xl hover:shadow-3xl transition-all relative overflow-hidden group"
                   >
                     <span className="relative z-10">{content.cta.button}</span>
                     <motion.div

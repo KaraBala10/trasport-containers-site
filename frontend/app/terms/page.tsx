@@ -216,7 +216,7 @@ export default function TermsPage() {
                 {content.contractSection.description}
               </p>
               <a
-                href="/documents/shipping-contract-full.pdf"
+                href="/documents/Terms of Use - Medo-Freight EU.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 bg-primary-yellow text-primary-dark px-8 py-4 rounded-md font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl"

@@ -1134,6 +1134,7 @@ export default function FCLQuotePage() {
       // Terms
       acceptTerms: "أوافق على الشروط والأحكام",
       privacyPolicy: "سياسة الخصوصية",
+      readTerms: "قراءة الشروط",
 
       // Buttons
       confirmBooking: "تأكيد الحجز",
@@ -1249,6 +1250,7 @@ export default function FCLQuotePage() {
       // Terms
       acceptTerms: "I accept the terms and conditions",
       privacyPolicy: "Privacy Policy",
+      readTerms: "Read Terms",
 
       // Buttons
       confirmBooking: "Confirm Booking",
@@ -3261,6 +3263,15 @@ export default function FCLQuotePage() {
                               className="text-primary-yellow hover:underline font-semibold"
                             >
                               {t.privacyPolicy}
+                            </a>
+                            {" / "}
+                            <a
+                              href="/documents/FCL Shipping Agreement - Medo-Freight EU.pdf"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary-yellow hover:underline font-semibold"
+                            >
+                              {t.readTerms}
                             </a>
                             {!formData.accepted_terms && (
                               <span className="text-red-500 ml-1">*</span>

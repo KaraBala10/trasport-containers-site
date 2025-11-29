@@ -460,7 +460,7 @@ export default function Step10Review({
                 {t.acceptPolicies} *
               </label>
               <Link
-                href="/documents/shipping-contract-full.pdf"
+                href="/documents/LCL Shipping Policy - Medo-Freight EU.pdf"
                 target="_blank"
                 className="text-primary-dark hover:text-primary-yellow text-sm underline ml-2"
               >
@@ -495,7 +495,7 @@ export default function Step10Review({
               {t.acceptTerms} *
             </label>
             <Link
-              href="/documents/shipping-contract-full.pdf"
+              href="/documents/LCL Shipping Agreement - Medo-Freight EU.pdf"
               target="_blank"
               className="text-primary-dark hover:text-primary-yellow text-sm underline ml-2"
             >
