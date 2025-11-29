@@ -1282,10 +1282,6 @@ export default function CreateShipmentPage() {
                 acceptedPolicies={acceptedPolicies}
                 onAcceptedTermsChange={setAcceptedTerms}
                 onAcceptedPoliciesChange={setAcceptedPolicies}
-                onCreateShipment={() => {
-                  // Move to payment step instead of creating shipment
-                  setCurrentStep(7);
-                }}
                 language={language}
                 selectedEUShippingName={selectedEUShippingName}
                 selectedEUShippingPrice={selectedEUShippingPrice}
@@ -1398,6 +1394,7 @@ export default function CreateShipmentPage() {
                 grandTotal={grandTotalWithTransport}
                 onStripePayment={handleStripePayment}
                 isProcessingPayment={isProcessingPayment}
+                isRecaptchaValid={isRecaptchaValid}
               />
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

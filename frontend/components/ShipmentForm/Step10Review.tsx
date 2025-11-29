@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ShippingDirection,
-  PersonInfo,
-  Parcel,
-} from "@/types/shipment";
+import { ShippingDirection, PersonInfo, Parcel } from "@/types/shipment";
 import { PricingResult } from "@/types/pricing";
 import Link from "next/link";
 
@@ -20,7 +16,6 @@ interface Step10ReviewProps {
   acceptedPolicies: boolean;
   onAcceptedTermsChange: (accepted: boolean) => void;
   onAcceptedPoliciesChange: (accepted: boolean) => void;
-  onCreateShipment: () => void;
   language: "ar" | "en";
   selectedEUShippingName?: string;
   selectedEUShippingPrice?: number; // Original Sendcloud price
@@ -38,7 +33,6 @@ export default function Step10Review({
   acceptedPolicies,
   onAcceptedTermsChange,
   onAcceptedPoliciesChange,
-  onCreateShipment,
   language,
   selectedEUShippingName,
   selectedEUShippingPrice,
@@ -443,7 +437,6 @@ export default function Step10Review({
             </h4>
             <p className="text-xs text-gray-700">{t.policyLiabilityDesc}</p>
           </div>
-
         </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200">
@@ -460,7 +453,9 @@ export default function Step10Review({
                 {t.acceptPolicies} *
               </label>
               <Link
-                href={`/documents/${encodeURIComponent("LCL Shipping Policy - Medo-Freight EU.pdf")}`}
+                href={`/documents/${encodeURIComponent(
+                  "LCL Shipping Policy - Medo-Freight EU.pdf"
+                )}`}
                 target="_blank"
                 className="text-primary-dark hover:text-primary-yellow text-sm underline ml-2"
               >
@@ -495,7 +490,9 @@ export default function Step10Review({
               {t.acceptTerms} *
             </label>
             <Link
-              href={`/documents/${encodeURIComponent("LCL Shipping Agreement - Medo-Freight EU.pdf")}`}
+              href={`/documents/${encodeURIComponent(
+                "LCL Shipping Agreement - Medo-Freight EU.pdf"
+              )}`}
               target="_blank"
               className="text-primary-dark hover:text-primary-yellow text-sm underline ml-2"
             >
@@ -503,52 +500,6 @@ export default function Step10Review({
             </Link>
           </div>
         </div>
-      </motion.div>
-
-      {/* Create Shipment Button */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="flex justify-center"
-      >
-        <motion.button
-          onClick={onCreateShipment}
-          disabled={!acceptedTerms || !acceptedPolicies}
-          className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
-            acceptedTerms && acceptedPolicies
-              ? "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
-          whileHover={
-            acceptedTerms && acceptedPolicies ? { scale: 1.08, y: -2 } : {}
-          }
-          whileTap={acceptedTerms && acceptedPolicies ? { scale: 0.96 } : {}}
-        >
-          <span className="relative z-10 flex items-center gap-3">
-            {t.createShipment}
-            <motion.svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              initial={{ x: 0 }}
-              whileHover={
-                acceptedTerms && acceptedPolicies
-                  ? { x: language === "ar" ? -5 : 5 }
-                  : {}
-              }
-              transition={{ duration: 0.3 }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M5 13l4 4L19 7"
-              />
-            </motion.svg>
-          </span>
-        </motion.button>
       </motion.div>
     </div>
   );

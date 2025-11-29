@@ -20,6 +20,7 @@ interface Step9PaymentProps {
   grandTotal?: number;
   onStripePayment?: () => Promise<void>;
   isProcessingPayment?: boolean;
+  isRecaptchaValid?: boolean;
 }
 
 export default function Step9Payment({
@@ -36,6 +37,7 @@ export default function Step9Payment({
   grandTotal = 0,
   onStripePayment,
   isProcessingPayment = false,
+  isRecaptchaValid = true,
 }: Step9PaymentProps) {
   const translations = {
     ar: {
@@ -183,19 +185,19 @@ export default function Step9Payment({
                 {onStripePayment && (
                   <motion.button
                     onClick={onStripePayment}
-                    disabled={isProcessingPayment || grandTotal <= 0}
+                    disabled={isProcessingPayment || grandTotal <= 0 || !isRecaptchaValid}
                     className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
-                      isProcessingPayment || grandTotal <= 0
+                      isProcessingPayment || grandTotal <= 0 || !isRecaptchaValid
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
                     }`}
                     whileHover={
-                      !isProcessingPayment && grandTotal > 0
+                      !isProcessingPayment && grandTotal > 0 && isRecaptchaValid
                         ? { scale: 1.02 }
                         : {}
                     }
                     whileTap={
-                      !isProcessingPayment && grandTotal > 0
+                      !isProcessingPayment && grandTotal > 0 && isRecaptchaValid
                         ? { scale: 0.98 }
                         : {}
                     }
@@ -682,19 +684,19 @@ export default function Step9Payment({
                 {onStripePayment && (
                   <motion.button
                     onClick={onStripePayment}
-                    disabled={isProcessingPayment || grandTotal <= 0}
+                    disabled={isProcessingPayment || grandTotal <= 0 || !isRecaptchaValid}
                     className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
-                      isProcessingPayment || grandTotal <= 0
+                      isProcessingPayment || grandTotal <= 0 || !isRecaptchaValid
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
                     }`}
                     whileHover={
-                      !isProcessingPayment && grandTotal > 0
+                      !isProcessingPayment && grandTotal > 0 && isRecaptchaValid
                         ? { scale: 1.02 }
                         : {}
                     }
                     whileTap={
-                      !isProcessingPayment && grandTotal > 0
+                      !isProcessingPayment && grandTotal > 0 && isRecaptchaValid
                         ? { scale: 0.98 }
                         : {}
                     }
