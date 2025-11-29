@@ -136,6 +136,8 @@ interface LCLShipment {
   status: string;
   tracking_number?: string;
   sendcloud_id?: number;
+  transfer_sender_name?: string;
+  transfer_reference?: string;
   created_at: string;
   updated_at: string;
   paid_at?: string;
@@ -153,6 +155,7 @@ export default function DashboardPage() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const { language, setLanguage, isRTL, mounted } = useLanguage();
   const router = useRouter();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const isAdmin = user?.is_superuser || false;
   const [fclQuotes, setFclQuotes] = useState<FCLQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
@@ -819,7 +822,8 @@ export default function DashboardPage() {
       return true;
     }
     // Regular users can only edit/delete shipments with these statuses
-    const statusesBeforePayment = ["CREATED", "OFFER_SENT"];
+    // LCL shipments start with PENDING_PAYMENT (no CREATED)
+    const statusesBeforePayment = ["PENDING_PAYMENT"];
     return statusesBeforePayment.includes(status);
   };
 
@@ -4646,142 +4650,139 @@ export default function DashboardPage() {
                                 </p>
                                 <span
                                   className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm ${getStatusColor(
-                                    shipment.status || "CREATED"
+                                    shipment.status || "PENDING_PAYMENT"
                                   )}`}
                                 >
                                   {getStatusDisplay(
-                                    shipment.status || "CREATED"
+                                    shipment.status || "PENDING_PAYMENT",
+                                    shipment.direction
                                   )}
                                 </span>
                               </div>
 
-                              {/* Payment Progress - Show for all statuses after CREATED */}
-                              {shipment.status !== "CREATED" &&
-                                Number(shipment.total_price) > 0 && (
-                                  <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                      {t.paymentProgress}
-                                    </p>
-                                    <div className="space-y-2">
-                                      <div className="flex justify-between items-center text-xs">
-                                        <span className="text-gray-600 font-medium">
-                                          {t.amountPaid}
-                                        </span>
-                                        <span className="font-bold text-primary-dark">
-                                          €
-                                          {Number(
-                                            shipment.amount_paid || 0
-                                          ).toFixed(2)}
-                                        </span>
-                                      </div>
-                                      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                        <div
-                                          className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
-                                          style={{
-                                            width: `${Math.min(
-                                              100,
-                                              ((Number(shipment.amount_paid) ||
-                                                0) /
-                                                Number(shipment.total_price)) *
-                                                100
-                                            )}%`,
-                                          }}
-                                        ></div>
-                                      </div>
-                                      <div className="flex justify-between items-center">
-                                        <p className="text-xs font-bold text-gray-700">
-                                          {Math.round(
+                              {/* Payment Progress - Show for all shipments with total_price */}
+                              {Number(shipment.total_price) > 0 && (
+                                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    {t.paymentProgress}
+                                  </p>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between items-center text-xs">
+                                      <span className="text-gray-600 font-medium">
+                                        {t.amountPaid}
+                                      </span>
+                                      <span className="font-bold text-primary-dark">
+                                        €
+                                        {Number(
+                                          shipment.amount_paid || 0
+                                        ).toFixed(2)}
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                      <div
+                                        className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
+                                        style={{
+                                          width: `${Math.min(
+                                            100,
                                             ((Number(shipment.amount_paid) ||
                                               0) /
                                               Number(shipment.total_price)) *
                                               100
-                                          )}
-                                          %
+                                          )}%`,
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <p className="text-xs font-bold text-gray-700">
+                                        {Math.round(
+                                          ((Number(shipment.amount_paid) || 0) /
+                                            Number(shipment.total_price)) *
+                                            100
+                                        )}
+                                        %
+                                      </p>
+                                      <p className="text-xs text-gray-600">
+                                        {t.totalPrice}: €
+                                        {Number(shipment.total_price).toFixed(
+                                          2
+                                        )}
+                                      </p>
+                                    </div>
+                                    {/* Warning message if payment is not 100% */}
+                                    {((Number(shipment.amount_paid) || 0) /
+                                      Number(shipment.total_price)) *
+                                      100 <
+                                      100 && (
+                                      <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+                                        <p className="text-xs font-semibold text-yellow-800">
+                                          {language === "ar"
+                                            ? "⚠️ يرجى إكمال الدفع للمتابعة"
+                                            : "⚠️ Please complete payment to continue"}
                                         </p>
-                                        <p className="text-xs text-gray-600">
-                                          {t.totalPrice}: €
-                                          {Number(shipment.total_price).toFixed(
-                                            2
-                                          )}
+                                        <p className="text-xs text-yellow-700 mt-1">
+                                          {language === "ar"
+                                            ? `المبلغ المتبقي: €${(
+                                                Number(shipment.total_price) -
+                                                (Number(shipment.amount_paid) ||
+                                                  0)
+                                              ).toFixed(2)}`
+                                            : `Remaining amount: €${(
+                                                Number(shipment.total_price) -
+                                                (Number(shipment.amount_paid) ||
+                                                  0)
+                                              ).toFixed(2)}`}
                                         </p>
                                       </div>
-                                      {/* Warning message if payment is not 100% */}
+                                    )}
+                                  </div>
+                                  {isAdmin && (
+                                    <div className="mt-2 space-y-2">
+                                      <button
+                                        onClick={() =>
+                                          handleUpdateShipmentPaidAmount(
+                                            shipment.id
+                                          )
+                                        }
+                                        className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                      >
+                                        {t.updatePaidAmount}
+                                      </button>
                                       {((Number(shipment.amount_paid) || 0) /
                                         Number(shipment.total_price)) *
                                         100 <
                                         100 && (
-                                        <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
-                                          <p className="text-xs font-semibold text-yellow-800">
-                                            {language === "ar"
-                                              ? "⚠️ يرجى إكمال الدفع للمتابعة"
-                                              : "⚠️ Please complete payment to continue"}
-                                          </p>
-                                          <p className="text-xs text-yellow-700 mt-1">
-                                            {language === "ar"
-                                              ? `المبلغ المتبقي: €${(
-                                                  Number(shipment.total_price) -
-                                                  (Number(
-                                                    shipment.amount_paid
-                                                  ) || 0)
-                                                ).toFixed(2)}`
-                                              : `Remaining amount: €${(
-                                                  Number(shipment.total_price) -
-                                                  (Number(
-                                                    shipment.amount_paid
-                                                  ) || 0)
-                                                ).toFixed(2)}`}
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
-                                    {isAdmin && (
-                                      <div className="mt-2 space-y-2">
                                         <button
                                           onClick={() =>
-                                            handleUpdateShipmentPaidAmount(
+                                            handleSendShipmentPaymentReminder(
                                               shipment.id
                                             )
                                           }
-                                          className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                          className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                                         >
-                                          {t.updatePaidAmount}
-                                        </button>
-                                        {((Number(shipment.amount_paid) || 0) /
-                                          Number(shipment.total_price)) *
-                                          100 <
-                                          100 && (
-                                          <button
-                                            onClick={() =>
-                                              handleSendShipmentPaymentReminder(
-                                                shipment.id
-                                              )
-                                            }
-                                            className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
                                           >
-                                            <svg
-                                              className="w-4 h-4"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              viewBox="0 0 24 24"
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                              />
-                                            </svg>
-                                            <span>
-                                              {language === "ar"
-                                                ? "إرسال تذكير الدفع"
-                                                : "Send Payment Reminder"}
-                                            </span>
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                            />
+                                          </svg>
+                                          <span>
+                                            {language === "ar"
+                                              ? "إرسال تذكير الدفع"
+                                              : "Send Payment Reminder"}
+                                          </span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             {/* Action Buttons */}
@@ -4802,7 +4803,7 @@ export default function DashboardPage() {
                                 <>
                                   {/* Admin: Status dropdown */}
                                   <select
-                                    value={shipment.status || "CREATED"}
+                                    value={shipment.status || "PENDING_PAYMENT"}
                                     onChange={(e) =>
                                       handleShipmentStatusChange(
                                         shipment.id,
@@ -4811,12 +4812,6 @@ export default function DashboardPage() {
                                     }
                                     className="px-4 py-2.5 text-sm font-semibold text-primary-dark bg-white border-2 border-gray-300 rounded-xl hover:border-primary-yellow focus:border-primary-yellow focus:outline-none focus:ring-2 focus:ring-primary-yellow/20 transition-all duration-200 shadow-sm"
                                   >
-                                    <option value="CREATED">
-                                      {getStatusDisplay(
-                                        "CREATED",
-                                        shipment.direction
-                                      )}
-                                    </option>
                                     <option value="PENDING_PAYMENT">
                                       {getStatusDisplay(
                                         "PENDING_PAYMENT",

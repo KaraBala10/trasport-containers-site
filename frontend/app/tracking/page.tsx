@@ -162,19 +162,33 @@ export default function TrackingPage() {
   const getTrackingSteps = (item: FCLQuote | LCLShipment): TrackingStep[] => {
     // Determine direction for LCL shipments
     const direction = "direction" in item ? item.direction : null;
+    const isLCLShipment = "direction" in item;
     
-    // Common steps for all
-    const commonSteps: TrackingStep[] = [
-      { key: "CREATED", label: { ar: t.created, en: t.created } },
-      {
-        key: "PENDING_PAYMENT",
-        label: { ar: t.pendingPayment, en: t.pendingPayment },
-      },
-      {
-        key: "PENDING_PICKUP",
-        label: { ar: t.pendingPickup, en: t.pendingPickup },
-      },
-    ];
+    // Common steps - different for FCL quotes and LCL shipments
+    const commonSteps: TrackingStep[] = isLCLShipment
+      ? [
+          // LCL shipments start with PENDING_PAYMENT (no CREATED)
+          {
+            key: "PENDING_PAYMENT",
+            label: { ar: t.pendingPayment, en: t.pendingPayment },
+          },
+          {
+            key: "PENDING_PICKUP",
+            label: { ar: t.pendingPickup, en: t.pendingPickup },
+          },
+        ]
+      : [
+          // FCL quotes include CREATED
+          { key: "CREATED", label: { ar: t.created, en: t.created } },
+          {
+            key: "PENDING_PAYMENT",
+            label: { ar: t.pendingPayment, en: t.pendingPayment },
+          },
+          {
+            key: "PENDING_PICKUP",
+            label: { ar: t.pendingPickup, en: t.pendingPickup },
+          },
+        ];
 
     // Direction-specific steps
     let directionSteps: TrackingStep[] = [];
@@ -292,7 +306,7 @@ export default function TrackingPage() {
 
     const steps = [...commonSteps, ...directionSteps, ...finalSteps];
 
-    const currentStatus = item?.status || "CREATED";
+    const currentStatus = item?.status || (isLCLShipment ? "PENDING_PAYMENT" : "CREATED");
     const statusIndex = steps.findIndex((step) => step.key === currentStatus);
 
     return steps.map((step, index) => {

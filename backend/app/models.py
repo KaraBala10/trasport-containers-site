@@ -719,7 +719,6 @@ class LCLShipment(models.Model):
     """Model to store LCL shipment requests"""
 
     STATUS_CHOICES = [
-        ("CREATED", "Created"),
         ("PENDING_PAYMENT", "Pending Payment"),
         ("PENDING_PICKUP", "Pending Pickup"),
         ("IN_TRANSIT_TO_WATTWEG_5", "In Transit to Wattweg 5"),
@@ -808,7 +807,9 @@ class LCLShipment(models.Model):
     transfer_slip = models.FileField(upload_to="transfer_slips/", blank=True, null=True)
 
     # Status
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="CREATED")
+    status = models.CharField(
+        max_length=50, choices=STATUS_CHOICES, default="PENDING_PAYMENT"
+    )
 
     # Tracking
     tracking_number = models.CharField(max_length=255, blank=True, default="")
