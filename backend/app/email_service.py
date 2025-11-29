@@ -12,24 +12,63 @@ from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
 
-# Status display names for emails
+# Status display names for emails (base names, direction-specific handled by function)
 STATUS_DISPLAY_NAMES = {
     "CREATED": "Created",
     "OFFER_SENT": "Offer Sent",
     "PENDING_PAYMENT": "Pending Payment",
     "PENDING_PICKUP": "Pending Pickup",
-    "IN_TRANSIT_TO_WATTWEG_5": "In Transit to Wattweg 5",
-    "ARRIVED_WATTWEG_5": "Arrived Wattweg 5",
-    "SORTING_WATTWEG_5": "Sorting Wattweg 5",
-    "READY_FOR_EXPORT": "Ready for Export",
-    "IN_TRANSIT_TO_SYRIA": "In Transit to Syria",
-    "ARRIVED_SYRIA": "Arrived Syria",
-    "SYRIA_SORTING": "Syria Sorting",
     "READY_FOR_DELIVERY": "Ready for Delivery",
     "OUT_FOR_DELIVERY": "Out for Delivery",
     "DELIVERED": "Delivered",
     "CANCELLED": "Cancelled",
 }
+
+# Direction-specific status display names
+STATUS_DISPLAY_NAMES_EU_SY = {
+    "IN_TRANSIT_TO_WATTWEG_5": "In Transit to Wattweg 5",
+    "ARRIVED_WATTWEG_5": "Arrived Wattweg 5",
+    "SORTING_WATTWEG_5": "Sorting Wattweg 5",
+    "READY_FOR_EXPORT": "Ready for Export",
+    "IN_TRANSIT_TO_DESTINATION": "In Transit to Syria",
+    "ARRIVED_DESTINATION": "Arrived in Syria",
+    "DESTINATION_SORTING": "Sorting in Syria",
+}
+
+STATUS_DISPLAY_NAMES_SY_EU = {
+    "IN_TRANSIT_TO_WATTWEG_5": "In Transit to EU Hub",
+    "ARRIVED_WATTWEG_5": "Arrived at EU Hub",
+    "SORTING_WATTWEG_5": "Sorting at EU Hub",
+    "READY_FOR_EXPORT": "Ready for Import",
+    "IN_TRANSIT_TO_DESTINATION": "In Transit to Europe",
+    "ARRIVED_DESTINATION": "Arrived in Europe",
+    "DESTINATION_SORTING": "Sorting in Europe",
+}
+
+
+def get_status_display_name(status, direction=None):
+    """
+    Get status display name based on status and direction (for LCL shipments)
+    
+    Args:
+        status: Status code (e.g., "IN_TRANSIT_TO_WATTWEG_5")
+        direction: Direction for LCL shipments ("eu-sy" or "sy-eu"), None for FCL
+        
+    Returns:
+        str: Display name for the status
+    """
+    # First check base names (common for all)
+    if status in STATUS_DISPLAY_NAMES:
+        return STATUS_DISPLAY_NAMES[status]
+    
+    # For LCL shipments, use direction-specific names
+    if direction == "eu-sy":
+        return STATUS_DISPLAY_NAMES_EU_SY.get(status, status)
+    elif direction == "sy-eu":
+        return STATUS_DISPLAY_NAMES_SY_EU.get(status, status)
+    
+    # Default fallback (for FCL or unknown direction)
+    return status
 
 
 def send_status_update_email(quote, old_status, new_status, offer_message=None):
@@ -657,6 +696,475 @@ contact@medo-freight.eu
     except Exception as e:
         logger.error(
             f"Unexpected error sending payment reminder email: {str(e)}",
+            exc_info=True,
+        )
+        return False
+
+
+def send_lcl_shipment_status_update_email(shipment, old_status, new_status):
+    """
+    Send email notification to user when LCL shipment status is updated
+
+    Args:
+        shipment: LCLShipment instance
+        old_status: Previous status
+        new_status: New status
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning(
+            "Email not configured: EMAIL_HOST_USER or EMAIL_HOST_PASSWORD not set. Skipping email notification."
+        )
+        return False
+
+    if not shipment.user or not shipment.user.email:
+        logger.warning(f"Cannot send email: Shipment {shipment.id} has no user or user email")
+        return False
+
+    try:
+        recipient_email = shipment.user.email
+        recipient_name = shipment.user.get_full_name() or shipment.user.username
+
+        # Get status display names (with direction support)
+        old_status_display = get_status_display_name(old_status, shipment.direction)
+        new_status_display = get_status_display_name(new_status, shipment.direction)
+
+        # Prepare email content
+        subject = f"LCL Shipment #{shipment.shipment_number or shipment.id} - Status Updated"
+
+        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        # Build email body
+        email_body = f"""
+Dear {recipient_name},
+
+Your LCL Shipment status has been updated.
+
+Shipment Number: {shipment.shipment_number or f'#{shipment.id}'}
+Direction: {direction_display}
+Sender: {shipment.sender_name}, {shipment.sender_city}, {shipment.sender_country}
+Receiver: {shipment.receiver_name}, {shipment.receiver_city}, {shipment.receiver_country}
+
+Status Update:
+Previous Status: {old_status_display}
+New Status: {new_status_display}
+"""
+
+        # Add payment info if status is PENDING_PAYMENT
+        if new_status == "PENDING_PAYMENT":
+            if shipment.total_price:
+                email_body += f"""
+
+Payment Information:
+Total Price: €{shipment.total_price:.2f}
+Amount Paid: €{shipment.amount_paid or 0:.2f}
+"""
+                if shipment.total_price > 0:
+                    payment_percentage = (
+                        (shipment.amount_paid or 0) / shipment.total_price * 100
+                        if shipment.amount_paid
+                        else 0
+                    )
+                    email_body += f"Payment Progress: {payment_percentage:.1f}%\n"
+
+        email_body += """
+
+You can view and manage your shipment by logging into your dashboard.
+
+Best regards,
+Medo-Freight.eu Team
+contact@medo-freight.eu
+"""
+
+        # Send email with fail_silently=True to prevent exceptions from blocking status updates
+        try:
+            send_mail(
+                subject=subject,
+                message=strip_tags(email_body),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient_email],
+                fail_silently=True,
+            )
+            logger.info(
+                f"Status update email sent successfully to {recipient_email} for shipment {shipment.id}"
+            )
+            return True
+        except (smtplib.SMTPException, gaierror, OSError) as smtp_error:
+            error_msg = str(smtp_error)
+            if "Network is unreachable" in error_msg:
+                logger.warning(
+                    "Cannot send email: SMTP server unreachable. Check network connection and EMAIL_HOST setting."
+                )
+            elif (
+                "Username and Password not accepted" in error_msg
+                or "BadCredentials" in error_msg
+            ):
+                logger.warning(
+                    "Cannot send email: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
+                )
+            else:
+                logger.warning(f"Cannot send email: {error_msg}")
+            return False
+
+    except Exception as e:
+        logger.error(
+            f"Unexpected error sending status update email: {str(e)}",
+            exc_info=True,
+        )
+        return False
+
+
+def send_lcl_shipment_status_update_notification_to_admin(shipment, old_status, new_status):
+    """
+    Send email notification to admin when LCL shipment status is updated
+
+    Args:
+        shipment: LCLShipment instance
+        old_status: Previous status
+        new_status: New status
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping status update notification to admin.")
+        return False
+
+    try:
+        # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
+        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+
+        # Get status display names (with direction support)
+        old_status_display = get_status_display_name(old_status, shipment.direction)
+        new_status_display = get_status_display_name(new_status, shipment.direction)
+
+        # Get user info
+        user_name = (
+            shipment.user.get_full_name() or shipment.user.username
+            if shipment.user
+            else "Unknown"
+        )
+        user_email = shipment.user.email if shipment.user else "Unknown"
+
+        # Prepare email content
+        subject = f"LCL Shipment Status Updated - {shipment.shipment_number or f'#{shipment.id}'}"
+
+        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        # Build email body
+        email_body = f"""
+LCL Shipment status has been updated.
+
+Shipment Details:
+-------------------
+Shipment Number: {shipment.shipment_number or f'#{shipment.id}'}
+Customer: {user_name} ({user_email})
+Direction: {direction_display}
+Sender: {shipment.sender_name}, {shipment.sender_city}, {shipment.sender_country}
+Receiver: {shipment.receiver_name}, {shipment.receiver_city}, {shipment.receiver_country}
+
+Status Update:
+-------------------
+Previous Status: {old_status_display}
+New Status: {new_status_display}
+Updated At: {shipment.updated_at.strftime('%Y-%m-%d %H:%M:%S')}
+"""
+
+        # Add payment info if status is PENDING_PAYMENT
+        if new_status == "PENDING_PAYMENT":
+            if shipment.total_price:
+                email_body += f"""
+
+Payment Information:
+Total Price: €{shipment.total_price:.2f}
+Amount Paid: €{shipment.amount_paid or 0:.2f}
+"""
+                if shipment.total_price > 0:
+                    payment_percentage = (
+                        (shipment.amount_paid or 0) / shipment.total_price * 100
+                        if shipment.amount_paid
+                        else 0
+                    )
+                    email_body += f"Payment Progress: {payment_percentage:.1f}%\n"
+
+        email_body += """
+
+You can view and manage this shipment in the admin dashboard.
+"""
+
+        # Send email with fail_silently=True to prevent exceptions
+        try:
+            send_mail(
+                subject=subject,
+                message=strip_tags(email_body),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[admin_email],
+                fail_silently=True,
+            )
+            logger.info(
+                f"Status update notification sent successfully to admin for shipment {shipment.id}"
+            )
+            return True
+        except (smtplib.SMTPException, gaierror, OSError) as smtp_error:
+            error_msg = str(smtp_error)
+            if "Network is unreachable" in error_msg:
+                logger.warning(
+                    "Cannot send status update notification: SMTP server unreachable. Check network connection and EMAIL_HOST setting."
+                )
+            elif (
+                "Username and Password not accepted" in error_msg
+                or "BadCredentials" in error_msg
+            ):
+                logger.warning(
+                    "Cannot send status update notification: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
+                )
+            else:
+                logger.warning(f"Cannot send status update notification: {error_msg}")
+            return False
+
+    except Exception as e:
+        logger.error(
+            f"Unexpected error sending status update notification: {str(e)}",
+            exc_info=True,
+        )
+        return False
+
+
+def send_lcl_shipment_confirmation_email(shipment):
+    """
+    Send confirmation email to user when a new LCL shipment is created
+
+    Args:
+        shipment: LCLShipment instance
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping LCL shipment confirmation email.")
+        return False
+
+    if not shipment.user or not shipment.user.email:
+        logger.warning(f"Cannot send email: Shipment {shipment.id} has no user or user email")
+        return False
+
+    try:
+        recipient_email = shipment.user.email
+        recipient_name = shipment.user.get_full_name() or shipment.user.username
+
+        # Prepare email content
+        subject = f"LCL Shipment Confirmation - {shipment.shipment_number or f'#{shipment.id}'}"
+
+        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        # Build email body
+        email_body = f"""
+Dear {recipient_name},
+
+Thank you for creating your LCL Shipment. We have received your shipment request and will process it shortly.
+
+Shipment Details:
+-------------------
+Shipment Number: {shipment.shipment_number or f'#{shipment.id}'}
+Status: {get_status_display_name(shipment.status, shipment.direction)}
+Direction: {direction_display}
+Created At: {shipment.created_at.strftime('%Y-%m-%d %H:%M:%S')}
+
+Sender Information:
+-------------------
+Name: {shipment.sender_name}
+Email: {shipment.sender_email}
+Phone: {shipment.sender_phone}
+Address: {shipment.sender_address}
+City: {shipment.sender_city}
+Country: {shipment.sender_country}
+
+Receiver Information:
+-------------------
+Name: {shipment.receiver_name}
+Email: {shipment.receiver_email}
+Phone: {shipment.receiver_phone}
+Address: {shipment.receiver_address}
+City: {shipment.receiver_city}
+Country: {shipment.receiver_country}
+"""
+
+        # Add pricing info if available
+        if shipment.total_price and shipment.total_price > 0:
+            email_body += f"""
+
+Pricing Information:
+-------------------
+Total Price: €{shipment.total_price:.2f}
+Amount Paid: €{shipment.amount_paid or 0:.2f}
+"""
+
+        email_body += """
+
+Our team will review your shipment request and process it accordingly. You will receive email notifications when your shipment status is updated.
+
+You can view and track your shipment by logging into your dashboard.
+
+If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+Medo-Freight.eu Team
+contact@medo-freight.eu
+"""
+
+        # Send email with fail_silently=True to prevent exceptions
+        try:
+            send_mail(
+                subject=subject,
+                message=strip_tags(email_body),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient_email],
+                fail_silently=True,
+            )
+            logger.info(
+                f"LCL shipment confirmation email sent successfully to {recipient_email} for shipment {shipment.shipment_number or shipment.id}"
+            )
+            return True
+        except (smtplib.SMTPException, gaierror, OSError) as smtp_error:
+            error_msg = str(smtp_error)
+            if "Network is unreachable" in error_msg:
+                logger.warning(
+                    "Cannot send LCL shipment confirmation email: SMTP server unreachable. Check network connection and EMAIL_HOST setting."
+                )
+            elif (
+                "Username and Password not accepted" in error_msg
+                or "BadCredentials" in error_msg
+            ):
+                logger.warning(
+                    "Cannot send LCL shipment confirmation email: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
+                )
+            else:
+                logger.warning(f"Cannot send LCL shipment confirmation email: {error_msg}")
+            return False
+
+    except Exception as e:
+        logger.error(
+            f"Unexpected error sending LCL shipment confirmation email: {str(e)}",
+            exc_info=True,
+        )
+        return False
+
+
+def send_lcl_shipment_notification_to_admin(shipment):
+    """
+    Send email notification to admin when a new LCL shipment is created
+
+    Args:
+        shipment: LCLShipment instance
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping LCL shipment notification.")
+        return False
+
+    try:
+        # Get admin email (use ADMIN_EMAIL from settings if configured, otherwise use DEFAULT_FROM_EMAIL)
+        admin_email = settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else settings.DEFAULT_FROM_EMAIL
+
+        # Prepare email content
+        subject = f"New LCL Shipment Request - {shipment.shipment_number or f'#{shipment.id}'}"
+
+        # Get user info
+        user_name = (
+            shipment.user.get_full_name() or shipment.user.username
+            if shipment.user
+            else "Unknown"
+        )
+        user_email = shipment.user.email if shipment.user else "Unknown"
+
+        direction_display = "Europe to Syria" if shipment.direction == "eu-sy" else "Syria to Europe"
+        # Build email body
+        email_body = f"""
+A new LCL Shipment request has been received.
+
+Shipment Details:
+-------------------
+Shipment Number: {shipment.shipment_number or f'#{shipment.id}'}
+Status: {get_status_display_name(shipment.status, shipment.direction)}
+Direction: {direction_display}
+Created At: {shipment.created_at.strftime('%Y-%m-%d %H:%M:%S')}
+
+Customer Information:
+-------------------
+User: {user_name} ({user_email})
+
+Sender Information:
+-------------------
+Name: {shipment.sender_name}
+Email: {shipment.sender_email}
+Phone: {shipment.sender_phone}
+Address: {shipment.sender_address}
+City: {shipment.sender_city}
+Country: {shipment.sender_country}
+
+Receiver Information:
+-------------------
+Name: {shipment.receiver_name}
+Email: {shipment.receiver_email}
+Phone: {shipment.receiver_phone}
+Address: {shipment.receiver_address}
+City: {shipment.receiver_city}
+Country: {shipment.receiver_country}
+"""
+
+        # Add pricing info if available
+        if shipment.total_price and shipment.total_price > 0:
+            email_body += f"""
+
+Pricing Information:
+-------------------
+Total Price: €{shipment.total_price:.2f}
+Amount Paid: €{shipment.amount_paid or 0:.2f}
+"""
+
+        email_body += """
+
+You can view and manage this shipment in the admin dashboard.
+"""
+
+        # Send email with fail_silently=True to prevent exceptions
+        try:
+            send_mail(
+                subject=subject,
+                message=strip_tags(email_body),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[admin_email],
+                fail_silently=True,
+            )
+            logger.info(
+                f"LCL shipment notification sent successfully to admin for shipment {shipment.shipment_number or shipment.id}"
+            )
+            return True
+        except (smtplib.SMTPException, gaierror, OSError) as smtp_error:
+            error_msg = str(smtp_error)
+            if "Network is unreachable" in error_msg:
+                logger.warning(
+                    "Cannot send LCL shipment notification: SMTP server unreachable. Check network connection and EMAIL_HOST setting."
+                )
+            elif (
+                "Username and Password not accepted" in error_msg
+                or "BadCredentials" in error_msg
+            ):
+                logger.warning(
+                    "Cannot send LCL shipment notification: SMTP authentication failed. Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."
+                )
+            else:
+                logger.warning(f"Cannot send LCL shipment notification: {error_msg}")
+            return False
+
+    except Exception as e:
+        logger.error(
+            f"Unexpected error sending LCL shipment notification: {str(e)}",
             exc_info=True,
         )
         return False

@@ -3013,6 +3013,22 @@ class LCLShipmentView(generics.CreateAPIView):
             f"Created LCL shipment {shipment.id} - {shipment.shipment_number} for user {self.request.user.id}"
         )
 
+        # Send email notifications
+        try:
+            from .email_service import (
+                send_lcl_shipment_confirmation_email,
+                send_lcl_shipment_notification_to_admin,
+            )
+            # Send confirmation email to user
+            send_lcl_shipment_confirmation_email(shipment)
+            # Send notification email to admin
+            send_lcl_shipment_notification_to_admin(shipment)
+        except Exception as email_error:
+            logger.error(
+                f"Failed to send LCL shipment email notifications: {str(email_error)}"
+            )
+            # Don't fail the request if email fails
+
 
 class LCLShipmentListView(generics.ListAPIView):
     """API endpoint to list user's LCL shipments (or all shipments for admin)"""
@@ -3130,6 +3146,9 @@ def update_lcl_shipment_status_view(request, pk):
         new_status = request.data.get("status")
         amount_paid = request.data.get("amount_paid")
         tracking_number = request.data.get("tracking_number")
+        
+        # Store old status for email notification (before any updates)
+        old_status = shipment.status
 
         # Update status if provided
         if new_status:
@@ -3210,6 +3229,32 @@ def update_lcl_shipment_status_view(request, pk):
             shipment.tracking_number = tracking_number
 
         shipment.save()
+
+        # Send email notifications if status was updated
+        if new_status:
+            try:
+                from .email_service import (
+                    send_lcl_shipment_status_update_email,
+                    send_lcl_shipment_status_update_notification_to_admin,
+                )
+                # Send email to user
+                send_lcl_shipment_status_update_email(
+                    shipment=shipment,
+                    old_status=old_status,
+                    new_status=new_status,
+                )
+                # Send email to admin
+                send_lcl_shipment_status_update_notification_to_admin(
+                    shipment=shipment,
+                    old_status=old_status,
+                    new_status=new_status,
+                )
+            except Exception as email_error:
+                # Log email error but don't fail the request
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Failed to send status update email notifications: {str(email_error)}"
+                )
 
         logger = logging.getLogger(__name__)
         logger.info(
