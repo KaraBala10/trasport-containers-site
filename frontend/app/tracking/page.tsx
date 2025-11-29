@@ -78,18 +78,11 @@ export default function TrackingPage() {
         backToDashboard: "العودة إلى لوحة التحكم",
         trackAnother: "تتبع شحنة أخرى",
         shipmentStatus: "حالة الشحنة",
-        // Status steps
+        // Status steps - Common
         created: "تم الإنشاء",
         offerSent: "تم إرسال العرض",
         pendingPayment: "في انتظار الدفع",
         pendingPickup: "في انتظار الاستلام",
-        inTransitToWattweg5: "في الطريق إلى واتفيج 5",
-        arrivedWattweg5: "وصل إلى واتفيج 5",
-        sortingWattweg5: "فرز في واتفيج 5",
-        readyForExport: "جاهز للتصدير",
-        inTransitToDestination: "في الطريق إلى الوجهة",
-        arrivedDestination: "وصل إلى الوجهة",
-        destinationSorting: "فرز في الوجهة",
         readyForDelivery: "جاهز للتسليم",
         outForDelivery: "خارج للتسليم",
         delivered: "تم التسليم",
@@ -97,6 +90,22 @@ export default function TrackingPage() {
         completed: "مكتمل",
         current: "حالي",
         pending: "قيد الانتظار",
+        // Status steps - EU to Middle East (eu-sy)
+        inTransitToWattweg5: "في الطريق إلى واتفيج 5",
+        arrivedWattweg5: "وصل إلى واتفيج 5",
+        sortingWattweg5: "فرز في واتفيج 5",
+        readyForExport: "جاهز للتصدير",
+        inTransitToDestination: "في الطريق إلى سوريا",
+        arrivedDestination: "وصل إلى سوريا",
+        destinationSorting: "فرز في سوريا",
+        // Status steps - Middle East to EU (sy-eu)
+        inTransitToEUHub: "في الطريق إلى مركز التجميع في أوروبا",
+        arrivedEUHub: "وصل إلى مركز التجميع في أوروبا",
+        sortingEUHub: "فرز في مركز التجميع في أوروبا",
+        readyForImport: "جاهز للاستيراد",
+        inTransitToEurope: "في الطريق إلى أوروبا",
+        arrivedEurope: "وصل إلى أوروبا",
+        sortingEurope: "فرز في أوروبا",
       },
       en: {
         title: "Track Shipment",
@@ -113,18 +122,11 @@ export default function TrackingPage() {
         backToDashboard: "Back to Dashboard",
         trackAnother: "Track Another Quote",
         shipmentStatus: "Shipment Status",
-        // Status steps
+        // Status steps - Common
         created: "Created",
         offerSent: "Offer Sent",
         pendingPayment: "Pending Payment",
         pendingPickup: "Pending Pickup",
-        inTransitToWattweg5: "In Transit to Wattweg 5",
-        arrivedWattweg5: "Arrived Wattweg 5",
-        sortingWattweg5: "Sorting Wattweg 5",
-        readyForExport: "Ready for Export",
-        inTransitToDestination: "In Transit to Destination",
-        arrivedDestination: "Arrived at Destination",
-        destinationSorting: "Sorting at Destination",
         readyForDelivery: "Ready for Delivery",
         outForDelivery: "Out for Delivery",
         delivered: "Delivered",
@@ -132,6 +134,22 @@ export default function TrackingPage() {
         completed: "Completed",
         current: "Current",
         pending: "Pending",
+        // Status steps - EU to Middle East (eu-sy)
+        inTransitToWattweg5: "In Transit to Wattweg 5",
+        arrivedWattweg5: "Arrived Wattweg 5",
+        sortingWattweg5: "Sorting Wattweg 5",
+        readyForExport: "Ready for Export",
+        inTransitToDestination: "In Transit to Syria",
+        arrivedDestination: "Arrived in Syria",
+        destinationSorting: "Sorting in Syria",
+        // Status steps - Middle East to EU (sy-eu)
+        inTransitToEUHub: "In Transit to EU Hub",
+        arrivedEUHub: "Arrived at EU Hub",
+        sortingEUHub: "Sorting at EU Hub",
+        readyForImport: "Ready for Import",
+        inTransitToEurope: "In Transit to Europe",
+        arrivedEurope: "Arrived in Europe",
+        sortingEurope: "Sorting in Europe",
       },
     }),
     []
@@ -142,9 +160,12 @@ export default function TrackingPage() {
 
   // Function to get tracking steps (works for both FCL quotes and LCL shipments)
   const getTrackingSteps = (item: FCLQuote | LCLShipment): TrackingStep[] => {
-    const steps = [
+    // Determine direction for LCL shipments
+    const direction = "direction" in item ? item.direction : null;
+    
+    // Common steps for all
+    const commonSteps: TrackingStep[] = [
       { key: "CREATED", label: { ar: t.created, en: t.created } },
-      { key: "OFFER_SENT", label: { ar: t.offerSent, en: t.offerSent } },
       {
         key: "PENDING_PAYMENT",
         label: { ar: t.pendingPayment, en: t.pendingPayment },
@@ -153,34 +174,111 @@ export default function TrackingPage() {
         key: "PENDING_PICKUP",
         label: { ar: t.pendingPickup, en: t.pendingPickup },
       },
-      {
-        key: "IN_TRANSIT_TO_WATTWEG_5",
-        label: { ar: t.inTransitToWattweg5, en: t.inTransitToWattweg5 },
-      },
-      {
-        key: "ARRIVED_WATTWEG_5",
-        label: { ar: t.arrivedWattweg5, en: t.arrivedWattweg5 },
-      },
-      {
-        key: "SORTING_WATTWEG_5",
-        label: { ar: t.sortingWattweg5, en: t.sortingWattweg5 },
-      },
-      {
-        key: "READY_FOR_EXPORT",
-        label: { ar: t.readyForExport, en: t.readyForExport },
-      },
-      {
-        key: "IN_TRANSIT_TO_DESTINATION",
-        label: { ar: t.inTransitToDestination, en: t.inTransitToDestination },
-      },
-      {
-        key: "ARRIVED_DESTINATION",
-        label: { ar: t.arrivedDestination, en: t.arrivedDestination },
-      },
-      {
-        key: "DESTINATION_SORTING",
-        label: { ar: t.destinationSorting, en: t.destinationSorting },
-      },
+    ];
+
+    // Direction-specific steps
+    let directionSteps: TrackingStep[] = [];
+    
+    if (direction === "eu-sy") {
+      // Europe to Middle East
+      directionSteps = [
+        {
+          key: "IN_TRANSIT_TO_WATTWEG_5",
+          label: { ar: t.inTransitToWattweg5, en: t.inTransitToWattweg5 },
+        },
+        {
+          key: "ARRIVED_WATTWEG_5",
+          label: { ar: t.arrivedWattweg5, en: t.arrivedWattweg5 },
+        },
+        {
+          key: "SORTING_WATTWEG_5",
+          label: { ar: t.sortingWattweg5, en: t.sortingWattweg5 },
+        },
+        {
+          key: "READY_FOR_EXPORT",
+          label: { ar: t.readyForExport, en: t.readyForExport },
+        },
+        {
+          key: "IN_TRANSIT_TO_DESTINATION",
+          label: { ar: t.inTransitToDestination, en: t.inTransitToDestination },
+        },
+        {
+          key: "ARRIVED_DESTINATION",
+          label: { ar: t.arrivedDestination, en: t.arrivedDestination },
+        },
+        {
+          key: "DESTINATION_SORTING",
+          label: { ar: t.destinationSorting, en: t.destinationSorting },
+        },
+      ];
+    } else if (direction === "sy-eu") {
+      // Middle East to Europe
+      directionSteps = [
+        {
+          key: "IN_TRANSIT_TO_WATTWEG_5",
+          label: { ar: t.inTransitToEUHub, en: t.inTransitToEUHub },
+        },
+        {
+          key: "ARRIVED_WATTWEG_5",
+          label: { ar: t.arrivedEUHub, en: t.arrivedEUHub },
+        },
+        {
+          key: "SORTING_WATTWEG_5",
+          label: { ar: t.sortingEUHub, en: t.sortingEUHub },
+        },
+        {
+          key: "READY_FOR_EXPORT",
+          label: { ar: t.readyForImport, en: t.readyForImport },
+        },
+        {
+          key: "IN_TRANSIT_TO_DESTINATION",
+          label: { ar: t.inTransitToEurope, en: t.inTransitToEurope },
+        },
+        {
+          key: "ARRIVED_DESTINATION",
+          label: { ar: t.arrivedEurope, en: t.arrivedEurope },
+        },
+        {
+          key: "DESTINATION_SORTING",
+          label: { ar: t.sortingEurope, en: t.sortingEurope },
+        },
+      ];
+    } else {
+      // FCL quotes (default - Europe to Middle East)
+      directionSteps = [
+        {
+          key: "IN_TRANSIT_TO_WATTWEG_5",
+          label: { ar: t.inTransitToWattweg5, en: t.inTransitToWattweg5 },
+        },
+        {
+          key: "ARRIVED_WATTWEG_5",
+          label: { ar: t.arrivedWattweg5, en: t.arrivedWattweg5 },
+        },
+        {
+          key: "SORTING_WATTWEG_5",
+          label: { ar: t.sortingWattweg5, en: t.sortingWattweg5 },
+        },
+        {
+          key: "READY_FOR_EXPORT",
+          label: { ar: t.readyForExport, en: t.readyForExport },
+        },
+        {
+          key: "IN_TRANSIT_TO_DESTINATION",
+          label: { ar: t.inTransitToDestination, en: t.inTransitToDestination },
+        },
+        {
+          key: "ARRIVED_DESTINATION",
+          label: { ar: t.arrivedDestination, en: t.arrivedDestination },
+        },
+        {
+          key: "DESTINATION_SORTING",
+          label: { ar: t.destinationSorting, en: t.destinationSorting },
+        },
+      ];
+    }
+
+    // Final steps (common for all)
+    const finalSteps: TrackingStep[] = [
       {
         key: "READY_FOR_DELIVERY",
         label: { ar: t.readyForDelivery, en: t.readyForDelivery },
@@ -191,6 +289,8 @@ export default function TrackingPage() {
       },
       { key: "DELIVERED", label: { ar: t.delivered, en: t.delivered } },
     ];
+
+    const steps = [...commonSteps, ...directionSteps, ...finalSteps];
 
     const currentStatus = item?.status || "CREATED";
     const statusIndex = steps.findIndex((step) => step.key === currentStatus);

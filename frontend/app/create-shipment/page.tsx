@@ -20,6 +20,7 @@ import Footer from "@/components/Footer";
 import { ShippingDirection, Parcel, PersonInfo } from "@/types/shipment";
 import { PricingResult } from "@/types/pricing";
 import { apiService } from "@/lib/api";
+import { useToast } from "@/contexts/ToastContext";
 
 const TOTAL_STEPS = 8;
 
@@ -27,6 +28,7 @@ export default function CreateShipmentPage() {
   const router = useRouter();
   const { language, setLanguage } = useLanguage();
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState<ShippingDirection | null>(null);
   const [sender, setSender] = useState<PersonInfo | null>(null);
@@ -337,7 +339,7 @@ export default function CreateShipmentPage() {
           grandTotal: 75,
         } as any);
 
-        alert(
+        showSuccess(
           language === "ar"
             ? "حدث خطأ في حساب الأسعار. الرجاء المحاولة مرة أخرى."
             : "Error calculating pricing. Please try again."
@@ -381,7 +383,7 @@ export default function CreateShipmentPage() {
   // Handle Stripe Payment
   const handleStripePayment = async () => {
     if (!pricing || grandTotalWithTransport <= 0) {
-      alert(
+      showSuccess(
         language === "ar"
           ? "يرجى التأكد من حساب السعر أولاً"
           : "Please ensure pricing is calculated first"
@@ -390,7 +392,7 @@ export default function CreateShipmentPage() {
     }
 
     if (!sender || !receiver) {
-      alert(
+      showSuccess(
         language === "ar"
           ? "يرجى التأكد من إدخال بيانات المرسل والمستلم"
           : "Please ensure sender and receiver information is provided"
@@ -514,7 +516,7 @@ export default function CreateShipmentPage() {
         errorMessage = error.message;
       }
       
-      alert(
+      showSuccess(
         language === "ar"
           ? errorMessage || "حدث خطأ أثناء إنشاء جلسة الدفع. يرجى التحقق من البيانات والمحاولة مرة أخرى."
           : errorMessage || "An error occurred while creating payment session. Please check your data and try again."
@@ -1299,7 +1301,7 @@ export default function CreateShipmentPage() {
 
                       // Validate required fields before sending
                       if (!sender?.fullName || !sender?.email || !sender?.phone || !sender?.city || !senderCountry) {
-                        alert(
+                        showSuccess(
                           language === "ar"
                             ? "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
                             : "Please complete all required sender information (name, email, phone, city, country)"
@@ -1309,7 +1311,7 @@ export default function CreateShipmentPage() {
                       }
 
                       if (!receiver?.fullName || !receiver?.email || !receiver?.phone || !receiver?.city || !receiverCountry) {
-                        alert(
+                        showSuccess(
                           language === "ar"
                             ? "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
                             : "Please complete all required receiver information (name, email, phone, city, country)"
@@ -1319,7 +1321,7 @@ export default function CreateShipmentPage() {
                       }
 
                       if (!sender?.street || !receiver?.street) {
-                        alert(
+                        showSuccess(
                           language === "ar"
                             ? "يرجى إدخال عنوان المرسل والمستقبل"
                             : "Please enter sender and receiver addresses"
@@ -1329,7 +1331,7 @@ export default function CreateShipmentPage() {
                       }
 
                       if (parcels.length === 0) {
-                        alert(
+                        showSuccess(
                           language === "ar"
                             ? "يرجى إضافة طرد واحد على الأقل"
                             : "Please add at least one parcel"
@@ -1391,7 +1393,7 @@ export default function CreateShipmentPage() {
                           "Failed to create shipment:",
                           response.data?.error || response.data
                         );
-                        alert(
+                        showSuccess(
                           language === "ar"
                             ? "فشل إنشاء الشحنة. يرجى المحاولة مرة أخرى."
                             : "Failed to create shipment. Please try again."
@@ -1423,7 +1425,7 @@ export default function CreateShipmentPage() {
                         }
                       }
                       
-                      alert(
+                      showSuccess(
                         language === "ar"
                           ? errorMessage || "حدث خطأ أثناء إنشاء الشحنة. يرجى التحقق من البيانات والمحاولة مرة أخرى."
                           : errorMessage || "An error occurred while creating the shipment. Please check your data and try again."

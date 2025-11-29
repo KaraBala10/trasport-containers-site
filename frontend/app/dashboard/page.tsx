@@ -9,6 +9,7 @@ import { apiService } from "@/lib/api";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useToast } from "@/contexts/ToastContext";
 
 interface FCLQuote {
   id: number;
@@ -294,21 +295,31 @@ export default function DashboardPage() {
         totalPrice: "السعر الإجمالي",
         paymentProgress: "تقدم الدفع",
         updatePaidAmount: "تحديث المبلغ المدفوع",
-        // Status translations
+        // Status translations - Common
         CREATED: "تم الإنشاء",
+        OFFER_SENT: "تم إرسال العرض",
         PENDING_PAYMENT: "في انتظار الدفع",
         PENDING_PICKUP: "في انتظار الاستلام",
-        IN_TRANSIT_TO_WATTWEG_5: "في الطريق إلى واتفيج 5",
-        ARRIVED_WATTWEG_5: "وصل إلى واتفيج 5",
-        SORTING_WATTWEG_5: "فرز في واتفيج 5",
-        READY_FOR_EXPORT: "جاهز للتصدير",
-        IN_TRANSIT_TO_DESTINATION: "في الطريق إلى الوجهة",
-        ARRIVED_DESTINATION: "وصل إلى الوجهة",
-        DESTINATION_SORTING: "فرز في الوجهة",
         READY_FOR_DELIVERY: "جاهز للتسليم",
         OUT_FOR_DELIVERY: "خارج للتسليم",
         DELIVERED: "تم التسليم",
         CANCELLED: "ملغى",
+        // Status translations - EU to Middle East (eu-sy)
+        IN_TRANSIT_TO_WATTWEG_5: "في الطريق إلى واتفيج 5",
+        ARRIVED_WATTWEG_5: "وصل إلى واتفيج 5",
+        SORTING_WATTWEG_5: "فرز في واتفيج 5",
+        READY_FOR_EXPORT: "جاهز للتصدير",
+        IN_TRANSIT_TO_DESTINATION: "في الطريق إلى سوريا",
+        ARRIVED_DESTINATION: "وصل إلى سوريا",
+        DESTINATION_SORTING: "فرز في سوريا",
+        // Status translations - Middle East to EU (sy-eu)
+        IN_TRANSIT_TO_EU_HUB: "في الطريق إلى مركز التجميع في أوروبا",
+        ARRIVED_EU_HUB: "وصل إلى مركز التجميع في أوروبا",
+        SORTING_EU_HUB: "فرز في مركز التجميع في أوروبا",
+        READY_FOR_IMPORT: "جاهز للاستيراد",
+        IN_TRANSIT_TO_EUROPE: "في الطريق إلى أوروبا",
+        ARRIVED_EUROPE: "وصل إلى أوروبا",
+        SORTING_EUROPE: "فرز في أوروبا",
         // Product Requests
         myProductRequests: "طلبات المنتجات الخاصة بي",
         noProductRequests: "لا توجد طلبات منتجات حتى الآن",
@@ -421,22 +432,31 @@ export default function DashboardPage() {
         totalPrice: "Total Price",
         paymentProgress: "Payment Progress",
         updatePaidAmount: "Update Paid Amount",
-        // Status translations
+        // Status translations - Common
         CREATED: "Created",
         OFFER_SENT: "Offer Sent",
         PENDING_PAYMENT: "Pending Payment",
         PENDING_PICKUP: "Pending Pickup",
-        IN_TRANSIT_TO_WATTWEG_5: "In Transit to Wattweg 5",
-        ARRIVED_WATTWEG_5: "Arrived Wattweg 5",
-        SORTING_WATTWEG_5: "Sorting Wattweg 5",
-        READY_FOR_EXPORT: "Ready for Export",
-        IN_TRANSIT_TO_DESTINATION: "In Transit to Destination",
-        ARRIVED_DESTINATION: "Arrived at Destination",
-        DESTINATION_SORTING: "Sorting at Destination",
         READY_FOR_DELIVERY: "Ready for Delivery",
         OUT_FOR_DELIVERY: "Out for Delivery",
         DELIVERED: "Delivered",
         CANCELLED: "Cancelled",
+        // Status translations - EU to Middle East (eu-sy)
+        IN_TRANSIT_TO_WATTWEG_5: "In Transit to Wattweg 5",
+        ARRIVED_WATTWEG_5: "Arrived Wattweg 5",
+        SORTING_WATTWEG_5: "Sorting Wattweg 5",
+        READY_FOR_EXPORT: "Ready for Export",
+        IN_TRANSIT_TO_DESTINATION: "In Transit to Syria",
+        ARRIVED_DESTINATION: "Arrived in Syria",
+        DESTINATION_SORTING: "Sorting in Syria",
+        // Status translations - Middle East to EU (sy-eu)
+        IN_TRANSIT_TO_EU_HUB: "In Transit to EU Hub",
+        ARRIVED_EU_HUB: "Arrived at EU Hub",
+        SORTING_EU_HUB: "Sorting at EU Hub",
+        READY_FOR_IMPORT: "Ready for Import",
+        IN_TRANSIT_TO_EUROPE: "In Transit to Europe",
+        ARRIVED_EUROPE: "Arrived in Europe",
+        SORTING_EUROPE: "Sorting in Europe",
         // Product Requests
         myProductRequests: "My Product Requests",
         noProductRequests: "No product requests yet",
@@ -524,7 +544,7 @@ export default function DashboardPage() {
                     `✅ Payment found! amount_paid: ${amountPaid}, percentage: ${paymentPercentage}%`
                   );
 
-                  alert(
+                  showSuccess(
                     language === "ar"
                       ? `تم استلام الدفعة بنجاح! المبلغ المدفوع: €${amountPaid.toFixed(
                           2
@@ -569,7 +589,7 @@ export default function DashboardPage() {
               console.log(
                 "⚠️ Payment not updated after 5 retries, forcing page refresh..."
               );
-              alert(
+              showSuccess(
                 language === "ar"
                   ? "تم الدفع بنجاح! سيتم تحديث الصفحة لعرض المبلغ المدفوع."
                   : "Payment successful! Refreshing page to show paid amount."
@@ -583,7 +603,7 @@ export default function DashboardPage() {
               // Retry on error
               fetchShipments(retryCount + 1);
             } else {
-              alert(
+              showSuccess(
                 language === "ar"
                   ? "تم الدفع بنجاح! سيتم تحديث حالة الشحنة قريباً."
                   : "Payment successful! Shipment status will be updated shortly."
@@ -624,9 +644,9 @@ export default function DashboardPage() {
                       : `Payment received successfully! Amount paid: €${
                           paymentData.amount_paid?.toFixed(2) || "0.00"
                         } of €${paymentData.total_price?.toFixed(2) || "0.00"}`;
-                  alert(message);
+                  showSuccess(message);
                 } else {
-                  alert(
+                  showSuccess(
                     language === "ar"
                       ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
                       : "Payment received successfully! The paid amount will be updated shortly."
@@ -634,14 +654,14 @@ export default function DashboardPage() {
                 }
               } catch (error) {
                 console.error("Error fetching payment status:", error);
-                alert(
+                showSuccess(
                   language === "ar"
                     ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
                     : "Payment received successfully! The paid amount will be updated shortly."
                 );
               }
             } else {
-              alert(
+              showSuccess(
                 language === "ar"
                   ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
                   : "Payment received successfully! The paid amount will be updated shortly."
@@ -649,7 +669,7 @@ export default function DashboardPage() {
             }
           } catch (error) {
             console.error("Error refreshing quotes:", error);
-            alert(
+            showSuccess(
               language === "ar"
                 ? "تم استلام الدفعة بنجاح! سيتم تحديث المبلغ المدفوع قريباً."
                 : "Payment received successfully! The paid amount will be updated shortly."
@@ -660,7 +680,7 @@ export default function DashboardPage() {
         // Remove query param from URL
         window.history.replaceState({}, "", window.location.pathname);
       } else if (paymentStatus === "canceled") {
-        alert(
+        showSuccess(
           language === "ar" ? "تم إلغاء عملية الدفع." : "Payment was canceled."
         );
         // Remove query param from URL
@@ -809,17 +829,19 @@ export default function DashboardPage() {
       await apiService.deleteFCLQuote(quoteId);
       setFclQuotes((prev) => prev.filter((q) => q.id !== quoteId));
       setDeleteConfirm(null);
-      alert(t.deleteSuccess);
+      showSuccess(t.deleteSuccess);
     } catch (error: any) {
       console.error("Error deleting quote:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     }
   };
 
   // Handle edit - open edit modal
   const handleEdit = (quote: FCLQuote) => {
     if (!canEditOrDelete(quote.status)) {
-      alert(
+      showSuccess(
         language === "ar"
           ? "لا يمكن تعديل أو حذف الطلب بعد بدء عملية الدفع"
           : "Cannot edit or delete quote after payment process has started"
@@ -849,11 +871,13 @@ export default function DashboardPage() {
       await apiService.updateProfile(profileData);
 
       // Refresh user data by reloading the page
-      alert(t.profileUpdated);
+      showSuccess(t.profileUpdated);
       window.location.reload();
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     } finally {
       setProfileSaving(false);
     }
@@ -876,14 +900,16 @@ export default function DashboardPage() {
   const handleSendPaymentReminder = async (quoteId: number) => {
     try {
       await apiService.sendPaymentReminder(quoteId);
-      alert(
+      showSuccess(
         language === "ar"
           ? "تم إرسال تذكير الدفع بنجاح"
           : "Payment reminder sent successfully"
       );
     } catch (error: any) {
       console.error("Error sending payment reminder:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -891,14 +917,16 @@ export default function DashboardPage() {
   const handleSendShipmentPaymentReminder = async (shipmentId: number) => {
     try {
       await apiService.sendShipmentPaymentReminder(shipmentId);
-      alert(
+      showSuccess(
         language === "ar"
           ? "تم إرسال تذكير الدفع بنجاح"
           : "Payment reminder sent successfully"
       );
     } catch (error: any) {
       console.error("Error sending payment reminder:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -916,7 +944,7 @@ export default function DashboardPage() {
       }
     } catch (error: any) {
       console.error("Error initiating payment:", error);
-      alert(
+      showSuccess(
         t.error +
           ": " +
           (error.response?.data?.error ||
@@ -954,10 +982,12 @@ export default function DashboardPage() {
       setEditingProductRequest(null);
       setProductRequestStatus("");
       setProductRequestNotes("");
-      alert(t.updated);
+      showSuccess(t.updated);
     } catch (error: any) {
       console.error("Error updating product request:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     } finally {
       setUpdatingProductRequest(false);
     }
@@ -992,15 +1022,17 @@ export default function DashboardPage() {
               Number(shipment.total_price)) *
             100;
           if (paymentPercentage < 100) {
-            alert(
+            showSuccess(
               language === "ar"
                 ? `لا يمكن تحديث الحالة إلى ${getStatusDisplay(
-                    newStatus
+                    newStatus,
+                    shipment.direction
                   )}. يجب إكمال الدفع بنسبة 100%. الدفع الحالي: ${paymentPercentage.toFixed(
                     1
                   )}%`
                 : `Cannot update status to ${getStatusDisplay(
-                    newStatus
+                    newStatus,
+                    shipment.direction
                   )}. Payment must be 100% complete. Current payment: ${paymentPercentage.toFixed(
                     1
                   )}%`
@@ -1029,10 +1061,12 @@ export default function DashboardPage() {
         shipmentsResponse.data?.results || shipmentsResponse.data || [];
       setLclShipments(Array.isArray(shipments) ? shipments : []);
 
-      alert(t.statusUpdated);
+      showSuccess(t.statusUpdated);
     } catch (error: any) {
       console.error("Error updating shipment status:", error);
-      alert(t.error + ": " + (error.response?.data?.error || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.error || error.message)
+      );
     }
   };
 
@@ -1055,7 +1089,7 @@ export default function DashboardPage() {
       }
       const parsedAmount = parseFloat(amountPaidInput || "0");
       if (isNaN(parsedAmount) || parsedAmount < 0) {
-        alert(
+        showSuccess(
           language === "ar"
             ? "يرجى إدخال مبلغ صحيح"
             : "Please enter a valid amount"
@@ -1063,7 +1097,7 @@ export default function DashboardPage() {
         return;
       }
       if (totalPrice > 0 && parsedAmount > totalPrice) {
-        alert(
+        showSuccess(
           language === "ar"
             ? "المبلغ المدفوع لا يمكن أن يكون أكبر من السعر الإجمالي"
             : "Amount paid cannot be greater than total price"
@@ -1091,14 +1125,16 @@ export default function DashboardPage() {
         shipmentsResponse.data?.results || shipmentsResponse.data || [];
       setLclShipments(Array.isArray(shipments) ? shipments : []);
 
-      alert(
+      showSuccess(
         language === "ar"
           ? "تم تحديث المبلغ المدفوع بنجاح"
           : "Amount paid updated successfully"
       );
     } catch (error: any) {
       console.error("Error updating paid amount:", error);
-      alert(t.error + ": " + (error.response?.data?.error || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.error || error.message)
+      );
     }
   };
 
@@ -1110,14 +1146,16 @@ export default function DashboardPage() {
         prevShipments.filter((s) => s.id !== shipmentId)
       );
       setDeleteConfirm(null);
-      alert(
+      showSuccess(
         language === "ar"
           ? "تم حذف الشحنة بنجاح"
           : "Shipment deleted successfully"
       );
     } catch (error: any) {
       console.error("Error deleting shipment:", error);
-      alert(t.error + ": " + (error.response?.data?.error || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.error || error.message)
+      );
       setDeleteConfirm(null);
     }
   };
@@ -1142,7 +1180,7 @@ export default function DashboardPage() {
       }
       const parsedAmount = parseFloat(amountPaidInput || "0");
       if (isNaN(parsedAmount) || parsedAmount < 0) {
-        alert(
+        showSuccess(
           language === "ar"
             ? "يرجى إدخال مبلغ صحيح"
             : "Please enter a valid amount"
@@ -1150,7 +1188,7 @@ export default function DashboardPage() {
         return;
       }
       if (totalPrice > 0 && parsedAmount > totalPrice) {
-        alert(
+        showSuccess(
           language === "ar"
             ? "المبلغ المدفوع لا يمكن أن يكون أكبر من السعر الإجمالي"
             : "Amount paid cannot be greater than total price"
@@ -1181,14 +1219,16 @@ export default function DashboardPage() {
       const quotes = quotesResponse.data?.results || quotesResponse.data || [];
       setFclQuotes(Array.isArray(quotes) ? quotes : []);
 
-      alert(
+      showSuccess(
         language === "ar"
           ? "تم تحديث المبلغ المدفوع بنجاح"
           : "Amount paid updated successfully"
       );
     } catch (error: any) {
       console.error("Error updating paid amount:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -1212,7 +1252,7 @@ export default function DashboardPage() {
           const paymentPercentage =
             ((quote.amount_paid || 0) / quote.total_price) * 100;
           if (paymentPercentage < 100) {
-            alert(
+            showSuccess(
               language === "ar"
                 ? `لا يمكن تحديث الحالة إلى ${getStatusDisplay(
                     newStatus
@@ -1228,7 +1268,7 @@ export default function DashboardPage() {
             return;
           }
         } else {
-          alert(
+          showSuccess(
             language === "ar"
               ? "يجب تحديد السعر الإجمالي أولاً"
               : "Total price must be set first"
@@ -1249,7 +1289,7 @@ export default function DashboardPage() {
           ) || "";
         if (offerMessage === null || offerMessage.trim() === "") {
           // User cancelled or empty message, don't update status
-          alert(
+          showSuccess(
             language === "ar"
               ? "يجب إدخال رسالة العرض"
               : "Offer message is required"
@@ -1281,7 +1321,7 @@ export default function DashboardPage() {
         }
         const parsedTotalPrice = parseFloat(totalPriceInput || "0");
         if (isNaN(parsedTotalPrice) || parsedTotalPrice <= 0) {
-          alert(
+          showSuccess(
             language === "ar"
               ? "يرجى إدخال سعر إجمالي صحيح"
               : "Please enter a valid total price"
@@ -1302,7 +1342,7 @@ export default function DashboardPage() {
         }
         const parsedAmount = parseFloat(amountPaidInput || "0");
         if (isNaN(parsedAmount) || parsedAmount < 0) {
-          alert(
+          showSuccess(
             language === "ar"
               ? "يرجى إدخال مبلغ صحيح"
               : "Please enter a valid amount"
@@ -1310,7 +1350,7 @@ export default function DashboardPage() {
           return;
         }
         if (parsedAmount > totalPrice) {
-          alert(
+          showSuccess(
             language === "ar"
               ? "المبلغ المدفوع لا يمكن أن يكون أكبر من السعر الإجمالي"
               : "Amount paid cannot be greater than total price"
@@ -1342,10 +1382,12 @@ export default function DashboardPage() {
       const quotes = quotesResponse.data?.results || quotesResponse.data || [];
       setFclQuotes(Array.isArray(quotes) ? quotes : []);
 
-      alert(t.statusUpdated);
+      showSuccess(t.statusUpdated);
     } catch (error: any) {
       console.error("Error updating status:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -1397,7 +1439,26 @@ export default function DashboardPage() {
   };
 
   // Get status display name
-  const getStatusDisplay = (status: string) => {
+  const getStatusDisplay = (status: string, direction?: "eu-sy" | "sy-eu") => {
+    // For LCL shipments, use direction-specific translations
+    if (direction === "sy-eu") {
+      // Map sy-eu specific statuses
+      const syEuStatusMap: { [key: string]: string } = {
+        IN_TRANSIT_TO_WATTWEG_5: "IN_TRANSIT_TO_EU_HUB",
+        ARRIVED_WATTWEG_5: "ARRIVED_EU_HUB",
+        SORTING_WATTWEG_5: "SORTING_EU_HUB",
+        READY_FOR_EXPORT: "READY_FOR_IMPORT",
+        IN_TRANSIT_TO_DESTINATION: "IN_TRANSIT_TO_EUROPE",
+        ARRIVED_DESTINATION: "ARRIVED_EUROPE",
+        DESTINATION_SORTING: "SORTING_EUROPE",
+      };
+      const mappedStatus = syEuStatusMap[status] || status;
+      return (t as any)[mappedStatus] || status.replace(/_/g, " ");
+    } else if (direction === "eu-sy") {
+      // For eu-sy, use default translations
+      return (t as any)[status] || status.replace(/_/g, " ");
+    }
+    // Default (FCL or no direction)
     return (t as any)[status] || status.replace(/_/g, " ");
   };
 
@@ -1466,10 +1527,12 @@ export default function DashboardPage() {
             ? "تم إرسال طلب التعديل بنجاح"
             : "Edit request sent successfully";
       }
-      alert(message);
+      showSuccess(message);
     } catch (error: any) {
       console.error("Error responding to offer:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -1477,7 +1540,9 @@ export default function DashboardPage() {
   const handleSendReply = async (quoteId: number) => {
     const message = replyMessage[quoteId]?.trim();
     if (!message) {
-      alert(language === "ar" ? "يجب إدخال رسالة" : "Please enter a message");
+      showSuccess(
+        language === "ar" ? "يجب إدخال رسالة" : "Please enter a message"
+      );
       return;
     }
 
@@ -1493,12 +1558,14 @@ export default function DashboardPage() {
       // Clear reply message
       setReplyMessage((prev) => ({ ...prev, [quoteId]: "" }));
 
-      alert(
+      showSuccess(
         language === "ar" ? "تم إرسال الرد بنجاح" : "Reply sent successfully"
       );
     } catch (error: any) {
       console.error("Error sending reply:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     } finally {
       setSendingReply(null);
     }
@@ -1522,7 +1589,7 @@ export default function DashboardPage() {
       // Close conversation
       setShowConversation(null);
 
-      alert(
+      showSuccess(
         language === "ar"
           ? action === "approve"
             ? "تم الموافقة على طلب التعديل"
@@ -1533,7 +1600,9 @@ export default function DashboardPage() {
       );
     } catch (error: any) {
       console.error("Error approving/declining edit request:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     } finally {
       setApprovingDeclining(null);
     }
@@ -1617,10 +1686,12 @@ export default function DashboardPage() {
       setFclQuotes(Array.isArray(quotes) ? quotes : []);
 
       setEditingQuote(null);
-      alert(t.updateSuccess);
+      showSuccess(t.updateSuccess);
     } catch (error: any) {
       console.error("Error updating quote:", error);
-      alert(t.error + ": " + (error.response?.data?.message || error.message));
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -3057,7 +3128,7 @@ export default function DashboardPage() {
                                   <button
                                     onClick={() => {
                                       if (!canEditOrDelete(quote.status)) {
-                                        alert(
+                                        showSuccess(
                                           language === "ar"
                                             ? "لا يمكن حذف الطلب بعد بدء عملية الدفع"
                                             : "Cannot delete quote after payment process has started"
@@ -3093,7 +3164,7 @@ export default function DashboardPage() {
                                   <button
                                     onClick={() => {
                                       if (!canEditOrDelete(quote.status)) {
-                                        alert(
+                                        showSuccess(
                                           language === "ar"
                                             ? "لا يمكن حذف الطلب بعد بدء عملية الدفع"
                                             : "Cannot delete quote after payment process has started"
@@ -4414,7 +4485,9 @@ export default function DashboardPage() {
                       <button
                         onClick={() => {
                           // Check if it's a quote or shipment
-                          const isQuote = fclQuotes.some(q => q.id === deleteConfirm);
+                          const isQuote = fclQuotes.some(
+                            (q) => q.id === deleteConfirm
+                          );
                           if (isQuote) {
                             handleDelete(deleteConfirm);
                           } else {
@@ -4530,7 +4603,9 @@ export default function DashboardPage() {
                                         ? shipment.sender_city || "Europe"
                                         : shipment.sender_city || "Syria"}
                                     </span>
-                                    <span className="text-primary-yellow text-lg font-bold">→</span>
+                                    <span className="text-primary-yellow text-lg font-bold">
+                                      →
+                                    </span>
                                     <span className="text-primary-dark font-bold">
                                       {shipment.direction === "eu-sy"
                                         ? shipment.receiver_city || "Syria"
@@ -4549,16 +4624,19 @@ export default function DashboardPage() {
                                   {shipment.parcels?.length || 0}{" "}
                                   {language === "ar" ? "طرد" : "parcel(s)"}
                                 </p>
-                                {shipment.parcels && shipment.parcels.length > 0 && (
-                                  <p className="text-xs text-gray-600">
-                                    {shipment.parcels.reduce(
-                                      (sum: number, p: any) =>
-                                        sum + (Number(p.weight) || 0),
-                                      0
-                                    ).toFixed(2)}{" "}
-                                    kg
-                                  </p>
-                                )}
+                                {shipment.parcels &&
+                                  shipment.parcels.length > 0 && (
+                                    <p className="text-xs text-gray-600">
+                                      {shipment.parcels
+                                        .reduce(
+                                          (sum: number, p: any) =>
+                                            sum + (Number(p.weight) || 0),
+                                          0
+                                        )
+                                        .toFixed(2)}{" "}
+                                      kg
+                                    </p>
+                                  )}
                               </div>
 
                               {/* Status */}
@@ -4590,7 +4668,10 @@ export default function DashboardPage() {
                                           {t.amountPaid}
                                         </span>
                                         <span className="font-bold text-primary-dark">
-                                          €{Number(shipment.amount_paid || 0).toFixed(2)}
+                                          €
+                                          {Number(
+                                            shipment.amount_paid || 0
+                                          ).toFixed(2)}
                                         </span>
                                       </div>
                                       <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
@@ -4599,7 +4680,8 @@ export default function DashboardPage() {
                                           style={{
                                             width: `${Math.min(
                                               100,
-                                              ((Number(shipment.amount_paid) || 0) /
+                                              ((Number(shipment.amount_paid) ||
+                                                0) /
                                                 Number(shipment.total_price)) *
                                                 100
                                             )}%`,
@@ -4609,7 +4691,8 @@ export default function DashboardPage() {
                                       <div className="flex justify-between items-center">
                                         <p className="text-xs font-bold text-gray-700">
                                           {Math.round(
-                                            ((Number(shipment.amount_paid) || 0) /
+                                            ((Number(shipment.amount_paid) ||
+                                              0) /
                                               Number(shipment.total_price)) *
                                               100
                                           )}
@@ -4617,7 +4700,9 @@ export default function DashboardPage() {
                                         </p>
                                         <p className="text-xs text-gray-600">
                                           {t.totalPrice}: €
-                                          {Number(shipment.total_price).toFixed(2)}
+                                          {Number(shipment.total_price).toFixed(
+                                            2
+                                          )}
                                         </p>
                                       </div>
                                       {/* Warning message if payment is not 100% */}
@@ -4635,11 +4720,15 @@ export default function DashboardPage() {
                                             {language === "ar"
                                               ? `المبلغ المتبقي: €${(
                                                   Number(shipment.total_price) -
-                                                  (Number(shipment.amount_paid) || 0)
+                                                  (Number(
+                                                    shipment.amount_paid
+                                                  ) || 0)
                                                 ).toFixed(2)}`
                                               : `Remaining amount: €${(
                                                   Number(shipment.total_price) -
-                                                  (Number(shipment.amount_paid) || 0)
+                                                  (Number(
+                                                    shipment.amount_paid
+                                                  ) || 0)
                                                 ).toFixed(2)}`}
                                           </p>
                                         </div>
@@ -4723,60 +4812,99 @@ export default function DashboardPage() {
                                     className="px-4 py-2.5 text-sm font-semibold text-primary-dark bg-white border-2 border-gray-300 rounded-xl hover:border-primary-yellow focus:border-primary-yellow focus:outline-none focus:ring-2 focus:ring-primary-yellow/20 transition-all duration-200 shadow-sm"
                                   >
                                     <option value="CREATED">
-                                      {getStatusDisplay("CREATED")}
-                                    </option>
-                                    <option value="OFFER_SENT">
-                                      {getStatusDisplay("OFFER_SENT")}
+                                      {getStatusDisplay(
+                                        "CREATED",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="PENDING_PAYMENT">
-                                      {getStatusDisplay("PENDING_PAYMENT")}
+                                      {getStatusDisplay(
+                                        "PENDING_PAYMENT",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="PENDING_PICKUP">
-                                      {getStatusDisplay("PENDING_PICKUP")}
+                                      {getStatusDisplay(
+                                        "PENDING_PICKUP",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="IN_TRANSIT_TO_WATTWEG_5">
                                       {getStatusDisplay(
-                                        "IN_TRANSIT_TO_WATTWEG_5"
+                                        "IN_TRANSIT_TO_WATTWEG_5",
+                                        shipment.direction
                                       )}
                                     </option>
                                     <option value="ARRIVED_WATTWEG_5">
-                                      {getStatusDisplay("ARRIVED_WATTWEG_5")}
+                                      {getStatusDisplay(
+                                        "ARRIVED_WATTWEG_5",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="SORTING_WATTWEG_5">
-                                      {getStatusDisplay("SORTING_WATTWEG_5")}
+                                      {getStatusDisplay(
+                                        "SORTING_WATTWEG_5",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="READY_FOR_EXPORT">
-                                      {getStatusDisplay("READY_FOR_EXPORT")}
+                                      {getStatusDisplay(
+                                        "READY_FOR_EXPORT",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="IN_TRANSIT_TO_DESTINATION">
                                       {getStatusDisplay(
-                                        "IN_TRANSIT_TO_DESTINATION"
+                                        "IN_TRANSIT_TO_DESTINATION",
+                                        shipment.direction
                                       )}
                                     </option>
                                     <option value="ARRIVED_DESTINATION">
-                                      {getStatusDisplay("ARRIVED_DESTINATION")}
+                                      {getStatusDisplay(
+                                        "ARRIVED_DESTINATION",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="DESTINATION_SORTING">
-                                      {getStatusDisplay("DESTINATION_SORTING")}
+                                      {getStatusDisplay(
+                                        "DESTINATION_SORTING",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="READY_FOR_DELIVERY">
-                                      {getStatusDisplay("READY_FOR_DELIVERY")}
+                                      {getStatusDisplay(
+                                        "READY_FOR_DELIVERY",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="OUT_FOR_DELIVERY">
-                                      {getStatusDisplay("OUT_FOR_DELIVERY")}
+                                      {getStatusDisplay(
+                                        "OUT_FOR_DELIVERY",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="DELIVERED">
-                                      {getStatusDisplay("DELIVERED")}
+                                      {getStatusDisplay(
+                                        "DELIVERED",
+                                        shipment.direction
+                                      )}
                                     </option>
                                     <option value="CANCELLED">
-                                      {getStatusDisplay("CANCELLED")}
+                                      {getStatusDisplay(
+                                        "CANCELLED",
+                                        shipment.direction
+                                      )}
                                     </option>
                                   </select>
                                   {/* Admin: Delete button */}
                                   <button
                                     onClick={() => {
-                                      if (!canEditOrDeleteShipment(shipment.status)) {
-                                        alert(
+                                      if (
+                                        !canEditOrDeleteShipment(
+                                          shipment.status
+                                        )
+                                      ) {
+                                        showSuccess(
                                           language === "ar"
                                             ? "لا يمكن حذف الشحنة بعد بدء عملية الدفع"
                                             : "Cannot delete shipment after payment process has started"
@@ -4785,7 +4913,9 @@ export default function DashboardPage() {
                                       }
                                       setDeleteConfirm(shipment.id);
                                     }}
-                                    disabled={!canEditOrDeleteShipment(shipment.status)}
+                                    disabled={
+                                      !canEditOrDeleteShipment(shipment.status)
+                                    }
                                     className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
                                       canEditOrDeleteShipment(shipment.status)
                                         ? "text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 cursor-pointer"
@@ -4800,8 +4930,12 @@ export default function DashboardPage() {
                                   {/* Regular user: Delete */}
                                   <button
                                     onClick={() => {
-                                      if (!canEditOrDeleteShipment(shipment.status)) {
-                                        alert(
+                                      if (
+                                        !canEditOrDeleteShipment(
+                                          shipment.status
+                                        )
+                                      ) {
+                                        showSuccess(
                                           language === "ar"
                                             ? "لا يمكن حذف الشحنة بعد بدء عملية الدفع"
                                             : "Cannot delete shipment after payment process has started"
@@ -4810,7 +4944,9 @@ export default function DashboardPage() {
                                       }
                                       setDeleteConfirm(shipment.id);
                                     }}
-                                    disabled={!canEditOrDeleteShipment(shipment.status)}
+                                    disabled={
+                                      !canEditOrDeleteShipment(shipment.status)
+                                    }
                                     className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 border ${
                                       canEditOrDeleteShipment(shipment.status)
                                         ? "text-red-700 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 cursor-pointer"
@@ -4944,7 +5080,9 @@ export default function DashboardPage() {
                                   {shipment.selected_eu_shipping_method ? (
                                     <>
                                       <div className="flex items-center gap-2">
-                                        <span className="text-green-600 font-bold text-lg">✓</span>
+                                        <span className="text-green-600 font-bold text-lg">
+                                          ✓
+                                        </span>
                                         <p className="text-sm font-semibold text-gray-900">
                                           {language === "ar"
                                             ? "تم استخدام Sendcloud"
@@ -4959,7 +5097,8 @@ export default function DashboardPage() {
                                               : "Shipping Method Name"}
                                           </p>
                                           <p className="text-sm font-semibold text-gray-900">
-                                            {shipment.selected_eu_shipping_name || "N/A"}
+                                            {shipment.selected_eu_shipping_name ||
+                                              "N/A"}
                                           </p>
                                         </div>
                                         <div>
@@ -4969,7 +5108,9 @@ export default function DashboardPage() {
                                               : "Shipping Method ID"}
                                           </p>
                                           <p className="text-sm font-semibold text-gray-900 font-mono">
-                                            {shipment.selected_eu_shipping_method}
+                                            {
+                                              shipment.selected_eu_shipping_method
+                                            }
                                           </p>
                                         </div>
                                         {shipment.sendcloud_id && (
@@ -4988,7 +5129,9 @@ export default function DashboardPage() {
                                     </>
                                   ) : (
                                     <div className="flex items-center gap-2">
-                                      <span className="text-red-600 font-bold text-lg">✗</span>
+                                      <span className="text-red-600 font-bold text-lg">
+                                        ✗
+                                      </span>
                                       <p className="text-sm font-semibold text-gray-900">
                                         {language === "ar"
                                           ? "لم يتم استخدام Sendcloud"
@@ -5018,7 +5161,10 @@ export default function DashboardPage() {
                                           {t.totalPrice}
                                         </p>
                                         <p className="text-lg font-bold text-primary-dark">
-                                          €{Number(shipment.total_price).toFixed(2)}
+                                          €
+                                          {Number(shipment.total_price).toFixed(
+                                            2
+                                          )}
                                         </p>
                                       </div>
                                       <div>
@@ -5026,7 +5172,10 @@ export default function DashboardPage() {
                                           {t.amountPaid}
                                         </p>
                                         <p className="text-lg font-bold text-green-600">
-                                          €{Number(shipment.amount_paid || 0).toFixed(2)}
+                                          €
+                                          {Number(
+                                            shipment.amount_paid || 0
+                                          ).toFixed(2)}
                                         </p>
                                       </div>
                                     </div>
@@ -5041,10 +5190,13 @@ export default function DashboardPage() {
                                     </p>
                                     {shipment.payment_method ? (
                                       <div className="space-y-3">
-                                        {shipment.payment_method === "stripe" && (
+                                        {shipment.payment_method ===
+                                          "stripe" && (
                                           <div>
                                             <div className="flex items-center gap-2 mb-2">
-                                              <span className="text-green-600 font-bold">✓</span>
+                                              <span className="text-green-600 font-bold">
+                                                ✓
+                                              </span>
                                               <p className="text-sm font-semibold text-gray-900">
                                                 {language === "ar"
                                                   ? "تم اختيار الدفع الإلكتروني (Stripe)"
@@ -5067,7 +5219,9 @@ export default function DashboardPage() {
                                         )}
                                         {shipment.payment_method === "cash" && (
                                           <div className="flex items-center gap-2">
-                                            <span className="text-blue-600 font-bold">✓</span>
+                                            <span className="text-blue-600 font-bold">
+                                              ✓
+                                            </span>
                                             <p className="text-sm font-semibold text-gray-900">
                                               {language === "ar"
                                                 ? "تم اختيار الدفع النقدي"
@@ -5075,17 +5229,21 @@ export default function DashboardPage() {
                                             </p>
                                           </div>
                                         )}
-                                        {shipment.payment_method === "internal-transfer" && (
+                                        {shipment.payment_method ===
+                                          "internal-transfer" && (
                                           <div>
                                             <div className="flex items-center gap-2 mb-2">
-                                              <span className="text-purple-600 font-bold">✓</span>
+                                              <span className="text-purple-600 font-bold">
+                                                ✓
+                                              </span>
                                               <p className="text-sm font-semibold text-gray-900">
                                                 {language === "ar"
                                                   ? "تم اختيار الحوالة الداخلية"
                                                   : "Internal Transfer Selected"}
                                               </p>
                                             </div>
-                                            {(shipment.transfer_sender_name || shipment.transfer_reference) && (
+                                            {(shipment.transfer_sender_name ||
+                                              shipment.transfer_reference) && (
                                               <div className="pl-7 mt-2 space-y-2">
                                                 {shipment.transfer_sender_name && (
                                                   <div>
@@ -5095,7 +5253,9 @@ export default function DashboardPage() {
                                                         : "Sender Name"}
                                                     </p>
                                                     <p className="text-sm font-semibold text-gray-900">
-                                                      {shipment.transfer_sender_name}
+                                                      {
+                                                        shipment.transfer_sender_name
+                                                      }
                                                     </p>
                                                   </div>
                                                 )}
@@ -5107,7 +5267,9 @@ export default function DashboardPage() {
                                                         : "Reference Number"}
                                                     </p>
                                                     <p className="text-sm font-mono font-semibold text-gray-700 bg-gray-50 p-2 rounded border border-gray-200">
-                                                      {shipment.transfer_reference}
+                                                      {
+                                                        shipment.transfer_reference
+                                                      }
                                                     </p>
                                                   </div>
                                                 )}
@@ -5118,7 +5280,9 @@ export default function DashboardPage() {
                                       </div>
                                     ) : (
                                       <div className="flex items-center gap-2">
-                                        <span className="text-orange-600 font-bold">⚠</span>
+                                        <span className="text-orange-600 font-bold">
+                                          ⚠
+                                        </span>
                                         <p className="text-sm font-semibold text-gray-900">
                                           {language === "ar"
                                             ? "لم يتم اختيار طريقة دفع"
@@ -5140,7 +5304,8 @@ export default function DashboardPage() {
                                         className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-lg ${
                                           shipment.payment_status === "paid"
                                             ? "bg-green-100 text-green-800"
-                                            : shipment.payment_status === "pending"
+                                            : shipment.payment_status ===
+                                              "pending"
                                             ? "bg-yellow-100 text-yellow-800"
                                             : "bg-gray-100 text-gray-800"
                                         }`}
@@ -5149,7 +5314,8 @@ export default function DashboardPage() {
                                           ? language === "ar"
                                             ? "مدفوع"
                                             : "Paid"
-                                          : shipment.payment_status === "pending"
+                                          : shipment.payment_status ===
+                                            "pending"
                                           ? language === "ar"
                                             ? "قيد الانتظار"
                                             : "Pending"
@@ -5161,8 +5327,9 @@ export default function DashboardPage() {
                               </div>
 
                               {/* EU Pickup Information */}
-                              {shipment.direction === "eu-sy" && (
-                                shipment.eu_pickup_address || shipment.eu_pickup_city ? (
+                              {shipment.direction === "eu-sy" &&
+                                (shipment.eu_pickup_address ||
+                                shipment.eu_pickup_city ? (
                                   <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
                                     <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
                                       <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
@@ -5176,7 +5343,9 @@ export default function DashboardPage() {
                                       {shipment.eu_pickup_address && (
                                         <div className="sm:col-span-2">
                                           <p className="text-xs text-gray-500 mb-1">
-                                            {language === "ar" ? "العنوان" : "Address"}
+                                            {language === "ar"
+                                              ? "العنوان"
+                                              : "Address"}
                                           </p>
                                           <p className="text-sm font-semibold text-gray-900">
                                             {shipment.eu_pickup_address}
@@ -5186,7 +5355,9 @@ export default function DashboardPage() {
                                       {shipment.eu_pickup_city && (
                                         <div>
                                           <p className="text-xs text-gray-500 mb-1">
-                                            {language === "ar" ? "المدينة" : "City"}
+                                            {language === "ar"
+                                              ? "المدينة"
+                                              : "City"}
                                           </p>
                                           <p className="text-sm font-semibold text-gray-900">
                                             {shipment.eu_pickup_city}
@@ -5196,7 +5367,9 @@ export default function DashboardPage() {
                                       {shipment.eu_pickup_postal_code && (
                                         <div>
                                           <p className="text-xs text-gray-500 mb-1">
-                                            {language === "ar" ? "الرمز البريدي" : "Postal Code"}
+                                            {language === "ar"
+                                              ? "الرمز البريدي"
+                                              : "Postal Code"}
                                           </p>
                                           <p className="text-sm font-semibold text-gray-900">
                                             {shipment.eu_pickup_postal_code}
@@ -5206,20 +5379,28 @@ export default function DashboardPage() {
                                       {shipment.eu_pickup_country && (
                                         <div>
                                           <p className="text-xs text-gray-500 mb-1">
-                                            {language === "ar" ? "الدولة" : "Country"}
+                                            {language === "ar"
+                                              ? "الدولة"
+                                              : "Country"}
                                           </p>
                                           <p className="text-sm font-semibold text-gray-900">
                                             {shipment.eu_pickup_country}
                                           </p>
                                         </div>
                                       )}
-                                      {Number(shipment.eu_pickup_weight) > 0 && (
+                                      {Number(shipment.eu_pickup_weight) >
+                                        0 && (
                                         <div>
                                           <p className="text-xs text-gray-500 mb-1">
-                                            {language === "ar" ? "الوزن" : "Weight"}
+                                            {language === "ar"
+                                              ? "الوزن"
+                                              : "Weight"}
                                           </p>
                                           <p className="text-sm font-semibold text-gray-900">
-                                            {Number(shipment.eu_pickup_weight).toFixed(2)} kg
+                                            {Number(
+                                              shipment.eu_pickup_weight
+                                            ).toFixed(2)}{" "}
+                                            kg
                                           </p>
                                         </div>
                                       )}
@@ -5236,7 +5417,9 @@ export default function DashboardPage() {
                                       </h4>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <span className="text-gray-400 font-bold">—</span>
+                                      <span className="text-gray-400 font-bold">
+                                        —
+                                      </span>
                                       <p className="text-sm font-semibold text-gray-600">
                                         {language === "ar"
                                           ? "لا توجد معلومات استلام في أوروبا"
@@ -5244,12 +5427,11 @@ export default function DashboardPage() {
                                       </p>
                                     </div>
                                   </div>
-                                )
-                              )}
+                                ))}
 
                               {/* Syria Transport Information */}
-                              {shipment.direction === "eu-sy" && (
-                                shipment.syria_province ? (
+                              {shipment.direction === "eu-sy" &&
+                                (shipment.syria_province ? (
                                   <div className="md:col-span-2 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
                                     <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
                                       <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
@@ -5262,7 +5444,9 @@ export default function DashboardPage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                       <div>
                                         <p className="text-xs text-gray-500 mb-1">
-                                          {language === "ar" ? "المحافظة" : "Province"}
+                                          {language === "ar"
+                                            ? "المحافظة"
+                                            : "Province"}
                                         </p>
                                         <p className="text-sm font-semibold text-gray-900">
                                           {shipment.syria_province}
@@ -5271,10 +5455,15 @@ export default function DashboardPage() {
                                       {Number(shipment.syria_weight) > 0 && (
                                         <div>
                                           <p className="text-xs text-gray-500 mb-1">
-                                            {language === "ar" ? "الوزن" : "Weight"}
+                                            {language === "ar"
+                                              ? "الوزن"
+                                              : "Weight"}
                                           </p>
                                           <p className="text-sm font-semibold text-gray-900">
-                                            {Number(shipment.syria_weight).toFixed(2)} kg
+                                            {Number(
+                                              shipment.syria_weight
+                                            ).toFixed(2)}{" "}
+                                            kg
                                           </p>
                                         </div>
                                       )}
@@ -5291,7 +5480,9 @@ export default function DashboardPage() {
                                       </h4>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <span className="text-gray-400 font-bold">—</span>
+                                      <span className="text-gray-400 font-bold">
+                                        —
+                                      </span>
                                       <p className="text-sm font-semibold text-gray-600">
                                         {language === "ar"
                                           ? "لا توجد معلومات نقل داخلي في سورية"
@@ -5299,8 +5490,7 @@ export default function DashboardPage() {
                                       </p>
                                     </div>
                                   </div>
-                                )
-                              )}
+                                ))}
 
                               {/* Tracking */}
                               {shipment.tracking_number && (

@@ -720,7 +720,6 @@ class LCLShipment(models.Model):
 
     STATUS_CHOICES = [
         ("CREATED", "Created"),
-        ("OFFER_SENT", "Offer Sent"),
         ("PENDING_PAYMENT", "Pending Payment"),
         ("PENDING_PICKUP", "Pending Pickup"),
         ("IN_TRANSIT_TO_WATTWEG_5", "In Transit to Wattweg 5"),
@@ -839,10 +838,12 @@ class LCLShipment(models.Model):
             from django.utils import timezone
 
             date_str = timezone.now().strftime("%Y%m%d")
+            # Use select_related and only to optimize query
             last_shipment = (
                 LCLShipment.objects.filter(
                     shipment_number__startswith=f"LCL-{date_str}"
                 )
+                .only("shipment_number")
                 .order_by("-shipment_number")
                 .first()
             )

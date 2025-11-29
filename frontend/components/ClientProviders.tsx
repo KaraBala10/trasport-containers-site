@@ -5,6 +5,7 @@ import Script from 'next/script';
 import ReCaptchaProvider from './ReCaptchaProvider';
 import WhatsAppButton from './WhatsAppButton';
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
+import { ToastProvider } from '@/contexts/ToastContext';
 
 interface ClientProvidersProps {
   children: ReactNode;
@@ -87,7 +88,9 @@ export default function ClientProviders({ children }: ClientProvidersProps) {
         </>
       )}
       <ReCaptchaProvider>
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </ReCaptchaProvider>
       
       {/* زر الواتساب العائم - يظهر في جميع الصفحات */}

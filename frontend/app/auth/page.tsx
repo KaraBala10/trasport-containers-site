@@ -3,6 +3,7 @@
 import { useState, lazy, Suspense, useMemo } from 'react';
 import { useReCaptcha } from '@/components/ReCaptchaWrapper';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useToast } from '@/contexts/ToastContext';
 
 // Lazy load LanguageSwitcher to reduce initial bundle size
 const LanguageSwitcher = lazy(() => import('@/components/LanguageSwitcher'));
@@ -101,16 +102,16 @@ export default function AuthPage() {
       
       // Success message (remove in production)
       if (language === 'ar') {
-        alert('تم الإرسال بنجاح! (في الإنتاج سيتم إرسال البيانات للخادم)');
+        showSuccess('تم الإرسال بنجاح! (في الإنتاج سيتم إرسال البيانات للخادم)');
       } else {
-        alert('Submitted successfully! (In production, data will be sent to server)');
+        showSuccess('Submitted successfully! (In production, data will be sent to server)');
       }
       
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Form submission error:', error);
       }
-      alert(language === 'ar' ? 'حدث خطأ في التحقق. يرجى المحاولة مرة أخرى.' : 'Verification error. Please try again.');
+      showError(language === 'ar' ? 'حدث خطأ في التحقق. يرجى المحاولة مرة أخرى.' : 'Verification error. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Parcel } from "@/types/shipment";
 import { apiService } from "@/lib/api";
+import { useToast } from "@/contexts/ToastContext";
 
 interface Price {
   id: number;
@@ -50,6 +51,7 @@ export default function Step4ParcelDetails({
   language,
   onValidationChange,
 }: Step4ParcelDetailsProps) {
+  const { showSuccess, showError } = useToast();
   const [prices, setPrices] = useState<Price[]>([]);
   const [regularProducts, setRegularProducts] = useState<Price[]>([]);
   const [perPieceProducts, setPerPieceProducts] = useState<PerPieceProduct[]>(
@@ -688,10 +690,10 @@ export default function Step4ParcelDetails({
 
                             if (response.data.success) {
                               // Show success message
-                              alert(
+                              showSuccess(
                                 language === "ar"
-                                  ? `تم إرسال طلبك بنجاح!\n\nسيقوم الأدمن بمراجعة طلبك وإضافة المنتج "${parcel.customProductName}" مع السعر.\n\nسنقوم بإرسال بريد إلكتروني لك عند إضافة المنتج.\n\nشكراً لك!`
-                                  : `Request sent successfully!\n\nThe admin will review your request and add the product "${parcel.customProductName}" with pricing.\n\nWe will send you an email when the product is added.\n\nThank you!`
+                                  ? `تم إرسال طلبك بنجاح! سيقوم الأدمن بمراجعة طلبك وإضافة المنتج "${parcel.customProductName}" مع السعر. سنقوم بإرسال بريد إلكتروني لك عند إضافة المنتج. شكراً لك!`
+                                  : `Request sent successfully! The admin will review your request and add the product "${parcel.customProductName}" with pricing. We will send you an email when the product is added. Thank you!`
                               );
 
                               // Remove this parcel card
@@ -702,7 +704,7 @@ export default function Step4ParcelDetails({
                             }
                           } catch (error) {
                             console.error("Error requesting product:", error);
-                            alert(
+                            showError(
                               language === "ar"
                                 ? "حدث خطأ في إرسال الطلب. الرجاء المحاولة مرة أخرى."
                                 : "Error sending request. Please try again."

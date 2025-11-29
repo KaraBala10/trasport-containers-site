@@ -6,6 +6,7 @@ import { ShippingDirection } from '@/types/shipment';
 import { PricingResult } from '@/types/pricing';
 import Link from 'next/link';
 import { apiService } from '@/lib/api';
+import { useToast } from '@/contexts/ToastContext';
 
 interface Step11ConfirmationProps {
   shipmentId: string;
@@ -22,6 +23,7 @@ export default function Step11Confirmation({
   language,
   grandTotalWithTransport,
 }: Step11ConfirmationProps) {
+  const { showSuccess, showError } = useToast();
   const translations = {
     ar: {
       title: 'تم إنشاء الشحنة بنجاح',
@@ -79,7 +81,7 @@ export default function Step11Confirmation({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading Packing List:', error);
-      alert(language === 'ar' 
+      showError(language === 'ar' 
         ? 'حدث خطأ أثناء تحميل Packing List. يرجى المحاولة لاحقاً.' 
         : 'Error downloading Packing List. Please try again later.');
     } finally {
@@ -104,7 +106,7 @@ export default function Step11Confirmation({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading Commercial Invoice:', error);
-      alert(language === 'ar' 
+      showError(language === 'ar' 
         ? 'حدث خطأ أثناء تحميل الفاتورة التجارية. يرجى المحاولة لاحقاً.' 
         : 'Error downloading Commercial Invoice. Please try again later.');
     } finally {

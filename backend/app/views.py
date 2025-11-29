@@ -3013,19 +3013,35 @@ class LCLShipmentView(generics.CreateAPIView):
             f"Created LCL shipment {shipment.id} - {shipment.shipment_number} for user {self.request.user.id}"
         )
 
-        # Send email notifications
+        # Send email notifications asynchronously to prevent timeout
         try:
+            import threading
             from .email_service import (
                 send_lcl_shipment_confirmation_email,
                 send_lcl_shipment_notification_to_admin,
             )
-            # Send confirmation email to user
-            send_lcl_shipment_confirmation_email(shipment)
-            # Send notification email to admin
-            send_lcl_shipment_notification_to_admin(shipment)
+            
+            def send_emails_async():
+                """Send emails in background thread"""
+                try:
+                    # Send confirmation email to user
+                    send_lcl_shipment_confirmation_email(shipment)
+                    # Send notification email to admin
+                    send_lcl_shipment_notification_to_admin(shipment)
+                except Exception as email_error:
+                    logger.error(
+                        f"Failed to send LCL shipment email notifications: {str(email_error)}",
+                        exc_info=True
+                    )
+            
+            # Start email sending in background thread
+            email_thread = threading.Thread(target=send_emails_async, daemon=True)
+            email_thread.start()
+            logger.info(f"Started background thread for sending LCL shipment emails for shipment {shipment.id}")
         except Exception as email_error:
             logger.error(
-                f"Failed to send LCL shipment email notifications: {str(email_error)}"
+                f"Failed to start email thread for LCL shipment: {str(email_error)}",
+                exc_info=True
             )
             # Don't fail the request if email fails
 
