@@ -15,6 +15,7 @@ interface Price {
   minimum_shipping_unit: "per_kg" | "per_piece";
   minimum_shipping_unit_display: string;
   one_cbm: number;
+  hs_code?: string;
 }
 
 interface PerPieceProduct {
@@ -306,6 +307,10 @@ export default function Step4ParcelDetails({
       height: "الارتفاع (سم)",
       weight: "الوزن (كغ)",
       productCategory: "نوع المنتج",
+      hsCode: "رمز HS (HS Code)",
+      shipmentType: "نوع الشحن",
+      personal: "شخصي",
+      commercial: "تجاري",
       packagingType: "نوع التغليف",
       packagingTypeOptional: "اختياري",
       additionalPackaging: "تغليف إضافي",
@@ -343,6 +348,10 @@ export default function Step4ParcelDetails({
       height: "Height (cm)",
       weight: "Weight (kg)",
       productCategory: "Product Category",
+      hsCode: "HS Code",
+      shipmentType: "Shipment Type",
+      personal: "Personal",
+      commercial: "Commercial",
       packagingType: "Packaging Type",
       packagingTypeOptional: "Optional",
       additionalPackaging: "Additional Packaging",
@@ -409,6 +418,7 @@ export default function Step4ParcelDetails({
       electronicsPicture: undefined,
       wantsInsurance: true, // Force insurance
       declaredShipmentValue: 0,
+      shipmentType: 'personal',
     };
     onParcelsChange([...parcels, newElectronics]);
   };
@@ -427,6 +437,7 @@ export default function Step4ParcelDetails({
       photos: [],
       wantsInsurance: false as boolean,
       declaredShipmentValue: 0 as number,
+      shipmentType: 'personal',
     };
     onParcelsChange([...parcels, newParcel]);
   };
@@ -463,6 +474,7 @@ export default function Step4ParcelDetails({
         }
 
         // Force enable insurance for MOBILE_PHONE and LAPTOP
+        // Also auto-fill HS Code when product is selected
         if (field === "productCategory") {
           const isPhoneOrLaptop =
             value === "MOBILE_PHONE" ||
@@ -483,6 +495,24 @@ export default function Step4ParcelDetails({
               updatedParcel.declaredShipmentValue =
                 updatedParcel.declaredValue || 0;
             }
+          }
+
+          // Auto-fill HS Code from selected product
+          if (value) {
+            const selectedProduct = 
+              prices.find((p) => p.id.toString() === value) ||
+              regularProducts.find((p) => p.id.toString() === value) ||
+              perPieceProducts.find((p) => p.id.toString() === value);
+            
+            if (selectedProduct && selectedProduct.hs_code) {
+              updatedParcel.hs_code = selectedProduct.hs_code;
+            } else {
+              // Clear HS Code if product doesn't have one
+              updatedParcel.hs_code = undefined;
+            }
+          } else {
+            // Clear HS Code if no product selected
+            updatedParcel.hs_code = undefined;
           }
         }
 
@@ -936,6 +966,46 @@ export default function Step4ParcelDetails({
                     }
                     return null;
                   })()}
+              </div>
+
+              {/* HS Code */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.hsCode}
+                </label>
+                <input
+                  type="text"
+                  value={parcel.hs_code || ""}
+                  onChange={(e) =>
+                    updateParcel(parcel.id, "hs_code", e.target.value || undefined)
+                  }
+                  placeholder={language === "ar" ? "مثال: 85171200" : "e.g., 85171200"}
+                  maxLength={20}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {language === "ar"
+                    ? "رمز HS للجمارك (يتم ملؤه تلقائياً عند اختيار المنتج)"
+                    : "HS Code for customs (auto-filled when product is selected)"}
+                </p>
+              </div>
+
+              {/* Shipment Type */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.shipmentType} *
+                </label>
+                <select
+                  value={parcel.shipmentType || 'personal'}
+                  onChange={(e) =>
+                    updateParcel(parcel.id, "shipmentType", e.target.value as 'personal' | 'commercial')
+                  }
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                  required
+                >
+                  <option value="personal">{t.personal}</option>
+                  <option value="commercial">{t.commercial}</option>
+                </select>
               </div>
 
               {/* Electronics Specific Fields */}

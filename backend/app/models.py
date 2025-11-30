@@ -483,6 +483,13 @@ class Price(models.Model):
         verbose_name="One CBM Price",
         help_text="Price for one cubic meter (CBM) in EUR",
     )
+    hs_code = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="HS Code",
+        help_text="Harmonized System Code for customs (e.g., 85171200 for mobile phones)",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
 

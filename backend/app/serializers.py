@@ -372,6 +372,7 @@ class PriceSerializer(serializers.ModelSerializer):
             "minimum_shipping_unit",
             "minimum_shipping_unit_display",
             "one_cbm",
+            "hs_code",
             "created_at",
             "updated_at",
         )

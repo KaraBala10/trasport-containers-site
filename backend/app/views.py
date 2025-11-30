@@ -533,15 +533,14 @@ def calculate_cbm_view(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Calculate CBM: (Length * Width * Height) / 1,000,000
-        # This converts from cm³ to m³
-        cbm = (length * width * height) / 1000000
+        # Calculate CBM: (Length * Width * Height) / 5,000
+        cbm = (length * width * height) / 5000
 
         return Response(
             {
                 "success": True,
                 "cbm": round(cbm, 6),  # Round to 6 decimal places
-                "formula": f"({length} × {width} × {height}) / 1,000,000 = {cbm:.6f} m³",
+                "formula": f"({length} × {width} × {height}) / 5,000 = {cbm:.6f} m³",
             },
             status=status.HTTP_200_OK,
         )

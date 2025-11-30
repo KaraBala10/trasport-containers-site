@@ -106,6 +106,9 @@ export default function Step3SenderReceiver({
       country: 'الدولة',
       province: 'المحافظة',
       idNumber: 'رقم الهوية / الجواز',
+      shipmentType: 'نوع الشحن',
+      personal: 'شخصي',
+      commercial: 'تجاري',
       required: 'مطلوب',
       inEurope: 'في أوروبا',
       inSyria: 'في سورية',
@@ -123,6 +126,9 @@ export default function Step3SenderReceiver({
       country: 'Country',
       province: 'Province',
       idNumber: 'ID / Passport Number',
+      shipmentType: 'Shipment Type',
+      personal: 'Personal',
+      commercial: 'Commercial',
       required: 'Required',
       inEurope: 'in Europe',
       inSyria: 'in Syria',
@@ -384,6 +390,7 @@ export default function Step3SenderReceiver({
               </p>
             )}
           </div>
+
         </div>
       </motion.div>
 
@@ -601,6 +608,7 @@ export default function Step3SenderReceiver({
               </p>
             )}
           </div>
+
         </div>
       </motion.div>
     </div>
