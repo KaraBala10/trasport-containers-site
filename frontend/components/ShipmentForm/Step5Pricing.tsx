@@ -160,12 +160,6 @@ export default function Step5Pricing({
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-700">{t.priceByCBM}</span>
-              <span className="font-semibold text-blue-900">
-                {pricing.basePrice.priceByCBM.toFixed(2)} €
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
               <span className="text-gray-700">{t.minimum}</span>
               <span className="font-semibold text-blue-900">75.00 €</span>
             </div>
