@@ -10,25 +10,7 @@ import { useReCaptcha } from "@/components/ReCaptchaWrapper";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-// Extend Window interface for grecaptcha
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready: (callback: () => void) => void;
-      render: (
-        element: string | HTMLElement,
-        options: {
-          sitekey: string;
-          size?: "normal" | "compact" | "invisible";
-          theme?: "light" | "dark";
-          callback?: (token: string) => void;
-          "expired-callback"?: () => void;
-          "error-callback"?: () => void;
-        }
-      ) => number;
-    };
-  }
-}
+// grecaptcha types are defined in types/grecaptcha.d.ts
 
 export default function RegisterPage() {
   const router = useRouter();

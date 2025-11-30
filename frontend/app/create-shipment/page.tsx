@@ -7,25 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useMemo } from "react";
 
-// Extend Window interface for grecaptcha
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready: (callback: () => void) => void;
-      render: (
-        elementId: string,
-        options: {
-          sitekey: string;
-          size?: string;
-          theme?: string;
-          callback?: (token: string) => void;
-          "expired-callback"?: () => void;
-          "error-callback"?: () => void;
-        }
-      ) => number;
-    };
-  }
-}
+// grecaptcha types are defined in types/grecaptcha.d.ts
 import Step1Direction from "@/components/ShipmentForm/Step1Direction";
 import Step3SenderReceiver from "@/components/ShipmentForm/Step3SenderReceiver";
 import Step4ParcelDetails from "@/components/ShipmentForm/Step4ParcelDetails";

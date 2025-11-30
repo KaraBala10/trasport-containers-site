@@ -11,25 +11,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/lib/api";
 
-// Extend Window interface for grecaptcha
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready: (callback: () => void) => void;
-      render: (
-        element: string | HTMLElement,
-        options: {
-          sitekey: string;
-          size?: "normal" | "compact" | "invisible";
-          theme?: "light" | "dark";
-          callback?: (token: string) => void;
-          "expired-callback"?: () => void;
-          "error-callback"?: () => void;
-        }
-      ) => number;
-    };
-  }
-}
+// grecaptcha types are defined in types/grecaptcha.d.ts
 
 export default function FCLQuotePage() {
   const router = useRouter();
