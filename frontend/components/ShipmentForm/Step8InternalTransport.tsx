@@ -4,6 +4,17 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShippingDirection } from "@/types/shipment";
 import apiService from "@/lib/api";
+import {
+  validateEmail,
+  validatePhone,
+  validateRequired,
+  validateWeight,
+  validateNumber,
+  formatPhoneInput,
+  formatNumericInput,
+  handleNumericInput,
+  handleIntegerInput,
+} from "@/utils/validation";
 
 interface ShippingMethod {
   id: number;
@@ -166,6 +177,18 @@ export default function Step8InternalTransport({
   const [shippingError, setShippingError] = useState<string | null>(null);
   const [canCalculate, setCanCalculate] = useState(false);
   const [postalCodeError, setPostalCodeError] = useState<string | null>(null);
+  
+  // Validation errors state
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    companyName?: string;
+    address?: string;
+    houseNumber?: string;
+    city?: string;
+    email?: string;
+    telephone?: string;
+    weight?: string;
+  }>({});
 
   // ✅ States for Syrian internal transport
   const [syrianProvinces, setSyrianProvinces] = useState<SyrianProvince[]>([]);
@@ -560,12 +583,33 @@ export default function Step8InternalTransport({
               <input
                 type="text"
                 value={euPickupAddress}
-                onChange={(e) => onEUPickupAddressChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                onChange={(e) => {
+                  onEUPickupAddressChange(e.target.value);
+                  if (fieldErrors.address) {
+                    setFieldErrors({ ...fieldErrors, address: undefined });
+                  }
+                }}
+                onBlur={() => {
+                  const error = validateRequired(
+                    euPickupAddress,
+                    t.pickupAddress,
+                    2,
+                    200
+                  );
+                  setFieldErrors({ ...fieldErrors, address: error || undefined });
+                }}
+                className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                  fieldErrors.address
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-300 focus:border-primary-yellow"
+                }`}
                 placeholder={
                   language === "ar" ? "مثال: Main Street" : "e.g., Main Street"
                 }
               />
+              {fieldErrors.address && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.address}</p>
+              )}
             </div>
 
             {/* House Number */}
@@ -576,10 +620,33 @@ export default function Step8InternalTransport({
               <input
                 type="text"
                 value={euPickupHouseNumber}
-                onChange={(e) => onEUPickupHouseNumberChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                onChange={(e) => {
+                  const formatted = formatIntegerInput(e.target.value);
+                  onEUPickupHouseNumberChange(formatted);
+                  if (fieldErrors.houseNumber) {
+                    setFieldErrors({ ...fieldErrors, houseNumber: undefined });
+                  }
+                }}
+                onBlur={() => {
+                  const error = validateRequired(
+                    euPickupHouseNumber,
+                    t.houseNumber,
+                    1,
+                    50
+                  );
+                  setFieldErrors({ ...fieldErrors, houseNumber: error || undefined });
+                }}
+                onKeyDown={handleIntegerInput}
+                className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                  fieldErrors.houseNumber
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-300 focus:border-primary-yellow"
+                }`}
                 placeholder={language === "ar" ? "مثال: 123" : "e.g., 123"}
               />
+              {fieldErrors.houseNumber && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.houseNumber}</p>
+              )}
             </div>
 
             {/* City */}
@@ -590,12 +657,33 @@ export default function Step8InternalTransport({
               <input
                 type="text"
                 value={euPickupCity}
-                onChange={(e) => onEUPickupCityChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                onChange={(e) => {
+                  onEUPickupCityChange(e.target.value);
+                  if (fieldErrors.city) {
+                    setFieldErrors({ ...fieldErrors, city: undefined });
+                  }
+                }}
+                onBlur={() => {
+                  const error = validateRequired(
+                    euPickupCity,
+                    t.city,
+                    2,
+                    100
+                  );
+                  setFieldErrors({ ...fieldErrors, city: error || undefined });
+                }}
+                className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                  fieldErrors.city
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-300 focus:border-primary-yellow"
+                }`}
                 placeholder={
                   language === "ar" ? "مثال: Amsterdam" : "e.g., Amsterdam"
                 }
               />
+              {fieldErrors.city && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.city}</p>
+              )}
             </div>
 
             {/* Postal Code */}

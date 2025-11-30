@@ -6,6 +6,12 @@ import Footer from "@/components/Footer";
 import contactContent from "@/content/contact.json";
 import { useLanguage } from "@/hooks/useLanguage";
 import { apiService } from "@/lib/api";
+import {
+  validateRequired,
+  validateEmail,
+  validatePhone,
+  formatPhoneInput,
+} from "@/utils/validation";
 
 interface FormData {
   fullName: string;
@@ -40,35 +46,24 @@ export default function ContactPage() {
 
   const content = contactContent[language];
 
-  const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
-
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = content.form.requiredError;
-    }
+    const fullNameError = validateRequired(formData.fullName, content.form.fullName.label, 2, 100);
+    if (fullNameError) newErrors.fullName = fullNameError;
 
-    if (!formData.email.trim()) {
-      newErrors.email = content.form.requiredError;
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = content.form.emailError;
-    }
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = content.form.requiredError;
-    }
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
 
     if (!formData.subject) {
       newErrors.subject = content.form.requiredError;
     }
 
-    if (!formData.message.trim()) {
-      newErrors.message = content.form.requiredError;
-    }
+    const messageError = validateRequired(formData.message, content.form.message.label, 10, 2000);
+    if (messageError) newErrors.message = messageError;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -162,7 +157,14 @@ export default function ContactPage() {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let formattedValue = value;
+    
+    // Format phone input
+    if (name === "phone") {
+      formattedValue = formatPhoneInput(value);
+    }
+    
+    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
     // مسح الخطأ عند الكتابة
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
@@ -246,6 +248,10 @@ export default function ContactPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={() => {
+                      const error = validateEmail(formData.email);
+                      setErrors({ ...errors, email: error || undefined });
+                    }}
                     placeholder={content.form.email.placeholder}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                       errors.email
@@ -274,6 +280,10 @@ export default function ContactPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    onBlur={() => {
+                      const error = validatePhone(formData.phone);
+                      setErrors({ ...errors, phone: error || undefined });
+                    }}
                     placeholder={content.form.phone.placeholder}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
                       errors.phone

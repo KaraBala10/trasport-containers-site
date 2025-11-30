@@ -5,6 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Parcel } from "@/types/shipment";
 import { apiService } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import {
+  validateNumber,
+  validateWeight,
+  validateDimension,
+  handleNumericInput,
+  formatNumericInput,
+} from "@/utils/validation";
 
 interface Price {
   id: number;
@@ -64,6 +71,14 @@ export default function Step4ParcelDetails({
   const [validationErrors, setValidationErrors] = useState<{
     [key: string]: string;
   }>({});
+  const [fieldErrors, setFieldErrors] = useState<{
+    [parcelId: string]: {
+      length?: string;
+      width?: string;
+      height?: string;
+      weight?: string;
+    };
+  }>({});
   const [customProductMode, setCustomProductMode] = useState<{
     [key: string]: boolean;
   }>({});
@@ -95,7 +110,10 @@ export default function Step4ParcelDetails({
         const response = await apiService.getRegularProducts();
         if (response.data.success && response.data.products) {
           setRegularProducts(response.data.products);
-          console.log('✅ Regular products loaded:', response.data.products.length);
+          console.log(
+            "✅ Regular products loaded:",
+            response.data.products.length
+          );
         }
       } catch (error) {
         console.error("Failed to fetch regular products:", error);
@@ -107,7 +125,10 @@ export default function Step4ParcelDetails({
         const response = await apiService.getPerPieceProducts();
         if (response.data.success) {
           setPerPieceProducts(response.data.products);
-          console.log('✅ Per-piece products (Electronics) loaded:', response.data.products.length);
+          console.log(
+            "✅ Per-piece products (Electronics) loaded:",
+            response.data.products.length
+          );
         }
       } catch (error) {
         console.error("Failed to fetch per-piece products:", error);
@@ -237,9 +258,7 @@ export default function Step4ParcelDetails({
         // Photos are required (3 photos)
         if (!parcel.photos || parcel.photos.length < 3) {
           parcelErrors.push(
-            language === "ar"
-              ? "3 صور مطلوبة"
-              : "3 photos are required"
+            language === "ar" ? "3 صور مطلوبة" : "3 photos are required"
           );
         }
       }
@@ -250,7 +269,9 @@ export default function Step4ParcelDetails({
           (p) => p.id.toString() === parcel.productCategory
         );
         if (price) {
-          const minWeight = parseFloat(price.minimum_shipping_weight.toString());
+          const minWeight = parseFloat(
+            price.minimum_shipping_weight.toString()
+          );
           const parcelWeight = parcel.weight || 0;
           const parcelQuantity = parcel.quantity || 1;
 
@@ -418,7 +439,7 @@ export default function Step4ParcelDetails({
       electronicsPicture: undefined,
       wantsInsurance: true, // Force insurance
       declaredShipmentValue: 0,
-      shipmentType: 'personal',
+      shipmentType: "personal",
     };
     onParcelsChange([...parcels, newElectronics]);
   };
@@ -437,7 +458,7 @@ export default function Step4ParcelDetails({
       photos: [],
       wantsInsurance: false as boolean,
       declaredShipmentValue: 0 as number,
-      shipmentType: 'personal',
+      shipmentType: "personal",
     };
     onParcelsChange([...parcels, newParcel]);
   };
@@ -446,87 +467,158 @@ export default function Step4ParcelDetails({
     onParcelsChange(parcels.filter((p) => p.id !== id));
   };
 
-  const updateParcel = async (id: string, field: keyof Parcel, value: any) => {
-    const updatedParcels = await Promise.all(parcels.map(async (parcel) => {
-      if (parcel.id === id) {
-        const updatedParcel = { ...parcel, [field]: value };
+  // Validate parcel field
+  const validateParcelField = (
+    parcelId: string,
+    field: "length" | "width" | "height" | "weight",
+    value: number | string
+  ): string | null => {
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
+    const fieldName =
+      field === "length"
+        ? language === "ar"
+          ? "الطول"
+          : "Length"
+        : field === "width"
+        ? language === "ar"
+          ? "العرض"
+          : "Width"
+        : field === "height"
+        ? language === "ar"
+          ? "الارتفاع"
+          : "Height"
+        : language === "ar"
+        ? "الوزن"
+        : "Weight";
 
-        // Automatically calculate CBM when any dimension changes
-        if (field === "length" || field === "width" || field === "height") {
-          const length = field === "length" ? value : parcel.length || 0;
-          const width = field === "width" ? value : parcel.width || 0;
-          const height = field === "height" ? value : parcel.height || 0;
-          
-          // Calculate CBM using Backend API only
-          try {
-            const response = await apiService.calculateCBM(length, width, height);
-            if (response.data.success) {
-              updatedParcel.cbm = response.data.cbm;
-              console.log('✅ CBM calculated from Backend API:', response.data.cbm);
-            } else {
-              console.error('❌ Backend API returned error for CBM calculation');
+    if (field === "weight") {
+      return validateWeight(numValue);
+    } else {
+      return validateDimension(numValue, fieldName);
+    }
+  };
+
+  const updateParcel = async (id: string, field: keyof Parcel, value: any) => {
+    // Format numeric fields
+    let formattedValue = value;
+    if (
+      (field === "length" ||
+        field === "width" ||
+        field === "height" ||
+        field === "weight") &&
+      typeof value === "string"
+    ) {
+      formattedValue = parseFloat(formatNumericInput(value)) || 0;
+    }
+
+    const updatedParcels = await Promise.all(
+      parcels.map(async (parcel) => {
+        if (parcel.id === id) {
+          const updatedParcel = { ...parcel, [field]: formattedValue };
+
+          // Clear field error when user starts typing
+          if (
+            (field === "length" ||
+              field === "width" ||
+              field === "height" ||
+              field === "weight") &&
+            fieldErrors[id]?.[field]
+          ) {
+            setFieldErrors({
+              ...fieldErrors,
+              [id]: {
+                ...fieldErrors[id],
+                [field]: undefined,
+              },
+            });
+          }
+
+          // Automatically calculate CBM when any dimension changes
+          if (field === "length" || field === "width" || field === "height") {
+            const length = field === "length" ? value : parcel.length || 0;
+            const width = field === "width" ? value : parcel.width || 0;
+            const height = field === "height" ? value : parcel.height || 0;
+
+            // Calculate CBM using Backend API only
+            try {
+              const response = await apiService.calculateCBM(
+                length,
+                width,
+                height
+              );
+              if (response.data.success) {
+                updatedParcel.cbm = response.data.cbm;
+                console.log(
+                  "✅ CBM calculated from Backend API:",
+                  response.data.cbm
+                );
+              } else {
+                console.error(
+                  "❌ Backend API returned error for CBM calculation"
+                );
+                updatedParcel.cbm = 0;
+              }
+            } catch (error) {
+              console.error(
+                "❌ Backend API failed for CBM calculation:",
+                error
+              );
               updatedParcel.cbm = 0;
             }
-          } catch (error) {
-            console.error('❌ Backend API failed for CBM calculation:', error);
-            updatedParcel.cbm = 0;
           }
-        }
 
-        // Force enable insurance for MOBILE_PHONE and LAPTOP
-        // Also auto-fill HS Code when product is selected
-        if (field === "productCategory") {
-          const isPhoneOrLaptop =
-            value === "MOBILE_PHONE" ||
-            value === "LAPTOP" ||
-            prices
-              .find((p) => p.id.toString() === value)
-              ?.en_item?.toLowerCase()
-              .includes("mobile") ||
-            prices
-              .find((p) => p.id.toString() === value)
-              ?.en_item?.toLowerCase()
-              .includes("laptop");
+          // Force enable insurance for MOBILE_PHONE and LAPTOP
+          // Also auto-fill HS Code when product is selected
+          if (field === "productCategory") {
+            const isPhoneOrLaptop =
+              value === "MOBILE_PHONE" ||
+              value === "LAPTOP" ||
+              prices
+                .find((p) => p.id.toString() === value)
+                ?.en_item?.toLowerCase()
+                .includes("mobile") ||
+              prices
+                .find((p) => p.id.toString() === value)
+                ?.en_item?.toLowerCase()
+                .includes("laptop");
 
-          if (isPhoneOrLaptop) {
-            updatedParcel.wantsInsurance = true;
-            // If no declared value set, set a default or keep existing
-            if (!updatedParcel.declaredShipmentValue) {
-              updatedParcel.declaredShipmentValue =
-                updatedParcel.declaredValue || 0;
+            if (isPhoneOrLaptop) {
+              updatedParcel.wantsInsurance = true;
+              // If no declared value set, set a default or keep existing
+              if (!updatedParcel.declaredShipmentValue) {
+                updatedParcel.declaredShipmentValue =
+                  updatedParcel.declaredValue || 0;
+              }
             }
-          }
 
-          // Auto-fill HS Code from selected product
-          if (value) {
-            const selectedProduct = 
-              prices.find((p) => p.id.toString() === value) ||
-              regularProducts.find((p) => p.id.toString() === value) ||
-              perPieceProducts.find((p) => p.id.toString() === value);
-            
-            if (selectedProduct && selectedProduct.hs_code) {
-              updatedParcel.hs_code = selectedProduct.hs_code;
+            // Auto-fill HS Code from selected product
+            if (value) {
+              const selectedProduct =
+                prices.find((p) => p.id.toString() === value) ||
+                regularProducts.find((p) => p.id.toString() === value) ||
+                perPieceProducts.find((p) => p.id.toString() === value);
+
+              if (selectedProduct && selectedProduct.hs_code) {
+                updatedParcel.hs_code = selectedProduct.hs_code;
+              } else {
+                // Clear HS Code if product doesn't have one
+                updatedParcel.hs_code = undefined;
+              }
             } else {
-              // Clear HS Code if product doesn't have one
+              // Clear HS Code if no product selected
               updatedParcel.hs_code = undefined;
             }
-          } else {
-            // Clear HS Code if no product selected
-            updatedParcel.hs_code = undefined;
           }
-        }
 
-        return updatedParcel;
-      }
-      return parcel;
-    }));
+          return updatedParcel;
+        }
+        return parcel;
+      })
+    );
     onParcelsChange(updatedParcels);
   };
 
-  const handlePhotoUpload = (
-    id: string,
-    files: FileList | null
-  ) => {
+  const handlePhotoUpload = (id: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     const updatedParcels = parcels.map((parcel) => {
@@ -642,24 +734,43 @@ export default function Step4ParcelDetails({
                       {t.length} *
                     </label>
                     <input
-                      type="number"
-                      step="0.1"
-                      min="0.1"
+                      type="text"
+                      inputMode="decimal"
                       value={parcel.length || ""}
-                      onChange={(e) =>
-                        updateParcel(
+                      onChange={(e) => {
+                        const formatted = formatNumericInput(e.target.value);
+                        updateParcel(parcel.id, "length", formatted);
+                      }}
+                      onBlur={() => {
+                        const error = validateParcelField(
                           parcel.id,
                           "length",
-                          parseFloat(e.target.value) || 0
-                        )
+                          parcel.length || 0
+                        );
+                        setFieldErrors({
+                          ...fieldErrors,
+                          [parcel.id]: {
+                            ...fieldErrors[parcel.id],
+                            length: error || undefined,
+                          },
+                        });
+                      }}
+                      onKeyDown={handleNumericInput}
+                      placeholder={
+                        language === "ar" ? "مثال: 30.5" : "e.g., 30.5"
                       }
-                      placeholder={language === "ar" ? "مثال: 30.5" : "e.g., 30.5"}
-                      className={`w-full px-4 py-3 rounded-xl border-2 ${
-                        validationErrors[parcel.id] && !parcel.length
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
+                      className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                        fieldErrors[parcel.id]?.length ||
+                        (validationErrors[parcel.id] && !parcel.length)
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-yellow"
+                      }`}
                     />
+                    {fieldErrors[parcel.id]?.length && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors[parcel.id].length}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -667,24 +778,43 @@ export default function Step4ParcelDetails({
                       {t.width} *
                     </label>
                     <input
-                      type="number"
-                      step="0.1"
-                      min="0.1"
+                      type="text"
+                      inputMode="decimal"
                       value={parcel.width || ""}
-                      onChange={(e) =>
-                        updateParcel(
+                      onChange={(e) => {
+                        const formatted = formatNumericInput(e.target.value);
+                        updateParcel(parcel.id, "width", formatted);
+                      }}
+                      onBlur={() => {
+                        const error = validateParcelField(
                           parcel.id,
                           "width",
-                          parseFloat(e.target.value) || 0
-                        )
+                          parcel.width || 0
+                        );
+                        setFieldErrors({
+                          ...fieldErrors,
+                          [parcel.id]: {
+                            ...fieldErrors[parcel.id],
+                            width: error || undefined,
+                          },
+                        });
+                      }}
+                      onKeyDown={handleNumericInput}
+                      placeholder={
+                        language === "ar" ? "مثال: 25.0" : "e.g., 25.0"
                       }
-                      placeholder={language === "ar" ? "مثال: 25.0" : "e.g., 25.0"}
-                      className={`w-full px-4 py-3 rounded-xl border-2 ${
-                        validationErrors[parcel.id] && !parcel.width
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
+                      className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                        fieldErrors[parcel.id]?.width ||
+                        (validationErrors[parcel.id] && !parcel.width)
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-yellow"
+                      }`}
                     />
+                    {fieldErrors[parcel.id]?.width && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors[parcel.id].width}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -692,24 +822,43 @@ export default function Step4ParcelDetails({
                       {t.height} *
                     </label>
                     <input
-                      type="number"
-                      step="0.1"
-                      min="0.1"
+                      type="text"
+                      inputMode="decimal"
                       value={parcel.height || ""}
-                      onChange={(e) =>
-                        updateParcel(
+                      onChange={(e) => {
+                        const formatted = formatNumericInput(e.target.value);
+                        updateParcel(parcel.id, "height", formatted);
+                      }}
+                      onBlur={() => {
+                        const error = validateParcelField(
                           parcel.id,
                           "height",
-                          parseFloat(e.target.value) || 0
-                        )
+                          parcel.height || 0
+                        );
+                        setFieldErrors({
+                          ...fieldErrors,
+                          [parcel.id]: {
+                            ...fieldErrors[parcel.id],
+                            height: error || undefined,
+                          },
+                        });
+                      }}
+                      onKeyDown={handleNumericInput}
+                      placeholder={
+                        language === "ar" ? "مثال: 15.2" : "e.g., 15.2"
                       }
-                      placeholder={language === "ar" ? "مثال: 15.2" : "e.g., 15.2"}
-                      className={`w-full px-4 py-3 rounded-xl border-2 ${
-                        validationErrors[parcel.id] && !parcel.height
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
+                      className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                        fieldErrors[parcel.id]?.height ||
+                        (validationErrors[parcel.id] && !parcel.height)
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-yellow"
+                      }`}
                     />
+                    {fieldErrors[parcel.id]?.height && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors[parcel.id].height}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -717,24 +866,43 @@ export default function Step4ParcelDetails({
                       {t.weight} *
                     </label>
                     <input
-                      type="number"
-                      step="0.1"
-                      min="0.1"
+                      type="text"
+                      inputMode="decimal"
                       value={parcel.weight || ""}
-                      onChange={(e) =>
-                        updateParcel(
+                      onChange={(e) => {
+                        const formatted = formatNumericInput(e.target.value);
+                        updateParcel(parcel.id, "weight", formatted);
+                      }}
+                      onBlur={() => {
+                        const error = validateParcelField(
                           parcel.id,
                           "weight",
-                          parseFloat(e.target.value) || 0
-                        )
+                          parcel.weight || 0
+                        );
+                        setFieldErrors({
+                          ...fieldErrors,
+                          [parcel.id]: {
+                            ...fieldErrors[parcel.id],
+                            weight: error || undefined,
+                          },
+                        });
+                      }}
+                      onKeyDown={handleNumericInput}
+                      placeholder={
+                        language === "ar" ? "مثال: 2.5" : "e.g., 2.5"
                       }
-                      placeholder={language === "ar" ? "مثال: 2.5" : "e.g., 2.5"}
-                      className={`w-full px-4 py-3 rounded-xl border-2 ${
-                        validationErrors[parcel.id] && !parcel.weight
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
+                      className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                        fieldErrors[parcel.id]?.weight ||
+                        (validationErrors[parcel.id] && !parcel.weight)
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-yellow"
+                      }`}
                     />
+                    {fieldErrors[parcel.id]?.weight && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors[parcel.id].weight}
+                      </p>
+                    )}
                   </div>
 
                   {/* CBM Display (Auto-calculated) */}
@@ -977,9 +1145,15 @@ export default function Step4ParcelDetails({
                   type="text"
                   value={parcel.hs_code || ""}
                   onChange={(e) =>
-                    updateParcel(parcel.id, "hs_code", e.target.value || undefined)
+                    updateParcel(
+                      parcel.id,
+                      "hs_code",
+                      e.target.value || undefined
+                    )
                   }
-                  placeholder={language === "ar" ? "مثال: 85171200" : "e.g., 85171200"}
+                  placeholder={
+                    language === "ar" ? "مثال: 85171200" : "e.g., 85171200"
+                  }
                   maxLength={20}
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
                 />
@@ -996,9 +1170,13 @@ export default function Step4ParcelDetails({
                   {t.shipmentType} *
                 </label>
                 <select
-                  value={parcel.shipmentType || 'personal'}
+                  value={parcel.shipmentType || "personal"}
                   onChange={(e) =>
-                    updateParcel(parcel.id, "shipmentType", e.target.value as 'personal' | 'commercial')
+                    updateParcel(
+                      parcel.id,
+                      "shipmentType",
+                      e.target.value as "personal" | "commercial"
+                    )
                   }
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
                   required
@@ -1035,7 +1213,8 @@ export default function Step4ParcelDetails({
                           : "e.g., iPhone 14 Pro - 256GB - Blue"
                       }
                       className={`w-full px-4 py-3 rounded-xl border-2 ${
-                        validationErrors[parcel.id] && !parcel.electronicsName?.trim()
+                        validationErrors[parcel.id] &&
+                        !parcel.electronicsName?.trim()
                           ? "border-red-500"
                           : "border-blue-300"
                       } focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white`}
@@ -1204,24 +1383,25 @@ export default function Step4ParcelDetails({
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     {t.quantity} *
                   </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={parcel.quantity || 1}
-                      onChange={(e) =>
-                        updateParcel(
-                          parcel.id,
-                          "quantity",
-                          parseInt(e.target.value) || 1
-                        )
-                      }
-                      placeholder={language === "ar" ? "مثال: 1" : "e.g., 1"}
-                      className={`w-full px-4 py-3 rounded-xl border-2 ${
-                        validationErrors[parcel.id] && (!parcel.quantity || parcel.quantity < 1)
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
-                    />
+                  <input
+                    type="number"
+                    min="1"
+                    value={parcel.quantity || 1}
+                    onChange={(e) =>
+                      updateParcel(
+                        parcel.id,
+                        "quantity",
+                        parseInt(e.target.value) || 1
+                      )
+                    }
+                    placeholder={language === "ar" ? "مثال: 1" : "e.g., 1"}
+                    className={`w-full px-4 py-3 rounded-xl border-2 ${
+                      validationErrors[parcel.id] &&
+                      (!parcel.quantity || parcel.quantity < 1)
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow`}
+                  />
                 </div>
               )}
 
@@ -1283,7 +1463,10 @@ export default function Step4ParcelDetails({
                           // Update immediately for checkbox (synchronous)
                           const updatedParcels = parcels.map((p) => {
                             if (p.id === parcel.id) {
-                              const updated = { ...p, wantsInsurance: newValue };
+                              const updated = {
+                                ...p,
+                                wantsInsurance: newValue,
+                              };
                               if (!newValue) {
                                 updated.declaredShipmentValue = 0;
                               }

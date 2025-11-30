@@ -10,6 +10,15 @@ import Autocomplete from "@/components/Autocomplete";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/lib/api";
+import {
+  validateRequired,
+  validateEmail,
+  validatePhone,
+  validateNumber,
+  formatPhoneInput,
+  formatNumericInput,
+  handleNumericInput,
+} from "@/utils/validation";
 
 // grecaptcha types are defined in types/grecaptcha.d.ts
 
@@ -1322,9 +1331,18 @@ export default function FCLQuotePage() {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
+    let formattedValue: any = value;
+    
+    // Format values based on field type
+    if (name === "phone") {
+      formattedValue = formatPhoneInput(value);
+    } else if (name === "total_weight" || name === "total_volume" || name === "cargo_value") {
+      formattedValue = formatNumericInput(value);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : formattedValue,
     }));
 
     // Clear error when user types
@@ -1332,6 +1350,32 @@ export default function FCLQuotePage() {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (fieldName: string, fieldValue: string) => {
+    let error: string | null = null;
+    
+    if (fieldName === "email") {
+      error = validateEmail(fieldValue);
+    } else if (fieldName === "phone") {
+      error = validatePhone(fieldValue);
+    } else if (fieldName === "full_name") {
+      error = validateRequired(fieldValue, language === "ar" ? "الاسم الكامل" : "Full Name", 2, 100);
+    } else if (fieldName === "total_weight" || fieldName === "total_volume") {
+      error = validateNumber(fieldValue, language === "ar" ? (fieldName === "total_weight" ? "الوزن" : "الحجم") : (fieldName === "total_weight" ? "Weight" : "Volume"), 0.01);
+    } else if (fieldName === "cargo_value") {
+      error = validateNumber(fieldValue, language === "ar" ? "قيمة البضاعة" : "Cargo Value", 0);
+    }
+    
+    if (error) {
+      setErrors((prev) => ({ ...prev, [fieldName]: error! }));
+    } else if (errors[fieldName]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
         return newErrors;
       });
     }
@@ -1366,8 +1410,18 @@ export default function FCLQuotePage() {
     } else if (section === "cargo") {
       if (!formData.commodity_type) newErrors.commodity_type = t.required;
       if (!formData.usage_type) newErrors.usage_type = t.required;
-      if (!formData.total_weight) newErrors.total_weight = t.required;
-      if (!formData.total_volume) newErrors.total_volume = t.required;
+      if (!formData.total_weight) {
+        newErrors.total_weight = t.required;
+      } else {
+        const weightError = validateNumber(formData.total_weight, language === "ar" ? "الوزن" : "Weight", 0.01);
+        if (weightError) newErrors.total_weight = weightError;
+      }
+      if (!formData.total_volume) {
+        newErrors.total_volume = t.required;
+      } else {
+        const volumeError = validateNumber(formData.total_volume, language === "ar" ? "الحجم" : "Volume", 0.01);
+        if (volumeError) newErrors.total_volume = volumeError;
+      }
       if (!formData.cargo_value) newErrors.cargo_value = t.required;
       if (
         formData.is_dangerous &&
@@ -2564,9 +2618,12 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="total_weight"
+                        type="text"
+                        inputMode="decimal"
                         value={formData.total_weight}
                         onChange={handleChange}
-                        step="0.01"
+                        onBlur={() => handleBlur("total_weight", formData.total_weight)}
+                        onKeyDown={handleNumericInput}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.total_weight
                             ? "border-red-500"
@@ -2590,9 +2647,12 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="total_volume"
+                        type="text"
+                        inputMode="decimal"
                         value={formData.total_volume}
                         onChange={handleChange}
-                        step="0.01"
+                        onBlur={() => handleBlur("total_volume", formData.total_volume)}
+                        onKeyDown={handleNumericInput}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.total_volume
                             ? "border-red-500"
@@ -2616,9 +2676,12 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="cargo_value"
+                        type="text"
+                        inputMode="decimal"
                         value={formData.cargo_value}
                         onChange={handleChange}
-                        step="0.01"
+                        onBlur={() => handleBlur("cargo_value", formData.cargo_value)}
+                        onKeyDown={handleNumericInput}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.cargo_value
                             ? "border-red-500"
@@ -3062,6 +3125,7 @@ export default function FCLQuotePage() {
                         name="full_name"
                         value={formData.full_name}
                         onChange={handleChange}
+                        onBlur={() => handleBlur("full_name", formData.full_name)}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.full_name
                             ? "border-red-500"
@@ -3140,6 +3204,7 @@ export default function FCLQuotePage() {
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
+                        onBlur={() => handleBlur("phone", formData.phone)}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.phone ? "border-red-500" : "border-gray-300"
                         }`}
@@ -3163,6 +3228,7 @@ export default function FCLQuotePage() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
+                        onBlur={() => handleBlur("email", formData.email)}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.email ? "border-red-500" : "border-gray-300"
                         }`}

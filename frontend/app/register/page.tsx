@@ -9,6 +9,10 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useReCaptcha } from "@/components/ReCaptchaWrapper";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import {
+  validateRequired,
+  validateEmail,
+} from "@/utils/validation";
 
 // grecaptcha types are defined in types/grecaptcha.d.ts
 
@@ -44,6 +48,12 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState<string>("");
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    username?: string;
+    email?: string;
+    password?: string;
+    password2?: string;
+  }>({});
 
   // Translations
   const translations = useMemo(
@@ -187,10 +197,25 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
-    if (formData.password !== formData.password2) {
-      setError(t.passwordsDoNotMatch);
+    // Validate all fields
+    const usernameError = validateRequired(formData.username, t.username, 3, 150);
+    const emailError = validateEmail(formData.email);
+    const passwordError = validateRequired(formData.password, t.password, 8, 128);
+    const password2Error = formData.password !== formData.password2 
+      ? t.passwordsDoNotMatch 
+      : validateRequired(formData.password2, t.confirmPassword, 8, 128);
+
+    if (usernameError || emailError || passwordError || password2Error) {
+      setFieldErrors({
+        username: usernameError || undefined,
+        email: emailError || undefined,
+        password: passwordError || undefined,
+        password2: password2Error || undefined,
+      });
       return;
     }
+
+    setFieldErrors({});
 
     // Check reCAPTCHA before submitting
     if (!isRecaptchaValid) {
@@ -386,13 +411,27 @@ export default function RegisterPage() {
                       name="username"
                       type="text"
                       required
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all text-gray-900 placeholder-gray-400"
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary-yellow outline-none transition-all text-gray-900 placeholder-gray-400 ${
+                        fieldErrors.username
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-dark"
+                      }`}
                       placeholder={t.username}
                       value={formData.username}
-                      onChange={(e) =>
-                        setFormData({ ...formData, username: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, username: e.target.value });
+                        if (fieldErrors.username) {
+                          setFieldErrors({ ...fieldErrors, username: undefined });
+                        }
+                      }}
+                      onBlur={() => {
+                        const error = validateRequired(formData.username, t.username, 3, 150);
+                        setFieldErrors({ ...fieldErrors, username: error || undefined });
+                      }}
                     />
+                    {fieldErrors.username && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.username}</p>
+                    )}
                   </div>
                 </div>
 
@@ -426,13 +465,27 @@ export default function RegisterPage() {
                       name="email"
                       type="email"
                       required
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all text-gray-900 placeholder-gray-400"
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary-yellow outline-none transition-all text-gray-900 placeholder-gray-400 ${
+                        fieldErrors.email
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-dark"
+                      }`}
                       placeholder={t.email}
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, email: e.target.value });
+                        if (fieldErrors.email) {
+                          setFieldErrors({ ...fieldErrors, email: undefined });
+                        }
+                      }}
+                      onBlur={() => {
+                        const error = validateEmail(formData.email);
+                        setFieldErrors({ ...fieldErrors, email: error || undefined });
+                      }}
                     />
+                    {fieldErrors.email && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                    )}
                   </div>
                 </div>
 
@@ -552,13 +605,31 @@ export default function RegisterPage() {
                       type="password"
                       required
                       minLength={8}
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all text-gray-900 placeholder-gray-400"
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary-yellow outline-none transition-all text-gray-900 placeholder-gray-400 ${
+                        fieldErrors.password
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-dark"
+                      }`}
                       placeholder={t.password}
                       value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, password: e.target.value });
+                        if (fieldErrors.password) {
+                          setFieldErrors({ ...fieldErrors, password: undefined });
+                        }
+                        // Also clear password2 error if passwords match
+                        if (fieldErrors.password2 && e.target.value === formData.password2) {
+                          setFieldErrors({ ...fieldErrors, password2: undefined });
+                        }
+                      }}
+                      onBlur={() => {
+                        const error = validateRequired(formData.password, t.password, 8, 128);
+                        setFieldErrors({ ...fieldErrors, password: error || undefined });
+                      }}
                     />
+                    {fieldErrors.password && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+                    )}
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
                     {language === "ar"

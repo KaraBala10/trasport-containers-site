@@ -7,6 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import {
+  validateRequired,
+  validateEmail,
+} from "@/utils/validation";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +22,10 @@ export default function LoginPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    username?: string;
+    password?: string;
+  }>({});
 
   // Translations
   const translations = useMemo(
@@ -59,6 +67,20 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    // Validate fields
+    const usernameError = validateRequired(formData.username, t.username, 3, 150);
+    const passwordError = validateRequired(formData.password, t.password, 6, 128);
+    
+    if (usernameError || passwordError) {
+      setFieldErrors({
+        username: usernameError || undefined,
+        password: passwordError || undefined,
+      });
+      return;
+    }
+    
+    setFieldErrors({});
     setLoading(true);
 
     const result = await login(formData.username, formData.password);
@@ -162,13 +184,27 @@ export default function LoginPage() {
                       name="username"
                       type="text"
                       required
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all text-gray-900 placeholder-gray-400"
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary-yellow outline-none transition-all text-gray-900 placeholder-gray-400 ${
+                        fieldErrors.username
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-dark"
+                      }`}
                       placeholder={t.username}
                       value={formData.username}
-                      onChange={(e) =>
-                        setFormData({ ...formData, username: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, username: e.target.value });
+                        if (fieldErrors.username) {
+                          setFieldErrors({ ...fieldErrors, username: undefined });
+                        }
+                      }}
+                      onBlur={() => {
+                        const error = validateRequired(formData.username, t.username, 3, 150);
+                        setFieldErrors({ ...fieldErrors, username: error || undefined });
+                      }}
                     />
+                    {fieldErrors.username && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.username}</p>
+                    )}
                   </div>
                 </div>
 
@@ -201,13 +237,27 @@ export default function LoginPage() {
                       name="password"
                       type="password"
                       required
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-dark outline-none transition-all text-gray-900 placeholder-gray-400"
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary-yellow outline-none transition-all text-gray-900 placeholder-gray-400 ${
+                        fieldErrors.password
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-primary-dark"
+                      }`}
                       placeholder={t.password}
                       value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, password: e.target.value });
+                        if (fieldErrors.password) {
+                          setFieldErrors({ ...fieldErrors, password: undefined });
+                        }
+                      }}
+                      onBlur={() => {
+                        const error = validateRequired(formData.password, t.password, 6, 128);
+                        setFieldErrors({ ...fieldErrors, password: error || undefined });
+                      }}
                     />
+                    {fieldErrors.password && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+                    )}
                   </div>
                 </div>
 
