@@ -533,8 +533,7 @@ def calculate_cbm_view(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Calculate CBM: (Length * Width * Height) / 1,000,000
-        # This converts from cm³ to m³
+        # Calculate CBM for display: (Length * Width * Height) / 1,000,000
         cbm = (length * width * height) / 1000000
 
         return Response(
@@ -626,33 +625,69 @@ def calculate_pricing_view(request):
                 # Get price from Price table
                 price = Price.objects.get(id=int(product_id))
 
-                # Calculate for this parcel (accounting for repeat count)
-                parcel_weight = weight * repeat_count
-                parcel_cbm = cbm * repeat_count
-
-                # Calculate: Weight * price_per_kg, CBM * one_cbm
-                price_by_weight = parcel_weight * float(price.price_per_kg)
-                price_by_cbm = parcel_cbm * float(price.one_cbm)
-
-                total_price_by_weight += price_by_weight
-                total_price_by_cbm += price_by_cbm
-
-                calculations.append(
-                    {
-                        "product_id": product_id,
-                        "product_name": (
-                            price.ar_item
-                            if request.data.get("language") == "ar"
-                            else price.en_item
-                        ),
-                        "weight": parcel_weight,
-                        "cbm": parcel_cbm,
-                        "price_per_kg": float(price.price_per_kg),
-                        "one_cbm": float(price.one_cbm),
-                        "price_by_weight": round(price_by_weight, 2),
-                        "price_by_cbm": round(price_by_cbm, 2),
-                    }
-                )
+                # Skip new calculation for per_piece products (electronics) - keep as is
+                if price.minimum_shipping_unit == "per_piece":
+                    # Keep original calculation for electronics
+                    parcel_weight = weight * repeat_count
+                    parcel_cbm = cbm * repeat_count
+                    price_by_weight = parcel_weight * float(price.price_per_kg)
+                    price_by_cbm = parcel_cbm * float(price.price_per_kg)
+                    total_price_by_weight += price_by_weight
+                    total_price_by_cbm += price_by_cbm
+                    calculations.append(
+                        {
+                            "product_id": product_id,
+                            "product_name": (
+                                price.ar_item
+                                if request.data.get("language") == "ar"
+                                else price.en_item
+                            ),
+                            "weight": parcel_weight,
+                            "cbm": parcel_cbm,
+                            "price_per_kg": float(price.price_per_kg),
+                            "price_by_weight": round(price_by_weight, 2),
+                            "price_by_cbm": round(price_by_cbm, 2),
+                        }
+                    )
+                else:
+                    # New calculation for per_kg products
+                    # Get dimensions from parcel_data
+                    length = float(parcel_data.get("length", 0))
+                    width = float(parcel_data.get("width", 0))
+                    height = float(parcel_data.get("height", 0))
+                    
+                    # Calculate volumetric weight: (L × W × H) / 6,000
+                    volumetric_weight = (length * width * height) / 6000
+                    
+                    # Chargeable weight = max(actual_weight, volumetric_weight)
+                    chargeable_weight = max(weight, volumetric_weight)
+                    
+                    # Account for repeat count
+                    parcel_chargeable_weight = chargeable_weight * repeat_count
+                    
+                    # Price = chargeable_weight × price_per_kg
+                    parcel_price = parcel_chargeable_weight * float(price.price_per_kg)
+                    
+                    total_price_by_weight += parcel_price
+                    total_price_by_cbm += parcel_price  # Same value for compatibility
+                    
+                    calculations.append(
+                        {
+                            "product_id": product_id,
+                            "product_name": (
+                                price.ar_item
+                                if request.data.get("language") == "ar"
+                                else price.en_item
+                            ),
+                            "weight": weight,
+                            "volumetric_weight": round(volumetric_weight, 3),
+                            "chargeable_weight": round(chargeable_weight, 3),
+                            "parcel_chargeable_weight": round(parcel_chargeable_weight, 3),
+                            "price_per_kg": float(price.price_per_kg),
+                            "price_by_weight": round(parcel_price, 2),
+                            "price_by_cbm": round(parcel_price, 2),
+                        }
+                    )
             except Price.DoesNotExist:
                 logger = logging.getLogger(__name__)
                 logger.warning(f"Price with id {product_id} not found")
@@ -681,7 +716,7 @@ def calculate_pricing_view(request):
 
         formula_dict = {
             "priceByWeight": f"Total Weight × Price per KG = {total_price_by_weight:.2f}",
-            "priceByCBM": f"Total CBM × One CBM Price = {total_price_by_cbm:.2f}",
+            "priceByCBM": f"Total CBM × Price per KG = {total_price_by_cbm:.2f}",
             "baseLCLPrice": f"max({total_price_by_weight:.2f}, {total_price_by_cbm:.2f}, 75) = {base_lcl_price:.2f}",
             "packagingCost": f"Total Packaging Cost = {total_packaging_cost:.2f}",
             "calculation": f"{base_lcl_price:.2f} + {total_packaging_cost:.2f} = {calculation_total:.2f}",

@@ -65,6 +65,25 @@ const syrianProvinces = [
   { code: 'QUNEITRA', name: 'Quneitra', nameAr: 'القنيطرة' },
 ];
 
+// Middle East countries
+const middleEastCountries = [
+  { code: 'SY', name: 'Syria', nameAr: 'سوريا' },
+  { code: 'JO', name: 'Jordan', nameAr: 'الأردن' },
+  { code: 'LB', name: 'Lebanon', nameAr: 'لبنان' },
+  { code: 'IQ', name: 'Iraq', nameAr: 'العراق' },
+  { code: 'SA', name: 'Saudi Arabia', nameAr: 'المملكة العربية السعودية' },
+  { code: 'AE', name: 'United Arab Emirates', nameAr: 'الإمارات العربية المتحدة' },
+  { code: 'KW', name: 'Kuwait', nameAr: 'الكويت' },
+  { code: 'QA', name: 'Qatar', nameAr: 'قطر' },
+  { code: 'BH', name: 'Bahrain', nameAr: 'البحرين' },
+  { code: 'OM', name: 'Oman', nameAr: 'عمان' },
+  { code: 'YE', name: 'Yemen', nameAr: 'اليمن' },
+  { code: 'PS', name: 'Palestine', nameAr: 'فلسطين' },
+  { code: 'EG', name: 'Egypt', nameAr: 'مصر' },
+  { code: 'TR', name: 'Turkey', nameAr: 'تركيا' },
+  { code: 'IR', name: 'Iran', nameAr: 'إيران' },
+];
+
 export default function Step3SenderReceiver({
   direction,
   sender,
@@ -87,6 +106,9 @@ export default function Step3SenderReceiver({
       country: 'الدولة',
       province: 'المحافظة',
       idNumber: 'رقم الهوية / الجواز',
+      shipmentType: 'نوع الشحن',
+      personal: 'شخصي',
+      commercial: 'تجاري',
       required: 'مطلوب',
       inEurope: 'في أوروبا',
       inSyria: 'في سورية',
@@ -104,6 +126,9 @@ export default function Step3SenderReceiver({
       country: 'Country',
       province: 'Province',
       idNumber: 'ID / Passport Number',
+      shipmentType: 'Shipment Type',
+      personal: 'Personal',
+      commercial: 'Commercial',
       required: 'Required',
       inEurope: 'in Europe',
       inSyria: 'in Syria',
@@ -120,9 +145,9 @@ export default function Step3SenderReceiver({
     email: '',
     street: '',
     streetNumber: '',
-    city: '',
+    city: isEUtoSY ? '' : undefined,
     postalCode: '',
-    country: isEUtoSY ? '' : undefined,
+    country: isEUtoSY ? '' : '',
     province: isEUtoSY ? undefined : '',
     idNumber: '',
   };
@@ -133,9 +158,9 @@ export default function Step3SenderReceiver({
     email: '',
     street: '',
     streetNumber: '',
-    city: '',
+    city: isEUtoSY ? undefined : '',
     postalCode: '',
-    country: isEUtoSY ? undefined : '',
+    country: isEUtoSY ? '' : undefined,
     province: isEUtoSY ? '' : undefined,
     idNumber: '',
   };
@@ -247,20 +272,41 @@ export default function Step3SenderReceiver({
             />
           </div>
 
-          {/* City */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t.city} *
-            </label>
-            <input
-              type="text"
-              value={senderData.city}
-              onChange={(e) => updateSender('city', e.target.value)}
-              placeholder={language === "ar" ? "مثال: أمستردام" : "e.g., Amsterdam"}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-              required
-            />
-          </div>
+          {/* City (for eu-sy) or Country (for sy-eu) */}
+          {isEUtoSY ? (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.city} *
+              </label>
+              <input
+                type="text"
+                value={senderData.city || ''}
+                onChange={(e) => updateSender('city', e.target.value)}
+                placeholder={language === "ar" ? "مثال: أمستردام" : "e.g., Amsterdam"}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                required
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.country} *
+              </label>
+              <select
+                value={senderData.country || ''}
+                onChange={(e) => updateSender('country', e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                required
+              >
+                <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                {middleEastCountries.map(country => (
+                  <option key={country.code} value={country.code}>
+                    {language === 'ar' ? country.nameAr : country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Postal Code */}
           <div>
@@ -344,6 +390,7 @@ export default function Step3SenderReceiver({
               </p>
             )}
           </div>
+
         </div>
       </motion.div>
 
@@ -441,20 +488,41 @@ export default function Step3SenderReceiver({
             </div>
           )}
 
-          {/* City */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t.city} *
-            </label>
-            <input
-              type="text"
-              value={receiverData.city}
-              onChange={(e) => updateReceiver('city', e.target.value)}
-              placeholder={language === "ar" ? "مثال: حلب" : "e.g., Aleppo"}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
-              required
-            />
-          </div>
+          {/* City (for sy-eu) or Country (for eu-sy) */}
+          {isEUtoSY ? (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.country} *
+              </label>
+              <select
+                value={receiverData.country || ''}
+                onChange={(e) => updateReceiver('country', e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
+                required
+              >
+                <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                {middleEastCountries.map(country => (
+                  <option key={country.code} value={country.code}>
+                    {language === 'ar' ? country.nameAr : country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.city} *
+              </label>
+              <input
+                type="text"
+                value={receiverData.city || ''}
+                onChange={(e) => updateReceiver('city', e.target.value)}
+                placeholder={language === "ar" ? "مثال: حلب" : "e.g., Aleppo"}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                required
+              />
+            </div>
+          )}
 
           {/* Postal Code */}
           {!isEUtoSY && (
@@ -540,6 +608,7 @@ export default function Step3SenderReceiver({
               </p>
             )}
           </div>
+
         </div>
       </motion.div>
     </div>

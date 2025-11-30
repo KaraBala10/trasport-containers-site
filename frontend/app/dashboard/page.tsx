@@ -5062,6 +5062,28 @@ export default function DashboardPage() {
                                                   : {parcel.cbm} m³
                                                 </p>
                                               )}
+                                              {parcel.shipmentType && (
+                                                <p>
+                                                  {language === "ar"
+                                                    ? "نوع الشحن"
+                                                    : "Shipment Type"}
+                                                  : {parcel.shipmentType === "personal"
+                                                    ? language === "ar"
+                                                      ? "شخصي"
+                                                      : "Personal"
+                                                    : language === "ar"
+                                                    ? "تجاري"
+                                                    : "Commercial"}
+                                                </p>
+                                              )}
+                                              {parcel.hs_code && (
+                                                <p>
+                                                  {language === "ar"
+                                                    ? "رمز HS"
+                                                    : "HS Code"}
+                                                  : {parcel.hs_code}
+                                                </p>
+                                              )}
                                             </div>
                                           </div>
                                         )

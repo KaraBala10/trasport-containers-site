@@ -122,11 +122,12 @@ class PriceAdmin(admin.ModelAdmin):
         "minimum_shipping_weight",
         "minimum_shipping_unit",
         "one_cbm",
+        "hs_code",
         "created_at",
         "updated_at",
     )
     list_filter = ("minimum_shipping_unit", "created_at", "updated_at")
-    search_fields = ("ar_item", "en_item")
+    search_fields = ("ar_item", "en_item", "hs_code")
     readonly_fields = ("created_at", "updated_at")
     list_editable = ("price_per_kg", "minimum_shipping_weight", "one_cbm")
     date_hierarchy = "created_at"
@@ -146,6 +147,13 @@ class PriceAdmin(admin.ModelAdmin):
                     ("minimum_shipping_weight", "minimum_shipping_unit"),
                     "one_cbm",
                 ),
+            },
+        ),
+        (
+            "Customs Information",
+            {
+                "fields": ("hs_code",),
+                "description": "HS Code for customs declaration (optional)",
             },
         ),
         (

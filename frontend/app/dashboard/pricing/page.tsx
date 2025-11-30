@@ -18,6 +18,7 @@ interface Price {
   minimum_shipping_weight: number;
   minimum_shipping_unit: "per_kg" | "per_piece";
   one_cbm: number;
+  hs_code?: string;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +79,7 @@ export default function AdminPricingPage() {
         perKg: "بالكيلو",
         perPiece: "بالقطعة",
         oneCbm: "سعر 1 CBM (€)",
+        hsCode: "رمز HS (HS Code)",
         dimension: "الأبعاد",
         price: "السعر (€)",
         loading: "جاري التحميل...",
@@ -109,6 +111,7 @@ export default function AdminPricingPage() {
         perKg: "Per KG",
         perPiece: "Per Piece",
         oneCbm: "One CBM Price (€)",
+        hsCode: "HS Code",
         dimension: "Dimension",
         price: "Price (€)",
         loading: "Loading...",
@@ -220,6 +223,7 @@ export default function AdminPricingPage() {
         | "per_kg"
         | "per_piece",
       one_cbm: parseFloat(formData.get("one_cbm") as string),
+      hs_code: (formData.get("hs_code") as string) || null,
     };
 
     try {
@@ -523,24 +527,38 @@ export default function AdminPricingPage() {
                               </div>
                               <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                  {t.oneCbm} *
+                                  {t.oneCbm}
                                 </label>
                                 <input
                                   type="number"
                                   step="0.01"
                                   name="one_cbm"
                                   defaultValue={editingPrice?.one_cbm || ""}
-                                  required
                                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
                                 />
-                                {selectedUnit === "per_piece" && (
-                                  <p className="mt-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                    ⚠️ <strong>{language === "ar" ? "للإلكترونيات:" : "For Electronics:"}</strong>{" "}
-                                    {language === "ar"
-                                      ? "اتركه فارغ أو 0 (لا يُستخدم للإلكترونيات)"
-                                      : "Leave empty or 0 (not used for electronics)"}
-                                  </p>
-                                )}
+                                <p className="mt-1 text-xs text-gray-500">
+                                  {language === "ar"
+                                    ? "⚠️ غير مستخدم في الحساب (يتم استخدام سعر الكيلو للمنتج)"
+                                    : "⚠️ Not used in calculation (product price per kg is used instead)"}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                  {t.hsCode}
+                                </label>
+                                <input
+                                  type="text"
+                                  name="hs_code"
+                                  defaultValue={editingPrice?.hs_code || ""}
+                                  placeholder={language === "ar" ? "مثال: 85171200" : "e.g., 85171200"}
+                                  maxLength={20}
+                                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">
+                                  {language === "ar"
+                                    ? "رمز HS للجمارك (اختياري)"
+                                    : "HS Code for customs (optional)"}
+                                </p>
                               </div>
                             </div>
                             <div className="mt-6 flex gap-4 justify-end">

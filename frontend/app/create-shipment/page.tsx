@@ -7,25 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useMemo } from "react";
 
-// Extend Window interface for grecaptcha
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready: (callback: () => void) => void;
-      render: (
-        elementId: string,
-        options: {
-          sitekey: string;
-          size?: string;
-          theme?: string;
-          callback?: (token: string) => void;
-          "expired-callback"?: () => void;
-          "error-callback"?: () => void;
-        }
-      ) => number;
-    };
-  }
-}
+// grecaptcha types are defined in types/grecaptcha.d.ts
 import Step1Direction from "@/components/ShipmentForm/Step1Direction";
 import Step3SenderReceiver from "@/components/ShipmentForm/Step3SenderReceiver";
 import Step4ParcelDetails from "@/components/ShipmentForm/Step4ParcelDetails";
@@ -206,26 +188,28 @@ export default function CreateShipmentPage() {
     if (!sender || !receiver) return false;
 
     // Validate sender
+    // eu-sy: sender needs city + country
+    // sy-eu: sender needs country + province (no city)
     const senderValid =
       sender.fullName?.trim() &&
       sender.phone?.trim() &&
       sender.email?.trim() &&
       sender.street?.trim() &&
-      sender.city?.trim() &&
       (direction === "eu-sy"
-        ? sender.country?.trim()
-        : sender.province?.trim());
+        ? sender.city?.trim() && sender.country?.trim()
+        : sender.country?.trim() && sender.province?.trim());
 
     // Validate receiver
+    // eu-sy: receiver needs country + province (no city)
+    // sy-eu: receiver needs city + country
     const receiverValid =
       receiver.fullName?.trim() &&
       receiver.phone?.trim() &&
       receiver.email?.trim() &&
       receiver.street?.trim() &&
-      receiver.city?.trim() &&
       (direction === "eu-sy"
-        ? receiver.province?.trim()
-        : receiver.country?.trim());
+        ? receiver.country?.trim() && receiver.province?.trim()
+        : receiver.city?.trim() && receiver.country?.trim());
 
     return senderValid && receiverValid;
   }, [sender, receiver, direction]);

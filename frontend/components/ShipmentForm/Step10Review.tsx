@@ -440,6 +440,17 @@ export default function Step10Review({
         </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="mb-4">
+            <Link
+              href={`/documents/${encodeURIComponent(
+                "LCL Shipping Policy - Medo-Freight EU.pdf"
+              )}`}
+              target="_blank"
+              className="text-primary-dark hover:text-primary-yellow text-sm underline font-semibold"
+            >
+              {t.readPolicies}
+            </Link>
+          </div>
           <div className="flex items-start gap-3">
             <input
               type="checkbox"
@@ -448,20 +459,9 @@ export default function Step10Review({
               className="w-5 h-5 mt-1 text-primary-yellow rounded focus:ring-primary-yellow"
               required
             />
-            <div className="flex-1">
-              <label className="text-sm font-semibold text-gray-800">
-                {t.acceptPolicies} *
-              </label>
-              <Link
-                href={`/documents/${encodeURIComponent(
-                  "LCL Shipping Policy - Medo-Freight EU.pdf"
-                )}`}
-                target="_blank"
-                className="text-primary-dark hover:text-primary-yellow text-sm underline ml-2"
-              >
-                {t.readPolicies}
-              </Link>
-            </div>
+            <label className="text-sm font-semibold text-gray-800">
+              {t.acceptPolicies} *
+            </label>
           </div>
         </div>
       </motion.div>
@@ -477,6 +477,17 @@ export default function Step10Review({
           {t.termsAndConditions}
         </h3>
 
+        <div className="mb-4">
+          <Link
+            href={`/documents/${encodeURIComponent(
+              "Legal Policies - Medo-Freight EU.pdf"
+            )}`}
+            target="_blank"
+            className="text-primary-dark hover:text-primary-yellow text-sm underline font-semibold"
+          >
+            {t.readTerms}
+          </Link>
+        </div>
         <div className="flex items-start gap-3">
           <input
             type="checkbox"
@@ -485,20 +496,9 @@ export default function Step10Review({
             className="w-5 h-5 mt-1 text-primary-yellow rounded focus:ring-primary-yellow"
             required
           />
-          <div className="flex-1">
-            <label className="text-sm font-semibold text-gray-800">
-              {t.acceptTerms} *
-            </label>
-            <Link
-              href={`/documents/${encodeURIComponent(
-                "LCL Shipping Agreement - Medo-Freight EU.pdf"
-              )}`}
-              target="_blank"
-              className="text-primary-dark hover:text-primary-yellow text-sm underline ml-2"
-            >
-              {t.readTerms}
-            </Link>
-          </div>
+          <label className="text-sm font-semibold text-gray-800">
+            {t.acceptTerms} *
+          </label>
         </div>
       </motion.div>
     </div>

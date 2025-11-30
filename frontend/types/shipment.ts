@@ -28,6 +28,8 @@ export interface Parcel {
   quantity: number; // Quantity of items
   repeatCount: number; // Number of times this parcel is repeated (default: 1)
   photos: File[]; // Parcel photos (3 required)
+  hs_code?: string; // HS Code for customs (from product or manually entered)
+  shipmentType?: 'personal' | 'commercial'; // نوع الشحن: شخصي أو تجاري
   
   // Electronics specific fields
   deviceType?: string;
