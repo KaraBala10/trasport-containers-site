@@ -1279,14 +1279,19 @@ export default function Step4ParcelDetails({
                           parcel.isElectronicsShipment
                         }
                         onChange={(e) => {
-                          updateParcel(
-                            parcel.id,
-                            "wantsInsurance",
-                            e.target.checked
-                          );
-                          if (!e.target.checked) {
-                            updateParcel(parcel.id, "declaredShipmentValue", 0);
-                          }
+                          const newValue = e.target.checked;
+                          // Update immediately for checkbox (synchronous)
+                          const updatedParcels = parcels.map((p) => {
+                            if (p.id === parcel.id) {
+                              const updated = { ...p, wantsInsurance: newValue };
+                              if (!newValue) {
+                                updated.declaredShipmentValue = 0;
+                              }
+                              return updated;
+                            }
+                            return p;
+                          });
+                          onParcelsChange(updatedParcels);
                         }}
                         className="w-5 h-5 text-primary-yellow border-gray-300 rounded focus:ring-2 focus:ring-primary-yellow focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
