@@ -130,6 +130,13 @@ export const apiService = {
     return apiClient.post(`/shipments/${shipmentId}/delete-eu-shipping/`);
   },
 
+  downloadSendcloudLabel: (shipmentId: number, labelType: 'normal_printer' | 'label' = 'normal_printer') => {
+    return apiClient.get(`/shipments/${shipmentId}/download-sendcloud-label/`, {
+      params: { type: labelType },
+      responseType: 'blob',
+    });
+  },
+
   deleteShipment: (id: number) => {
     return apiClient.delete(`/shipments/${id}/`);
   },

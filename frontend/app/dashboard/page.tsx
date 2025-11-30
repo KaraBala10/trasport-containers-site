@@ -5067,7 +5067,9 @@ export default function DashboardPage() {
                                                   {language === "ar"
                                                     ? "نوع الشحن"
                                                     : "Shipment Type"}
-                                                  : {parcel.shipmentType === "personal"
+                                                  :{" "}
+                                                  {parcel.shipmentType ===
+                                                  "personal"
                                                     ? language === "ar"
                                                       ? "شخصي"
                                                       : "Personal"
@@ -5528,31 +5530,137 @@ export default function DashboardPage() {
                                             </div>
                                           </div>
                                         )}
-                                      {shipment.sendcloud_label_url && (
+                                      {shipment.sendcloud_id && (
                                         <div className="mt-4 pt-4 border-t border-gray-200">
-                                          <a
-                                            href={shipment.sendcloud_label_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-colors shadow-sm hover:shadow-md"
-                                          >
-                                            <svg
-                                              className="w-5 h-5"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              viewBox="0 0 24 24"
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                              />
-                                            </svg>
+                                          <p className="text-xs text-gray-500 mb-2">
                                             {language === "ar"
-                                              ? "تحميل Label"
-                                              : "Download Label"}
-                                          </a>
+                                              ? "تحميل Labels"
+                                              : "Download Labels"}
+                                          </p>
+                                          <div className="flex flex-wrap gap-2">
+                                            <button
+                                              onClick={async () => {
+                                                try {
+                                                  const response =
+                                                    await apiService.downloadSendcloudLabel(
+                                                      shipment.id,
+                                                      "label"
+                                                    );
+                                                  const url =
+                                                    window.URL.createObjectURL(
+                                                      new Blob([response.data])
+                                                    );
+                                                  const link =
+                                                    document.createElement("a");
+                                                  link.href = url;
+                                                  link.setAttribute(
+                                                    "download",
+                                                    `label_${
+                                                      shipment.shipment_number ||
+                                                      shipment.id
+                                                    }_a6.pdf`
+                                                  );
+                                                  document.body.appendChild(
+                                                    link
+                                                  );
+                                                  link.click();
+                                                  link.remove();
+                                                  window.URL.revokeObjectURL(
+                                                    url
+                                                  );
+                                                } catch (error) {
+                                                  console.error(
+                                                    "Error downloading A6 label:",
+                                                    error
+                                                  );
+                                                  alert(
+                                                    language === "ar"
+                                                      ? "فشل تحميل Label A6"
+                                                      : "Failed to download A6 label"
+                                                  );
+                                                }
+                                              }}
+                                              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
+                                            >
+                                              <svg
+                                                className="w-5 h-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                              </svg>
+                                              {language === "ar"
+                                                ? "تحميل Label A6"
+                                                : "Download Label A6"}
+                                            </button>
+                                            <button
+                                              onClick={async () => {
+                                                try {
+                                                  const response =
+                                                    await apiService.downloadSendcloudLabel(
+                                                      shipment.id,
+                                                      "normal_printer"
+                                                    );
+                                                  const url =
+                                                    window.URL.createObjectURL(
+                                                      new Blob([response.data])
+                                                    );
+                                                  const link =
+                                                    document.createElement("a");
+                                                  link.href = url;
+                                                  link.setAttribute(
+                                                    "download",
+                                                    `label_${
+                                                      shipment.shipment_number ||
+                                                      shipment.id
+                                                    }_a4.pdf`
+                                                  );
+                                                  document.body.appendChild(
+                                                    link
+                                                  );
+                                                  link.click();
+                                                  link.remove();
+                                                  window.URL.revokeObjectURL(
+                                                    url
+                                                  );
+                                                } catch (error) {
+                                                  console.error(
+                                                    "Error downloading A4 label:",
+                                                    error
+                                                  );
+                                                  alert(
+                                                    language === "ar"
+                                                      ? "فشل تحميل Label A4"
+                                                      : "Failed to download A4 label"
+                                                  );
+                                                }
+                                              }}
+                                              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-yellow text-primary-dark rounded-lg font-semibold hover:bg-primary-yellow/90 transition-colors shadow-sm hover:shadow-md"
+                                            >
+                                              <svg
+                                                className="w-5 h-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                              </svg>
+                                              {language === "ar"
+                                                ? "تحميل Label A4"
+                                                : "Download Label A4"}
+                                            </button>
+                                          </div>
                                         </div>
                                       )}
                                     </>

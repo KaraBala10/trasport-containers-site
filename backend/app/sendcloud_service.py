@@ -1306,17 +1306,21 @@ def download_label(parcel_id: int, label_type: str = "normal_printer") -> bytes:
         logger.error("Sendcloud API credentials not configured")
         raise SendcloudAPIError("Sendcloud API credentials missing")
 
-    # Build URL based on label type
+    # Build URL based on label type - using test=1 parameter
     if label_type == "normal_printer":
-        url = f"{settings.SENDCLOUD_API_URL}labels/normal_printer/{parcel_id_int}?start_from=0"
+        # A4 label: /api/v2/labels/normal_printer/{parcel_id}?start_from=0&test=1
+        url = f"{settings.SENDCLOUD_API_URL}labels/normal_printer/{parcel_id_int}?start_from=0&test=1"
     else:
-        url = f"{settings.SENDCLOUD_API_URL}parcels/{parcel_id_int}/documents/label"
+        # A6 label: /api/v2/parcels/{parcel_id}/documents/label?test=1
+        url = f"{settings.SENDCLOUD_API_URL}parcels/{parcel_id_int}/documents/label?test=1"
 
     # Prepare authentication
     auth = HTTPBasicAuth(settings.SENDCLOUD_PUBLIC_KEY, settings.SENDCLOUD_SECRET_KEY)
 
     try:
-        logger.info(f"Downloading {label_type} label for parcel {parcel_id_int}")
+        logger.info(
+            f"Downloading {label_type} label for parcel {parcel_id_int} (test mode)"
+        )
 
         response = requests.get(
             url,
