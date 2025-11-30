@@ -122,6 +122,14 @@ export const apiService = {
     return apiClient.put(`/shipments/${id}/`, data);
   },
 
+  approveEUShipping: (shipmentId: number) => {
+    return apiClient.post(`/shipments/${shipmentId}/approve-eu-shipping/`);
+  },
+
+  deleteEUShipping: (shipmentId: number) => {
+    return apiClient.post(`/shipments/${shipmentId}/delete-eu-shipping/`);
+  },
+
   deleteShipment: (id: number) => {
     return apiClient.delete(`/shipments/${id}/`);
   },

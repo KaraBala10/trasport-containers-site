@@ -2718,6 +2718,361 @@ def get_shipping_methods_simple_view(request):
         )
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def download_sendcloud_label_view(request, shipment_id):
+    """
+    Download Sendcloud label for a shipment (proxy with authentication)
+
+    GET /api/shipments/<shipment_id>/download-sendcloud-label/?type=normal_printer
+
+    Query params:
+        type: 'normal_printer' (A4) or 'label' (A6), default: 'normal_printer'
+    """
+    from django.http import HttpResponse
+
+    from .sendcloud_service import (
+        SendcloudAPIError,
+        SendcloudValidationError,
+        download_label,
+    )
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Get shipment
+        shipment = LCLShipment.objects.filter(id=shipment_id).first()
+        if not shipment:
+            return Response(
+                {"success": False, "error": "Shipment not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check if user has permission (owner or admin)
+        if not request.user.is_superuser and shipment.user != request.user:
+            return Response(
+                {"success": False, "error": "Permission denied"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Check if shipment has sendcloud_id
+        if not shipment.sendcloud_id:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Shipment does not have a Sendcloud parcel",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get label type from query params
+        label_type = request.query_params.get("type", "normal_printer")
+
+        # Download label from Sendcloud
+        try:
+            label_content = download_label(shipment.sendcloud_id, label_type)
+        except (SendcloudAPIError, SendcloudValidationError) as e:
+            logger.error(f"Failed to download label: {str(e)}")
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Return PDF as response
+        response = HttpResponse(label_content, content_type="application/pdf")
+        filename = f"label_{shipment.shipment_number or shipment.id}_{label_type}.pdf"
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+        logger.info(f"✅ Downloaded {label_type} label for shipment {shipment_id}")
+        return response
+
+    except Exception as e:
+        logger.error(f"Unexpected error: {type(e).__name__}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "An unexpected error occurred"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def approve_eu_shipping_view(request, shipment_id):
+    """
+    Admin endpoint to approve and create Sendcloud parcel for a shipment
+
+    POST /api/shipments/<shipment_id>/approve-eu-shipping/
+
+    Creates a parcel in Sendcloud using the form data from the shipment
+    """
+    from .sendcloud_service import (
+        SendcloudAPIError,
+        SendcloudValidationError,
+        create_parcel,
+    )
+
+    logger = logging.getLogger(__name__)
+
+    # Check if user is admin
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only admins can approve EU shipping"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        # Get shipment
+        shipment = LCLShipment.objects.filter(id=shipment_id).first()
+        if not shipment:
+            return Response(
+                {"success": False, "error": "Shipment not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check if shipment already has sendcloud_id
+        if shipment.sendcloud_id:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Shipment already has a Sendcloud parcel created",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if required fields are present
+        if not shipment.selected_eu_shipping_method:
+            return Response(
+                {
+                    "success": False,
+                    "error": "No shipping method selected for this shipment",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate all required EU pickup fields with fallbacks for older shipments
+        missing_fields = []
+
+        # Use fallback for name if missing (use receiver_name for EU pickup)
+        pickup_name = shipment.eu_pickup_name
+        if not pickup_name or not pickup_name.strip():
+            pickup_name = shipment.receiver_name
+            if not pickup_name or not pickup_name.strip():
+                missing_fields.append("name")
+
+        # Check address
+        if not shipment.eu_pickup_address or not shipment.eu_pickup_address.strip():
+            missing_fields.append("address")
+
+        # Check city
+        if not shipment.eu_pickup_city or not shipment.eu_pickup_city.strip():
+            missing_fields.append("city")
+
+        # Check postal_code
+        if (
+            not shipment.eu_pickup_postal_code
+            or not shipment.eu_pickup_postal_code.strip()
+        ):
+            missing_fields.append("postal_code")
+
+        # Check country
+        if not shipment.eu_pickup_country or not shipment.eu_pickup_country.strip():
+            missing_fields.append("country")
+
+        # Check weight
+        if not shipment.eu_pickup_weight or float(shipment.eu_pickup_weight) <= 0:
+            missing_fields.append("weight")
+
+        if missing_fields:
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Missing required EU pickup information: {', '.join(missing_fields)}",
+                    "missing_fields": missing_fields,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Prepare shipment data for Sendcloud (using new form fields with fallbacks)
+        shipment_data = {
+            "name": pickup_name.strip(),
+            "address": shipment.eu_pickup_address.strip(),
+            "city": shipment.eu_pickup_city.strip(),
+            "postal_code": shipment.eu_pickup_postal_code.strip(),
+            "country": shipment.eu_pickup_country.strip(),
+            "weight": float(shipment.eu_pickup_weight),
+        }
+
+        # Add optional fields with fallbacks
+        if shipment.eu_pickup_company_name:
+            shipment_data["company_name"] = shipment.eu_pickup_company_name
+
+        if shipment.eu_pickup_house_number:
+            shipment_data["house_number"] = shipment.eu_pickup_house_number
+
+        # Use fallback for email if missing (use receiver_email)
+        pickup_email = shipment.eu_pickup_email
+        if not pickup_email or not pickup_email.strip():
+            pickup_email = shipment.receiver_email
+        if pickup_email and pickup_email.strip():
+            shipment_data["email"] = pickup_email.strip()
+
+        # Use fallback for telephone if missing (use receiver_phone)
+        pickup_telephone = shipment.eu_pickup_telephone
+        if not pickup_telephone or not pickup_telephone.strip():
+            pickup_telephone = shipment.receiver_phone
+        if pickup_telephone and pickup_telephone.strip():
+            shipment_data["telephone"] = pickup_telephone.strip()
+
+        if shipment.shipment_number:
+            shipment_data["order_number"] = shipment.shipment_number
+
+        # Create parcel in Sendcloud
+        logger.info(
+            f"Admin {request.user.username} approving EU shipping for shipment {shipment_id}"
+        )
+        logger.info(
+            f"Shipment data being sent to Sendcloud: {list(shipment_data.keys())}"
+        )
+        logger.debug(f"Full shipment data: {shipment_data}")
+        logger.info(
+            f"Selected shipping method ID: {shipment.selected_eu_shipping_method}"
+        )
+
+        try:
+            sendcloud_result = create_parcel(
+                shipment_data=shipment_data,
+                selected_shipping_method=shipment.selected_eu_shipping_method,
+            )
+        except Exception as e:
+            logger.error(f"Error calling create_parcel: {type(e).__name__}: {str(e)}")
+            import traceback
+
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
+
+        # Update shipment with Sendcloud data
+        shipment.sendcloud_id = sendcloud_result.get("sendcloud_id")
+        tracking_number = sendcloud_result.get("tracking_number", "")
+        shipment.tracking_number = tracking_number if tracking_number else ""
+
+        tracking_url = sendcloud_result.get("tracking_url")
+        shipment.tracking_url = tracking_url if tracking_url else None
+
+        label_url_a6 = sendcloud_result.get("label_url_a6")
+        label_url = sendcloud_result.get("label_url")
+        shipment.sendcloud_label_url = label_url_a6 or label_url or None
+
+        # Store A4 labels
+        normal_printer_labels = sendcloud_result.get("normal_printer_labels", [])
+        shipment.normal_printer_labels = (
+            normal_printer_labels if normal_printer_labels else []
+        )
+
+        # Update status
+        if shipment.sendcloud_id:
+            shipment.status = "PENDING_PICKUP"
+
+        shipment.save()
+
+        logger.info(
+            f"✅ Admin approved EU shipping for shipment {shipment_id}: sendcloud_id={shipment.sendcloud_id}"
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "EU shipping approved and Sendcloud parcel created",
+                "sendcloud_id": shipment.sendcloud_id,
+                "tracking_number": shipment.tracking_number,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except SendcloudValidationError as e:
+        logger.warning(f"Validation error: {str(e)}")
+        return Response(
+            {"success": False, "error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except SendcloudAPIError as e:
+        error_msg = str(e)
+        logger.error(f"Sendcloud API error: {error_msg}")
+        # Return the actual error message to help with debugging
+        return Response(
+            {"success": False, "error": error_msg},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {type(e).__name__}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "An unexpected error occurred"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def delete_eu_shipping_view(request, shipment_id):
+    """
+    Admin endpoint to delete/remove EU shipping method from a shipment
+
+    POST /api/shipments/<shipment_id>/delete-eu-shipping/
+
+    Removes the selected EU shipping method and related data
+    """
+    logger = logging.getLogger(__name__)
+
+    # Check if user is admin
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only admins can delete EU shipping"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        # Get shipment
+        shipment = LCLShipment.objects.filter(id=shipment_id).first()
+        if not shipment:
+            return Response(
+                {"success": False, "error": "Shipment not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check if sendcloud_id exists (parcel already created)
+        if shipment.sendcloud_id:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Cannot delete EU shipping: Sendcloud parcel already created. Contact Sendcloud support to cancel.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Remove EU shipping method and related data
+        shipment.selected_eu_shipping_method = None
+        shipment.selected_eu_shipping_name = ""
+        shipment.save()
+
+        logger.info(f"✅ Admin deleted EU shipping method for shipment {shipment_id}")
+
+        return Response(
+            {
+                "success": True,
+                "message": "EU shipping method removed successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except Exception as e:
+        logger.error(f"Unexpected error: {type(e).__name__}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "An unexpected error occurred"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])  # Webhooks come from Sendcloud, not authenticated users
 def sendcloud_webhook_view(request):

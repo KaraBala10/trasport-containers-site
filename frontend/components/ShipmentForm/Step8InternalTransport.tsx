@@ -165,6 +165,7 @@ export default function Step8InternalTransport({
   const [loadingShipping, setLoadingShipping] = useState(false);
   const [shippingError, setShippingError] = useState<string | null>(null);
   const [canCalculate, setCanCalculate] = useState(false);
+  const [postalCodeError, setPostalCodeError] = useState<string | null>(null);
 
   // ✅ States for Syrian internal transport
   const [syrianProvinces, setSyrianProvinces] = useState<SyrianProvince[]>([]);
@@ -216,6 +217,11 @@ export default function Step8InternalTransport({
       optional: "اختياري",
       noMethods: "لا توجد طرق شحن متاحة",
       error: "خطأ",
+      postalCodeInvalid: "الرمز البريدي غير صحيح",
+      postalCodeRequired: "الرمز البريدي مطلوب",
+      postalCodeGermany: "يجب أن يكون الرمز البريدي الألماني 5 أرقام",
+      postalCodeNetherlands:
+        "يجب أن يكون الرمز البريدي الهولندي 4 أرقام متبوعة بحرفين (مثال: 1012AB)",
     },
     en: {
       title: "Internal Transport",
@@ -259,11 +265,85 @@ export default function Step8InternalTransport({
       optional: "Optional",
       noMethods: "No shipping methods available",
       error: "Error",
+      postalCodeInvalid: "Invalid postal code",
+      postalCodeRequired: "Postal code is required",
+      postalCodeGermany: "German postal code must be exactly 5 digits",
+      postalCodeNetherlands:
+        "Dutch postal code must be 4 digits followed by 2 letters (e.g., 1012AB)",
     },
   };
 
   const t = translations[language];
   const isEUtoSY = direction === "eu-sy";
+
+  // ✅ Validate postal code based on country
+  const validatePostalCode = (code: string, country: string): string | null => {
+    if (!code || !code.trim()) {
+      return t.postalCodeRequired;
+    }
+
+    const cleaned = code.trim().replace(/[\s\-]/g, "");
+
+    // Germany: exactly 5 digits
+    if (country === "DE") {
+      if (!/^\d+$/.test(cleaned)) {
+        return t.postalCodeGermany;
+      }
+      if (cleaned.length > 5) {
+        return t.postalCodeGermany;
+      }
+      // Allow less than 5 digits (will be padded on backend)
+      if (cleaned.length === 0) {
+        return t.postalCodeRequired;
+      }
+    }
+
+    // Netherlands: 4 digits + 2 letters (format: 1234AB)
+    if (country === "NL") {
+      if (cleaned.length === 6) {
+        const digits = cleaned.substring(0, 4);
+        const letters = cleaned.substring(4, 6);
+        if (!/^\d{4}$/.test(digits) || !/^[A-Za-z]{2}$/.test(letters)) {
+          return t.postalCodeNetherlands;
+        }
+      } else if (cleaned.length === 4 && /^\d{4}$/.test(cleaned)) {
+        // Allow just 4 digits (incomplete but valid format)
+        return null;
+      } else {
+        return t.postalCodeNetherlands;
+      }
+    }
+
+    // General validation: allow alphanumeric, max 20 chars
+    if (cleaned.length > 20) {
+      return t.postalCodeInvalid;
+    }
+
+    return null;
+  };
+
+  // ✅ Handle postal code change with validation
+  const handlePostalCodeChange = (value: string) => {
+    onEUPickupPostalCodeChange(value);
+
+    // Validate if country is selected
+    if (euPickupCountry) {
+      const error = validatePostalCode(value, euPickupCountry);
+      setPostalCodeError(error);
+    } else {
+      setPostalCodeError(null);
+    }
+  };
+
+  // ✅ Validate postal code when country changes
+  useEffect(() => {
+    if (euPickupCountry && euPickupPostalCode) {
+      const error = validatePostalCode(euPickupPostalCode, euPickupCountry);
+      setPostalCodeError(error);
+    } else {
+      setPostalCodeError(null);
+    }
+  }, [euPickupCountry, euPickupPostalCode, language]);
 
   // ✅ Load Syrian provinces on component mount
   useEffect(() => {
@@ -330,7 +410,8 @@ export default function Step8InternalTransport({
       euPickupCity.trim().length > 0 &&
       euPickupPostalCode.trim().length > 0 &&
       euPickupCountry.trim().length > 0 &&
-      euPickupWeight > 0;
+      euPickupWeight > 0 &&
+      !postalCodeError; // Don't allow calculation if postal code is invalid
 
     setCanCalculate(allFieldsFilled);
 
@@ -347,6 +428,7 @@ export default function Step8InternalTransport({
     euPickupPostalCode,
     euPickupCountry,
     euPickupWeight,
+    postalCodeError,
   ]);
 
   // ✅ Calculate EU shipping rates from Sendcloud (using new simple endpoint)
@@ -524,12 +606,38 @@ export default function Step8InternalTransport({
               <input
                 type="text"
                 value={euPickupPostalCode}
-                onChange={(e) => onEUPickupPostalCodeChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                onChange={(e) => handlePostalCodeChange(e.target.value)}
+                onBlur={() => {
+                  if (euPickupCountry && euPickupPostalCode) {
+                    const error = validatePostalCode(
+                      euPickupPostalCode,
+                      euPickupCountry
+                    );
+                    setPostalCodeError(error);
+                  }
+                }}
+                className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                  postalCodeError
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-300 focus:border-primary-yellow"
+                }`}
                 placeholder={
-                  language === "ar" ? "مثال: 1012AB" : "e.g., 1012AB"
+                  euPickupCountry === "DE"
+                    ? language === "ar"
+                      ? "مثال: 10115"
+                      : "e.g., 10115"
+                    : euPickupCountry === "NL"
+                    ? language === "ar"
+                      ? "مثال: 1012AB"
+                      : "e.g., 1012AB"
+                    : language === "ar"
+                    ? "مثال: 1012AB"
+                    : "e.g., 1012AB"
                 }
               />
+              {postalCodeError && (
+                <p className="mt-1 text-sm text-red-600">{postalCodeError}</p>
+              )}
             </div>
 
             {/* Country */}
@@ -1093,12 +1201,38 @@ export default function Step8InternalTransport({
                 <input
                   type="text"
                   value={euPickupPostalCode}
-                  onChange={(e) => onEUPickupPostalCodeChange(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  onChange={(e) => handlePostalCodeChange(e.target.value)}
+                  onBlur={() => {
+                    if (euPickupCountry && euPickupPostalCode) {
+                      const error = validatePostalCode(
+                        euPickupPostalCode,
+                        euPickupCountry
+                      );
+                      setPostalCodeError(error);
+                    }
+                  }}
+                  className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                    postalCodeError
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:border-primary-yellow"
+                  }`}
                   placeholder={
-                    language === "ar" ? "مثال: 1012AB" : "e.g., 1012AB"
+                    euPickupCountry === "DE"
+                      ? language === "ar"
+                        ? "مثال: 10115"
+                        : "e.g., 10115"
+                      : euPickupCountry === "NL"
+                      ? language === "ar"
+                        ? "مثال: 1012AB"
+                        : "e.g., 1012AB"
+                      : language === "ar"
+                      ? "مثال: 1012AB"
+                      : "e.g., 1012AB"
                   }
                 />
+                {postalCodeError && (
+                  <p className="mt-1 text-sm text-red-600">{postalCodeError}</p>
+                )}
               </div>
 
               {/* Country */}

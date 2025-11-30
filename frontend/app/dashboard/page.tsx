@@ -137,6 +137,13 @@ interface LCLShipment {
   tracking_number?: string;
   sendcloud_id?: number;
   sendcloud_label_url?: string;
+  tracking_url?: string;
+  normal_printer_labels?: string[];
+  eu_pickup_name?: string;
+  eu_pickup_company_name?: string;
+  eu_pickup_house_number?: string;
+  eu_pickup_email?: string;
+  eu_pickup_telephone?: string;
   transfer_sender_name?: string;
   transfer_reference?: string;
   transfer_slip?: string;
@@ -5086,55 +5093,419 @@ export default function DashboardPage() {
                                             : "Sendcloud Used"}
                                         </p>
                                       </div>
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-7">
-                                        <div>
-                                          <p className="text-xs text-gray-500 mb-1">
-                                            {language === "ar"
-                                              ? "اسم طريقة الشحن"
-                                              : "Shipping Method Name"}
-                                          </p>
-                                          <p className="text-sm font-semibold text-gray-900">
-                                            {shipment.selected_eu_shipping_name ||
-                                              "N/A"}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <p className="text-xs text-gray-500 mb-1">
-                                            {language === "ar"
-                                              ? "معرف طريقة الشحن"
-                                              : "Shipping Method ID"}
-                                          </p>
-                                          <p className="text-sm font-semibold text-gray-900 font-mono">
-                                            {
-                                              shipment.selected_eu_shipping_method
-                                            }
-                                          </p>
-                                        </div>
-                                        {shipment.sendcloud_id && (
+                                      {/* Sendcloud Parcel Form Information */}
+                                      <div className="pl-7 space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                           <div>
                                             <p className="text-xs text-gray-500 mb-1">
                                               {language === "ar"
-                                                ? "معرف Sendcloud"
-                                                : "Sendcloud ID"}
+                                                ? "اسم طريقة الشحن"
+                                                : "Shipping Method Name"}
                                             </p>
-                                            <p className="text-sm font-semibold text-gray-900 font-mono">
-                                              {shipment.sendcloud_id}
+                                            <p className="text-sm font-semibold text-gray-900">
+                                              {shipment.selected_eu_shipping_name ||
+                                                "N/A"}
                                             </p>
                                           </div>
-                                        )}
-                                        {shipment.tracking_number && (
                                           <div>
                                             <p className="text-xs text-gray-500 mb-1">
                                               {language === "ar"
-                                                ? "رقم التتبع"
-                                                : "Tracking Number"}
+                                                ? "معرف طريقة الشحن"
+                                                : "Shipping Method ID"}
                                             </p>
                                             <p className="text-sm font-semibold text-gray-900 font-mono">
-                                              {shipment.tracking_number}
+                                              {
+                                                shipment.selected_eu_shipping_method
+                                              }
                                             </p>
                                           </div>
-                                        )}
+                                        </div>
+
+                                        {/* Parcel Form Fields */}
+                                        <div className="pt-3 border-t border-gray-200">
+                                          <p className="text-xs font-semibold text-gray-700 mb-3">
+                                            {language === "ar"
+                                              ? "معلومات الطرد"
+                                              : "Parcel Information"}
+                                          </p>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {shipment.eu_pickup_name && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "الاسم"
+                                                    : "Name"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {shipment.eu_pickup_name}
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_company_name && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "اسم الشركة"
+                                                    : "Company Name"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {
+                                                    shipment.eu_pickup_company_name
+                                                  }
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_address && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "العنوان"
+                                                    : "Address"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {shipment.eu_pickup_address}
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_house_number && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "رقم المنزل"
+                                                    : "House Number"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {
+                                                    shipment.eu_pickup_house_number
+                                                  }
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_city && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "المدينة"
+                                                    : "City"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {shipment.eu_pickup_city}
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_postal_code && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "الرمز البريدي"
+                                                    : "Postal Code"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {
+                                                    shipment.eu_pickup_postal_code
+                                                  }
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_country && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "الدولة"
+                                                    : "Country"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {shipment.eu_pickup_country}
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_email && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "البريد الإلكتروني"
+                                                    : "Email"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {shipment.eu_pickup_email}
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_telephone && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "رقم الهاتف"
+                                                    : "Telephone"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {shipment.eu_pickup_telephone}
+                                                </p>
+                                              </div>
+                                            )}
+                                            {shipment.eu_pickup_weight && (
+                                              <div>
+                                                <p className="text-xs text-gray-500 mb-1">
+                                                  {language === "ar"
+                                                    ? "الوزن (كغ)"
+                                                    : "Weight (kg)"}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                  {shipment.eu_pickup_weight}
+                                                </p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Sendcloud ID and Tracking */}
+                                        <div className="pt-3 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                          {shipment.sendcloud_id && (
+                                            <div>
+                                              <p className="text-xs text-gray-500 mb-1">
+                                                {language === "ar"
+                                                  ? "معرف Sendcloud"
+                                                  : "Sendcloud ID"}
+                                              </p>
+                                              <p className="text-sm font-semibold text-gray-900 font-mono">
+                                                {shipment.sendcloud_id}
+                                              </p>
+                                            </div>
+                                          )}
+                                          {shipment.tracking_number && (
+                                            <div>
+                                              <p className="text-xs text-gray-500 mb-1">
+                                                {language === "ar"
+                                                  ? "رقم التتبع"
+                                                  : "Tracking Number"}
+                                              </p>
+                                              <p className="text-sm font-semibold text-gray-900 font-mono">
+                                                {shipment.tracking_number}
+                                              </p>
+                                            </div>
+                                          )}
+                                          {shipment.tracking_url && (
+                                            <div className="sm:col-span-2">
+                                              <p className="text-xs text-gray-500 mb-1">
+                                                {language === "ar"
+                                                  ? "رابط التتبع"
+                                                  : "Tracking URL"}
+                                              </p>
+                                              <a
+                                                href={shipment.tracking_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 underline break-all"
+                                              >
+                                                {shipment.tracking_url}
+                                              </a>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
+
+                                      {/* Admin Actions: Approve/Delete EU Shipping */}
+                                      {isAdmin &&
+                                        shipment.selected_eu_shipping_method &&
+                                        !shipment.sendcloud_id && (
+                                          <div className="mt-4 pt-4 border-t border-gray-200">
+                                            <p className="text-xs text-gray-500 mb-2">
+                                              {language === "ar"
+                                                ? "إجراءات الإدارة"
+                                                : "Admin Actions"}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                              <button
+                                                onClick={async () => {
+                                                  if (
+                                                    !confirm(
+                                                      language === "ar"
+                                                        ? "هل أنت متأكد من الموافقة على إنشاء طرد Sendcloud؟"
+                                                        : "Are you sure you want to approve and create Sendcloud parcel?"
+                                                    )
+                                                  ) {
+                                                    return;
+                                                  }
+                                                  try {
+                                                    const response =
+                                                      await apiService.approveEUShipping(
+                                                        shipment.id
+                                                      );
+                                                    if (response.data.success) {
+                                                      showSuccess(
+                                                        language === "ar"
+                                                          ? "تم إنشاء طرد Sendcloud بنجاح"
+                                                          : "Sendcloud parcel created successfully"
+                                                      );
+                                                      // Refresh shipments
+                                                      const shipmentsResponse =
+                                                        await apiService.getShipments();
+                                                      const shipments =
+                                                        shipmentsResponse.data
+                                                          ?.results ||
+                                                        shipmentsResponse.data ||
+                                                        [];
+                                                      const processedShipments =
+                                                        Array.isArray(shipments)
+                                                          ? shipments.map(
+                                                              (
+                                                                s: LCLShipment
+                                                              ) => ({
+                                                                ...s,
+                                                                amount_paid:
+                                                                  Number(
+                                                                    s.amount_paid ||
+                                                                      0
+                                                                  ),
+                                                                total_price:
+                                                                  Number(
+                                                                    s.total_price ||
+                                                                      0
+                                                                  ),
+                                                              })
+                                                            )
+                                                          : [];
+                                                      setLclShipments(
+                                                        processedShipments
+                                                      );
+                                                    } else {
+                                                      showError(
+                                                        response.data.error ||
+                                                          (language === "ar"
+                                                            ? "فشل إنشاء الطرد"
+                                                            : "Failed to create parcel")
+                                                      );
+                                                    }
+                                                  } catch (error: any) {
+                                                    console.error(
+                                                      "Error approving EU shipping:",
+                                                      error
+                                                    );
+                                                    showError(
+                                                      error.response?.data
+                                                        ?.error ||
+                                                        (language === "ar"
+                                                          ? "فشل إنشاء طرد Sendcloud"
+                                                          : "Failed to create Sendcloud parcel")
+                                                    );
+                                                  }
+                                                }}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-sm hover:shadow-md"
+                                              >
+                                                <svg
+                                                  className="w-5 h-5"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M5 13l4 4L19 7"
+                                                  />
+                                                </svg>
+                                                {language === "ar"
+                                                  ? "الموافقة وإنشاء الطرد"
+                                                  : "Approve & Create Parcel"}
+                                              </button>
+                                              <button
+                                                onClick={async () => {
+                                                  if (
+                                                    !confirm(
+                                                      language === "ar"
+                                                        ? "هل أنت متأكد من حذف طريقة الشحن الأوروبية؟"
+                                                        : "Are you sure you want to delete EU shipping method?"
+                                                    )
+                                                  ) {
+                                                    return;
+                                                  }
+                                                  try {
+                                                    const response =
+                                                      await apiService.deleteEUShipping(
+                                                        shipment.id
+                                                      );
+                                                    if (response.data.success) {
+                                                      showSuccess(
+                                                        language === "ar"
+                                                          ? "تم حذف طريقة الشحن بنجاح"
+                                                          : "EU shipping method deleted successfully"
+                                                      );
+                                                      // Refresh shipments
+                                                      const shipmentsResponse =
+                                                        await apiService.getShipments();
+                                                      const shipments =
+                                                        shipmentsResponse.data
+                                                          ?.results ||
+                                                        shipmentsResponse.data ||
+                                                        [];
+                                                      const processedShipments =
+                                                        Array.isArray(shipments)
+                                                          ? shipments.map(
+                                                              (
+                                                                s: LCLShipment
+                                                              ) => ({
+                                                                ...s,
+                                                                amount_paid:
+                                                                  Number(
+                                                                    s.amount_paid ||
+                                                                      0
+                                                                  ),
+                                                                total_price:
+                                                                  Number(
+                                                                    s.total_price ||
+                                                                      0
+                                                                  ),
+                                                              })
+                                                            )
+                                                          : [];
+                                                      setLclShipments(
+                                                        processedShipments
+                                                      );
+                                                    } else {
+                                                      showError(
+                                                        response.data.error ||
+                                                          (language === "ar"
+                                                            ? "فشل الحذف"
+                                                            : "Failed to delete")
+                                                      );
+                                                    }
+                                                  } catch (error: any) {
+                                                    console.error(
+                                                      "Error deleting EU shipping:",
+                                                      error
+                                                    );
+                                                    showError(
+                                                      error.response?.data
+                                                        ?.error ||
+                                                        (language === "ar"
+                                                          ? "فشل حذف طريقة الشحن"
+                                                          : "Failed to delete EU shipping")
+                                                    );
+                                                  }
+                                                }}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm hover:shadow-md"
+                                              >
+                                                <svg
+                                                  className="w-5 h-5"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                  />
+                                                </svg>
+                                                {language === "ar"
+                                                  ? "حذف طريقة الشحن"
+                                                  : "Delete Shipping Method"}
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
                                       {shipment.sendcloud_label_url && (
                                         <div className="mt-4 pt-4 border-t border-gray-200">
                                           <a

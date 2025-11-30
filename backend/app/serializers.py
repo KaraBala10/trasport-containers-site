@@ -542,6 +542,64 @@ class LCLShipmentSerializer(serializers.ModelSerializer):
             representation["total_price"] = float(representation["total_price"])
         return representation
 
+    def create(self, validated_data):
+        """Create LCL shipment and ensure all EU pickup fields are saved"""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        # Log received data for debugging
+        eu_pickup_fields = [
+            "eu_pickup_name",
+            "eu_pickup_company_name",
+            "eu_pickup_house_number",
+            "eu_pickup_email",
+            "eu_pickup_telephone",
+            "eu_pickup_address",
+            "eu_pickup_city",
+            "eu_pickup_postal_code",
+            "eu_pickup_country",
+            "eu_pickup_weight",
+        ]
+
+        # Get initial data to ensure we capture all fields, even empty ones
+        initial_data = getattr(self, "initial_data", {})
+
+        # Ensure all EU pickup fields are in validated_data
+        # Check initial_data first to capture all fields, even empty strings
+        for field in eu_pickup_fields:
+            # Always check initial_data first to get the raw value
+            if field in initial_data:
+                value = initial_data[field]
+                # Preserve the value, even if it's an empty string or None
+                if value is None:
+                    validated_data[field] = "" if field != "eu_pickup_weight" else 0
+                else:
+                    validated_data[field] = value
+                logger.debug(
+                    f"Set {field} from initial_data: {repr(validated_data[field])}"
+                )
+            elif field not in validated_data:
+                # Field not in request at all, set default
+                validated_data[field] = "" if field != "eu_pickup_weight" else 0
+                logger.debug(f"Set {field} with default: {repr(validated_data[field])}")
+            else:
+                # Field is in validated_data, keep it
+                logger.debug(
+                    f"{field} already in validated_data: {repr(validated_data[field])}"
+                )
+
+        # Create the shipment
+        shipment = super().create(validated_data)
+
+        # Log saved values for debugging
+        logger.info(f"Created shipment {shipment.id} with EU pickup fields:")
+        for field in eu_pickup_fields:
+            value = getattr(shipment, field, None)
+            logger.info(f"  {field}: {value}")
+
+        return shipment
+
     class Meta:
         model = LCLShipment
         fields = (
@@ -628,4 +686,17 @@ class LCLShipmentSerializer(serializers.ModelSerializer):
             "total_price": {"required": False},
             "amount_paid": {"required": False},
             "status": {"required": False},
+            # EU Pickup fields - allow blank values
+            "eu_pickup_name": {"required": False, "allow_blank": True},
+            "eu_pickup_company_name": {"required": False, "allow_blank": True},
+            "eu_pickup_address": {"required": False, "allow_blank": True},
+            "eu_pickup_house_number": {"required": False, "allow_blank": True},
+            "eu_pickup_city": {"required": False, "allow_blank": True},
+            "eu_pickup_postal_code": {"required": False, "allow_blank": True},
+            "eu_pickup_country": {"required": False, "allow_blank": True},
+            "eu_pickup_email": {"required": False, "allow_blank": True},
+            "eu_pickup_telephone": {"required": False, "allow_blank": True},
+            "eu_pickup_weight": {"required": False},
+            "selected_eu_shipping_method": {"required": False, "allow_null": True},
+            "selected_eu_shipping_name": {"required": False, "allow_blank": True},
         }
