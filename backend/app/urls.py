@@ -36,6 +36,7 @@ from .views import (
     create_shipment_checkout_session,
     current_user_view,
     delete_eu_shipping_view,
+    download_invoice_view,
     get_packaging_prices_view,
     get_per_piece_products_view,
     get_prices_view,
@@ -145,6 +146,11 @@ urlpatterns = [
         "shipments/<int:shipment_id>/download-sendcloud-label/",
         download_sendcloud_label_view,
         name="download_sendcloud_label",
+    ),
+    path(
+        "shipments/<int:pk>/invoice/",
+        download_invoice_view,
+        name="lcl_shipment_invoice",
     ),
     # Stripe webhook
     path("stripe/webhook/", stripe_webhook_view, name="stripe_webhook"),

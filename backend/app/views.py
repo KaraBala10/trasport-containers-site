@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
@@ -3792,6 +3793,8 @@ class LCLShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 @permission_classes([IsAuthenticated])
 def update_lcl_shipment_status_view(request, pk):
     """API endpoint for admin to update LCL shipment status and amount_paid"""
+    logger = logging.getLogger(__name__)
+    
     if not request.user.is_superuser:
         return Response(
             {"success": False, "error": "Only superusers can update shipment status."},
@@ -3806,6 +3809,9 @@ def update_lcl_shipment_status_view(request, pk):
 
         # Store old status for email notification (before any updates)
         old_status = shipment.status
+        old_payment_status = shipment.payment_status
+        
+        logger.info(f"📝 Updating shipment {shipment.id}: old_status={old_status}, new_status={new_status}, old_payment_status={old_payment_status}, amount_paid={amount_paid}, current_amount_paid={shipment.amount_paid}, total_price={shipment.total_price}")
 
         # Update status if provided
         if new_status:
@@ -3885,7 +3891,101 @@ def update_lcl_shipment_status_view(request, pk):
         if tracking_number is not None:
             shipment.tracking_number = tracking_number
 
+        # Auto-update payment_status to "paid" when status changes from PENDING_PAYMENT to any other status
+        # This means admin confirmed the payment by changing the status
+        payment_status_updated = False
+        
+        # If status is changing from PENDING_PAYMENT to any other status, payment is confirmed
+        if new_status and old_status == "PENDING_PAYMENT" and new_status != "PENDING_PAYMENT":
+            # If admin is changing status from PENDING_PAYMENT, it means payment is confirmed
+            # Update payment_status to "paid" automatically
+            if shipment.payment_status != "paid":
+                shipment.payment_status = "paid"
+                payment_status_updated = True
+                if not shipment.paid_at:
+                    from django.utils import timezone
+                    shipment.paid_at = timezone.now()
+                logger.info(f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (admin confirmed payment by changing status from {old_status} to {new_status})")
+            else:
+                logger.info(f"ℹ️ payment_status already 'paid' for shipment {shipment.id}")
+        
+        # Also: if status is being changed to PENDING_PICKUP or any status after PENDING_PAYMENT,
+        # and payment_status is still pending, update it to paid (admin confirmed payment)
+        if not payment_status_updated and new_status and new_status != "PENDING_PAYMENT":
+            # Statuses that come after PENDING_PAYMENT (payment must be confirmed)
+            post_payment_statuses = [
+                "PENDING_PICKUP",
+                "IN_TRANSIT_TO_WATTWEG_5",
+                "ARRIVED_WATTWEG_5",
+                "SORTING_WATTWEG_5",
+                "READY_FOR_EXPORT",
+                "IN_TRANSIT_TO_DESTINATION",
+                "ARRIVED_DESTINATION",
+                "DESTINATION_SORTING",
+                "READY_FOR_DELIVERY",
+                "OUT_FOR_DELIVERY",
+                "DELIVERED",
+            ]
+            if new_status in post_payment_statuses and shipment.payment_status == "pending":
+                shipment.payment_status = "paid"
+                payment_status_updated = True
+                if not shipment.paid_at:
+                    from django.utils import timezone
+                    shipment.paid_at = timezone.now()
+                logger.info(f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (status changed to {new_status}, which requires payment confirmation)")
+        
+        # Also update payment_status if amount_paid is being set and equals total_price
+        if not payment_status_updated and amount_paid is not None and shipment.total_price and shipment.total_price > 0:
+            if float(amount_paid) >= float(shipment.total_price) and shipment.payment_status != "paid":
+                shipment.payment_status = "paid"
+                payment_status_updated = True
+                if not shipment.paid_at:
+                    from django.utils import timezone
+                    shipment.paid_at = timezone.now()
+                logger.info(f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (amount_paid {amount_paid} >= total_price {shipment.total_price})")
+        
+        # Also check current amount_paid if status is being changed (even if not from PENDING_PAYMENT)
+        if not payment_status_updated and new_status and old_status != new_status:
+            if shipment.amount_paid and shipment.total_price and shipment.total_price > 0:
+                if float(shipment.amount_paid) >= float(shipment.total_price) and shipment.payment_status != "paid":
+                    shipment.payment_status = "paid"
+                    payment_status_updated = True
+                    if not shipment.paid_at:
+                        from django.utils import timezone
+                        shipment.paid_at = timezone.now()
+                    logger.info(f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (current amount_paid {shipment.amount_paid} >= total_price {shipment.total_price})")
+
         shipment.save()
+
+        # Generate invoice automatically if status changed from PENDING_PAYMENT to any other status
+        # and payment_status is 'paid'
+        if new_status and old_status == "PENDING_PAYMENT" and new_status != "PENDING_PAYMENT":
+            if shipment.payment_status == "paid" and not shipment.invoice_file:
+                try:
+                    from .document_service import generate_invoice, save_invoice_to_storage
+                    from .email_service import send_invoice_email_to_user, send_invoice_email_to_admin
+                    
+                    # Generate invoice PDF
+                    pdf_bytes = generate_invoice(shipment, language='ar')
+                    
+                    # Save to storage
+                    save_invoice_to_storage(shipment, pdf_bytes)
+                    
+                    # Send invoice by email
+                    try:
+                        send_invoice_email_to_user(shipment, pdf_bytes)
+                        send_invoice_email_to_admin(shipment, pdf_bytes)
+                    except Exception as email_error:
+                        logger.warning(f"Failed to send invoice emails: {str(email_error)}")
+                        # Don't fail if email fails
+                    
+                    logger.info(f"✅ Invoice generated and saved for shipment {shipment.id}")
+                except Exception as invoice_error:
+                    # Log error but don't fail the request
+                    logger.error(
+                        f"Failed to generate invoice automatically: {str(invoice_error)}",
+                        exc_info=True
+                    )
 
         # Send email notifications if status was updated
         if new_status:
@@ -3939,6 +4039,93 @@ def update_lcl_shipment_status_view(request, pk):
         logger.error(f"Error updating LCL shipment status: {str(e)}", exc_info=True)
         return Response(
             {"success": False, "error": f"An error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def download_invoice_view(request, pk):
+    """
+    Download invoice PDF for LCL shipment.
+    GET /api/shipments/{id}/invoice/
+    
+    Requirements:
+    - Shipment status must not be PENDING_PAYMENT
+    - Payment status must be 'paid'
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        shipment = LCLShipment.objects.get(pk=pk)
+        
+        # Check permissions: user must own the shipment or be admin
+        if shipment.user != request.user and not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "You can only download invoices for your own shipments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
+        # Validate shipment status
+        if shipment.status == "PENDING_PAYMENT":
+            return Response(
+                {"success": False, "error": "Invoice can only be generated after payment is confirmed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Validate payment status
+        if shipment.payment_status != "paid":
+            return Response(
+                {"success": False, "error": "Payment must be confirmed before generating invoice."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Import document service
+        from .document_service import generate_invoice, save_invoice_to_storage
+        
+        # Get language from request (default: 'ar')
+        language = request.GET.get('language', 'ar')
+        if language not in ['ar', 'en']:
+            language = 'ar'
+        
+        # Generate invoice PDF
+        try:
+            pdf_bytes = generate_invoice(shipment, language=language)
+        except ValueError as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as gen_error:
+            logger.error(f"Error generating invoice PDF: {str(gen_error)}", exc_info=True)
+            return Response(
+                {"success": False, "error": f"Failed to generate invoice: {str(gen_error)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+        # Save to storage if not already saved (always try to save)
+        if not shipment.invoice_file:
+            try:
+                save_invoice_to_storage(shipment, pdf_bytes)
+                logger.info(f"✅ Invoice saved to storage for shipment {shipment.id}")
+            except Exception as save_error:
+                logger.error(f"Failed to save invoice to storage: {str(save_error)}", exc_info=True)
+                # Continue anyway - we can still return the PDF
+        
+        # Return PDF as response
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="Invoice-{shipment.shipment_number}.pdf"'
+        return response
+        
+    except LCLShipment.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Shipment not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error generating invoice: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": f"An error occurred while generating invoice: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

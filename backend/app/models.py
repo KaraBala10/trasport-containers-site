@@ -828,6 +828,10 @@ class LCLShipment(models.Model):
     sendcloud_id = models.IntegerField(null=True, blank=True)
     sendcloud_label_url = models.URLField(max_length=500, blank=True, null=True, help_text="URL to download shipping label from Sendcloud")
 
+    # Invoice
+    invoice_file = models.FileField(upload_to="invoices/", blank=True, null=True, help_text="Generated invoice PDF file")
+    invoice_generated_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when invoice was generated")
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

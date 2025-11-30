@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="{{ language }}" dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice / فاتورة - {{ invoice_number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: {% if language == 'ar' %}'Cairo', 'Arial', sans-serif{% else %}'Inter', 'Arial', sans-serif{% endif %};
+            font-size: 12px;
+            line-height: 1.6;
+            color: #1a365d;
+            direction: {% if language == 'ar' %}rtl{% else %}ltr{% endif %};
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #1a365d;
+        }
+        
+        .company-info {
+            flex: 1;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 5px;
+        }
+        
+        .company-tagline {
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .company-details {
+            font-size: 11px;
+            color: #4a5568;
+            line-height: 1.8;
+        }
+        
+        .invoice-info {
+            text-align: {% if language == 'ar' %}left{% else %}right{% endif %};
+        }
+        
+        .invoice-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 20px;
+        }
+        
+        .invoice-details {
+            font-size: 11px;
+            color: #4a5568;
+        }
+        
+        .invoice-details p {
+            margin: 5px 0;
+        }
+        
+        .invoice-label {
+            font-weight: bold;
+            color: #1a365d;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #fbbf24;
+        }
+        
+        .address-box {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #1a365d;
+            margin-bottom: 20px;
+        }
+        
+        .address-label {
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .address-content {
+            font-size: 11px;
+            color: #4a5568;
+            line-height: 1.8;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        table th {
+            background: #1a365d;
+            color: white;
+            padding: 12px 8px;
+            text-align: {% if language == 'ar' %}right{% else %}left{% endif %};
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 11px;
+            color: #4a5568;
+        }
+        
+        table tr:nth-child(even) {
+            background: #f7fafc;
+        }
+        
+        .text-right {
+            text-align: {% if language == 'ar' %}left{% else %}right{% endif %};
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .summary-box {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 5px;
+            border: 2px solid #e2e8f0;
+            margin-top: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+        
+        .summary-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .summary-value {
+            font-weight: bold;
+            color: #1a365d;
+        }
+        
+        .total-row {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a365d;
+            padding-top: 10px;
+            margin-top: 10px;
+            border-top: 3px solid #1a365d;
+        }
+        
+        .notes {
+            margin-top: 30px;
+            padding: 15px;
+            background: #fffbf0;
+            border-left: 4px solid #fbbf24;
+            border-radius: 5px;
+        }
+        
+        .notes-title {
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 10px;
+        }
+        
+        .notes-content {
+            font-size: 10px;
+            color: #4a5568;
+            line-height: 1.8;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            font-size: 10px;
+            color: #718096;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .badge-paid {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .badge-pending {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="company-info">
+            <div class="company-name">Medo-Freight EU</div>
+            <div class="company-tagline">Ship · Route · Deliver</div>
+            <div class="company-details">
+                Wattweg 5, 4622RA Bergen op Zoom, Nederland<br>
+                Phone: +31 683083916<br>
+                Email: contact@medo-freight.eu<br>
+                Website: www.medo-freight.eu
+            </div>
+        </div>
+        <div class="invoice-info">
+            <div class="invoice-title">{% if language == 'ar' %}فاتورة{% else %}INVOICE{% endif %}</div>
+            <div class="invoice-details">
+                <p><span class="invoice-label">{% if language == 'ar' %}رقم الفاتورة:{% else %}Invoice #:{% endif %}</span> {{ invoice_number }}</p>
+                <p><span class="invoice-label">{% if language == 'ar' %}رقم الشحنة:{% else %}Shipment #:{% endif %}</span> {{ invoice_number }}</p>
+                <p><span class="invoice-label">{% if language == 'ar' %}التاريخ:{% else %}Date:{% endif %}</span> {{ invoice_date|date:"Y-m-d" }}</p>
+                {% if shipment.paid_at %}
+                <p><span class="invoice-label">{% if language == 'ar' %}تاريخ الدفع:{% else %}Payment Date:{% endif %}</span> {{ shipment.paid_at|date:"Y-m-d" }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- FROM / TO -->
+    <div class="section">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="address-box">
+                <div class="address-label">{% if language == 'ar' %}من:{% else %}FROM:{% endif %}</div>
+                <div class="address-content">
+                    <strong>{{ company.name }}</strong><br>
+                    {{ company.address }}<br>
+                    {{ company.phone }}<br>
+                    {{ company.email }}
+                </div>
+            </div>
+            <div class="address-box">
+                <div class="address-label">{% if language == 'ar' %}إلى:{% else %}TO:{% endif %}</div>
+                <div class="address-content">
+                    <strong>{{ shipment.sender_name }}</strong><br>
+                    {{ shipment.sender_address }}<br>
+                    {{ shipment.sender_city }}, {{ shipment.sender_country }}<br>
+                    {{ shipment.sender_phone }}<br>
+                    {{ shipment.sender_email }}
+                </div>
+            </div>
+        </div>
+        <div class="address-box" style="margin-top: 15px;">
+            <div class="address-label">{% if language == 'ar' %}فاتورة إلى:{% else %}BILL TO:{% endif %}</div>
+            <div class="address-content">
+                <strong>{{ shipment.receiver_name }}</strong><br>
+                {{ shipment.receiver_address }}<br>
+                {{ shipment.receiver_city }}, {{ shipment.receiver_country }}<br>
+                {{ shipment.receiver_phone }}<br>
+                {{ shipment.receiver_email }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipment Details -->
+    <div class="section">
+        <div class="section-title">{% if language == 'ar' %}تفاصيل الشحنة{% else %}SHIPMENT DETAILS{% endif %}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 11px;">
+            <div>
+                <strong>{% if language == 'ar' %}الاتجاه:{% else %}Direction:{% endif %}</strong>
+                {% if shipment.direction == 'eu-sy' %}
+                    {% if language == 'ar' %}من أوروبا إلى الشرق الأوسط{% else %}Europe to Middle East{% endif %}
+                {% else %}
+                    {% if language == 'ar' %}من الشرق الأوسط إلى أوروبا{% else %}Middle East to Europe{% endif %}
+                {% endif %}
+            </div>
+            <div>
+                <strong>{% if language == 'ar' %}الحالة:{% else %}Status:{% endif %}</strong>
+                {{ status_display }}
+            </div>
+            <div>
+                <strong>{% if language == 'ar' %}طريقة الدفع:{% else %}Payment Method:{% endif %}</strong>
+                {% if shipment.payment_method == 'stripe' %}
+                    {% if language == 'ar' %}إلكتروني (Stripe){% else %}Electronic (Stripe){% endif %}
+                {% elif shipment.payment_method == 'cash' %}
+                    {% if language == 'ar' %}نقدي{% else %}Cash{% endif %}
+                {% elif shipment.payment_method == 'internal-transfer' %}
+                    {% if language == 'ar' %}تحويل داخلي{% else %}Internal Transfer{% endif %}
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+            <div>
+                <strong>{% if language == 'ar' %}حالة الدفع:{% else %}Payment Status:{% endif %}</strong>
+                <span class="badge {% if shipment.payment_status == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
+                    {% if shipment.payment_status == 'paid' %}
+                        {% if language == 'ar' %}مدفوع{% else %}Paid{% endif %}
+                    {% else %}
+                        {% if language == 'ar' %}قيد الانتظار{% else %}Pending{% endif %}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="section">
+        <div class="section-title">{% if language == 'ar' %}البنود{% else %}ITEMS{% endif %}</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{% if language == 'ar' %}المنتج{% else %}Product{% endif %}</th>
+                    <th>{% if language == 'ar' %}الكمية{% else %}Qty{% endif %}</th>
+                    <th>{% if language == 'ar' %}الأبعاد{% else %}Dimensions{% endif %}</th>
+                    <th>{% if language == 'ar' %}الوزن{% else %}Weight{% endif %}</th>
+                    <th>{% if language == 'ar' %}الحجمي{% else %}Vol.{% endif %}</th>
+                    <th>{% if language == 'ar' %}المحاسَب{% else %}Chargeable{% endif %}</th>
+                    <th>{% if language == 'ar' %}السعر/كغ{% else %}Rate{% endif %}</th>
+                    <th class="text-right">{% if language == 'ar' %}الإجمالي{% else %}Total{% endif %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for calc in pricing.parcel_calculations %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>
+                        <strong>{% if language == 'ar' %}{{ calc.product_name_ar }}{% else %}{{ calc.product_name_en }}{% endif %}</strong>
+                        {% if calc.hs_code %}
+                        <br><small>HS: {{ calc.hs_code }}</small>
+                        {% endif %}
+                        {% if calc.shipment_type %}
+                        <br><small>{% if language == 'ar' %}نوع: {% if calc.shipment_type == 'personal' %}شخصي{% else %}تجاري{% endif %}{% else %}Type: {{ calc.shipment_type|title }}{% endif %}</small>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ calc.repeat_count }}</td>
+                    <td>
+                        {% if not calc.is_electronics %}
+                        {{ calc.length }}×{{ calc.width }}×{{ calc.height }} cm
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ calc.weight }} kg</td>
+                    <td class="text-center">
+                        {% if not calc.is_electronics %}
+                        {{ calc.volumetric_weight }} kg
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if not calc.is_electronics %}
+                        {{ calc.chargeable_weight }} kg
+                        {% else %}
+                        {{ calc.weight }} kg
+                        {% endif %}
+                    </td>
+                    <td class="text-center">€{{ calc.price_per_kg }}</td>
+                    <td class="text-right"><strong>€{{ calc.price_by_weight }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pricing Summary -->
+    <div class="section">
+        <div class="section-title">{% if language == 'ar' %}ملخص الأسعار{% else %}PRICING SUMMARY{% endif %}</div>
+        <div class="summary-box">
+            <div class="summary-row">
+                <span class="summary-label">{% if language == 'ar' %}Base LCL Price:{% else %}Base LCL Price:{% endif %}</span>
+                <span class="summary-value">€{{ pricing.base_lcl_price }}</span>
+            </div>
+            {% if pricing.packaging_cost > 0 %}
+            <div class="summary-row">
+                <span class="summary-label">{% if language == 'ar' %}Packaging Cost:{% else %}Packaging Cost:{% endif %}</span>
+                <span class="summary-value">€{{ pricing.packaging_cost }}</span>
+            </div>
+            {% endif %}
+            {% if pricing.insurance_cost > 0 %}
+            <div class="summary-row">
+                <span class="summary-label">{% if language == 'ar' %}Insurance Cost:{% else %}Insurance Cost:{% endif %}</span>
+                <span class="summary-value">€{{ pricing.insurance_cost }}</span>
+            </div>
+            {% endif %}
+            {% if shipment.selected_eu_shipping_name %}
+            <div class="summary-row">
+                <span class="summary-label">{% if language == 'ar' %}EU Shipping ({{ shipment.selected_eu_shipping_name }}):{% else %}EU Shipping ({{ shipment.selected_eu_shipping_name }}):{% endif %}</span>
+                <span class="summary-value">
+                    {% comment %}EU shipping cost needs to be calculated from total_price breakdown{% endcomment %}
+                    {% if language == 'ar' %}مشمول{% else %}Included{% endif %}
+                </span>
+            </div>
+            {% endif %}
+            {% if shipment.syria_province %}
+            <div class="summary-row">
+                <span class="summary-label">{% if language == 'ar' %}Syria Transport ({{ shipment.syria_province }}):{% else %}Syria Transport ({{ shipment.syria_province }}):{% endif %}</span>
+                <span class="summary-value">€{{ pricing.syria_transport_cost }}</span>
+            </div>
+            {% endif %}
+            <div class="summary-row total-row">
+                <span>{% if language == 'ar' %}الإجمالي:{% else %}TOTAL:{% endif %}</span>
+                <span>€{{ shipment.total_price }}</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">{% if language == 'ar' %}المبلغ المدفوع:{% else %}Amount Paid:{% endif %}</span>
+                <span class="summary-value">€{{ shipment.amount_paid }}</span>
+            </div>
+            {% if shipment.total_price > shipment.amount_paid %}
+            <div class="summary-row">
+                <span class="summary-label">{% if language == 'ar' %}المبلغ المتبقي:{% else %}Remaining:{% endif %}</span>
+                <span class="summary-value">€{{ remaining_amount }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="notes">
+        <div class="notes-title">{% if language == 'ar' %}ملاحظات:{% else %}NOTES:{% endif %}</div>
+        <div class="notes-content">
+            {% if language == 'ar' %}
+            - Base LCL Price: max({{ pricing.total_price_by_weight }}, {{ pricing.total_price_by_cbm }}, 75) = {{ pricing.base_lcl_price }}<br>
+            {% if pricing.insurance_cost > 0 %}
+            - Insurance: ({{ pricing.base_lcl_price }} + {{ pricing.declared_shipment_value }}) × 1.5% = {{ pricing.insurance_cost }}<br>
+            {% endif %}
+            - شكراً لتعاملكم معنا!
+            {% else %}
+            - Base LCL Price: max({{ pricing.total_price_by_weight }}, {{ pricing.total_price_by_cbm }}, 75) = {{ pricing.base_lcl_price }}<br>
+            {% if pricing.insurance_cost > 0 %}
+            - Insurance: ({{ pricing.base_lcl_price }} + {{ pricing.declared_shipment_value }}) × 1.5% = {{ pricing.insurance_cost }}<br>
+            {% endif %}
+            - Thank you for your business!
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>Medo-Freight EU</strong> | {{ company.website }} | {{ company.email }}</p>
+        <p>{% if language == 'ar' %}هذه فاتورة رسمية.{% else %}This is an official invoice.{% endif %}</p>
+    </div>
+</body>
+</html>
+

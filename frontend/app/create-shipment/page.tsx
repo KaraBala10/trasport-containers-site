@@ -1582,34 +1582,91 @@ export default function CreateShipmentPage() {
                       const senderCountry =
                         direction === "sy-eu" ? "Syria" : sender?.country || "";
 
-                      // Validate required fields before sending
-                      if (
-                        !sender?.fullName ||
-                        !sender?.email ||
-                        !sender?.phone ||
-                        !sender?.city ||
-                        !senderCountry
-                      ) {
+                      // Validate sender based on direction
+                      // sy-eu: sender needs country + province (no city)
+                      // eu-sy: sender needs city + country
+                      const isSYtoEU = direction === "sy-eu";
+                      const senderValid = isSYtoEU
+                        ? !!(sender?.fullName?.trim() &&
+                          sender?.email?.trim() &&
+                          sender?.phone?.trim() &&
+                          sender?.country?.trim() &&
+                          sender?.province?.trim() &&
+                          senderCountry)
+                        : !!(sender?.fullName?.trim() &&
+                          sender?.email?.trim() &&
+                          sender?.phone?.trim() &&
+                          sender?.city?.trim() &&
+                          sender?.country?.trim() &&
+                          senderCountry);
+
+                      if (!senderValid) {
+                        // Debug: log what's missing
+                        console.log("Sender validation failed:", {
+                          direction,
+                          isSYtoEU,
+                          fullName: sender?.fullName,
+                          email: sender?.email,
+                          phone: sender?.phone,
+                          country: sender?.country,
+                          province: sender?.province,
+                          city: sender?.city,
+                          senderCountry,
+                        });
+                        
                         showSuccess(
                           language === "ar"
-                            ? "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
-                            : "Please complete all required sender information (name, email, phone, city, country)"
+                            ? isSYtoEU
+                              ? "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، الدولة، المحافظة)"
+                              : "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
+                            : isSYtoEU
+                              ? "Please complete all required sender information (name, email, phone, country, province)"
+                              : "Please complete all required sender information (name, email, phone, city, country)"
                         );
                         setIsCreatingShipment(false);
                         return;
                       }
 
-                      if (
-                        !receiver?.fullName ||
-                        !receiver?.email ||
-                        !receiver?.phone ||
-                        !receiver?.city ||
-                        !receiverCountry
-                      ) {
+                      // Validate receiver based on direction
+                      // eu-sy: receiver needs country + province (no city)
+                      // sy-eu: receiver needs city + country
+                      const isEUtoSY = direction === "eu-sy";
+                      const receiverValid = isEUtoSY
+                        ? !!(receiver?.fullName?.trim() &&
+                          receiver?.email?.trim() &&
+                          receiver?.phone?.trim() &&
+                          receiver?.country?.trim() &&
+                          receiver?.province?.trim() &&
+                          receiverCountry)
+                        : !!(receiver?.fullName?.trim() &&
+                          receiver?.email?.trim() &&
+                          receiver?.phone?.trim() &&
+                          receiver?.city?.trim() &&
+                          receiver?.country?.trim() &&
+                          receiverCountry);
+
+                      if (!receiverValid) {
+                        // Debug: log what's missing
+                        console.log("Receiver validation failed:", {
+                          direction,
+                          isEUtoSY,
+                          fullName: receiver?.fullName,
+                          email: receiver?.email,
+                          phone: receiver?.phone,
+                          country: receiver?.country,
+                          province: receiver?.province,
+                          city: receiver?.city,
+                          receiverCountry,
+                        });
+                        
                         showSuccess(
                           language === "ar"
-                            ? "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
-                            : "Please complete all required receiver information (name, email, phone, city, country)"
+                            ? isEUtoSY
+                              ? "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، الدولة، المحافظة)"
+                              : "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
+                            : isEUtoSY
+                              ? "Please complete all required receiver information (name, email, phone, country, province)"
+                              : "Please complete all required receiver information (name, email, phone, city, country)"
                         );
                         setIsCreatingShipment(false);
                         return;
@@ -1685,7 +1742,11 @@ export default function CreateShipmentPage() {
                           sender?.street && sender?.streetNumber
                             ? `${sender.street} ${sender.streetNumber}`.trim()
                             : sender?.street || "",
-                        sender_city: sender?.city || "",
+                        // For sy-eu direction, sender doesn't have city (has country + province)
+                        // For eu-sy direction, sender has city
+                        sender_city: direction === "sy-eu" 
+                          ? (sender?.country || sender?.province || "") 
+                          : (sender?.city || ""),
                         sender_postal_code: sender?.postalCode || "",
                         sender_country: senderCountry,
                         receiver_name: receiver?.fullName || "",
@@ -1695,7 +1756,11 @@ export default function CreateShipmentPage() {
                           receiver?.street && receiver?.streetNumber
                             ? `${receiver.street} ${receiver.streetNumber}`.trim()
                             : receiver?.street || "",
-                        receiver_city: receiver?.city || "",
+                        // For eu-sy direction, receiver doesn't have city (has country + province)
+                        // For sy-eu direction, receiver has city
+                        receiver_city: direction === "eu-sy"
+                          ? (receiver?.country || receiver?.province || "")
+                          : (receiver?.city || ""),
                         receiver_postal_code: receiver?.postalCode || "",
                         receiver_country: receiverCountry,
                         parcels: parcels,

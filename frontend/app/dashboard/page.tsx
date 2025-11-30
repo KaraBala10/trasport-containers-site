@@ -147,6 +147,8 @@ interface LCLShipment {
   transfer_sender_name?: string;
   transfer_reference?: string;
   transfer_slip?: string;
+  invoice_file?: string;
+  invoice_generated_at?: string;
   created_at: string;
   updated_at: string;
   paid_at?: string;
@@ -1098,6 +1100,7 @@ export default function DashboardPage() {
           : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR):`
       );
       if (amountPaidInput === null) {
+        // User cancelled
         return;
       }
       const parsedAmount = parseFloat(amountPaidInput || "0");
@@ -1118,25 +1121,38 @@ export default function DashboardPage() {
         return;
       }
 
+      // Update amount_paid by calling status update with same status (same as FCL logic)
       const response = await apiService.updateShipmentStatus(
         shipmentId,
-        undefined,
+        shipment.status, // Pass current status (same as FCL)
         parsedAmount
       );
 
+      // Update the shipment in the list immediately (same as FCL logic)
       if (response.data?.data) {
-        setLclShipments((prevShipments) =>
-          prevShipments.map((s) =>
-            s.id === shipmentId ? { ...s, ...response.data.data } : s
-          )
-        );
+        const updatedShipment = response.data.data;
+        console.log("Updating shipment locally:", updatedShipment);
+        console.log("Updated amount_paid:", updatedShipment.amount_paid);
+        setLclShipments((prevShipments) => {
+          const updated = prevShipments.map((s) =>
+            s.id === shipmentId ? { ...s, ...updatedShipment } : s
+          );
+          console.log("Updated shipments state:", updated.find(s => s.id === shipmentId));
+          return updated;
+        });
       }
 
-      // Refresh shipments list
-      const shipmentsResponse = await apiService.getShipments();
-      const shipments =
-        shipmentsResponse.data?.results || shipmentsResponse.data || [];
-      setLclShipments(Array.isArray(shipments) ? shipments : []);
+      // Refresh shipments list after a short delay to ensure consistency (same as FCL logic)
+      setTimeout(async () => {
+        try {
+          const shipmentsResponse = await apiService.getShipments();
+          const shipments =
+            shipmentsResponse.data?.results || shipmentsResponse.data || [];
+          setLclShipments(Array.isArray(shipments) ? shipments : []);
+        } catch (error) {
+          console.error("Error refreshing shipments:", error);
+        }
+      }, 300);
 
       showSuccess(
         language === "ar"
@@ -4669,8 +4685,9 @@ export default function DashboardPage() {
                                 </span>
                               </div>
 
-                              {/* Payment Progress - Show for all shipments with total_price */}
-                              {Number(shipment.total_price) > 0 && (
+                              {/* Payment Progress - Show for all shipments with total_price (same as FCL logic) */}
+                              {shipment.total_price &&
+                                shipment.total_price > 0 && (
                                 <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     {t.paymentProgress}
@@ -4680,41 +4697,42 @@ export default function DashboardPage() {
                                       <span className="text-gray-600 font-medium">
                                         {t.amountPaid}
                                       </span>
-                                      <span className="font-bold text-primary-dark">
-                                        €
-                                        {Number(
-                                          shipment.amount_paid || 0
-                                        ).toFixed(2)}
+                                      <span 
+                                        key={`amount-${shipment.id}-${shipment.amount_paid}`}
+                                        className="font-bold text-primary-dark"
+                                      >
+                                        €{shipment.amount_paid || 0}
                                       </span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                                       <div
+                                        key={`progress-${shipment.id}-${shipment.amount_paid}`}
                                         className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
                                         style={{
                                           width: `${Math.min(
                                             100,
-                                            ((Number(shipment.amount_paid) ||
-                                              0) /
-                                              Number(shipment.total_price)) *
+                                            ((shipment.amount_paid || 0) /
+                                              shipment.total_price) *
                                               100
                                           )}%`,
                                         }}
                                       ></div>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                      <p className="text-xs font-bold text-gray-700">
-                                        {Math.round(
-                                          ((Number(shipment.amount_paid) || 0) /
-                                            Number(shipment.total_price)) *
-                                            100
-                                        )}
-                                        %
-                                      </p>
+                                        <p 
+                                          key={`percentage-${shipment.id}-${shipment.amount_paid}`}
+                                          className="text-xs font-bold text-gray-700"
+                                        >
+                                          {Math.round(
+                                            ((shipment.amount_paid || 0) /
+                                              shipment.total_price) *
+                                              100
+                                          )}
+                                          %
+                                        </p>
                                       <p className="text-xs text-gray-600">
                                         {t.totalPrice}: €
-                                        {Number(shipment.total_price).toFixed(
-                                          2
-                                        )}
+                                        {shipment.total_price || 0}
                                       </p>
                                     </div>
                                     {/* Warning message if payment is not 100% */}
@@ -5862,6 +5880,252 @@ export default function DashboardPage() {
                                   )}
                                 </div>
                               </div>
+
+                              {/* Documents Section */}
+                              <div className="md:col-span-2 lg:col-span-3 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
+                                  <h4 className="font-bold text-primary-dark text-lg">
+                                    {language === "ar" ? "المستندات" : "Documents"}
+                                  </h4>
+                                </div>
+
+                                {/* Invoice Card */}
+                                {(() => {
+                                  // Debug: log shipment data
+                                  console.log("Invoice Debug:", {
+                                    payment_status: shipment.payment_status,
+                                    status: shipment.status,
+                                    invoice_file: shipment.invoice_file,
+                                    invoice_generated_at: shipment.invoice_generated_at,
+                                  });
+                                  
+                                  const canGenerateInvoice = shipment.payment_status === "paid" && shipment.status !== "PENDING_PAYMENT";
+                                  const hasInvoice = !!(shipment.invoice_file || shipment.invoice_generated_at);
+                                  
+                                  if (canGenerateInvoice && hasInvoice) {
+                                    return "has_invoice"; // Show invoice download
+                                  } else if (canGenerateInvoice && !hasInvoice) {
+                                    return "can_generate"; // Show generate button
+                                  } else {
+                                    return "not_available"; // Show not available
+                                  }
+                                })() === "has_invoice" ? (
+                                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-200">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-green-600 font-bold text-lg">✓</span>
+                                        <h5 className="font-bold text-primary-dark">
+                                          {language === "ar" ? "الفاتورة" : "Invoice"}
+                                        </h5>
+                                      </div>
+                                      {shipment.invoice_generated_at && (
+                                        <span className="text-xs text-gray-500">
+                                          {new Date(shipment.invoice_generated_at).toLocaleDateString(
+                                            language === "ar" ? "ar-SA" : "en-US"
+                                          )}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="mb-4 space-y-2">
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span>📄</span>
+                                        <span className="font-mono text-gray-700">
+                                          Invoice-{shipment.shipment_number}.pdf
+                                        </span>
+                                      </div>
+                                      {shipment.invoice_generated_at && (
+                                        <p className="text-xs text-gray-500">
+                                          {language === "ar" ? "تم التوليد:" : "Generated:"}{" "}
+                                          {new Date(shipment.invoice_generated_at).toLocaleString(
+                                            language === "ar" ? "ar-SA" : "en-US"
+                                          )}
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2">
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            const response = await apiService.downloadInvoice(
+                                              shipment.id,
+                                              language
+                                            );
+                                            const blob = new Blob([response.data], {
+                                              type: "application/pdf",
+                                            });
+                                            const url = window.URL.createObjectURL(blob);
+                                            const link = document.createElement("a");
+                                            link.href = url;
+                                            link.download = `Invoice-${shipment.shipment_number}.pdf`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                            window.URL.revokeObjectURL(url);
+                                          } catch (error: any) {
+                                            console.error("Error downloading invoice:", error);
+                                            showSuccess(
+                                              language === "ar"
+                                                ? "حدث خطأ أثناء تحميل الفاتورة. يرجى المحاولة لاحقاً."
+                                                : "Error downloading invoice. Please try again later."
+                                            );
+                                          }
+                                        }}
+                                        className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                      >
+                                        <svg
+                                          className="w-4 h-4"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                          />
+                                        </svg>
+                                        {language === "ar" ? "تحميل الفاتورة" : "Download Invoice"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (() => {
+                                  const canGenerateInvoice = shipment.payment_status === "paid" && shipment.status !== "PENDING_PAYMENT";
+                                  const hasInvoice = !!(shipment.invoice_file || shipment.invoice_generated_at);
+                                  console.log("Invoice Generate Check:", {
+                                    canGenerateInvoice,
+                                    hasInvoice,
+                                    payment_status: shipment.payment_status,
+                                    status: shipment.status,
+                                    shouldShow: canGenerateInvoice && !hasInvoice,
+                                  });
+                                  return canGenerateInvoice && !hasInvoice;
+                                })() ? (
+                                  // This should not happen, but just in case - show generate button
+                                  <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-yellow-600">⏳</span>
+                                      <h5 className="font-bold text-primary-dark">
+                                        {language === "ar" ? "الفاتورة" : "Invoice"}
+                                      </h5>
+                                    </div>
+                                    <p className="text-sm text-gray-700 mb-3">
+                                      {language === "ar"
+                                        ? "الفاتورة غير متاحة. اضغط على الزر أدناه لتوليدها وتحميلها."
+                                        : "Invoice is not available. Click the button below to generate and download it."}
+                                    </p>
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          showSuccess(
+                                            language === "ar"
+                                              ? "جاري توليد الفاتورة..."
+                                              : "Generating invoice..."
+                                          );
+                                          
+                                          const response = await apiService.downloadInvoice(
+                                            shipment.id,
+                                            language
+                                          );
+                                          
+                                          const blob = new Blob([response.data], {
+                                            type: "application/pdf",
+                                          });
+                                          const url = window.URL.createObjectURL(blob);
+                                          const link = document.createElement("a");
+                                          link.href = url;
+                                          link.download = `Invoice-${shipment.shipment_number}.pdf`;
+                                          document.body.appendChild(link);
+                                          link.click();
+                                          document.body.removeChild(link);
+                                          window.URL.revokeObjectURL(url);
+                                          
+                                          showSuccess(
+                                            language === "ar"
+                                              ? "تم تحميل الفاتورة بنجاح! جاري تحديث الصفحة..."
+                                              : "Invoice downloaded successfully! Refreshing page..."
+                                          );
+                                          
+                                          setTimeout(() => {
+                                            window.location.reload();
+                                          }, 1500);
+                                        } catch (error: any) {
+                                          console.error("Error downloading invoice:", error);
+                                          const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                          showSuccess(
+                                            language === "ar"
+                                              ? `حدث خطأ: ${errorMessage}`
+                                              : `Error: ${errorMessage}`
+                                          );
+                                        }
+                                      }}
+                                      className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md"
+                                    >
+                                      {language === "ar" ? "توليد وتحميل الفاتورة" : "Generate & Download Invoice"}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-gray-400">⏳</span>
+                                      <h5 className="font-bold text-gray-600">
+                                        {language === "ar" ? "الفاتورة" : "Invoice"}
+                                      </h5>
+                                    </div>
+                                    <p className="text-sm text-gray-500">
+                                      {shipment.status === "PENDING_PAYMENT" || shipment.payment_status !== "paid"
+                                        ? language === "ar"
+                                          ? "سيتم توليد الفاتورة بعد تأكيد الدفع"
+                                          : "Invoice will be generated after payment confirmation"
+                                        : language === "ar"
+                                        ? "الفاتورة غير متاحة حالياً"
+                                        : "Invoice is not available at the moment"}
+                                    </p>
+                                  </div>
+                                )}
+
+                                  {/* Coming Soon Documents */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 opacity-60">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-gray-400">⏳</span>
+                                        <p className="text-sm font-semibold text-gray-600">
+                                          {language === "ar" ? "قائمة التعبئة" : "Packing List"}
+                                        </p>
+                                      </div>
+                                      <p className="text-xs text-gray-500">
+                                        {language === "ar" ? "قريباً" : "Coming Soon"}
+                                      </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 opacity-60">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-gray-400">⏳</span>
+                                        <p className="text-sm font-semibold text-gray-600">
+                                          {language === "ar" ? "وثيقة التصدير" : "Export Document"}
+                                        </p>
+                                      </div>
+                                      <p className="text-xs text-gray-500">
+                                        {language === "ar" ? "قريباً" : "Coming Soon"}
+                                      </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 opacity-60">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-gray-400">⏳</span>
+                                        <p className="text-sm font-semibold text-gray-600">
+                                          {language === "ar" ? "الإيصال" : "Receipt"}
+                                        </p>
+                                      </div>
+                                      <p className="text-xs text-gray-500">
+                                        {language === "ar" ? "قريباً" : "Coming Soon"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
 
                               {/* EU Pickup Information */}
                               {shipment.direction === "eu-sy" &&

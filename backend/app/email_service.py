@@ -1779,3 +1779,191 @@ You can view and manage this quote in the admin dashboard.
             exc_info=True,
         )
         return False
+
+
+def send_invoice_email_to_user(shipment, pdf_bytes):
+    """
+    Send invoice PDF to user via email.
+    
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+    
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping invoice email to user.")
+        return False
+    
+    try:
+        from django.core.mail import EmailMessage
+        from io import BytesIO
+        
+        # Get user email
+        user_email = shipment.receiver_email or shipment.user.email if shipment.user else None
+        if not user_email:
+            logger.warning(f"No email found for shipment {shipment.id}")
+            return False
+        
+        # Get status display name
+        status_display = get_status_display_name(shipment.status, shipment.direction)
+        
+        # Determine language based on user preference (default: Arabic)
+        # For now, we'll use Arabic
+        language = 'ar'
+        
+        # Email subject
+        subject_ar = f"فاتورتك جاهزة - شحنة {shipment.shipment_number}"
+        subject_en = f"Your Invoice is Ready - Shipment {shipment.shipment_number}"
+        subject = subject_ar if language == 'ar' else subject_en
+        
+        # Email body
+        body_ar = f"""
+        مرحباً {shipment.receiver_name},
+        
+        تم توليد فاتورتك بنجاح لشحنتك رقم {shipment.shipment_number}.
+        
+        يمكنك تحميل الفاتورة من المرفقات أو من لوحة التحكم الخاصة بك.
+        
+        تفاصيل الشحنة:
+        - رقم الشحنة: {shipment.shipment_number}
+        - الحالة: {status_display['ar']}
+        - المبلغ الإجمالي: €{shipment.total_price}
+        - المبلغ المدفوع: €{shipment.amount_paid}
+        
+        شكراً لتعاملكم معنا!
+        
+        Medo-Freight EU
+        """
+        
+        body_en = f"""
+        Hello {shipment.receiver_name},
+        
+        Your invoice has been successfully generated for shipment {shipment.shipment_number}.
+        
+        You can download the invoice from the attachments or from your dashboard.
+        
+        Shipment Details:
+        - Shipment Number: {shipment.shipment_number}
+        - Status: {status_display['en']}
+        - Total Amount: €{shipment.total_price}
+        - Amount Paid: €{shipment.amount_paid}
+        
+        Thank you for your business!
+        
+        Medo-Freight EU
+        """
+        
+        body = body_ar if language == 'ar' else body_en
+        
+        # Create email message
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user_email],
+        )
+        
+        # Attach PDF
+        email.attach(
+            f"Invoice-{shipment.shipment_number}.pdf",
+            pdf_bytes,
+            'application/pdf'
+        )
+        
+        # Send email
+        email.send()
+        
+        logger.info(f"✅ Invoice email sent to user {user_email} for shipment {shipment.id}")
+        return True
+        
+    except Exception as e:
+        logger.error(
+            f"Error sending invoice email to user: {str(e)}",
+            exc_info=True
+        )
+        return False
+
+
+def send_invoice_email_to_admin(shipment, pdf_bytes):
+    """
+    Send invoice PDF to admin via email.
+    
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+    
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping invoice email to admin.")
+        return False
+    
+    try:
+        from django.core.mail import EmailMessage
+        
+        # Get admin email
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
+        
+        # Get user info
+        user_name = (
+            shipment.user.get_full_name() or shipment.user.username
+            if shipment.user
+            else "Unknown"
+        )
+        user_email = shipment.user.email if shipment.user else "Unknown"
+        
+        # Email subject
+        subject = f"Invoice Generated - Shipment {shipment.shipment_number}"
+        
+        # Email body
+        body = f"""
+        Invoice has been generated for shipment {shipment.shipment_number}.
+        
+        Shipment Details:
+        - Shipment Number: {shipment.shipment_number}
+        - User: {user_name} ({user_email})
+        - Status: {shipment.get_status_display()}
+        - Payment Status: {shipment.payment_status}
+        - Total Amount: €{shipment.total_price}
+        - Amount Paid: €{shipment.amount_paid}
+        - Payment Method: {shipment.get_payment_method_display() if shipment.payment_method else 'N/A'}
+        
+        Invoice is attached.
+        """
+        
+        # Create email message
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[admin_email],
+        )
+        
+        # Attach PDF
+        email.attach(
+            f"Invoice-{shipment.shipment_number}.pdf",
+            pdf_bytes,
+            'application/pdf'
+        )
+        
+        # Send email
+        email.send()
+        
+        logger.info(f"✅ Invoice email sent to admin for shipment {shipment.id}")
+        return True
+        
+    except Exception as e:
+        logger.error(
+            f"Error sending invoice email to admin: {str(e)}",
+            exc_info=True
+        )
+        return False

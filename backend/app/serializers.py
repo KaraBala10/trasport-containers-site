@@ -651,6 +651,8 @@ class LCLShipmentSerializer(serializers.ModelSerializer):
             "tracking_number",
             "sendcloud_id",
             "sendcloud_label_url",
+            "invoice_file",
+            "invoice_generated_at",
             "created_at",
             "updated_at",
             "paid_at",

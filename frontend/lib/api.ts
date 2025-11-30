@@ -363,6 +363,13 @@ export const apiService = {
     });
   },
 
+  downloadInvoice: (shipmentId: string | number, language?: string) => {
+    return apiClient.get(`/shipments/${shipmentId}/invoice/`, {
+      responseType: 'blob',
+      params: language ? { language } : {},
+    });
+  },
+
   // Location endpoints
   getCountries: () => {
     return apiClient.get('/countries/');
