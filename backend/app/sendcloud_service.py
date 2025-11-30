@@ -488,6 +488,202 @@ def get_shipping_methods(
         raise SendcloudAPIError("Unexpected error while fetching shipping methods")
 
 
+def get_shipping_methods_simple(
+    weight: float,
+    country: str,
+) -> List[Dict]:
+    """
+    Get available shipping methods from Sendcloud using test=1 parameter
+    Filters by weight and country
+    
+    Args:
+        weight: Package weight in kg
+        country: Destination country code (ISO 2-letter, e.g. 'NL', 'DE')
+    
+    Returns:
+        List of shipping methods:
+        [
+            {
+                'id': 1,
+                'name': 'PostNL',
+                'carrier': 'postnl',
+                'min_weight': '0.0',
+                'max_weight': '30.0',
+                'countries': [...]
+            },
+            ...
+        ]
+    
+    Raises:
+        SendcloudAPIError: If API call fails
+        SendcloudValidationError: If input validation fails
+    """
+    
+    # Validate inputs
+    try:
+        weight = validate_weight(weight)
+        country = validate_country_code(country)
+    except SendcloudValidationError as e:
+        logger.warning(f"Input validation failed: {str(e)}")
+        raise
+    
+    # Check if API keys are configured
+    if not settings.SENDCLOUD_PUBLIC_KEY or not settings.SENDCLOUD_SECRET_KEY:
+        logger.error("Sendcloud API keys are not configured")
+        raise SendcloudAPIError("Sendcloud API credentials are missing")
+    
+    url = f"{settings.SENDCLOUD_API_URL}shipping_methods"
+    
+    auth = HTTPBasicAuth(
+        settings.SENDCLOUD_PUBLIC_KEY,
+        settings.SENDCLOUD_SECRET_KEY
+    )
+    
+    # Use test=1 parameter as requested
+    params = {
+        'test': '1'
+    }
+    
+    try:
+        logger.info(f"Requesting Sendcloud shipping methods (test mode): Weight={weight}kg, Country={country}")
+        
+        response = requests.get(
+            url,
+            auth=auth,
+            params=params,
+            headers={'Accept': 'application/json'},
+            timeout=10
+        )
+        
+        response.raise_for_status()
+        data = response.json()
+        
+        shipping_methods = data.get('shipping_methods', [])
+        
+        if not isinstance(shipping_methods, list):
+            logger.error("shipping_methods is not a list")
+            raise SendcloudAPIError("Invalid shipping_methods format in response")
+        
+        if not shipping_methods:
+            logger.warning("No shipping methods available")
+            return []
+        
+        # Filter by weight and country
+        filtered_methods = []
+        country_upper = country.upper()
+        
+        for method in shipping_methods:
+            if not isinstance(method, dict):
+                continue
+            
+            method_id = method.get('id')
+            method_name = method.get('name')
+            min_weight_str = method.get('min_weight')
+            max_weight_str = method.get('max_weight')
+            countries = method.get('countries', [])
+            
+            if not method_id or not method_name:
+                continue
+            
+            # Debug: Log method structure to understand carrier format
+            if not filtered_methods:  # Only log first method to avoid spam
+                logger.debug(f"Sample method structure: {list(method.keys())}")
+                logger.debug(f"Carrier field type: {type(method.get('carrier'))}, value: {method.get('carrier')}")
+            
+            # Filter by weight - weight must be between min_weight and max_weight (inclusive)
+            weight_valid = True
+            if min_weight_str and max_weight_str:
+                try:
+                    min_weight = float(min_weight_str)
+                    max_weight = float(max_weight_str)
+                    # Weight must be >= min_weight and <= max_weight
+                    if weight < min_weight or weight > max_weight:
+                        weight_valid = False
+                except (TypeError, ValueError):
+                    # If weight values are invalid, skip weight check
+                    pass
+            
+            if not weight_valid:
+                continue
+            
+            # Filter by country - check if country is in the countries array and extract price
+            country_data_found = None
+            if isinstance(countries, list):
+                for country_data in countries:
+                    if isinstance(country_data, dict):
+                        country_code = country_data.get('iso_2')
+                        if country_code and country_code.upper() == country_upper:
+                            country_data_found = country_data
+                            break
+            
+            if not country_data_found:
+                continue
+            
+            # Extract carrier code - handle multiple formats
+            carrier = 'unknown'
+            carrier_obj = method.get('carrier')
+            
+            if carrier_obj:
+                if isinstance(carrier_obj, dict):
+                    # Carrier is a dict with 'code', 'name', or 'code_name' field
+                    carrier = (
+                        carrier_obj.get('code') or 
+                        carrier_obj.get('name') or 
+                        carrier_obj.get('code_name') or
+                        'unknown'
+                    )
+                elif isinstance(carrier_obj, str) and carrier_obj.lower() != 'unknown':
+                    # Carrier is already a string (and not "unknown")
+                    carrier = carrier_obj
+                else:
+                    # Try to convert to string if it's something else
+                    carrier = str(carrier_obj) if str(carrier_obj).lower() != 'unknown' else 'unknown'
+            
+            # If still unknown, try to extract from method name (e.g., "DHL Parcel Connect" -> "DHL")
+            if carrier == 'unknown' and method_name:
+                # Common carrier prefixes in method names
+                carrier_prefixes = ['DHL', 'UPS', 'FedEx', 'DPD', 'PostNL', 'GLS', 'TNT', 'DHL Express']
+                for prefix in carrier_prefixes:
+                    if method_name.upper().startswith(prefix.upper()):
+                        carrier = prefix
+                        break
+            
+            # Extract price for this country
+            country_price = country_data_found.get('price', 0)
+            
+            # Add to filtered methods with country-specific price
+            filtered_methods.append({
+                'id': method_id,
+                'name': method_name,
+                'carrier': carrier,
+                'min_weight': min_weight_str,
+                'max_weight': max_weight_str,
+                'price': float(country_price) if country_price else 0,
+                'currency': 'EUR',  # Default currency
+                'country_price_breakdown': country_data_found.get('price_breakdown', []),
+                'countries': countries,  # Keep full countries array for reference
+            })
+        
+        logger.info(f"Filtered {len(filtered_methods)} shipping methods for weight={weight}kg, country={country}")
+        return filtered_methods
+        
+    except requests.exceptions.HTTPError as e:
+        status_code = e.response.status_code if e.response else 'N/A'
+        logger.error(f"Sendcloud API HTTP error: Status {status_code}")
+        raise SendcloudAPIError(f"Sendcloud API error (status {status_code})")
+    except requests.exceptions.Timeout:
+        logger.error("Sendcloud API request timeout")
+        raise SendcloudAPIError("Sendcloud API request timeout")
+    except requests.exceptions.RequestException as e:
+        error_type = type(e).__name__
+        logger.error(f"Sendcloud API request failed: {error_type}")
+        raise SendcloudAPIError("Failed to connect to Sendcloud API")
+    except Exception as e:
+        error_type = type(e).__name__
+        logger.error(f"Unexpected error in get_shipping_methods_simple: {error_type}")
+        raise SendcloudAPIError("Unexpected error while fetching shipping methods")
+
+
 def create_parcel(
     shipment_data: Dict,
     selected_shipping_method: int,

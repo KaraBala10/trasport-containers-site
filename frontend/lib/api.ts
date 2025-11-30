@@ -397,6 +397,13 @@ export const apiService = {
     return apiClient.post('/calculate-eu-shipping/', data);
   },
 
+  // Get shipping methods (simple - filtered by weight and country)
+  getShippingMethodsSimple: (weight: number, country: string) => {
+    return apiClient.get('/sendcloud/shipping-methods-simple/', {
+      params: { weight, country },
+    });
+  },
+
   // ============================================================================
   // SYRIAN INTERNAL TRANSPORT API
   // ============================================================================

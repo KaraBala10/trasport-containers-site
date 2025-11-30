@@ -26,6 +26,7 @@ from .views import (
     approve_or_decline_edit_request_view,
     calculate_cbm_view,
     calculate_eu_shipping_view,
+    get_shipping_methods_simple_view,
     calculate_pricing_view,
     calculate_syria_transport_view,
     cities_list_view,
@@ -181,6 +182,11 @@ urlpatterns = [
         "calculate-eu-shipping/",
         calculate_eu_shipping_view,
         name="calculate_eu_shipping",
+    ),
+    path(
+        "sendcloud/shipping-methods-simple/",
+        get_shipping_methods_simple_view,
+        name="get_shipping_methods_simple",
     ),
     path("sendcloud/webhook/", sendcloud_webhook_view, name="sendcloud_webhook"),
     # Syrian Internal Transport endpoints

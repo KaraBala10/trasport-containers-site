@@ -1888,11 +1888,17 @@ def stripe_webhook_view(request):
 
                                         # Add optional fields if available
                                         if shipment.receiver_email:
-                                            shipment_data["receiver_email"] = shipment.receiver_email
+                                            shipment_data["receiver_email"] = (
+                                                shipment.receiver_email
+                                            )
                                         if shipment.receiver_phone:
-                                            shipment_data["receiver_phone"] = shipment.receiver_phone
+                                            shipment_data["receiver_phone"] = (
+                                                shipment.receiver_phone
+                                            )
                                         if shipment.shipment_number:
-                                            shipment_data["order_number"] = shipment.shipment_number
+                                            shipment_data["order_number"] = (
+                                                shipment.shipment_number
+                                            )
 
                                         # Create parcel in Sendcloud
                                         sendcloud_result = create_parcel(
@@ -1901,12 +1907,14 @@ def stripe_webhook_view(request):
                                         )
 
                                         # Update shipment with Sendcloud data
-                                        shipment.sendcloud_id = sendcloud_result.get("sendcloud_id")
+                                        shipment.sendcloud_id = sendcloud_result.get(
+                                            "sendcloud_id"
+                                        )
                                         shipment.tracking_number = sendcloud_result.get(
                                             "tracking_number", ""
                                         )
-                                        shipment.sendcloud_label_url = sendcloud_result.get(
-                                            "label_url"
+                                        shipment.sendcloud_label_url = (
+                                            sendcloud_result.get("label_url")
                                         )
 
                                         # Update status to PENDING_PICKUP if parcel was created
@@ -2566,6 +2574,150 @@ def calculate_eu_shipping_view(request):
         )
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_shipping_methods_simple_view(request):
+    """
+    Get shipping methods filtered by weight and country (using test=1)
+
+    GET /api/sendcloud/shipping-methods-simple/?weight=10&country=NL
+
+    Query params:
+    - weight: Package weight in kg (required)
+    - country: Destination country code (required)
+
+    Returns:
+    {
+        "success": true,
+        "shipping_methods": [
+            {
+                "id": 1,
+                "name": "PostNL",
+                "carrier": "postnl",
+                "min_weight": "0.0",
+                "max_weight": "30.0",
+                "countries": [...]
+            },
+            ...
+        ]
+    }
+    """
+    from .sendcloud_service import (
+        SendcloudAPIError,
+        SendcloudValidationError,
+        get_shipping_methods_simple,
+    )
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        weight = request.query_params.get("weight")
+        country = request.query_params.get("country")
+
+        if not weight:
+            return Response(
+                {"success": False, "error": "Weight parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not country:
+            return Response(
+                {"success": False, "error": "Country parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            weight_float = float(weight)
+        except (TypeError, ValueError):
+            return Response(
+                {"success": False, "error": "Invalid weight value"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        shipping_methods = get_shipping_methods_simple(
+            weight=weight_float,
+            country=country,
+        )
+
+        logger.info(
+            f"✅ Retrieved {len(shipping_methods)} shipping methods for weight={weight}kg, country={country}"
+        )
+
+        # ✅ Calculate profit margin from ShippingSettings (same as calculate_eu_shipping_view)
+        try:
+            from .models import ShippingSettings
+
+            settings_obj = ShippingSettings.get_settings()
+            profit_margin_percent = float(
+                settings_obj.sendcloud_profit_margin
+            )  # Get percentage
+
+            logger.info(f"📊 Calculating profit margin: {profit_margin_percent}%")
+
+            for method in shipping_methods:
+                sendcloud_price = method.get("price", 0)  # Original Sendcloud price
+                profit_amount = round(
+                    sendcloud_price * (profit_margin_percent / 100), 2
+                )  # Calculate profit
+                total_price = round(
+                    sendcloud_price + profit_amount, 2
+                )  # Calculate total
+
+                # Add all prices to response
+                method["profit_amount"] = profit_amount
+                method["profit_margin_percent"] = profit_margin_percent
+                method["total_price"] = total_price  # Frontend uses this for pricing
+
+                logger.info(
+                    f"  💰 {method.get('name', 'Unknown')}: Sendcloud=€{sendcloud_price} + Profit=€{profit_amount} = Total=€{total_price}"
+                )
+
+            logger.info(
+                f"✅ Calculated profit for {len(shipping_methods)} shipping methods"
+            )
+        except Exception as e:
+            logger.error(f"❌ Could not calculate profit margin: {str(e)}")
+            logger.error(traceback.format_exc())
+            logger.warning("⚠️ Profit margin not added, using base prices only.")
+            # If profit calculation fails, set total_price to base price
+            for method in shipping_methods:
+                if "total_price" not in method:
+                    method["total_price"] = method.get("price", 0)
+                    method["profit_amount"] = 0
+                    method["profit_margin_percent"] = 0
+
+        return Response(
+            {
+                "success": True,
+                "shipping_methods": shipping_methods,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    except SendcloudValidationError as e:
+        logger.warning(f"Validation error: {str(e)}")
+        return Response(
+            {"success": False, "error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except SendcloudAPIError as e:
+        logger.error(f"Sendcloud API error: {str(e)}")
+        return Response(
+            {
+                "success": False,
+                "error": "Unable to fetch shipping methods. Please try again.",
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {type(e).__name__}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "An unexpected error occurred"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])  # Webhooks come from Sendcloud, not authenticated users
 def sendcloud_webhook_view(request):
@@ -3112,11 +3264,12 @@ class LCLShipmentView(generics.CreateAPIView):
         # Send email notifications asynchronously to prevent timeout
         try:
             import threading
+
             from .email_service import (
                 send_lcl_shipment_confirmation_email,
                 send_lcl_shipment_notification_to_admin,
             )
-            
+
             def send_emails_async():
                 """Send emails in background thread"""
                 try:
@@ -3127,17 +3280,19 @@ class LCLShipmentView(generics.CreateAPIView):
                 except Exception as email_error:
                     logger.error(
                         f"Failed to send LCL shipment email notifications: {str(email_error)}",
-                        exc_info=True
+                        exc_info=True,
                     )
-            
+
             # Start email sending in background thread
             email_thread = threading.Thread(target=send_emails_async, daemon=True)
             email_thread.start()
-            logger.info(f"Started background thread for sending LCL shipment emails for shipment {shipment.id}")
+            logger.info(
+                f"Started background thread for sending LCL shipment emails for shipment {shipment.id}"
+            )
         except Exception as email_error:
             logger.error(
                 f"Failed to start email thread for LCL shipment: {str(email_error)}",
-                exc_info=True
+                exc_info=True,
             )
             # Don't fail the request if email fails
 
@@ -3258,7 +3413,7 @@ def update_lcl_shipment_status_view(request, pk):
         new_status = request.data.get("status")
         amount_paid = request.data.get("amount_paid")
         tracking_number = request.data.get("tracking_number")
-        
+
         # Store old status for email notification (before any updates)
         old_status = shipment.status
 
@@ -3349,6 +3504,7 @@ def update_lcl_shipment_status_view(request, pk):
                     send_lcl_shipment_status_update_email,
                     send_lcl_shipment_status_update_notification_to_admin,
                 )
+
                 # Send email to user
                 send_lcl_shipment_status_update_email(
                     shipment=shipment,

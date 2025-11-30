@@ -67,11 +67,17 @@ export default function CreateShipmentPage() {
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [wantsInsurance, setWantsInsurance] = useState<boolean>(false);
   const [declaredShipmentValue, setDeclaredShipmentValue] = useState<number>(0);
+  // Sendcloud Parcel Form Fields
+  const [euPickupName, setEUPickupName] = useState<string>("");
+  const [euPickupCompanyName, setEUPickupCompanyName] = useState<string>("");
   const [euPickupAddress, setEUPickupAddress] = useState<string>("");
-  const [euPickupWeight, setEUPickupWeight] = useState<number>(0);
+  const [euPickupHouseNumber, setEUPickupHouseNumber] = useState<string>("");
   const [euPickupCity, setEUPickupCity] = useState<string>("");
   const [euPickupPostalCode, setEUPickupPostalCode] = useState<string>("");
   const [euPickupCountry, setEUPickupCountry] = useState<string>("");
+  const [euPickupEmail, setEUPickupEmail] = useState<string>("");
+  const [euPickupTelephone, setEUPickupTelephone] = useState<string>("");
+  const [euPickupWeight, setEUPickupWeight] = useState<number>(0);
   const [selectedEUShippingMethod, setSelectedEUShippingMethod] = useState<
     number | null
   >(null);
@@ -229,6 +235,7 @@ export default function CreateShipmentPage() {
 
     // Check if EU Transport card is started (any field filled)
     const euTransportStarted =
+      euPickupName?.trim() ||
       euPickupAddress?.trim() ||
       euPickupCity?.trim() ||
       euPickupPostalCode?.trim() ||
@@ -680,11 +687,16 @@ export default function CreateShipmentPage() {
         receiver_postal_code: receiver.postalCode || "",
         receiver_country: receiverCountry,
         parcels: parcels,
+        eu_pickup_name: euPickupName,
+        eu_pickup_company_name: euPickupCompanyName,
         eu_pickup_address: euPickupAddress,
-        eu_pickup_weight: euPickupWeight,
+        eu_pickup_house_number: euPickupHouseNumber,
         eu_pickup_city: euPickupCity,
         eu_pickup_postal_code: euPickupPostalCode,
         eu_pickup_country: euPickupCountry,
+        eu_pickup_email: euPickupEmail,
+        eu_pickup_telephone: euPickupTelephone,
+        eu_pickup_weight: euPickupWeight,
         selected_eu_shipping_method: selectedEUShippingMethod,
         selected_eu_shipping_name: selectedEUShippingName,
         syria_province: syriaProvince,
@@ -1119,16 +1131,26 @@ export default function CreateShipmentPage() {
               <Step8InternalTransport
                 direction={direction}
                 language={language}
+                euPickupName={euPickupName}
+                onEUPickupNameChange={setEUPickupName}
+                euPickupCompanyName={euPickupCompanyName}
+                onEUPickupCompanyNameChange={setEUPickupCompanyName}
                 euPickupAddress={euPickupAddress}
                 onEUPickupAddressChange={setEUPickupAddress}
-                euPickupWeight={euPickupWeight}
-                onEUPickupWeightChange={setEUPickupWeight}
+                euPickupHouseNumber={euPickupHouseNumber}
+                onEUPickupHouseNumberChange={setEUPickupHouseNumber}
                 euPickupCity={euPickupCity}
                 onEUPickupCityChange={setEUPickupCity}
                 euPickupPostalCode={euPickupPostalCode}
                 onEUPickupPostalCodeChange={setEUPickupPostalCode}
                 euPickupCountry={euPickupCountry}
                 onEUPickupCountryChange={setEUPickupCountry}
+                euPickupEmail={euPickupEmail}
+                onEUPickupEmailChange={setEUPickupEmail}
+                euPickupTelephone={euPickupTelephone}
+                onEUPickupTelephoneChange={setEUPickupTelephone}
+                euPickupWeight={euPickupWeight}
+                onEUPickupWeightChange={setEUPickupWeight}
                 selectedEUShippingMethod={selectedEUShippingMethod}
                 onEUShippingMethodChange={(
                   id,

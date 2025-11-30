@@ -779,11 +779,16 @@ class LCLShipment(models.Model):
     # Parcels (stored as JSON)
     parcels = models.JSONField(default=list, help_text="List of parcel objects")
 
-    # EU Pickup (for eu-sy direction)
+    # EU Pickup (for eu-sy direction) - Sendcloud Parcel Form Fields
+    eu_pickup_name = models.CharField(max_length=255, blank=True, help_text="Name for Sendcloud parcel")
+    eu_pickup_company_name = models.CharField(max_length=255, blank=True, help_text="Company name for Sendcloud parcel")
     eu_pickup_address = models.TextField(blank=True)
+    eu_pickup_house_number = models.CharField(max_length=50, blank=True, help_text="House number for Sendcloud parcel")
     eu_pickup_city = models.CharField(max_length=255, blank=True)
     eu_pickup_postal_code = models.CharField(max_length=50, blank=True)
     eu_pickup_country = models.CharField(max_length=100, blank=True)
+    eu_pickup_email = models.EmailField(blank=True, help_text="Email for Sendcloud parcel")
+    eu_pickup_telephone = models.CharField(max_length=50, blank=True, help_text="Telephone for Sendcloud parcel")
     eu_pickup_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     selected_eu_shipping_method = models.IntegerField(null=True, blank=True)
     selected_eu_shipping_name = models.CharField(max_length=255, blank=True)

@@ -15,21 +15,41 @@ interface ShippingMethod {
   total_price?: number; // Total price (calculated in backend)
   currency: string;
   delivery_days: string;
+  min_weight?: string;
+  max_weight?: string;
+  country_price_breakdown?: Array<{
+    type: string;
+    label: string;
+    value: number;
+  }>;
+  lead_time_hours?: number | null;
 }
 
 interface Step8InternalTransportProps {
   direction: ShippingDirection;
+  // Sendcloud Parcel Form Fields
+  euPickupName: string;
+  euPickupCompanyName: string;
   euPickupAddress: string;
-  euPickupWeight: number;
+  euPickupHouseNumber: string;
   euPickupCity: string;
   euPickupPostalCode: string;
   euPickupCountry: string;
+  euPickupEmail: string;
+  euPickupTelephone: string;
+  euPickupWeight: number;
   selectedEUShippingMethod: number | null;
+  // Callbacks
+  onEUPickupNameChange: (name: string) => void;
+  onEUPickupCompanyNameChange: (companyName: string) => void;
   onEUPickupAddressChange: (address: string) => void;
-  onEUPickupWeightChange: (weight: number) => void;
+  onEUPickupHouseNumberChange: (houseNumber: string) => void;
   onEUPickupCityChange: (city: string) => void;
   onEUPickupPostalCodeChange: (postalCode: string) => void;
   onEUPickupCountryChange: (country: string) => void;
+  onEUPickupEmailChange: (email: string) => void;
+  onEUPickupTelephoneChange: (telephone: string) => void;
+  onEUPickupWeightChange: (weight: number) => void;
   onEUShippingMethodChange: (
     methodId: number | null,
     sendcloudPrice?: number,
@@ -111,17 +131,27 @@ interface SyriaTransportCalculation {
 
 export default function Step8InternalTransport({
   direction,
+  euPickupName,
+  euPickupCompanyName,
   euPickupAddress,
-  euPickupWeight,
+  euPickupHouseNumber,
   euPickupCity,
   euPickupPostalCode,
   euPickupCountry,
+  euPickupEmail,
+  euPickupTelephone,
+  euPickupWeight,
   selectedEUShippingMethod,
+  onEUPickupNameChange,
+  onEUPickupCompanyNameChange,
   onEUPickupAddressChange,
-  onEUPickupWeightChange,
+  onEUPickupHouseNumberChange,
   onEUPickupCityChange,
   onEUPickupPostalCodeChange,
   onEUPickupCountryChange,
+  onEUPickupEmailChange,
+  onEUPickupTelephoneChange,
+  onEUPickupWeightChange,
   onEUShippingMethodChange,
   syriaProvince,
   syriaWeight,
@@ -164,7 +194,18 @@ export default function Step8InternalTransport({
       carrier: "الناقل",
       deliveryDays: "أيام التوصيل",
       selected: "محدد",
+      weightRange: "نطاق الوزن",
+      priceBreakdown: "تفاصيل السعر",
+      leadTime: "وقت التوصيل",
+      labelPrice: "سعر Label",
+      fuelSurcharge: "رسوم الوقود",
+      customsSurcharge: "رسوم الجمارك",
       fillAllFields: "يرجى ملء جميع الحقول لحساب الأسعار",
+      name: "الاسم",
+      companyName: "اسم الشركة",
+      houseNumber: "رقم المنزل",
+      email: "البريد الإلكتروني",
+      telephone: "رقم الهاتف",
       syriaTransport: "النقل الداخلي في سورية",
       syriaTransportDesc: "توصيل من مركز حلب إلى المحافظة المحددة",
       selectProvince: "اختر المحافظة",
@@ -196,7 +237,18 @@ export default function Step8InternalTransport({
       carrier: "Carrier",
       deliveryDays: "Delivery Days",
       selected: "Selected",
+      weightRange: "Weight Range",
+      priceBreakdown: "Price Breakdown",
+      leadTime: "Delivery Time",
+      labelPrice: "Label Price",
+      fuelSurcharge: "Fuel Surcharge",
+      customsSurcharge: "Customs Surcharge",
       fillAllFields: "Please fill all fields to calculate rates",
+      name: "Name",
+      companyName: "Company Name",
+      houseNumber: "House Number",
+      email: "Email",
+      telephone: "Telephone",
       syriaTransport: "Internal Transport in Syria",
       syriaTransportDesc: "Delivery from Aleppo center to selected province",
       selectProvince: "Select Province",
@@ -273,6 +325,7 @@ export default function Step8InternalTransport({
   // ✅ Check if all required fields are filled for EU shipping calculation
   useEffect(() => {
     const allFieldsFilled =
+      euPickupName.trim().length > 0 &&
       euPickupAddress.trim().length > 0 &&
       euPickupCity.trim().length > 0 &&
       euPickupPostalCode.trim().length > 0 &&
@@ -288,6 +341,7 @@ export default function Step8InternalTransport({
       onEUShippingMethodChange(null);
     }
   }, [
+    euPickupName,
     euPickupAddress,
     euPickupCity,
     euPickupPostalCode,
@@ -295,7 +349,7 @@ export default function Step8InternalTransport({
     euPickupWeight,
   ]);
 
-  // ✅ Calculate EU shipping rates from Sendcloud
+  // ✅ Calculate EU shipping rates from Sendcloud (using new simple endpoint)
   const calculateEUShipping = async () => {
     if (!canCalculate) {
       setShippingError(t.fillAllFields);
@@ -308,37 +362,43 @@ export default function Step8InternalTransport({
     onEUShippingMethodChange(null);
 
     try {
-      const response = await apiService.calculateEUShipping({
-        sender_address: "Wattweg 5", // Our center address
-        sender_city: "Bergen op Zoom",
-        sender_postal_code: "4622RA",
-        sender_country: "NL",
-        receiver_address: euPickupAddress,
-        receiver_city: euPickupCity,
-        receiver_postal_code: euPickupPostalCode,
-        receiver_country: euPickupCountry,
-        weight: euPickupWeight,
-      });
+      // Use the new simple endpoint that filters by weight and country
+      const response = await apiService.getShippingMethodsSimple(
+        euPickupWeight,
+        euPickupCountry
+      );
 
       if (response.data.success && response.data.shipping_methods) {
         console.log(
           "📦 EU Shipping Methods from API:",
           response.data.shipping_methods
         );
-        // Log first method to see structure
-        if (response.data.shipping_methods.length > 0) {
-          console.log(
-            "📦 First Method Structure:",
-            response.data.shipping_methods[0]
-          );
-          console.log(
-            "📦 First Method Keys:",
-            Object.keys(response.data.shipping_methods[0])
-          );
-        }
-        setShippingMethods(response.data.shipping_methods);
 
-        if (response.data.shipping_methods.length === 0) {
+        // Format the methods for display
+        const formattedMethods: ShippingMethod[] =
+          response.data.shipping_methods.map((method: any) => ({
+            id: method.id,
+            name: method.name,
+            carrier: method.carrier || "unknown",
+            price: method.price || 0, // Base Sendcloud price
+            profit_amount: method.profit_amount || 0, // Profit amount
+            profit_margin_percent: method.profit_margin_percent || 0, // Profit margin %
+            total_price: method.total_price || method.price || 0, // Total price with profit
+            currency: method.currency || "EUR",
+            delivery_days: method.lead_time_hours
+              ? `${Math.ceil(method.lead_time_hours / 24)} ${
+                  language === "ar" ? "أيام" : "days"
+                }`
+              : "N/A",
+            min_weight: method.min_weight,
+            max_weight: method.max_weight,
+            country_price_breakdown: method.country_price_breakdown || [],
+            lead_time_hours: method.lead_time_hours,
+          }));
+
+        setShippingMethods(formattedMethods);
+
+        if (formattedMethods.length === 0) {
           setShippingError(t.noMethods);
         }
       } else {
@@ -376,6 +436,40 @@ export default function Step8InternalTransport({
           </div>
 
           <div className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.name} *
+              </label>
+              <input
+                type="text"
+                value={euPickupName}
+                onChange={(e) => onEUPickupNameChange(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                placeholder={
+                  language === "ar" ? "مثال: John Doe" : "e.g., John Doe"
+                }
+              />
+            </div>
+
+            {/* Company Name (Optional) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.companyName} ({t.optional})
+              </label>
+              <input
+                type="text"
+                value={euPickupCompanyName}
+                onChange={(e) => onEUPickupCompanyNameChange(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                placeholder={
+                  language === "ar"
+                    ? "مثال: Company Name"
+                    : "e.g., Company Name"
+                }
+              />
+            </div>
+
             {/* Address */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -387,10 +481,22 @@ export default function Step8InternalTransport({
                 onChange={(e) => onEUPickupAddressChange(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
                 placeholder={
-                  language === "ar"
-                    ? "مثال: Main Street 123"
-                    : "e.g., Main Street 123"
+                  language === "ar" ? "مثال: Main Street" : "e.g., Main Street"
                 }
+              />
+            </div>
+
+            {/* House Number */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.houseNumber} *
+              </label>
+              <input
+                type="text"
+                value={euPickupHouseNumber}
+                onChange={(e) => onEUPickupHouseNumberChange(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                placeholder={language === "ar" ? "مثال: 123" : "e.g., 123"}
               />
             </div>
 
@@ -466,6 +572,42 @@ export default function Step8InternalTransport({
               />
             </div>
 
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.email} *
+              </label>
+              <input
+                type="email"
+                value={euPickupEmail}
+                onChange={(e) => onEUPickupEmailChange(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                placeholder={
+                  language === "ar"
+                    ? "مثال: email@example.com"
+                    : "e.g., email@example.com"
+                }
+              />
+            </div>
+
+            {/* Telephone */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {t.telephone} *
+              </label>
+              <input
+                type="tel"
+                value={euPickupTelephone}
+                onChange={(e) => onEUPickupTelephoneChange(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                placeholder={
+                  language === "ar"
+                    ? "مثال: +31612345678"
+                    : "e.g., +31612345678"
+                }
+              />
+            </div>
+
             {/* Calculate Button */}
             <button
               onClick={calculateEUShipping}
@@ -531,30 +673,69 @@ export default function Step8InternalTransport({
                       );
                     }}
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h5 className="font-bold text-gray-800">
-                            {method.name}
-                          </h5>
-                          {selectedEUShippingMethod === method.id && (
-                            <span className="px-2 py-0.5 bg-primary-yellow text-white text-xs rounded-full font-bold">
-                              ✓ {t.selected}
-                            </span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h5 className="font-bold text-gray-800">
+                              {method.name}
+                            </h5>
+                            {selectedEUShippingMethod === method.id && (
+                              <span className="px-2 py-0.5 bg-primary-yellow text-white text-xs rounded-full font-bold">
+                                ✓ {t.selected}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {t.carrier}: {method.carrier}
+                          </p>
+                          {method.min_weight && method.max_weight && (
+                            <p className="text-sm text-gray-600">
+                              {t.weightRange}: {method.min_weight} -{" "}
+                              {method.max_weight} kg
+                            </p>
+                          )}
+                          {method.lead_time_hours && (
+                            <p className="text-sm text-gray-600">
+                              {t.leadTime}:{" "}
+                              {Math.ceil(method.lead_time_hours / 24)}{" "}
+                              {language === "ar" ? "أيام" : "days"}
+                            </p>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">
-                          {t.carrier}: {method.carrier}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {t.deliveryDays}: {method.delivery_days}
-                        </p>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-primary-dark">
+                            {method.price.toFixed(2)} {method.currency}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary-dark">
-                          {method.price.toFixed(2)} {method.currency}
-                        </p>
-                      </div>
+
+                      {/* Price Breakdown */}
+                      {method.country_price_breakdown &&
+                        method.country_price_breakdown.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs font-semibold text-gray-700 mb-2">
+                              {t.priceBreakdown}:
+                            </p>
+                            <div className="space-y-1">
+                              {method.country_price_breakdown.map(
+                                (item: any, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    className="flex justify-between items-center text-xs"
+                                  >
+                                    <span className="text-gray-600">
+                                      {item.label}:
+                                    </span>
+                                    <span className="font-semibold text-gray-800">
+                                      €{item.value.toFixed(2)}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
                     </div>
                   </motion.div>
                 ))}
@@ -960,6 +1141,42 @@ export default function Step8InternalTransport({
                 />
               </div>
 
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.email} *
+                </label>
+                <input
+                  type="email"
+                  value={euPickupEmail}
+                  onChange={(e) => onEUPickupEmailChange(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  placeholder={
+                    language === "ar"
+                      ? "مثال: email@example.com"
+                      : "e.g., email@example.com"
+                  }
+                />
+              </div>
+
+              {/* Telephone */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.telephone} *
+                </label>
+                <input
+                  type="tel"
+                  value={euPickupTelephone}
+                  onChange={(e) => onEUPickupTelephoneChange(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  placeholder={
+                    language === "ar"
+                      ? "مثال: +31612345678"
+                      : "e.g., +31612345678"
+                  }
+                />
+              </div>
+
               {/* Calculate Button */}
               <button
                 onClick={calculateEUShipping}
@@ -1025,30 +1242,69 @@ export default function Step8InternalTransport({
                         );
                       }}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h5 className="font-bold text-gray-800">
-                              {method.name}
-                            </h5>
-                            {selectedEUShippingMethod === method.id && (
-                              <span className="px-2 py-0.5 bg-primary-yellow text-white text-xs rounded-full font-bold">
-                                ✓ {t.selected}
-                              </span>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h5 className="font-bold text-gray-800">
+                                {method.name}
+                              </h5>
+                              {selectedEUShippingMethod === method.id && (
+                                <span className="px-2 py-0.5 bg-primary-yellow text-white text-xs rounded-full font-bold">
+                                  ✓ {t.selected}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {t.carrier}: {method.carrier}
+                            </p>
+                            {method.min_weight && method.max_weight && (
+                              <p className="text-sm text-gray-600">
+                                {t.weightRange}: {method.min_weight} -{" "}
+                                {method.max_weight} kg
+                              </p>
+                            )}
+                            {method.lead_time_hours && (
+                              <p className="text-sm text-gray-600">
+                                {t.leadTime}:{" "}
+                                {Math.ceil(method.lead_time_hours / 24)}{" "}
+                                {language === "ar" ? "أيام" : "days"}
+                              </p>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600">
-                            {t.carrier}: {method.carrier}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {t.deliveryDays}: {method.delivery_days}
-                          </p>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-primary-dark">
+                              {method.price.toFixed(2)} {method.currency}
+                            </p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-primary-dark">
-                            {method.price.toFixed(2)} {method.currency}
-                          </p>
-                        </div>
+
+                        {/* Price Breakdown */}
+                        {method.country_price_breakdown &&
+                          method.country_price_breakdown.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs font-semibold text-gray-700 mb-2">
+                                {t.priceBreakdown}:
+                              </p>
+                              <div className="space-y-1">
+                                {method.country_price_breakdown.map(
+                                  (item: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="flex justify-between items-center text-xs"
+                                    >
+                                      <span className="text-gray-600">
+                                        {item.label}:
+                                      </span>
+                                      <span className="font-semibold text-gray-800">
+                                        €{item.value.toFixed(2)}
+                                      </span>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
                       </div>
                     </motion.div>
                   ))}
