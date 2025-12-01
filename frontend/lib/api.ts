@@ -370,6 +370,13 @@ export const apiService = {
     });
   },
 
+  downloadConsolidatedExportInvoice: (shipmentId: string | number, language?: string) => {
+    return apiClient.get(`/shipments/${shipmentId}/consolidated-export-invoice/`, {
+      responseType: 'blob',
+      params: language ? { language } : {},
+    });
+  },
+
   downloadReceipt: (shipmentId: string | number, language?: string) => {
     return apiClient.get(`/shipments/${shipmentId}/receipt/`, {
       responseType: 'blob',

@@ -359,6 +359,85 @@ def generate_invoice(shipment: LCLShipment, language: str = 'ar') -> bytes:
         raise
 
 
+def generate_consolidated_export_invoice(shipment: LCLShipment, language: str = 'en') -> bytes:
+    """
+    Generate Consolidated Export Invoice – Mixed Shipment (Personal & Commercial Goods)
+    for LCL shipment. This is primarily for admin/export documentation.
+
+    Args:
+        shipment: LCLShipment instance
+        language: kept for future use (currently template is EN)
+
+    Returns:
+        PDF bytes
+    """
+    try:
+        # Reuse invoice pricing calculations (includes CBM per parcel)
+        pricing = calculate_invoice_totals(shipment)
+
+        # Company info (for logo and site URL)
+        company_info = get_company_info()
+
+        # Generate QR Code for tracking (same logic as regular invoice)
+        tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
+        qr_code_base64 = None
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(tracking_url)
+            qr.make(fit=True)
+
+            img = qr.make_image(fill_color="black", back_color="white")
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format="PNG")
+            img_buffer.seek(0)
+            qr_code_base64 = base64.b64encode(img_buffer.read()).decode("utf-8")
+        except Exception as e:
+            logger.warning(f"Could not generate QR code for consolidated export invoice: {str(e)}")
+
+        # Aggregate totals for CBM and packages
+        total_cbm = 0.0
+        total_packages = 0
+        for item in pricing.get("parcel_calculations", []):
+            try:
+                cbm_value = float(item.get("cbm", 0) or 0)
+            except (TypeError, ValueError):
+                cbm_value = 0.0
+            total_cbm += cbm_value
+            repeat_count = int(item.get("repeat_count", 1) or 1)
+            total_packages += repeat_count
+
+        context = {
+            "shipment": shipment,
+            "company": company_info,
+            "pricing": pricing,
+            "language": language,
+            "invoice_date": shipment.paid_at or shipment.created_at,
+            "invoice_number": shipment.shipment_number,
+            "tracking_url": tracking_url,
+            "qr_code_base64": qr_code_base64,
+            "total_cbm": total_cbm,
+            "total_packages": total_packages,
+        }
+
+        html_string = render_to_string("documents/consolidated_export_invoice.html", context)
+
+        font_config = FontConfiguration()
+        html = HTML(string=html_string, base_url=settings.BASE_DIR)
+        pdf_bytes = html.write_pdf(font_config=font_config)
+
+        logger.info(f"Successfully generated consolidated export invoice PDF for shipment {shipment.id}")
+        return pdf_bytes
+
+    except Exception as e:
+        logger.error(f"Error generating consolidated export invoice: {str(e)}", exc_info=True)
+        raise
+
+
 def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_labels: Optional[int] = None) -> bytes:
     """
     Generate shipping labels PDF for LCL shipment.

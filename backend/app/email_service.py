@@ -1969,6 +1969,84 @@ def send_invoice_email_to_admin(shipment, pdf_bytes):
         return False
 
 
+def send_consolidated_export_invoice_email_to_admin(shipment, pdf_bytes):
+    """
+    Send Consolidated Export Invoice PDF to admin via email.
+    This document is for export/customs purposes and is only sent to admin.
+
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping consolidated export invoice email to admin.")
+        return False
+
+    try:
+        from django.core.mail import EmailMessage
+
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if getattr(settings, "ADMIN_EMAIL", None)
+            else settings.DEFAULT_FROM_EMAIL
+        )
+
+        user_name = (
+            shipment.user.get_full_name() or shipment.user.username
+            if shipment.user
+            else "Unknown"
+        )
+        user_email = shipment.user.email if shipment.user else "Unknown"
+
+        subject = (
+            f"Consolidated Export Invoice Generated – Shipment {shipment.shipment_number}"
+        )
+
+        body = f"""
+Consolidated Export Invoice – Mixed Shipment (Personal & Commercial Goods) has been generated.
+
+Shipment Details:
+- Shipment Number: {shipment.shipment_number}
+- User: {user_name} ({user_email})
+- Status: {shipment.get_status_display()}
+- Payment Status: {shipment.payment_status}
+- Total Amount: €{shipment.total_price}
+- Amount Paid: €{shipment.amount_paid}
+
+This document is for export/customs records only and is not shared with the customer.
+        """
+
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[admin_email],
+        )
+
+        email.attach(
+            f"Consolidated-Export-Invoice-{shipment.shipment_number}.pdf",
+            pdf_bytes,
+            "application/pdf",
+        )
+
+        email.send()
+
+        logger.info(
+            f"✅ Consolidated export invoice email sent to admin for shipment {shipment.id}"
+        )
+        return True
+
+    except Exception as e:
+        logger.error(
+            f"Error sending consolidated export invoice email to admin: {str(e)}",
+            exc_info=True,
+        )
+        return False
+
+
 def send_shipping_labels_email_to_user(shipment, pdf_bytes, num_labels=None):
     """
     Send shipping labels PDF to user via email.

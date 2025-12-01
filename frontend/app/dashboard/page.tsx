@@ -6384,6 +6384,81 @@ export default function DashboardPage() {
                                     {language === "ar" ? "تحميل ملصقات الشحن" : "Download Shipping Labels"}
                                   </button>
                                 </div>
+
+                                {/* Consolidated Export Invoice - Admin Only */}
+                                {isAdmin && shipment.payment_status === "paid" && shipment.status !== "PENDING_PAYMENT" && (
+                                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border-2 border-indigo-200 mt-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-indigo-600 font-bold text-lg">📋</span>
+                                      <h5 className="font-bold text-primary-dark">
+                                        {language === "ar" ? "فاتورة التصدير الموحدة" : "Consolidated Export Invoice"}
+                                      </h5>
+                                    </div>
+                                    <p className="text-sm text-gray-700 mb-3">
+                                      {language === "ar"
+                                        ? "فاتورة التصدير الموحدة - للشحنات المختلطة (شخصية وتجارية)"
+                                        : "Consolidated Export Invoice – Mixed Shipment (Personal & Commercial Goods)"}
+                                    </p>
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          showInfo(
+                                            language === "ar"
+                                              ? "⏳ جاري توليد فاتورة التصدير الموحدة... يرجى الانتظار"
+                                              : "⏳ Generating consolidated export invoice... Please wait"
+                                          );
+                                          
+                                          const response = await apiService.downloadConsolidatedExportInvoice(
+                                            shipment.id,
+                                            "en"
+                                          );
+                                          
+                                          const blob = new Blob([response.data], {
+                                            type: "application/pdf",
+                                          });
+                                          const url = window.URL.createObjectURL(blob);
+                                          const link = document.createElement("a");
+                                          link.href = url;
+                                          link.download = `Consolidated-Export-Invoice-${shipment.shipment_number}.pdf`;
+                                          document.body.appendChild(link);
+                                          link.click();
+                                          document.body.removeChild(link);
+                                          window.URL.revokeObjectURL(url);
+                                          
+                                          showSuccess(
+                                            language === "ar"
+                                              ? "✅ تم تحميل فاتورة التصدير الموحدة بنجاح!"
+                                              : "✅ Consolidated export invoice downloaded successfully!"
+                                          );
+                                        } catch (error: any) {
+                                          console.error("Error downloading consolidated export invoice:", error);
+                                          const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                          showError(
+                                            language === "ar"
+                                              ? `حدث خطأ أثناء تحميل فاتورة التصدير الموحدة: ${errorMessage}`
+                                              : `Error downloading consolidated export invoice: ${errorMessage}`
+                                          );
+                                        }
+                                      }}
+                                      className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                    >
+                                      <svg
+                                        className="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                        />
+                                      </svg>
+                                      {language === "ar" ? "تحميل فاتورة التصدير الموحدة" : "Download Consolidated Export Invoice"}
+                                    </button>
+                                  </div>
+                                )}
                               </div>
 
                               {/* EU Pickup Information */}

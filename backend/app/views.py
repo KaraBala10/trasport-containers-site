@@ -3962,29 +3962,61 @@ def update_lcl_shipment_status_view(request, pk):
         if new_status and old_status == "PENDING_PAYMENT" and new_status != "PENDING_PAYMENT":
             if shipment.payment_status == "paid" and not shipment.invoice_file:
                 try:
-                    from .document_service import generate_invoice, save_invoice_to_storage
-                    from .email_service import send_invoice_email_to_user, send_invoice_email_to_admin
-                    
-                    # Generate invoice PDF
-                    pdf_bytes = generate_invoice(shipment, language='ar')
-                    
+                    from .document_service import (
+                        generate_invoice,
+                        save_invoice_to_storage,
+                        generate_consolidated_export_invoice,
+                    )
+                    from .email_service import (
+                        send_invoice_email_to_user,
+                        send_invoice_email_to_admin,
+                        send_consolidated_export_invoice_email_to_admin,
+                    )
+
+                    # Generate regular invoice PDF
+                    pdf_bytes = generate_invoice(shipment, language="ar")
+
                     # Save to storage
                     save_invoice_to_storage(shipment, pdf_bytes)
-                    
-                    # Send invoice by email
+
+                    # Send standard invoice by email (user + admin)
                     try:
                         send_invoice_email_to_user(shipment, pdf_bytes)
                         send_invoice_email_to_admin(shipment, pdf_bytes)
                     except Exception as email_error:
                         logger.warning(f"Failed to send invoice emails: {str(email_error)}")
                         # Don't fail if email fails
-                    
+
                     logger.info(f"✅ Invoice generated and saved for shipment {shipment.id}")
                 except Exception as invoice_error:
                     # Log error but don't fail the request
                     logger.error(
                         f"Failed to generate invoice automatically: {str(invoice_error)}",
-                        exc_info=True
+                        exc_info=True,
+                    )
+
+            # Additionally, when moving from PENDING_PAYMENT to any other status (like PENDING_PICKUP),
+            # generate Consolidated Export Invoice for admin only
+            if new_status and new_status != "PENDING_PAYMENT" and shipment.payment_status == "paid":
+                try:
+                    from .document_service import generate_consolidated_export_invoice
+                    from .email_service import (
+                        send_consolidated_export_invoice_email_to_admin,
+                    )
+
+                    consolidated_pdf = generate_consolidated_export_invoice(
+                        shipment, language="en"
+                    )
+                    send_consolidated_export_invoice_email_to_admin(
+                        shipment, consolidated_pdf
+                    )
+                    logger.info(
+                        f"✅ Consolidated export invoice generated and emailed for shipment {shipment.id}"
+                    )
+                except Exception as consolidated_error:
+                    logger.error(
+                        f"Failed to generate/send consolidated export invoice: {str(consolidated_error)}",
+                        exc_info=True,
                     )
         
         # Generate receipt automatically when shipment arrives at specific locations
@@ -4164,6 +4196,86 @@ def download_invoice_view(request, pk):
         logger.error(f"Error generating invoice: {str(e)}", exc_info=True)
         return Response(
             {"success": False, "error": f"An error occurred while generating invoice: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def download_consolidated_export_invoice_view(request, pk):
+    """
+    Download Consolidated Export Invoice PDF for LCL shipment.
+    GET /api/shipments/{id}/consolidated-export-invoice/
+    
+    Only available for admin users.
+    Requirements:
+    - User must be admin (is_superuser)
+    - Payment status must be 'paid'
+    - Status must not be PENDING_PAYMENT
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        shipment = LCLShipment.objects.get(pk=pk)
+        
+        # Check permissions: only admin can download consolidated export invoice
+        if not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "Only admin users can download consolidated export invoice."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
+        # Validate shipment status
+        if shipment.status == "PENDING_PAYMENT":
+            return Response(
+                {"success": False, "error": "Consolidated export invoice can only be generated after payment is confirmed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Validate payment status
+        if shipment.payment_status != "paid":
+            return Response(
+                {"success": False, "error": "Payment must be confirmed before generating consolidated export invoice."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Import document service
+        from .document_service import generate_consolidated_export_invoice
+        
+        # Get language from request (default: 'en' for export invoice)
+        language = request.GET.get('language', 'en')
+        if language not in ['ar', 'en']:
+            language = 'en'
+        
+        # Generate consolidated export invoice PDF
+        try:
+            pdf_bytes = generate_consolidated_export_invoice(shipment, language=language)
+        except ValueError as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as gen_error:
+            logger.error(f"Error generating consolidated export invoice PDF: {str(gen_error)}", exc_info=True)
+            return Response(
+                {"success": False, "error": f"Failed to generate consolidated export invoice: {str(gen_error)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+        # Return PDF as response
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="Consolidated-Export-Invoice-{shipment.shipment_number}.pdf"'
+        return response
+        
+    except LCLShipment.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Shipment not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error generating consolidated export invoice: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": f"An error occurred while generating consolidated export invoice: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

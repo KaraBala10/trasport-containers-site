@@ -37,6 +37,7 @@ from .views import (
     current_user_view,
     delete_eu_shipping_view,
     download_invoice_view,
+    download_consolidated_export_invoice_view,
     download_receipt_view,
     download_shipping_labels_view,
     get_packaging_prices_view,
@@ -153,6 +154,11 @@ urlpatterns = [
         "shipments/<int:pk>/invoice/",
         download_invoice_view,
         name="lcl_shipment_invoice",
+    ),
+    path(
+        "shipments/<int:pk>/consolidated-export-invoice/",
+        download_consolidated_export_invoice_view,
+        name="lcl_shipment_consolidated_export_invoice",
     ),
     path(
         "shipments/<int:pk>/receipt/",
