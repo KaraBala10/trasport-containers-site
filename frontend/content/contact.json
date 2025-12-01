@@ -49,16 +49,16 @@
         "website": "www.medo-freight.eu"
       },
       "syria": {
-        "title": "الشريك المحلي في سورية",
+        "title": "الشريك المحلي في الشرق الأوسط",
         "companyName": "شركة الإكرام التجارية",
         "locations": [
           {
             "name": "الراموسة",
-            "address": "حلب – الراموسة (بجانب كراج البولمان)"
+            "address": "الشرق الأوسط – الراموسة (بجانب كراج البولمان)"
           },
           {
             "name": "الشيخ نجار",
-            "address": "حلب – المدينة الصناعية الشيخ نجار (منطقة مكاتب الشحن الدولي)"
+            "address": "الشرق الأوسط – المدينة الصناعية الشيخ نجار (منطقة مكاتب الشحن الدولي)"
           }
         ],
         "phone": "+9639954778188",
@@ -122,16 +122,16 @@
         "website": "www.medo-freight.eu"
       },
       "syria": {
-        "title": "Local Partner in Syria",
+        "title": "Local Partner in the Middle East",
         "companyName": "Al Ikram Trading Co.",
         "locations": [
           {
             "name": "Ramousa",
-            "address": "Aleppo – Ramousa (next to Pullman Garage)"
+            "address": "Middle East – Ramousa (next to Pullman Garage)"
           },
           {
             "name": "Sheikh Najjar",
-            "address": "Aleppo – Sheikh Najjar Industrial City (International Shipping Offices Area)"
+            "address": "Middle East – Sheikh Najjar Industrial City (International Shipping Offices Area)"
           }
         ],
         "phone": "+9639954778188",

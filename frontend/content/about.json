@@ -1,13 +1,13 @@
 {
   "ar": {
     "pageTitle": "من نحن",
-    "pageDescription": "تعرف على MEDO-FREIGHT ومكاتبنا في أوروبا وسوريا",
+    "pageDescription": "تعرف على MEDO-FREIGHT ومكاتبنا في أوروبا والشرق الأوسط",
     "mainTitle": "من نحن",
-    "intro": "نحن شركة شحن أوروبية مقرّها هولندا، متخصصة في تجميع وشحن الطرود LCL إلى سورية من جميع دول أوروبا، إضافة إلى خدمات الشحن البحري FCL إلى الشرق الأوسط والعالم. نقدم خدمات لوجستية متكاملة بتركيز كامل على الدقة، الأمان، والالتزام بالمواعيد.",
-    "description": "نحن نعرف تمامًا تحديات الشحن إلى سورية: القيود، الفحوصات، اختلاف الأنظمة، وتأخّر الإمدادات. لذلك بنينا نظام شحن متكامل بعملية واضحة وبسيطة، تبدأ من استلام الطرد في أوروبا… وتنتهي بوصوله إلى يد العميل داخل سورية بكل شفافية.",
+    "intro": "نحن شركة شحن أوروبية مقرّها هولندا، متخصصة في تجميع وشحن الطرود LCL إلى الشرق الأوسط من جميع دول أوروبا، إضافة إلى خدمات الشحن البحري FCL إلى الشرق الأوسط والعالم. نقدم خدمات لوجستية متكاملة بتركيز كامل على الدقة، الأمان، والالتزام بالمواعيد.",
+    "description": "نحن نعرف تمامًا تحديات الشحن إلى الشرق الأوسط: القيود، الفحوصات، اختلاف الأنظمة، وتأخّر الإمدادات. لذلك بنينا نظام شحن متكامل بعملية واضحة وبسيطة، تبدأ من استلام الطرد في أوروبا… وتنتهي بوصوله إلى يد العميل داخل الشرق الأوسط بكل شفافية.",
     "vision": {
       "title": "رؤيتنا",
-      "text": "أن نكون الشركة الأكثر ثقة وكفاءة للشحن من أوروبا إلى سورية، وأن نقدّم للعملاء تجربة شحن سهلة، سريعة، وواضحة من البداية إلى النهاية."
+      "text": "أن نكون الشركة الأكثر ثقة وكفاءة للشحن من أوروبا إلى الشرق الأوسط، وأن نقدّم للعملاء تجربة شحن سهلة، سريعة، وواضحة من البداية إلى النهاية."
     },
     "mission": {
       "title": "مهمتنا",
@@ -17,8 +17,8 @@
       "title": "ماذا نقدّم؟",
       "items": [
         {
-          "title": "شحن LCL إلى سورية",
-          "description": "تجميع طرود من جميع أنحاء أوروبا داخل مركزنا في هولندا، ثم شحنها في حاويتنا الخاصة إلى سورية. خدمة مثالية للأفراد والشركات والطلبيات الصغيرة.",
+          "title": "شحن LCL إلى الشرق الأوسط",
+          "description": "تجميع طرود من جميع أنحاء أوروبا داخل مركزنا في هولندا، ثم شحنها في حاويتنا الخاصة إلى الشرق الأوسط. خدمة مثالية للأفراد والشركات والطلبيات الصغيرة.",
           "icon": "📦"
         },
         {
@@ -37,7 +37,7 @@
           "icon": "📸"
         },
         {
-          "title": "توصيل داخل سورية",
+          "title": "توصيل داخل الشرق الأوسط",
           "description": "نوفّر شبكة توصيل داخل أغلب المحافظات عبر شركائنا المحليين.",
           "icon": "🚚"
         }
@@ -96,7 +96,7 @@
     ],
     "cta": {
       "title": "نحن هنا لنخفّف عنك رحلة الشحن كلها",
-      "subtitle": "من أوروبا إلى سورية… طريق طويل، لكن مع MEDO-FREIGHT.EU تصبح العملية أبسط، أسرع، وأكثر أمانًا.",
+      "subtitle": "من أوروبا إلى الشرق الأوسط… طريق طويل، لكن مع MEDO-FREIGHT.EU تصبح العملية أبسط، أسرع، وأكثر أمانًا.",
       "button": "ابدأ الشحن الآن"
     },
     
@@ -130,17 +130,17 @@
         "website": "www.medo-freight.eu"
       },
       "syria": {
-        "title": "سوريا — الشريك المحلي",
+        "title": "الشرق الأوسط — الشريك المحلي",
         "companyName": "شركة الإكرام التجارية",
         "companyNameEn": "Al Ikram Trading Co.",
         "locations": [
           {
             "name": "مكتب الرامسة",
-            "address": "الرامسة (بجانب كراج البولمان) – حلب"
+            "address": "الرامسة (بجانب كراج البولمان) – الشرق الأوسط"
           },
           {
             "name": "مكتب المدينة الصناعية",
-            "address": "المدينة الصناعية الشيخ نجار (منطقة مكاتب الشحن الدولي) – حلب"
+            "address": "المدينة الصناعية الشيخ نجار (منطقة مكاتب الشحن الدولي) – الشرق الأوسط"
           }
         ],
         "phone": "+963 995 477 8188",
@@ -151,13 +151,13 @@
   
   "en": {
     "pageTitle": "About Us",
-    "pageDescription": "Learn about MEDO-FREIGHT and our offices in Europe and Syria",
+    "pageDescription": "Learn about MEDO-FREIGHT and our offices in Europe and the Middle East",
     "mainTitle": "About Us",
     "intro": "We are a European shipping company based in the Netherlands, specialized in consolidating and shipping LCL partial parcels from all European countries, in addition to FCL sea freight services to the Middle East and worldwide. We provide integrated logistics services with full focus on accuracy, security, and punctuality.",
-    "description": "We fully understand the challenges of shipping to Syria: restrictions, inspections, different systems, and supply delays. That's why we built an integrated shipping system with a clear and simple process, starting from receiving the parcel in Europe... and ending with its arrival to the customer's hand inside Syria with complete transparency.",
+    "description": "We fully understand the challenges of shipping to the Middle East: restrictions, inspections, different systems, and supply delays. That's why we built an integrated shipping system with a clear and simple process, starting from receiving the parcel in Europe... and ending with its arrival to the customer's hand inside the Middle East with complete transparency.",
     "vision": {
       "title": "Our Vision",
-      "text": "To be the most trusted and efficient company for shipping from Europe to Syria, and to provide customers with an easy, fast, and clear shipping experience from start to finish."
+      "text": "To be the most trusted and efficient company for shipping from Europe to the Middle East, and to provide customers with an easy, fast, and clear shipping experience from start to finish."
     },
     "mission": {
       "title": "Our Mission",
@@ -168,7 +168,7 @@
       "items": [
         {
           "title": "LCL Partial Shipping",
-          "description": "Consolidating parcels from all over Europe inside our center in the Netherlands, then shipping them in our own container to Syria. Perfect service for individuals, companies, and small orders.",
+          "description": "Consolidating parcels from all over Europe inside our center in the Netherlands, then shipping them in our own container to the Middle East. Perfect service for individuals, companies, and small orders.",
           "icon": "📦"
         },
         {
@@ -187,7 +187,7 @@
           "icon": "📸"
         },
         {
-          "title": "Delivery Inside Syria",
+          "title": "Delivery Inside the Middle East",
           "description": "We provide a delivery network inside most governorates through our local partners.",
           "icon": "🚚"
         }
@@ -246,7 +246,7 @@
     ],
     "cta": {
       "title": "We Are Here to Make Your Shipping Journey Easier",
-      "subtitle": "From Europe to Syria... a long road, but with MEDO-FREIGHT.EU the process becomes simpler, faster, and safer.",
+      "subtitle": "From Europe to the Middle East... a long road, but with MEDO-FREIGHT.EU the process becomes simpler, faster, and safer.",
       "button": "Start Shipping Now"
     },
     
@@ -280,17 +280,17 @@
         "website": "www.medo-freight.eu"
       },
       "syria": {
-        "title": "Syria — Local Partner",
+        "title": "Middle East — Local Partner",
         "companyName": "Al Ikram Trading Co.",
         "companyNameEn": "Al Ikram Trading Co.",
         "locations": [
           {
             "name": "Al-Ramsa Office",
-            "address": "Al-Ramsa (next to Pullman Garage) – Aleppo"
+            "address": "Al-Ramsa (next to Pullman Garage) – Middle East"
           },
           {
             "name": "Industrial City Office",
-            "address": "Sheikh Najjar Industrial City (International Freight Offices Area) – Aleppo"
+            "address": "Sheikh Najjar Industrial City (International Freight Offices Area) – Middle East"
           }
         ],
         "phone": "+963 995 477 8188",

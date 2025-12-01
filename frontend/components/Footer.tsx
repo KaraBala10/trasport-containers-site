@@ -25,7 +25,7 @@ export default function Footer() {
       createShipment: "إنشاء شحنة LCL جزئية",
       faq: "الأسئلة الشائعة",
       europeCenters: "مراكز أوروبا",
-      aleppoCenter: "مركز حلب والتوزيع",
+      aleppoCenter: "مركز الشرق الأوسط والتوزيع",
       prohibitedGoods: "البضائع المحظورة",
       privacy: "سياسة الخصوصية",
       terms: "الشروط والأحكام",
@@ -44,7 +44,7 @@ export default function Footer() {
       createShipment: "Create LCL Partial Shipment",
       faq: "FAQ",
       europeCenters: "Europe Centers",
-      aleppoCenter: "Aleppo Distribution Center",
+      aleppoCenter: "Middle East Distribution Center",
       prohibitedGoods: "Prohibited Goods",
       privacy: "Privacy Policy",
       terms: "Terms & Conditions",
@@ -133,7 +133,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/aleppo-center"
+                  href="/middle-east-center"
                   className="text-gray-300 hover:text-primary-yellow transition-colors focus:outline-none focus:ring-2 focus:ring-primary-yellow/50 rounded px-1 py-0.5 inline-block"
                 >
                   {t.aleppoCenter}

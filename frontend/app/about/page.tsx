@@ -1124,7 +1124,7 @@ export default function AboutPage() {
                   transition={{ duration: 5, repeat: Infinity }}
                   className="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-center"
                 >
-                  🇸🇾
+                  🌍
                 </motion.div>
 
                 <div className="mb-6 sm:mb-7 md:mb-8">

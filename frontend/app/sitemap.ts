@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/aleppo-center`,
+      url: `${baseUrl}/middle-east-center`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,

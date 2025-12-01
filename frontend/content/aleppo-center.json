@@ -1,9 +1,9 @@
 {
   "ar": {
-    "pageTitle": "مركز حلب والتوزيع",
-    "pageDescription": "مراكزنا في حلب لاستلام وتوزيع الشحنات",
-    "mainTitle": "مركز حلب والتوزيع",
-    "intro": "نوفر لكم مراكز استلام وتوزيع في حلب لتسهيل استلام شحناتكم القادمة من أوروبا",
+    "pageTitle": "مركز الشرق الأوسط والتوزيع",
+    "pageDescription": "مراكزنا في الشرق الأوسط لاستلام وتوزيع الشحنات",
+    "mainTitle": "مركز الشرق الأوسط والتوزيع",
+    "intro": "نوفر لكم مراكز استلام وتوزيع في الشرق الأوسط لتسهيل استلام شحناتكم القادمة من أوروبا",
     "note": "لا تحتاج لـ Backend",
     
     "tableHeaders": {
@@ -15,16 +15,16 @@
     
     "locations": [
       {
-        "country": "سوريا",
+        "country": "الشرق الأوسط",
         "countryCode": "SY",
-        "city": "حلب - الرامسة",
+        "city": "الشرق الأوسط - الرامسة",
         "address": "بجانب كراج البولمان",
         "services": ["توزيع LCL", "توزيع FCL"]
       },
       {
-        "country": "سوريا",
+        "country": "الشرق الأوسط",
         "countryCode": "SY",
-        "city": "حلب - الشيخ نجار",
+        "city": "الشرق الأوسط - الشيخ نجار",
         "address": "منطقة مكاتب الشحن الدولي",
         "services": ["FCL"]
       }
@@ -34,7 +34,7 @@
       "title": "أنواع الخدمات",
       "distribution": {
         "title": "خدمة التوزيع",
-        "description": "نوفر خدمة التوزيع المحلي لشحنات LCL و FCL من المراكز إلى عنوانكم في حلب والمناطق المحيطة"
+        "description": "نوفر خدمة التوزيع المحلي لشحنات LCL و FCL من المراكز إلى عنوانكم في الشرق الأوسط والمناطق المحيطة"
       },
       "storage": {
         "title": "التخزين المؤقت",
@@ -51,10 +51,10 @@
   },
   
   "en": {
-    "pageTitle": "Aleppo Distribution Center",
-    "pageDescription": "Our centers in Aleppo for receiving and distributing shipments",
-    "mainTitle": "Aleppo Distribution Center",
-    "intro": "We provide receiving and distribution centers in Aleppo to facilitate receiving your shipments from Europe",
+    "pageTitle": "Middle East Distribution Center",
+    "pageDescription": "Our centers in the Middle East for receiving and distributing shipments",
+    "mainTitle": "Middle East Distribution Center",
+    "intro": "We provide receiving and distribution centers in the Middle East to facilitate receiving your shipments from Europe",
     "note": "No Backend needed",
     
     "tableHeaders": {
@@ -66,16 +66,16 @@
     
     "locations": [
       {
-        "country": "Syria",
+        "country": "Middle East",
         "countryCode": "SY",
-        "city": "Aleppo - Al-Ramsa",
+        "city": "Middle East - Al-Ramsa",
         "address": "Next to Pullman Garage",
         "services": ["LCL Distribution", "FCL Distribution"]
       },
       {
-        "country": "Syria",
+        "country": "Middle East",
         "countryCode": "SY",
-        "city": "Aleppo - Sheikh Najjar",
+        "city": "Middle East - Sheikh Najjar",
         "address": "International Freight Offices Area",
         "services": ["FCL"]
       }
@@ -85,7 +85,7 @@
       "title": "Service Types",
       "distribution": {
         "title": "Distribution Service",
-        "description": "We provide local distribution service for LCL and FCL shipments from centers to your address in Aleppo and surrounding areas"
+        "description": "We provide local distribution service for LCL and FCL shipments from centers to your address in the Middle East and surrounding areas"
       },
       "storage": {
         "title": "Temporary Storage",

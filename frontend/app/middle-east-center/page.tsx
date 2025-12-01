@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import aleppoCenterContent from "@/content/aleppo-center.json";
 import { useLanguage } from "@/hooks/useLanguage";
 
-export default function AleppoCenterPage() {
+export default function MiddleEastCenterPage() {
   const { language, isRTL } = useLanguage();
   const content = aleppoCenterContent[language];
 
@@ -54,37 +54,6 @@ export default function AleppoCenterPage() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {location.countryCode === "SY" && (
-                            <svg
-                              className="w-8 h-8 flex-shrink-0"
-                              viewBox="0 0 900 600"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <rect width="900" height="200" fill="#CE1126" />
-                              <rect
-                                y="200"
-                                width="900"
-                                height="200"
-                                fill="#FFFFFF"
-                              />
-                              <rect
-                                y="400"
-                                width="900"
-                                height="200"
-                                fill="#000000"
-                              />
-                              <g transform="translate(225,300)">
-                                <polygon
-                                  points="0,-50 14.7,-15.5 48.3,-12.4 24.1,11.8 30.9,45 0,27.5 -30.9,45 -24.1,11.8 -48.3,-12.4 -14.7,-15.5"
-                                  fill="#007A3D"
-                                />
-                                <polygon
-                                  points="75,-50 89.7,-15.5 123.3,-12.4 99.1,11.8 105.9,45 75,27.5 44.1,45 50.9,11.8 26.7,-12.4 60.3,-15.5"
-                                  fill="#007A3D"
-                                />
-                              </g>
-                            </svg>
-                          )}
                           <span className="font-semibold text-primary-dark text-lg">
                             {location.country}
                           </span>
@@ -122,27 +91,6 @@ export default function AleppoCenterPage() {
                   className="bg-white rounded-lg shadow-lg p-6 border-t-4 border-primary-yellow"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    {location.countryCode === "SY" && (
-                      <svg
-                        className="w-12 h-12 flex-shrink-0"
-                        viewBox="0 0 900 600"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <rect width="900" height="200" fill="#CE1126" />
-                        <rect y="200" width="900" height="200" fill="#FFFFFF" />
-                        <rect y="400" width="900" height="200" fill="#000000" />
-                        <g transform="translate(225,300)">
-                          <polygon
-                            points="0,-50 14.7,-15.5 48.3,-12.4 24.1,11.8 30.9,45 0,27.5 -30.9,45 -24.1,11.8 -48.3,-12.4 -14.7,-15.5"
-                            fill="#007A3D"
-                          />
-                          <polygon
-                            points="75,-50 89.7,-15.5 123.3,-12.4 99.1,11.8 105.9,45 75,27.5 44.1,45 50.9,11.8 26.7,-12.4 60.3,-15.5"
-                            fill="#007A3D"
-                          />
-                        </g>
-                      </svg>
-                    )}
                     <div>
                       <div className="font-bold text-primary-dark text-lg">
                         {location.country}
@@ -304,3 +252,4 @@ export default function AleppoCenterPage() {
     </div>
   );
 }
+
