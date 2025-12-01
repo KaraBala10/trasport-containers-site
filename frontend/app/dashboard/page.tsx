@@ -4670,6 +4670,39 @@ export default function DashboardPage() {
                                   )}
                               </div>
 
+                              {/* Shipment Type (Personal/Commercial) */}
+                              {shipment.parcels && shipment.parcels.length > 0 && (() => {
+                                const shipmentTypes = shipment.parcels
+                                  .map((p: any) => p.shipmentType)
+                                  .filter((type: string) => type);
+                                const uniqueTypes = [...new Set(shipmentTypes)];
+                                const isMixed = uniqueTypes.length > 1;
+                                const displayType = isMixed 
+                                  ? (language === "ar" ? "مختلط" : "Mixed")
+                                  : (uniqueTypes[0] === "commercial" 
+                                      ? (language === "ar" ? "تجارية" : "Commercial")
+                                      : (language === "ar" ? "شخصية" : "Personal"));
+                                
+                                return (
+                                  <div className="space-y-2">
+                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                      {language === "ar" ? "نوع الشحنة" : "Shipment Type"}
+                                    </p>
+                                    <span
+                                      className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm ${
+                                        isMixed
+                                          ? "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300"
+                                          : uniqueTypes[0] === "commercial"
+                                          ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300"
+                                          : "bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300"
+                                      }`}
+                                    >
+                                      {displayType}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+
                               {/* Status */}
                               <div className="space-y-2">
                                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
