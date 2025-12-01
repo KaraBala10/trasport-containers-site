@@ -15,8 +15,8 @@
 
         body {
             font-family: 'Inter', 'Arial', sans-serif;
-            font-size: 11px;
-            line-height: 1.5;
+            font-size: 13px;
+            line-height: 1.6;
             color: #111827;
         }
 
@@ -47,24 +47,24 @@
 
         .brand-line {
             font-weight: 700;
-            font-size: 13px;
+            font-size: 15px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }
 
         .qr-container {
             text-align: right;
-            font-size: 9px;
+            font-size: 11px;
         }
 
         .qr-container img {
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
         }
 
         .section-title {
             font-weight: 700;
-            font-size: 11px;
+            font-size: 13px;
             text-transform: uppercase;
             margin-top: 6px;
             margin-bottom: 2px;
@@ -76,7 +76,7 @@
 
         .shipper-block {
             margin-top: 4px;
-            font-size: 10px;
+            font-size: 12px;
         }
 
         .info-grid {
@@ -93,13 +93,13 @@
         }
 
         .info-label {
-            font-size: 9px;
+            font-size: 11px;
             text-transform: uppercase;
             color: #6b7280;
         }
 
         .info-value {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 600;
         }
 
@@ -110,7 +110,7 @@
         }
 
         .invoice-main-title {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 700;
             text-transform: uppercase;
         }
@@ -120,13 +120,13 @@
             border-collapse: collapse;
             margin-top: 4px;
             margin-bottom: 8px;
-            font-size: 9px;
+            font-size: 11px;
         }
 
         .light-border-table th,
         .light-border-table td {
             border: 1px solid #d1d5db;
-            padding: 3px 4px;
+            padding: 5px 6px;
         }
 
         .light-border-table th {
@@ -147,13 +147,13 @@
         }
 
         .small-text {
-            font-size: 9px;
+            font-size: 11px;
         }
 
         .footer-notes {
             margin-top: 10px;
-            font-size: 8px;
-            line-height: 1.5;
+            font-size: 10px;
+            line-height: 1.6;
             color: #374151;
         }
     </style>
@@ -193,11 +193,11 @@
             <tr>
                 <td>
                     <div class="info-label">Invoice No.</div>
-                    <div class="info-value">{{ invoice_number }}</div>
+                    <div class="info-value">&nbsp;</div>
                 </td>
                 <td>
                     <div class="info-label">Invoice Date</div>
-                    <div class="info-value">{{ invoice_date|date:"Y-m-d" }}</div>
+                    <div class="info-value">&nbsp;</div>
                 </td>
                 <td>
                     <div class="info-label">GST Reg No.</div>
@@ -205,7 +205,7 @@
                 </td>
                 <td>
                     <div class="info-label">Your Order No.</div>
-                    <div class="info-value">{{ shipment.id }}</div>
+                    <div class="info-value">&nbsp;</div>
                 </td>
                 <td>
                     <div class="info-label">Page No.</div>
@@ -219,47 +219,48 @@
                 Consolidated Export Invoice – Mixed Shipment (Personal &amp; Commercial Goods)
             </div>
         </div>
+        
+        {% if total_cbm > 65 or total_weight > 24000 %}
+        <div style="margin: 8px 0; padding: 8px; background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 4px;">
+            <div class="small-text" style="font-weight: 700; color: #92400e;">
+                NOTE: If CBM exceeds 65 or weight exceeds 24 tons, additional invoices will be generated for each type and page numbers will be activated.
+            </div>
+        </div>
+        {% endif %}
 
         <table class="info-grid">
             <tr>
                 <td>
                     <div class="info-label">For Account of Consignee</div>
-                    <div class="info-value">
-                        {{ shipment.receiver_name|default_if_none:"" }}<br>
-                        {{ shipment.receiver_address|default_if_none:"" }}<br>
-                        {{ shipment.receiver_city|default_if_none:"" }} {{ shipment.receiver_postcode|default_if_none:"" }}<br>
-                        {{ shipment.receiver_country|default_if_none:"" }}
-                    </div>
+                    <div class="info-value">&nbsp;</div>
                 </td>
                 <td>
                     <div class="info-label">Deliver To Consignee</div>
-                    <div class="info-value">
-                        {{ shipment.receiver_name|default_if_none:"" }}<br>
-                        {{ shipment.receiver_address|default_if_none:"" }}<br>
-                        {{ shipment.receiver_city|default_if_none:"" }} {{ shipment.receiver_postcode|default_if_none:"" }}<br>
-                        {{ shipment.receiver_country|default_if_none:"" }}
-                    </div>
+                    <div class="info-value">&nbsp;</div>
                 </td>
                 <td>
                     <div class="info-label">Customer No.</div>
-                    <div class="info-value">{% if shipment.user %}{{ shipment.user.id }}{% else %}N/A{% endif %}</div>
+                    <div class="info-value">&nbsp;</div>
                     <div class="info-label" style="margin-top:4px;">Currency</div>
                     <div class="info-value">EUR</div>
                 </td>
                 <td>
                     <div class="info-label">Payment Terms</div>
                     <div class="info-value">Prepaid</div>
+                    <div class="info-label" style="margin-top:4px;">Sales Area</div>
+                    <div class="info-value">&nbsp;</div>
+                </td>
+                <td>
+                    <div class="info-label">Incoterms</div>
+                    <div class="info-value">&nbsp;</div>
                     <div class="info-label" style="margin-top:4px;">Bank Details</div>
-                    <div class="small-text">
-                        As per Medo-Freight EU standard terms.
-                    </div>
+                    <div class="info-value">&nbsp;</div>
                 </td>
             </tr>
         </table>
 
         <table class="light-border-table">
             <tr>
-                <th>HS Tariff Code</th>
                 <th>Made In Country of Origin</th>
                 <th>Bill of Lading</th>
                 <th>Loading Port / City</th>
@@ -268,64 +269,53 @@
                 <th>Mode / Vessel Name</th>
                 <th>Container No.</th>
                 <th>Voyage No.</th>
+                <th>ETD</th>
+                <th>ETA</th>
+                <th>Shipping</th>
+                <th>Seal No.</th>
             </tr>
             <tr>
-                <td class="small-text">
-                    <!-- HS codes per parcel appear in detail table below -->
-                </td>
-                <td class="small-text">
-                    {{ shipment.origin_country|default_if_none:"" }}
-                </td>
-                <td class="small-text">
-                    {{ shipment.bill_of_lading|default_if_none:"" }}
-                </td>
-                <td class="small-text">
-                    {{ shipment.origin_city|default_if_none:"" }} / {{ shipment.origin_country|default_if_none:"" }}
-                </td>
-                <td class="small-text">
-                    {{ shipment.destination_city|default_if_none:"" }} / {{ shipment.destination_country|default_if_none:"" }}
-                </td>
-                <td class="small-text">
-                    {{ shipment.created_at|date:"Y-m-d" }}
-                </td>
-                <td class="small-text">
-                    LCL Consolidation
-                </td>
-                <td class="small-text">
-                    {{ shipment.container_number|default_if_none:"" }}
-                </td>
-                <td class="small-text">
-                    {{ shipment.voyage_number|default_if_none:"" }}
-                </td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
+                <td class="small-text">&nbsp;</td>
             </tr>
         </table>
 
         <table class="light-border-table">
             <tr>
                 <th>Product Code</th>
-                <th>Description / Client Name / Ref No</th>
+                <th>Description</th>
                 <th class="text-center">HS Code</th>
                 <th class="text-center">CBM</th>
                 <th class="text-center">Unit</th>
                 <th class="text-center">Quantity</th>
                 <th class="text-right">Unit Price (EUR)</th>
                 <th class="text-right">Value (EUR)</th>
+                <th class="text-right">Gross Weight (kg)</th>
+                <th class="text-right">Nett Weight (kg)</th>
             </tr>
             {% for item in pricing.parcel_calculations %}
                 <tr>
                     <td class="small-text">
-                        {{ item.product_id }}
+                        {{ shipment.shipment_number|default_if_none:"" }}
                     </td>
                     <td class="small-text">
-                        {{ item.product_name_en|default_if_none:"" }} / {{ item.product_name_ar|default_if_none:"" }}<br>
-                        Client: {{ shipment.receiver_name|default_if_none:"" }}<br>
-                        Ref: {{ shipment.shipment_number|default_if_none:"" }}
+                        {{ item.product_name_en|default_if_none:"" }} / {{ item.product_name_ar|default_if_none:"" }}
                     </td>
                     <td class="small-text text-center">
                         {{ item.hs_code|default_if_none:"" }}
                     </td>
                     <td class="small-text text-center">
-                        {{ item.cbm|default:0 }}
+                        {{ item.cbm|default:0|floatformat:3 }}
                     </td>
                     <td class="small-text text-center">
                         PCS
@@ -334,31 +324,42 @@
                         {{ item.repeat_count|default:1 }}
                     </td>
                     <td class="small-text text-right">
-                        {{ item.price_per_kg|floatformat:2 }}
+                        &nbsp;
                     </td>
                     <td class="small-text text-right">
                         {{ item.price_by_weight|floatformat:2 }}
                     </td>
+                    <td class="small-text text-right">
+                        {{ item.weight|default:0|floatformat:2 }}
+                    </td>
+                    <td class="small-text text-right">
+                        &nbsp;
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8" class="small-text">
+                    <td colspan="10" class="small-text">
                         No parcel breakdown available.
                     </td>
                 </tr>
             {% endfor %}
             <tr class="totals-row">
-                <td colspan="3" class="text-right">TOTAL QUANTITY</td>
+                <td colspan="2" class="text-right">TOTAL</td>
+                <td class="text-center">&nbsp;</td>
                 <td class="text-center">
                     {{ total_cbm|floatformat:3 }} m³
                 </td>
                 <td colspan="2" class="text-center">
                     {{ total_packages }}
                 </td>
-                <td class="text-right">TOTAL</td>
+                <td class="text-right">&nbsp;</td>
                 <td class="text-right">
                     {{ pricing.total_price|floatformat:2 }}
                 </td>
+                <td class="text-right">
+                    {{ total_weight|floatformat:2 }}
+                </td>
+                <td class="text-right">&nbsp;</td>
             </tr>
         </table>
 
@@ -366,14 +367,13 @@
             <tr>
                 <td style="width: 50%;">
                     <div class="small-text">
-                        SALES TAX: 0.00 %<br>
+                        SALES TAX: {% if is_personal_only %}0.00{% else %}&nbsp;{% endif %} %<br>
                         TOTAL INVOICE VALUE: EUR {{ pricing.total_price|floatformat:2 }}
                     </div>
                 </td>
                 <td style="width: 50%;">
                     <div class="small-text text-right">
-                        Incoterms: CIF (unless otherwise agreed in writing)<br>
-                        Sales Area: EU Export Consolidation
+                        &nbsp;
                     </div>
                 </td>
             </tr>

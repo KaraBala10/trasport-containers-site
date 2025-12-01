@@ -46,8 +46,8 @@ export default function Step9Payment({
       stripeDesc:
         "ادفع بأمان عبر Stripe - جميع طرق الدفع متاحة (بطاقات بنكية، Apple Pay، Google Pay)",
       paymentMethods: "طرق الدفع المتاحة",
-      cashPayment: "الدفع نقداً في مركز حلب",
-      cashDesc: "دفع كامل قيمة الشحن نقداً عند تسليم الطرود في مركزنا في حلب",
+      cashPayment: "الدفع نقداً في المركز",
+      cashDesc: "دفع كامل قيمة الشحن نقداً عند تسليم الطرود في المركز",
       transferPayment: "الدفع عبر تحويل داخلي",
       transferDesc:
         "يمكنك الدفع عبر حوالة محلية (بنك / صرّاف) إلى حسابنا داخل سورية",

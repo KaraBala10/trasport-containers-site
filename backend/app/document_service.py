@@ -399,17 +399,40 @@ def generate_consolidated_export_invoice(shipment: LCLShipment, language: str = 
         except Exception as e:
             logger.warning(f"Could not generate QR code for consolidated export invoice: {str(e)}")
 
-        # Aggregate totals for CBM and packages
+        # Aggregate totals for CBM, packages, and weight
         total_cbm = 0.0
         total_packages = 0
+        total_weight = 0.0
+        shipment_types = []
+        
         for item in pricing.get("parcel_calculations", []):
             try:
                 cbm_value = float(item.get("cbm", 0) or 0)
             except (TypeError, ValueError):
                 cbm_value = 0.0
             total_cbm += cbm_value
+            
+            try:
+                weight_value = float(item.get("weight", 0) or 0)
+            except (TypeError, ValueError):
+                weight_value = 0.0
             repeat_count = int(item.get("repeat_count", 1) or 1)
+            total_weight += weight_value * repeat_count
             total_packages += repeat_count
+            
+            # Get shipment type from parcel
+            if shipment.parcels:
+                for parcel in shipment.parcels:
+                    if isinstance(parcel, dict):
+                        parcel_type = parcel.get("shipmentType") or parcel.get("shipment_type")
+                        if parcel_type:
+                            shipment_types.append(parcel_type)
+        
+        # Determine if shipment is personal, commercial, or mixed
+        unique_types = list(set(shipment_types))
+        is_personal_only = len(unique_types) == 1 and unique_types[0] == "personal"
+        is_commercial_only = len(unique_types) == 1 and unique_types[0] == "commercial"
+        is_mixed = len(unique_types) > 1
 
         context = {
             "shipment": shipment,
@@ -422,6 +445,10 @@ def generate_consolidated_export_invoice(shipment: LCLShipment, language: str = 
             "qr_code_base64": qr_code_base64,
             "total_cbm": total_cbm,
             "total_packages": total_packages,
+            "total_weight": total_weight,
+            "is_personal_only": is_personal_only,
+            "is_commercial_only": is_commercial_only,
+            "is_mixed": is_mixed,
         }
 
         html_string = render_to_string("documents/consolidated_export_invoice.html", context)
@@ -478,16 +505,24 @@ def generate_packing_list(shipment: LCLShipment, language: str = 'en') -> bytes:
         except Exception as e:
             logger.warning(f"Could not generate QR code for packing list: {str(e)}")
 
-        # Aggregate totals for CBM and packages
+        # Aggregate totals for CBM, packages, and weight
         total_cbm = 0.0
         total_packages = 0
+        total_weight = 0.0
+        
         for item in pricing.get("parcel_calculations", []):
             try:
                 cbm_value = float(item.get("cbm", 0) or 0)
             except (TypeError, ValueError):
                 cbm_value = 0.0
             total_cbm += cbm_value
+            
+            try:
+                weight_value = float(item.get("weight", 0) or 0)
+            except (TypeError, ValueError):
+                weight_value = 0.0
             repeat_count = int(item.get("repeat_count", 1) or 1)
+            total_weight += weight_value * repeat_count
             total_packages += repeat_count
 
         # Get signature if exists
@@ -514,6 +549,7 @@ def generate_packing_list(shipment: LCLShipment, language: str = 'en') -> bytes:
             "qr_code_base64": qr_code_base64,
             "total_cbm": total_cbm,
             "total_packages": total_packages,
+            "total_weight": total_weight,
             "signature_base64": signature_base64,
         }
 
