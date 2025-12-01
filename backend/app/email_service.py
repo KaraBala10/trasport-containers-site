@@ -2049,6 +2049,86 @@ This document is for export/customs records only and is not shared with the cust
         return False
 
 
+def send_packing_list_email_to_admin(shipment, pdf_bytes):
+    """
+    Send Packing List PDF to admin via email.
+    This document is for cargo identification purposes only and is only sent to admin.
+
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping packing list email to admin.")
+        return False
+
+    try:
+        from django.core.mail import EmailMessage
+
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if getattr(settings, "ADMIN_EMAIL", None)
+            else settings.DEFAULT_FROM_EMAIL
+        )
+        
+        logger.info(f"📧 Preparing to send packing list email to: {admin_email}")
+
+        user_name = (
+            shipment.user.get_full_name() or shipment.user.username
+            if shipment.user
+            else "Unknown"
+        )
+        user_email = shipment.user.email if shipment.user else "Unknown"
+
+        subject = (
+            f"Packing List Generated – Shipment {shipment.shipment_number}"
+        )
+
+        body = f"""
+Packing List has been generated for shipment {shipment.shipment_number}.
+
+Shipment Details:
+- Shipment Number: {shipment.shipment_number}
+- User: {user_name} ({user_email})
+- Status: {shipment.get_status_display()}
+- Payment Status: {shipment.payment_status}
+- Total Amount: €{shipment.total_price}
+- Amount Paid: €{shipment.amount_paid}
+
+This document is for cargo identification purposes only. All packages have been checked, weighed, and sealed before loading.
+        """
+
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[admin_email],
+        )
+
+        email.attach(
+            f"Packing-List-{shipment.shipment_number}.pdf",
+            pdf_bytes,
+            "application/pdf",
+        )
+
+        email.send()
+
+        logger.info(
+            f"✅ Packing list email sent to admin for shipment {shipment.id}"
+        )
+        return True
+
+    except Exception as e:
+        logger.error(
+            f"Error sending packing list email to admin: {str(e)}",
+            exc_info=True,
+        )
+        return False
+
+
 def send_shipping_labels_email_to_user(shipment, pdf_bytes, num_labels=None):
     """
     Send shipping labels PDF to user via email.

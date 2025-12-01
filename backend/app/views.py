@@ -4351,6 +4351,15 @@ def download_packing_list_view(request, pk):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
+        # Send packing list by email to admin
+        try:
+            from .email_service import send_packing_list_email_to_admin
+            send_packing_list_email_to_admin(shipment, pdf_bytes)
+            logger.info(f"✅ Packing list email sent to admin for shipment {shipment.id}")
+        except Exception as email_error:
+            logger.warning(f"Failed to send packing list email: {str(email_error)}")
+            # Don't fail if email fails - still return the PDF
+        
         # Return PDF as response
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="Packing-List-{shipment.shipment_number}.pdf"'
