@@ -831,6 +831,11 @@ class LCLShipment(models.Model):
     # Invoice
     invoice_file = models.FileField(upload_to="invoices/", blank=True, null=True, help_text="Generated invoice PDF file")
     invoice_generated_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when invoice was generated")
+    invoice_signature = models.ImageField(upload_to="invoice_signatures/", blank=True, null=True, help_text="Electronic signature for invoice")
+    
+    # Receipt
+    receipt_file = models.FileField(upload_to="receipts/", blank=True, null=True, help_text="Generated receipt PDF file")
+    receipt_generated_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when receipt was generated")
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

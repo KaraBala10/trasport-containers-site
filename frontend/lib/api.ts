@@ -370,6 +370,24 @@ export const apiService = {
     });
   },
 
+  downloadReceipt: (shipmentId: string | number, language?: string) => {
+    return apiClient.get(`/shipments/${shipmentId}/receipt/`, {
+      responseType: 'blob',
+      params: language ? { language } : {},
+    });
+  },
+
+  downloadShippingLabels: (shipmentId: string | number, language?: string, numLabels?: number) => {
+    const params: any = {};
+    if (language) params.language = language;
+    if (numLabels !== undefined && numLabels > 0) params.num_labels = numLabels;
+    
+    return apiClient.get(`/shipments/${shipmentId}/shipping-labels/`, {
+      responseType: 'blob',
+      params,
+    });
+  },
+
   // Location endpoints
   getCountries: () => {
     return apiClient.get('/countries/');

@@ -1967,3 +1967,369 @@ def send_invoice_email_to_admin(shipment, pdf_bytes):
             exc_info=True
         )
         return False
+
+
+def send_shipping_labels_email_to_user(shipment, pdf_bytes, num_labels=None):
+    """
+    Send shipping labels PDF to user via email.
+    
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+        num_labels: Number of labels generated (optional)
+    
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping shipping labels email to user.")
+        return False
+    
+    try:
+        from django.core.mail import EmailMessage
+        from io import BytesIO
+        
+        # Get user email
+        user_email = shipment.receiver_email or shipment.user.email if shipment.user else None
+        if not user_email:
+            logger.warning(f"No email found for shipment {shipment.id}")
+            return False
+        
+        # Get status display name
+        status_display = get_status_display_name(shipment.status, shipment.direction)
+        
+        # Determine language based on user preference (default: Arabic)
+        language = 'ar'
+        
+        # Email subject
+        subject_ar = f"ملصقات الشحن جاهزة - شحنة {shipment.shipment_number}"
+        subject_en = f"Shipping Labels Ready - Shipment {shipment.shipment_number}"
+        subject = subject_ar if language == 'ar' else subject_en
+        
+        # Email body
+        body_ar = f"""
+        مرحباً {shipment.receiver_name},
+        
+        تم توليد ملصقات الشحن بنجاح لشحنتك رقم {shipment.shipment_number}.
+        
+        يمكنك تحميل الملصقات من المرفقات أو من لوحة التحكم الخاصة بك.
+        
+        تفاصيل الشحنة:
+        - رقم الشحنة: {shipment.shipment_number}
+        - الحالة: {status_display['ar']}
+        - عدد الملصقات: {num_labels if num_labels else 'حسب عدد الطرود'}
+        
+        شكراً لتعاملكم معنا!
+        
+        Medo-Freight EU
+        """
+        
+        body_en = f"""
+        Hello {shipment.receiver_name},
+        
+        Your shipping labels have been successfully generated for shipment {shipment.shipment_number}.
+        
+        You can download the labels from the attachments or from your dashboard.
+        
+        Shipment Details:
+        - Shipment Number: {shipment.shipment_number}
+        - Status: {status_display['en']}
+        - Number of Labels: {num_labels if num_labels else 'Based on number of parcels'}
+        
+        Thank you for your business!
+        
+        Medo-Freight EU
+        """
+        
+        body = body_ar if language == 'ar' else body_en
+        
+        # Create email message
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user_email],
+        )
+        
+        # Attach PDF
+        email.attach(
+            f"Shipping-Labels-{shipment.shipment_number}.pdf",
+            pdf_bytes,
+            'application/pdf'
+        )
+        
+        # Send email
+        email.send()
+        
+        logger.info(f"✅ Shipping labels email sent to user {user_email} for shipment {shipment.id}")
+        return True
+        
+    except Exception as e:
+        logger.error(
+            f"Error sending shipping labels email to user: {str(e)}",
+            exc_info=True
+        )
+        return False
+
+
+def send_shipping_labels_email_to_admin(shipment, pdf_bytes, num_labels=None):
+    """
+    Send shipping labels PDF to admin via email.
+    
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+        num_labels: Number of labels generated (optional)
+    
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping shipping labels email to admin.")
+        return False
+    
+    try:
+        from django.core.mail import EmailMessage
+        
+        # Get admin email
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
+        
+        # Get user info
+        user_name = (
+            shipment.user.get_full_name() or shipment.user.username
+            if shipment.user
+            else "Unknown"
+        )
+        user_email = shipment.user.email if shipment.user else "Unknown"
+        
+        # Email subject
+        subject = f"Shipping Labels Generated - Shipment {shipment.shipment_number}"
+        
+        # Email body
+        body = f"""
+        Shipping labels have been generated for shipment {shipment.shipment_number}.
+        
+        Shipment Details:
+        - Shipment Number: {shipment.shipment_number}
+        - User: {user_name} ({user_email})
+        - Status: {shipment.get_status_display()}
+        - Number of Labels: {num_labels if num_labels else 'Based on number of parcels'}
+        
+        Shipping labels are attached.
+        """
+        
+        # Create email message
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[admin_email],
+        )
+        
+        # Attach PDF
+        email.attach(
+            f"Shipping-Labels-{shipment.shipment_number}.pdf",
+            pdf_bytes,
+            'application/pdf'
+        )
+        
+        # Send email
+        email.send()
+        
+        logger.info(f"✅ Shipping labels email sent to admin for shipment {shipment.id}")
+        return True
+        
+    except Exception as e:
+        logger.error(
+            f"Error sending shipping labels email to admin: {str(e)}",
+            exc_info=True
+        )
+        return False
+
+
+def send_receipt_email_to_user(shipment, pdf_bytes):
+    """
+    Send receipt PDF to user via email.
+    
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+    
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping receipt email to user.")
+        return False
+    
+    try:
+        from django.core.mail import EmailMessage
+        from io import BytesIO
+        
+        # Get user email
+        user_email = shipment.receiver_email or shipment.user.email if shipment.user else None
+        if not user_email:
+            logger.warning(f"No email found for shipment {shipment.id}")
+            return False
+        
+        # Get status display name
+        status_display_dict = get_status_display_name(shipment.status, shipment.direction)
+        # status_display_name returns a string, not a dict, so we'll use it directly
+        status_display_text = status_display_dict if isinstance(status_display_dict, str) else status_display_dict.get('ar', str(status_display_dict))
+        
+        # Determine language based on user preference (default: Arabic)
+        language = 'ar'
+        
+        # Email subject
+        subject_ar = f"إيصال استلام شحنتك - شحنة {shipment.shipment_number}"
+        subject_en = f"Receipt for Your Shipment - Shipment {shipment.shipment_number}"
+        subject = subject_ar if language == 'ar' else subject_en
+        
+        # Email body
+        body_ar = f"""
+        مرحباً {shipment.receiver_name},
+        
+        تم استلام شحنتك رقم {shipment.shipment_number} بنجاح.
+        
+        يمكنك تحميل إيصال الاستلام من المرفقات أو من لوحة التحكم الخاصة بك.
+        
+        تفاصيل الشحنة:
+        - رقم الشحنة: {shipment.shipment_number}
+        - الحالة: {status_display_text}
+        
+        شكراً لتعاملكم معنا!
+        
+        Medo-Freight EU
+        """
+        
+        body_en = f"""
+        Hello {shipment.receiver_name},
+        
+        Your shipment {shipment.shipment_number} has been received successfully.
+        
+        You can download the receipt from the attachments or from your dashboard.
+        
+        Shipment Details:
+        - Shipment Number: {shipment.shipment_number}
+        - Status: {status_display_text}
+        
+        Thank you for your business!
+        
+        Medo-Freight EU
+        """
+        
+        body = body_ar if language == 'ar' else body_en
+        
+        # Create email message
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user_email],
+        )
+        
+        # Attach PDF
+        email.attach(
+            f"Receipt-{shipment.shipment_number}.pdf",
+            pdf_bytes,
+            'application/pdf'
+        )
+        
+        # Send email
+        logger.info(f"📧 Sending receipt email to user {user_email} for shipment {shipment.id}")
+        email.send()
+        logger.info(f"✅ Receipt email sent successfully to user {user_email} for shipment {shipment.id}")
+        return True
+        
+    except Exception as e:
+        logger.error(
+            f"Error sending receipt email to user: {str(e)}",
+            exc_info=True
+        )
+        return False
+
+
+def send_receipt_email_to_admin(shipment, pdf_bytes):
+    """
+    Send receipt PDF to admin via email.
+    
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+    
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    # Check if email is configured
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        logger.warning("Email not configured. Skipping receipt email to admin.")
+        return False
+    
+    try:
+        from django.core.mail import EmailMessage
+        
+        # Get admin email
+        admin_email = (
+            settings.ADMIN_EMAIL
+            if settings.ADMIN_EMAIL
+            else settings.DEFAULT_FROM_EMAIL
+        )
+        
+        # Get user info
+        user_name = (
+            shipment.user.get_full_name() or shipment.user.username
+            if shipment.user
+            else "Unknown"
+        )
+        user_email = shipment.user.email if shipment.user else "Unknown"
+        
+        # Email subject
+        subject = f"Receipt Generated - Shipment {shipment.shipment_number}"
+        
+        # Email body
+        body = f"""
+        Receipt has been generated for shipment {shipment.shipment_number}.
+        
+        Shipment Details:
+        - Shipment Number: {shipment.shipment_number}
+        - User: {user_name} ({user_email})
+        - Status: {shipment.get_status_display()}
+        - Direction: {shipment.get_direction_display()}
+        
+        Receipt is attached.
+        """
+        
+        # Create email message
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[admin_email],
+        )
+        
+        # Attach PDF
+        email.attach(
+            f"Receipt-{shipment.shipment_number}.pdf",
+            pdf_bytes,
+            'application/pdf'
+        )
+        
+        # Send email
+        logger.info(f"📧 Sending receipt email to admin {admin_email} for shipment {shipment.id}")
+        email.send()
+        logger.info(f"✅ Receipt email sent successfully to admin {admin_email} for shipment {shipment.id}")
+        return True
+        
+    except Exception as e:
+        logger.error(
+            f"Error sending receipt email to admin: {str(e)}",
+            exc_info=True
+        )
+        return False

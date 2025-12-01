@@ -149,6 +149,8 @@ interface LCLShipment {
   transfer_slip?: string;
   invoice_file?: string;
   invoice_generated_at?: string;
+  receipt_file?: string;
+  receipt_generated_at?: string;
   created_at: string;
   updated_at: string;
   paid_at?: string;
@@ -6086,6 +6088,302 @@ export default function DashboardPage() {
                                     </p>
                                   </div>
                                 )}
+
+                                {/* Receipt Card */}
+                                {(() => {
+                                  const hasReceipt = !!(shipment.receipt_file || shipment.receipt_generated_at);
+                                  
+                                  // Check if receipt should be available based on status and direction
+                                  const shouldHaveReceipt = 
+                                    (shipment.direction === "eu-sy" && shipment.status === "ARRIVED_WATTWEG_5") ||
+                                    (shipment.direction === "sy-eu" && shipment.status === "ARRIVED_DESTINATION");
+                                  
+                                  if (hasReceipt) {
+                                    return (
+                                      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-4 border-2 border-purple-200 mt-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-purple-600 font-bold text-lg">✓</span>
+                                            <h5 className="font-bold text-primary-dark">
+                                              {language === "ar" ? "إيصال الاستلام" : "Receipt"}
+                                            </h5>
+                                          </div>
+                                          {shipment.receipt_generated_at && (
+                                            <span className="text-xs text-gray-500">
+                                              {new Date(shipment.receipt_generated_at).toLocaleDateString(
+                                                language === "ar" ? "ar-SA" : "en-US"
+                                              )}
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="mb-4 space-y-2">
+                                          <div className="flex items-center gap-2 text-sm">
+                                            <span>📄</span>
+                                            <span className="font-mono text-gray-700">
+                                              Receipt-{shipment.shipment_number}.pdf
+                                            </span>
+                                          </div>
+                                          {shipment.receipt_generated_at && (
+                                            <p className="text-xs text-gray-500">
+                                              {language === "ar" ? "تم التوليد:" : "Generated:"}{" "}
+                                              {new Date(shipment.receipt_generated_at).toLocaleString(
+                                                language === "ar" ? "ar-SA" : "en-US"
+                                              )}
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2">
+                                          <button
+                                            onClick={async () => {
+                                              try {
+                                                // Show loading message
+                                                showInfo(
+                                                  language === "ar"
+                                                    ? "⏳ جاري توليد الإيصال وإرساله عبر البريد الإلكتروني... يرجى الانتظار"
+                                                    : "⏳ Generating receipt and sending via email... Please wait"
+                                                );
+                                                
+                                                const response = await apiService.downloadReceipt(
+                                                  shipment.id,
+                                                  language
+                                                );
+                                                
+                                                const blob = new Blob([response.data], {
+                                                  type: "application/pdf",
+                                                });
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement("a");
+                                                link.href = url;
+                                                link.download = `Receipt-${shipment.shipment_number}.pdf`;
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                                window.URL.revokeObjectURL(url);
+                                                
+                                                // Show success message
+                                                showSuccess(
+                                                  language === "ar"
+                                                    ? "✅ تم تحميل الإيصال بنجاح! تم إرسال نسخة إلى بريدك الإلكتروني أيضاً"
+                                                    : "✅ Receipt downloaded successfully! A copy has been sent to your email as well"
+                                                );
+                                              } catch (error: any) {
+                                                console.error("Error downloading receipt:", error);
+                                                const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                                showError(
+                                                  language === "ar"
+                                                    ? `حدث خطأ أثناء تحميل الإيصال: ${errorMessage}`
+                                                    : `Error downloading receipt: ${errorMessage}`
+                                                );
+                                              }
+                                            }}
+                                            className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                          >
+                                            <svg
+                                              className="w-4 h-4"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                              />
+                                            </svg>
+                                            {language === "ar" ? "تحميل الإيصال" : "Download Receipt"}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  } else if (shouldHaveReceipt) {
+                                    return (
+                                      <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-200 mt-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <span className="text-yellow-600">⏳</span>
+                                          <h5 className="font-bold text-primary-dark">
+                                            {language === "ar" ? "إيصال الاستلام" : "Receipt"}
+                                          </h5>
+                                        </div>
+                                        <p className="text-sm text-gray-700 mb-3">
+                                          {language === "ar"
+                                            ? "إيصال الاستلام جاهز للتوليد. اضغط على الزر أدناه لتحميله."
+                                            : "Receipt is ready to be generated. Click the button below to download it."}
+                                        </p>
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              // Show loading message
+                                              showInfo(
+                                                language === "ar"
+                                                  ? "⏳ جاري توليد الإيصال وإرساله عبر البريد الإلكتروني... يرجى الانتظار"
+                                                  : "⏳ Generating receipt and sending via email... Please wait"
+                                              );
+                                              
+                                              const response = await apiService.downloadReceipt(
+                                                shipment.id,
+                                                language
+                                              );
+                                              
+                                              const blob = new Blob([response.data], {
+                                                type: "application/pdf",
+                                              });
+                                              const url = window.URL.createObjectURL(blob);
+                                              const link = document.createElement("a");
+                                              link.href = url;
+                                              link.download = `Receipt-${shipment.shipment_number}.pdf`;
+                                              document.body.appendChild(link);
+                                              link.click();
+                                              document.body.removeChild(link);
+                                              window.URL.revokeObjectURL(url);
+                                              
+                                              // Show success message
+                                              showSuccess(
+                                                language === "ar"
+                                                  ? "✅ تم تحميل الإيصال بنجاح! تم إرسال نسخة إلى بريدك الإلكتروني أيضاً. جاري تحديث الصفحة..."
+                                                  : "✅ Receipt downloaded successfully! A copy has been sent to your email as well. Refreshing page..."
+                                              );
+                                              
+                                              setTimeout(() => {
+                                                window.location.reload();
+                                              }, 2000);
+                                            } catch (error: any) {
+                                              console.error("Error downloading receipt:", error);
+                                              const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                              showError(
+                                                language === "ar"
+                                                  ? `حدث خطأ: ${errorMessage}`
+                                                  : `Error: ${errorMessage}`
+                                              );
+                                            }
+                                          }}
+                                          className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md"
+                                        >
+                                          {language === "ar" ? "توليد وتحميل الإيصال" : "Generate & Download Receipt"}
+                                        </button>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+
+                                {/* Shipping Labels Card */}
+                                <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200 mt-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-blue-600">📦</span>
+                                    <h5 className="font-bold text-primary-dark">
+                                      {language === "ar" ? "ملصقات الشحن" : "Shipping Labels"}
+                                    </h5>
+                                  </div>
+                                  <p className="text-sm text-gray-700 mb-3">
+                                    {language === "ar"
+                                      ? "قم بتحميل ملصقات الشحن (حجم 6×4 بوصة)"
+                                      : "Download shipping labels (6×4 inch size)"}
+                                  </p>
+                                  
+                                  {/* Number of Labels Input */}
+                                  <div className="mb-3">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                      {language === "ar" ? "عدد الملصقات المطلوبة:" : "Number of Labels:"}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      id={`label-count-${shipment.id}`}
+                                      min="1"
+                                      max="100"
+                                      defaultValue={(() => {
+                                        // Calculate default from parcels
+                                        const parcels = shipment.parcels || [];
+                                        let total = 0;
+                                        parcels.forEach((p: any) => {
+                                          total += parseInt(p.repeatCount || 1);
+                                        });
+                                        return total || 1;
+                                      })()}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                      placeholder={language === "ar" ? "عدد الملصقات" : "Number of labels"}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {language === "ar"
+                                        ? "اتركه فارغاً لاستخدام العدد الافتراضي من الطرود"
+                                        : "Leave empty to use default count from parcels"}
+                                    </p>
+                                  </div>
+                                  
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        const labelCountInput = document.getElementById(`label-count-${shipment.id}`) as HTMLInputElement;
+                                        const numLabels = labelCountInput?.value ? parseInt(labelCountInput.value) : undefined;
+                                        
+                                        if (numLabels !== undefined && (numLabels < 1 || numLabels > 100)) {
+                                          showSuccess(
+                                            language === "ar"
+                                              ? "يرجى إدخال عدد بين 1 و 100"
+                                              : "Please enter a number between 1 and 100"
+                                          );
+                                          return;
+                                        }
+                                        
+                                        showSuccess(
+                                          language === "ar"
+                                            ? "جاري توليد ملصقات الشحن..."
+                                            : "Generating shipping labels..."
+                                        );
+                                        
+                                        const response = await apiService.downloadShippingLabels(
+                                          shipment.id,
+                                          language,
+                                          numLabels
+                                        );
+                                        
+                                        const blob = new Blob([response.data], {
+                                          type: "application/pdf",
+                                        });
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement("a");
+                                        link.href = url;
+                                        link.download = `Shipping-Labels-${shipment.shipment_number}.pdf`;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                        
+                                        showSuccess(
+                                          language === "ar"
+                                            ? "تم تحميل ملصقات الشحن بنجاح!"
+                                            : "Shipping labels downloaded successfully!"
+                                        );
+                                      } catch (error: any) {
+                                        console.error("Error downloading shipping labels:", error);
+                                        const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                        showSuccess(
+                                          language === "ar"
+                                            ? `حدث خطأ: ${errorMessage}`
+                                            : `Error: ${errorMessage}`
+                                        );
+                                      }
+                                    }}
+                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                      />
+                                    </svg>
+                                    {language === "ar" ? "تحميل ملصقات الشحن" : "Download Shipping Labels"}
+                                  </button>
+                                </div>
 
                                   {/* Coming Soon Documents */}
                                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">

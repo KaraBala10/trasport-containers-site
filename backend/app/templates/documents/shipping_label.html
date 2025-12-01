@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="{{ language }}" dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipping Label - {{ parcel_index }}</title>
+    <style>
+        @page {
+            size: 6in 4in;
+            margin: 0.08in;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 7px;
+            line-height: 1.2;
+            color: #000;
+            padding: 2px;
+        }
+        
+        .label-container {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #1a365d;
+            padding: 4px 4px 4px 0;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: white;
+        }
+        
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3px;
+            padding-bottom: 2px;
+            border-bottom: 1.5px solid #1a365d;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .logo-section img {
+            max-width: 45px;
+            max-height: 22px;
+            object-fit: contain;
+        }
+        
+        .company-info {
+            flex: 1;
+        }
+        
+        .company-name {
+            font-size: 10px;
+            font-weight: bold;
+            color: #1a365d;
+            letter-spacing: 0.2px;
+        }
+        
+        .company-tagline {
+            font-size: 6px;
+            color: #fbbf24;
+            font-weight: 600;
+        }
+        
+        .qr-section {
+            text-align: center;
+            padding: 1.5px;
+            border: 1px solid #1a365d;
+            border-radius: 2px;
+            background: white;
+        }
+        
+        .qr-section img {
+            width: 35px;
+            height: 35px;
+            display: block;
+            margin: 0 auto 1px;
+        }
+        
+        .qr-label {
+            font-size: 5px;
+            font-weight: bold;
+            color: #1a365d;
+        }
+        
+        .label-title {
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+            margin: 2px 0 3px;
+            color: #1a365d;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 60px;
+            gap: 4px;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .left-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5px;
+            min-height: 0;
+        }
+        
+        .section {
+            margin-bottom: 2px;
+            padding: 2.5px 2.5px 2.5px 0;
+            border: 1px solid #cbd5e0;
+            border-radius: 2px;
+            background: #f7fafc;
+        }
+        
+        .section-title {
+            font-size: 6.5px;
+            font-weight: bold;
+            margin-bottom: 1.5px;
+            text-transform: uppercase;
+            color: #1a365d;
+            border-bottom: 1px solid #1a365d;
+            padding-bottom: 1px;
+        }
+        
+        .field-row {
+            display: flex;
+            margin-bottom: 1px;
+            margin-left: 0;
+            padding-left: 0;
+            font-size: 6px;
+            align-items: baseline;
+        }
+        
+        .field-label {
+            font-weight: bold;
+            min-width: 35px;
+            margin-right: 2px;
+            margin-left: 0;
+            padding-left: 0;
+            color: #2d3748;
+            font-size: 6px;
+        }
+        
+        .field-value {
+            flex: 1;
+            border-bottom: 1px solid #4a5568;
+            min-height: 8px;
+            padding-bottom: 0.5px;
+            padding-left: 0;
+            margin-left: 0;
+            font-size: 6px;
+        }
+        
+        .shipping-method {
+            background: #1a365d;
+            color: white;
+            padding: 1.5px 4px;
+            border-radius: 2px;
+            font-size: 6.5px;
+            font-weight: bold;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .parcel-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 4px;
+            font-size: 6px;
+            margin: 3px 0 4px 0;
+            padding: 0;
+            margin-left: 0;
+        }
+        
+        .parcel-field {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            background: transparent;
+            padding: 2px 0 2px 0;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            min-height: auto;
+        }
+        
+        .parcel-label {
+            font-weight: bold;
+            margin-bottom: 2px;
+            color: #1a365d;
+            font-size: 5.8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            text-align: left;
+            width: 100%;
+        }
+        
+        .parcel-value {
+            border-bottom: 2px solid #1a365d;
+            min-height: 10px;
+            font-weight: 700;
+            padding: 1px 0;
+            font-size: 6.5px;
+            color: #2d3748;
+            text-align: left;
+            width: 100%;
+            background: transparent;
+        }
+        
+        .route-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1a365d;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 6.5px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 4px;
+            box-shadow: 0 1px 3px rgba(251, 191, 36, 0.3);
+            border: 1px solid #f59e0b;
+        }
+        
+        .collection-center {
+            background: #fffbf0;
+            padding: 2.5px;
+            border-radius: 2px;
+            border: 1px solid #fbbf24;
+            font-size: 5px;
+            line-height: 1.2;
+            overflow: hidden;
+        }
+        
+        .center-title {
+            font-weight: bold;
+            font-size: 5.5px;
+            margin-bottom: 1.5px;
+            color: #1a365d;
+            text-transform: uppercase;
+        }
+        
+        .center-info {
+            line-height: 1.2;
+        }
+        
+        .center-info strong {
+            color: #1a365d;
+            font-size: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="label-container">
+        <!-- Header with Logo -->
+        <div class="header-section">
+            <div class="logo-section">
+                {% if company.logo_base64 %}
+                <img src="data:image/png;base64,{{ company.logo_base64 }}" alt="Logo">
+                {% endif %}
+                <div class="company-info">
+                    <div class="company-name">Medo-Freight EU</div>
+                    <div class="company-tagline">Ship · Route · Deliver</div>
+                </div>
+            </div>
+            {% if qr_code_base64 %}
+            <div class="qr-section">
+                <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
+                <div class="qr-label">TRACK</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Title -->
+        <div class="label-title">SHIPPING LABEL</div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="left-section">
+                <!-- Tracking -->
+                <div class="section">
+                    <div class="field-row">
+                        <span class="field-label">TRACKING:</span>
+                        <span class="field-value">{{ shipment.shipment_number|default:"_________________" }}</span>
+                    </div>
+                </div>
+                
+                <!-- TO Section -->
+                <div class="section">
+                    <div class="section-title">TO:</div>
+                    <div class="field-row">
+                        <span class="field-label">Name:</span>
+                        <span class="field-value">{{ shipment.receiver_name }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Phone:</span>
+                        <span class="field-value">{{ shipment.receiver_phone }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">City:</span>
+                        <span class="field-value">{{ shipment.receiver_city }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Address:</span>
+                        <span class="field-value">{{ shipment.receiver_address }}</span>
+                    </div>
+                </div>
+                
+                <!-- Shipping Method -->
+                <div class="section">
+                    <div class="section-title">SHIPPING:</div>
+                    <div class="shipping-method">LCL</div>
+                </div>
+                
+                <!-- FROM Section -->
+                <div class="section">
+                    <div class="section-title">FROM:</div>
+                    <div class="field-row">
+                        <span class="field-label">Name:</span>
+                        <span class="field-value">{{ shipment.sender_name }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Phone:</span>
+                        <span class="field-value">{{ shipment.sender_phone }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">City:</span>
+                        <span class="field-value">{{ shipment.sender_city }}</span>
+                    </div>
+                </div>
+                
+                <!-- Parcel Info -->
+                <div class="section">
+                    <div class="section-title">PARCEL:</div>
+                    <div class="parcel-info">
+                        <div class="parcel-field">
+                            <div class="parcel-label">Pkgs</div>
+                            <div class="parcel-value">{{ parcel.repeat_count|default:1 }}</div>
+                        </div>
+                        <div class="parcel-field">
+                            <div class="parcel-label">Weight</div>
+                            <div class="parcel-value">{{ parcel.weight|default:0 }} kg</div>
+                        </div>
+                        <div class="parcel-field">
+                            <div class="parcel-label">Volume</div>
+                            <div class="parcel-value">{{ parcel.cbm|default:0 }} m³</div>
+                        </div>
+                    </div>
+                    <div class="route-badge" style="margin-top: 4px;">
+                        Route: {% if shipment.direction == 'eu-sy' %}EU → SY{% else %}SY → EU{% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Section - Collection Center -->
+            <div class="collection-center">
+                <div class="center-title">COLLECTION CENTER</div>
+                <div class="center-info">
+                    <strong>Medo-b2b / Medo-Freight-EU</strong><br>
+                    Ship, Route, Deliver
+                </div>
+                <div style="margin-top: 2px;">
+                    <strong>Small (&lt; 20 kg):</strong><br>
+                    Eurobox Self Storage<br>
+                    Bergen op Zoom<br>
+                    Wattweg 5, 4622 RA<br>
+                    Storage: 0220-0221
+                </div>
+                <div style="margin-top: 2px;">
+                    <strong>Large (50+ kg):</strong><br>
+                    Meekrapweg 2<br>
+                    4571 RX, Zeeland<br>
+                    Axel, NL<br>
+                    Storage: A2
+                </div>
+                <div style="margin-top: 2px;">
+                    <strong>CONTACT:</strong><br>
+                    📞 0031683083916<br>
+                    ✉️ contact@medo-freight.eu
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

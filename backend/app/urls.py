@@ -37,6 +37,8 @@ from .views import (
     current_user_view,
     delete_eu_shipping_view,
     download_invoice_view,
+    download_receipt_view,
+    download_shipping_labels_view,
     get_packaging_prices_view,
     get_per_piece_products_view,
     get_prices_view,
@@ -151,6 +153,16 @@ urlpatterns = [
         "shipments/<int:pk>/invoice/",
         download_invoice_view,
         name="lcl_shipment_invoice",
+    ),
+    path(
+        "shipments/<int:pk>/receipt/",
+        download_receipt_view,
+        name="lcl_shipment_receipt",
+    ),
+    path(
+        "shipments/<int:pk>/shipping-labels/",
+        download_shipping_labels_view,
+        name="lcl_shipment_shipping_labels",
     ),
     # Stripe webhook
     path("stripe/webhook/", stripe_webhook_view, name="stripe_webhook"),

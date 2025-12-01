@@ -3986,6 +3986,44 @@ def update_lcl_shipment_status_view(request, pk):
                         f"Failed to generate invoice automatically: {str(invoice_error)}",
                         exc_info=True
                     )
+        
+        # Generate receipt automatically when shipment arrives at specific locations
+        # For eu-sy: when status changes to ARRIVED_WATTWEG_5
+        # For sy-eu: when status changes to ARRIVED_DESTINATION
+        if new_status and not shipment.receipt_file:
+            should_generate_receipt = False
+            
+            if shipment.direction == "eu-sy" and new_status == "ARRIVED_WATTWEG_5":
+                should_generate_receipt = True
+            elif shipment.direction == "sy-eu" and new_status == "ARRIVED_DESTINATION":
+                should_generate_receipt = True
+            
+            if should_generate_receipt:
+                try:
+                    from .document_service import generate_receipt, save_receipt_to_storage
+                    from .email_service import send_receipt_email_to_user, send_receipt_email_to_admin
+                    
+                    # Generate receipt PDF
+                    pdf_bytes = generate_receipt(shipment, language='ar')
+                    
+                    # Save to storage
+                    save_receipt_to_storage(shipment, pdf_bytes)
+                    
+                    # Send receipt by email
+                    try:
+                        send_receipt_email_to_user(shipment, pdf_bytes)
+                        send_receipt_email_to_admin(shipment, pdf_bytes)
+                    except Exception as email_error:
+                        logger.warning(f"Failed to send receipt emails: {str(email_error)}")
+                        # Don't fail if email fails
+                    
+                    logger.info(f"✅ Receipt generated and saved for shipment {shipment.id}")
+                except Exception as receipt_error:
+                    # Log error but don't fail the request
+                    logger.error(
+                        f"Failed to generate receipt automatically: {str(receipt_error)}",
+                        exc_info=True
+                    )
 
         # Send email notifications if status was updated
         if new_status:
@@ -4126,6 +4164,204 @@ def download_invoice_view(request, pk):
         logger.error(f"Error generating invoice: {str(e)}", exc_info=True)
         return Response(
             {"success": False, "error": f"An error occurred while generating invoice: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def download_receipt_view(request, pk):
+    """
+    Download receipt PDF for LCL shipment.
+    GET /api/shipments/{id}/receipt/
+    
+    Generates receipt if not already generated and conditions are met.
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        shipment = LCLShipment.objects.get(pk=pk)
+        
+        # Check permissions: user must own the shipment or be admin
+        if shipment.user != request.user and not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "You can only download receipts for your own shipments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
+        # Check if receipt should be available based on status and direction
+        # Allow receipt generation if status matches the required conditions
+        should_have_receipt = (
+            (shipment.direction == "eu-sy" and shipment.status == "ARRIVED_WATTWEG_5") or
+            (shipment.direction == "sy-eu" and shipment.status == "ARRIVED_DESTINATION")
+        )
+        
+        # Log for debugging
+        logger.info(f"Receipt request for shipment {shipment.id}: direction={shipment.direction}, status={shipment.status}, should_have_receipt={should_have_receipt}")
+        
+        # Allow receipt generation even if status doesn't match (for manual generation)
+        # But show a warning in the response if conditions aren't met
+        if not should_have_receipt:
+            logger.warning(f"Receipt requested for shipment {shipment.id} but status/direction don't match requirements. Generating anyway.")
+        
+        # Import document service
+        from .document_service import generate_receipt, save_receipt_to_storage
+        
+        # Get language from request (default: 'ar')
+        language = request.GET.get('language', 'ar')
+        if language not in ['ar', 'en']:
+            language = 'ar'
+        
+        # If receipt file exists, read it and send email, then return
+        if shipment.receipt_file:
+            try:
+                with open(shipment.receipt_file.path, 'rb') as pdf_file:
+                    pdf_bytes = pdf_file.read()
+                    
+                    # Send receipt by email even if file exists (same as shipping labels)
+                    try:
+                        logger.info(f"📧 Receipt file exists, sending emails for shipment {shipment.id}")
+                        from .email_service import send_receipt_email_to_user, send_receipt_email_to_admin
+                        send_receipt_email_to_user(shipment, pdf_bytes)
+                        send_receipt_email_to_admin(shipment, pdf_bytes)
+                    except Exception as email_error:
+                        logger.warning(f"Failed to send receipt emails: {str(email_error)}")
+                        # Don't fail if email fails
+                    
+                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                    response['Content-Disposition'] = f'inline; filename="Receipt-{shipment.shipment_number}.pdf"'
+                    return response
+            except Exception as file_error:
+                logger.warning(f"Error reading receipt file, will regenerate: {str(file_error)}")
+                # Continue to generate new receipt
+        
+        # Generate receipt PDF
+        try:
+            pdf_bytes = generate_receipt(shipment, language=language)
+        except Exception as gen_error:
+            logger.error(f"Error generating receipt PDF: {str(gen_error)}", exc_info=True)
+            return Response(
+                {"success": False, "error": f"Failed to generate receipt: {str(gen_error)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+        # Send receipt by email (same logic as shipping labels - send BEFORE saving)
+        try:
+            logger.info(f"📧 Attempting to send receipt emails for shipment {shipment.id}")
+            from .email_service import send_receipt_email_to_user, send_receipt_email_to_admin
+            user_result = send_receipt_email_to_user(shipment, pdf_bytes)
+            admin_result = send_receipt_email_to_admin(shipment, pdf_bytes)
+            logger.info(f"📧 Receipt email results - User: {user_result}, Admin: {admin_result}")
+        except Exception as email_error:
+            logger.error(f"❌ Failed to send receipt emails: {str(email_error)}", exc_info=True)
+            # Don't fail if email fails
+        
+        # Save to storage if not already saved
+        if not shipment.receipt_file:
+            try:
+                save_receipt_to_storage(shipment, pdf_bytes)
+                logger.info(f"✅ Receipt saved to storage for shipment {shipment.id}")
+            except Exception as save_error:
+                logger.error(f"Failed to save receipt to storage: {str(save_error)}", exc_info=True)
+                # Continue anyway - we can still return the PDF
+        
+        # Return PDF as response
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="Receipt-{shipment.shipment_number}.pdf"'
+        return response
+        
+    except LCLShipment.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Shipment not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error downloading receipt: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": f"An error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def download_shipping_labels_view(request, pk):
+    """
+    Download shipping labels PDF for LCL shipment.
+    GET /api/shipments/{id}/shipping-labels/
+    
+    Generates one label per parcel (including repeat_count for electronics).
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        shipment = LCLShipment.objects.get(pk=pk)
+        
+        # Check permissions: user must own the shipment or be admin
+        if shipment.user != request.user and not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "You can only download shipping labels for your own shipments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
+        # Import document service
+        from .document_service import generate_shipping_labels
+        
+        # Get language from request (default: 'ar')
+        language = request.GET.get('language', 'ar')
+        if language not in ['ar', 'en']:
+            language = 'ar'
+        
+        # Get number of labels from request (optional)
+        num_labels = request.GET.get('num_labels')
+        if num_labels:
+            try:
+                num_labels = int(num_labels)
+                if num_labels <= 0:
+                    num_labels = None
+            except (ValueError, TypeError):
+                num_labels = None
+        else:
+            num_labels = None
+        
+        # Generate shipping labels PDF
+        try:
+            pdf_bytes = generate_shipping_labels(shipment, language=language, num_labels=num_labels)
+        except ValueError as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as gen_error:
+            logger.error(f"Error generating shipping labels PDF: {str(gen_error)}", exc_info=True)
+            return Response(
+                {"success": False, "error": f"Failed to generate shipping labels: {str(gen_error)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+        # Send shipping labels by email
+        try:
+            from .email_service import send_shipping_labels_email_to_user, send_shipping_labels_email_to_admin
+            send_shipping_labels_email_to_user(shipment, pdf_bytes, num_labels=num_labels)
+            send_shipping_labels_email_to_admin(shipment, pdf_bytes, num_labels=num_labels)
+        except Exception as email_error:
+            logger.warning(f"Failed to send shipping labels emails: {str(email_error)}")
+            # Don't fail if email fails
+        
+        # Return PDF as response
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="Shipping-Labels-{shipment.shipment_number}.pdf"'
+        return response
+        
+    except LCLShipment.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Shipment not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error generating shipping labels: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": f"An error occurred while generating shipping labels: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

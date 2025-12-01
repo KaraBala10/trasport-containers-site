@@ -15,6 +15,8 @@ from weasyprint import HTML, CSS
 from weasyprint.text.fonts import FontConfiguration
 import io
 import os
+import base64
+import qrcode
 
 from .models import LCLShipment, Price, PackagingPrice, SyrianProvincePrice
 
@@ -211,6 +213,38 @@ def calculate_invoice_totals(shipment: LCLShipment) -> Dict:
 
 def get_company_info() -> Dict:
     """Get company information for invoice"""
+    # Get site URL from settings or environment
+    site_url = getattr(settings, 'SITE_URL', 'https://medo-freight.eu')
+    if not site_url.startswith('http'):
+        site_url = f'https://{site_url}'
+    
+    # Logo path - try multiple possible locations
+    # Inside Docker: /app/WhatsApp Image...
+    # Outside Docker: root directory
+    possible_paths = [
+        os.path.join('/app', 'WhatsApp Image 2025-11-28 at 23.01.45_ac5dc14b.png'),  # Docker container path
+        os.path.join(settings.BASE_DIR.parent, 'WhatsApp Image 2025-11-28 at 23.01.45_ac5dc14b.png'),  # Local development
+        os.path.join(settings.BASE_DIR.parent.parent, 'WhatsApp Image 2025-11-28 at 23.01.45_ac5dc14b.png'),  # Alternative local path
+    ]
+    
+    logo_base64 = None
+    
+    # Try to read and encode logo as base64 from any possible path
+    for logo_path in possible_paths:
+        if os.path.exists(logo_path):
+            try:
+                with open(logo_path, 'rb') as f:
+                    logo_data = f.read()
+                    logo_base64 = base64.b64encode(logo_data).decode('utf-8')
+                    logger.info(f"Successfully loaded logo from: {logo_path}")
+                    break
+            except Exception as e:
+                logger.warning(f"Could not read logo file from {logo_path}: {str(e)}")
+                continue
+    
+    if not logo_base64:
+        logger.warning("Logo file not found in any of the expected locations")
+    
     return {
         'name': 'Medo-Freight EU',
         'tagline': 'Ship · Route · Deliver',
@@ -218,6 +252,8 @@ def get_company_info() -> Dict:
         'phone': '+31 683083916',
         'email': 'contact@medo-freight.eu',
         'website': 'www.medo-freight.eu',
+        'site_url': site_url,
+        'logo_base64': logo_base64,
     }
 
 
@@ -253,6 +289,43 @@ def generate_invoice(shipment: LCLShipment, language: str = 'ar') -> bytes:
         # Calculate remaining amount
         remaining_amount = float(shipment.total_price) - float(shipment.amount_paid or 0)
         
+        # Generate QR Code for tracking
+        tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
+        qr_code_base64 = None
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(tracking_url)
+            qr.make(fit=True)
+            
+            # Create QR code image
+            img = qr.make_image(fill_color="black", back_color="white")
+            
+            # Convert to base64
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+            qr_code_base64 = base64.b64encode(img_buffer.read()).decode('utf-8')
+        except Exception as e:
+            logger.warning(f"Could not generate QR code: {str(e)}")
+        
+        # Get signature if exists
+        signature_base64 = None
+        if shipment.invoice_signature:
+            try:
+                signature_path = shipment.invoice_signature.path
+                if os.path.exists(signature_path):
+                    with open(signature_path, 'rb') as f:
+                        signature_data = f.read()
+                        signature_base64 = base64.b64encode(signature_data).decode('utf-8')
+                        logger.info(f"Successfully loaded signature for shipment {shipment.id}")
+            except Exception as e:
+                logger.warning(f"Could not read signature file: {str(e)}")
+        
         # Prepare context for template
         context = {
             'shipment': shipment,
@@ -263,6 +336,9 @@ def generate_invoice(shipment: LCLShipment, language: str = 'ar') -> bytes:
             'invoice_number': shipment.shipment_number,
             'status_display': status_display,
             'remaining_amount': round(remaining_amount, 2),
+            'tracking_url': tracking_url,
+            'qr_code_base64': qr_code_base64,
+            'signature_base64': signature_base64,
         }
         
         # Render HTML template
@@ -280,6 +356,120 @@ def generate_invoice(shipment: LCLShipment, language: str = 'ar') -> bytes:
         
     except Exception as e:
         logger.error(f"Error generating invoice: {str(e)}", exc_info=True)
+        raise
+
+
+def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_labels: Optional[int] = None) -> bytes:
+    """
+    Generate shipping labels PDF for LCL shipment.
+    Creates one label per parcel (including repeat_count).
+    
+    Args:
+        shipment: LCLShipment instance
+        language: 'ar' or 'en' (default: 'ar')
+    
+    Returns:
+        PDF bytes containing all shipping labels
+    """
+    try:
+        # Get company info
+        company_info = get_company_info()
+        
+        # Generate QR Code for tracking
+        tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
+        qr_code_base64 = None
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=8,
+                border=2,
+            )
+            qr.add_data(tracking_url)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+            qr_code_base64 = base64.b64encode(img_buffer.read()).decode('utf-8')
+        except Exception as e:
+            logger.warning(f"Could not generate QR code: {str(e)}")
+        
+        # Calculate total number of labels needed
+        parcels_data = shipment.parcels if shipment.parcels else []
+        
+        # If num_labels is provided, use it; otherwise calculate from parcels
+        if num_labels is not None and num_labels > 0:
+            total_labels = num_labels
+            # Use first parcel data for all labels
+            base_parcel = parcels_data[0] if parcels_data else {}
+            label_parcels = []
+            for i in range(total_labels):
+                label_parcels.append({
+                    **base_parcel,
+                    "parcel_index": i + 1,
+                    "total_parcels": total_labels,
+                })
+        else:
+            # Calculate from parcels (original logic)
+            total_labels = 0
+            label_parcels = []  # List of parcels with their repeat counts
+            
+            for parcel_data in parcels_data:
+                repeat_count = int(parcel_data.get("repeatCount", 1))
+                total_labels += repeat_count
+                # Add this parcel repeat_count times
+                for i in range(repeat_count):
+                    label_parcels.append({
+                        **parcel_data,
+                        "parcel_index": i + 1,
+                        "total_parcels": repeat_count,
+                    })
+            
+            if total_labels == 0:
+                raise ValueError("No parcels found in shipment")
+        
+        # Generate HTML for all labels
+        all_labels_html = []
+        
+        for idx, parcel in enumerate(label_parcels, 1):
+            context = {
+                'shipment': shipment,
+                'company': company_info,
+                'parcel': parcel,
+                'parcel_index': idx,
+                'total_labels': total_labels,
+                'language': language,
+                'qr_code_base64': qr_code_base64,
+            }
+            
+            # Render label template
+            label_html = render_to_string('documents/shipping_label.html', context)
+            all_labels_html.append(label_html)
+        
+        # Combine all labels into one HTML document with page breaks
+        combined_html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page { size: 6in 4in; margin: 0.15in; } .page-break { page-break-after: always; }</style></head><body>'
+        for i, label_html in enumerate(all_labels_html):
+            combined_html += label_html
+            if i < len(all_labels_html) - 1:
+                combined_html += '<div class="page-break"></div>'
+        combined_html += '</body></html>'
+        
+        # Generate PDF using WeasyPrint
+        font_config = FontConfiguration()
+        html = HTML(string=combined_html, base_url=settings.BASE_DIR)
+        
+        # Custom page size: 6x4 inches (width x height)
+        pdf_bytes = html.write_pdf(
+            font_config=font_config,
+            stylesheets=[CSS(string='@page { size: 6in 4in; margin: 0.15in; }')]
+        )
+        
+        logger.info(f"Successfully generated {total_labels} shipping labels for shipment {shipment.id}")
+        return pdf_bytes
+        
+    except Exception as e:
+        logger.error(f"Error generating shipping labels: {str(e)}", exc_info=True)
         raise
 
 
@@ -314,5 +504,132 @@ def save_invoice_to_storage(shipment: LCLShipment, pdf_bytes: bytes) -> str:
         
     except Exception as e:
         logger.error(f"Error saving invoice to storage: {str(e)}", exc_info=True)
+        raise
+
+
+def generate_receipt(shipment: LCLShipment, language: str = 'ar') -> bytes:
+    """
+    Generate receipt PDF for LCL shipment.
+    
+    Args:
+        shipment: LCLShipment instance
+        language: 'ar' or 'en' (default: 'ar')
+    
+    Returns:
+        PDF bytes
+    """
+    try:
+        # Get company info
+        company_info = get_company_info()
+        
+        # Get status display name for both languages
+        from .email_service import get_status_display_name
+        status_display_ar = get_status_display_name(shipment.status, shipment.direction)
+        # For English, we'll use the same text for now (can be improved later)
+        status_display_en = status_display_ar
+        
+        # Generate QR Code for tracking
+        tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
+        qr_code_base64 = None
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(tracking_url)
+            qr.make(fit=True)
+            
+            # Create QR code image
+            img = qr.make_image(fill_color="black", back_color="white")
+            
+            # Convert to base64
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+            qr_code_base64 = base64.b64encode(img_buffer.read()).decode('utf-8')
+        except Exception as e:
+            logger.warning(f"Could not generate QR code: {str(e)}")
+        
+        # Get signature if exists (use invoice_signature for company signature)
+        signature_base64 = None
+        if shipment.invoice_signature:
+            try:
+                signature_path = shipment.invoice_signature.path
+                if os.path.exists(signature_path):
+                    with open(signature_path, 'rb') as f:
+                        signature_data = f.read()
+                        signature_base64 = base64.b64encode(signature_data).decode('utf-8')
+                        logger.info(f"Successfully loaded signature for receipt {shipment.id}")
+            except Exception as e:
+                logger.warning(f"Could not read signature file: {str(e)}")
+        
+        # Prepare context for template
+        context = {
+            'shipment': shipment,
+            'company': company_info,
+            'language': language,
+            'receipt_date': timezone.now(),
+            'receipt_number': shipment.shipment_number,
+            'status_display': {
+                'ar': status_display_ar,
+                'en': status_display_en,
+            },
+            'status_display_text': status_display_ar if language == 'ar' else status_display_en,
+            'tracking_url': tracking_url,
+            'qr_code_base64': qr_code_base64,
+            'signature_base64': signature_base64,
+        }
+        
+        # Render HTML template
+        html_string = render_to_string('documents/receipt.html', context)
+        
+        # Generate PDF using WeasyPrint
+        font_config = FontConfiguration()
+        html = HTML(string=html_string, base_url=settings.BASE_DIR)
+        
+        # Generate PDF
+        pdf_bytes = html.write_pdf(font_config=font_config)
+        
+        logger.info(f"Successfully generated receipt PDF for shipment {shipment.id}")
+        return pdf_bytes
+        
+    except Exception as e:
+        logger.error(f"Error generating receipt: {str(e)}", exc_info=True)
+        raise
+
+
+def save_receipt_to_storage(shipment: LCLShipment, pdf_bytes: bytes) -> str:
+    """
+    Save receipt PDF to storage and update shipment record.
+    
+    Args:
+        shipment: LCLShipment instance
+        pdf_bytes: PDF file bytes
+    
+    Returns:
+        File path
+    """
+    try:
+        from django.core.files.base import ContentFile
+        
+        # Generate filename
+        filename = f"Receipt-{shipment.shipment_number}.pdf"
+        
+        # Save to FileField
+        shipment.receipt_file.save(
+            filename,
+            ContentFile(pdf_bytes),
+            save=False
+        )
+        shipment.receipt_generated_at = timezone.now()
+        shipment.save()
+        
+        logger.info(f"Saved receipt to {shipment.receipt_file.path} for shipment {shipment.id}")
+        return shipment.receipt_file.path
+        
+    except Exception as e:
+        logger.error(f"Error saving receipt to storage: {str(e)}", exc_info=True)
         raise
 

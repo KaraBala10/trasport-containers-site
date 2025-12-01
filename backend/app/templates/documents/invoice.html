@@ -33,6 +33,16 @@
             border-bottom: 3px solid #1a365d;
         }
         
+        .logo-container {
+            margin-bottom: 15px;
+        }
+        
+        .logo-container img {
+            max-width: 150px;
+            max-height: 80px;
+            object-fit: contain;
+        }
+        
         .company-info {
             flex: 1;
         }
@@ -82,6 +92,25 @@
             color: #1a365d;
         }
         
+        .qr-code-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .qr-code-container img {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #e2e8f0;
+            padding: 5px;
+            background: white;
+        }
+        
+        .qr-code-label {
+            font-size: 9px;
+            color: #4a5568;
+            margin-top: 5px;
+        }
+        
         .section {
             margin-bottom: 25px;
         }
@@ -93,6 +122,22 @@
             margin-bottom: 15px;
             padding-bottom: 8px;
             border-bottom: 2px solid #fbbf24;
+        }
+        
+        .bilingual-text {
+            display: block;
+        }
+        
+        .bilingual-text .ar {
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .bilingual-text .en {
+            display: block;
+            font-size: 10px;
+            color: #718096;
+            font-style: italic;
         }
         
         .address-box {
@@ -234,12 +279,71 @@
             background: #feebc8;
             color: #7c2d12;
         }
+        
+        /* Signature Section */
+        .signature-section {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e2e8f0;
+        }
+        
+        .signature-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+        
+        .signature-box {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .signature-line {
+            border-top: 2px solid #1a365d;
+            margin: 60px auto 10px;
+            width: 200px;
+        }
+        
+        .signature-image {
+            max-width: 200px;
+            max-height: 80px;
+            margin: 10px auto;
+            object-fit: contain;
+        }
+        
+        .signature-label {
+            font-size: 11px;
+            color: #4a5568;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .signature-placeholder {
+            border: 2px dashed #cbd5e0;
+            border-radius: 4px;
+            padding: 40px 20px;
+            margin: 10px auto;
+            width: 200px;
+            min-height: 80px;
+            background: #f7fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a0aec0;
+            font-size: 10px;
+        }
     </style>
 </head>
 <body>
     <!-- Header -->
     <div class="header">
         <div class="company-info">
+            {% if company.logo_base64 %}
+            <div class="logo-container">
+                <img src="data:image/png;base64,{{ company.logo_base64 }}" alt="Medo-Freight EU Logo">
+            </div>
+            {% endif %}
             <div class="company-name">Medo-Freight EU</div>
             <div class="company-tagline">Ship · Route · Deliver</div>
             <div class="company-details">
@@ -250,15 +354,59 @@
             </div>
         </div>
         <div class="invoice-info">
-            <div class="invoice-title">{% if language == 'ar' %}فاتورة{% else %}INVOICE{% endif %}</div>
+            <div class="invoice-title">
+                <span class="bilingual-text">
+                    <span class="ar">فاتورة</span>
+                    <span class="en">INVOICE</span>
+                </span>
+            </div>
             <div class="invoice-details">
-                <p><span class="invoice-label">{% if language == 'ar' %}رقم الفاتورة:{% else %}Invoice #:{% endif %}</span> {{ invoice_number }}</p>
-                <p><span class="invoice-label">{% if language == 'ar' %}رقم الشحنة:{% else %}Shipment #:{% endif %}</span> {{ invoice_number }}</p>
-                <p><span class="invoice-label">{% if language == 'ar' %}التاريخ:{% else %}Date:{% endif %}</span> {{ invoice_date|date:"Y-m-d" }}</p>
+                <p>
+                    <span class="invoice-label">
+                        <span class="bilingual-text">
+                            <span class="ar">رقم الفاتورة:</span>
+                            <span class="en">Invoice #:</span>
+                        </span>
+                    </span> {{ invoice_number }}
+                </p>
+                <p>
+                    <span class="invoice-label">
+                        <span class="bilingual-text">
+                            <span class="ar">رقم الشحنة:</span>
+                            <span class="en">Shipment #:</span>
+                        </span>
+                    </span> {{ invoice_number }}
+                </p>
+                <p>
+                    <span class="invoice-label">
+                        <span class="bilingual-text">
+                            <span class="ar">التاريخ:</span>
+                            <span class="en">Date:</span>
+                        </span>
+                    </span> {{ invoice_date|date:"Y-m-d" }}
+                </p>
                 {% if shipment.paid_at %}
-                <p><span class="invoice-label">{% if language == 'ar' %}تاريخ الدفع:{% else %}Payment Date:{% endif %}</span> {{ shipment.paid_at|date:"Y-m-d" }}</p>
+                <p>
+                    <span class="invoice-label">
+                        <span class="bilingual-text">
+                            <span class="ar">تاريخ الدفع:</span>
+                            <span class="en">Payment Date:</span>
+                        </span>
+                    </span> {{ shipment.paid_at|date:"Y-m-d" }}
+                </p>
                 {% endif %}
             </div>
+            {% if qr_code_base64 %}
+            <div class="qr-code-container">
+                <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="Tracking QR Code">
+                <div class="qr-code-label">
+                    <span class="bilingual-text">
+                        <span class="ar">تتبع الشحنة</span>
+                        <span class="en">Track Shipment</span>
+                    </span>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -266,7 +414,12 @@
     <div class="section">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="address-box">
-                <div class="address-label">{% if language == 'ar' %}من:{% else %}FROM:{% endif %}</div>
+                <div class="address-label">
+                    <span class="bilingual-text">
+                        <span class="ar">من:</span>
+                        <span class="en">FROM:</span>
+                    </span>
+                </div>
                 <div class="address-content">
                     <strong>{{ company.name }}</strong><br>
                     {{ company.address }}<br>
@@ -275,7 +428,12 @@
                 </div>
             </div>
             <div class="address-box">
-                <div class="address-label">{% if language == 'ar' %}إلى:{% else %}TO:{% endif %}</div>
+                <div class="address-label">
+                    <span class="bilingual-text">
+                        <span class="ar">إلى:</span>
+                        <span class="en">TO:</span>
+                    </span>
+                </div>
                 <div class="address-content">
                     <strong>{{ shipment.sender_name }}</strong><br>
                     {{ shipment.sender_address }}<br>
@@ -286,7 +444,12 @@
             </div>
         </div>
         <div class="address-box" style="margin-top: 15px;">
-            <div class="address-label">{% if language == 'ar' %}فاتورة إلى:{% else %}BILL TO:{% endif %}</div>
+            <div class="address-label">
+                <span class="bilingual-text">
+                    <span class="ar">فاتورة إلى:</span>
+                    <span class="en">BILL TO:</span>
+                </span>
+            </div>
             <div class="address-content">
                 <strong>{{ shipment.receiver_name }}</strong><br>
                 {{ shipment.receiver_address }}<br>
@@ -299,39 +462,85 @@
 
     <!-- Shipment Details -->
     <div class="section">
-        <div class="section-title">{% if language == 'ar' %}تفاصيل الشحنة{% else %}SHIPMENT DETAILS{% endif %}</div>
+        <div class="section-title">
+            <span class="bilingual-text">
+                <span class="ar">تفاصيل الشحنة</span>
+                <span class="en">SHIPMENT DETAILS</span>
+            </span>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 11px;">
             <div>
-                <strong>{% if language == 'ar' %}الاتجاه:{% else %}Direction:{% endif %}</strong>
+                <strong>
+                    <span class="bilingual-text">
+                        <span class="ar">الاتجاه:</span>
+                        <span class="en">Direction:</span>
+                    </span>
+                </strong>
                 {% if shipment.direction == 'eu-sy' %}
-                    {% if language == 'ar' %}من أوروبا إلى الشرق الأوسط{% else %}Europe to Middle East{% endif %}
+                    <span class="bilingual-text">
+                        <span class="ar">من أوروبا إلى الشرق الأوسط</span>
+                        <span class="en">Europe to Middle East</span>
+                    </span>
                 {% else %}
-                    {% if language == 'ar' %}من الشرق الأوسط إلى أوروبا{% else %}Middle East to Europe{% endif %}
+                    <span class="bilingual-text">
+                        <span class="ar">من الشرق الأوسط إلى أوروبا</span>
+                        <span class="en">Middle East to Europe</span>
+                    </span>
                 {% endif %}
             </div>
             <div>
-                <strong>{% if language == 'ar' %}الحالة:{% else %}Status:{% endif %}</strong>
+                <strong>
+                    <span class="bilingual-text">
+                        <span class="ar">الحالة:</span>
+                        <span class="en">Status:</span>
+                    </span>
+                </strong>
                 {{ status_display }}
             </div>
             <div>
-                <strong>{% if language == 'ar' %}طريقة الدفع:{% else %}Payment Method:{% endif %}</strong>
+                <strong>
+                    <span class="bilingual-text">
+                        <span class="ar">طريقة الدفع:</span>
+                        <span class="en">Payment Method:</span>
+                    </span>
+                </strong>
                 {% if shipment.payment_method == 'stripe' %}
-                    {% if language == 'ar' %}إلكتروني (Stripe){% else %}Electronic (Stripe){% endif %}
+                    <span class="bilingual-text">
+                        <span class="ar">إلكتروني (Stripe)</span>
+                        <span class="en">Electronic (Stripe)</span>
+                    </span>
                 {% elif shipment.payment_method == 'cash' %}
-                    {% if language == 'ar' %}نقدي{% else %}Cash{% endif %}
+                    <span class="bilingual-text">
+                        <span class="ar">نقدي</span>
+                        <span class="en">Cash</span>
+                    </span>
                 {% elif shipment.payment_method == 'internal-transfer' %}
-                    {% if language == 'ar' %}تحويل داخلي{% else %}Internal Transfer{% endif %}
+                    <span class="bilingual-text">
+                        <span class="ar">تحويل داخلي</span>
+                        <span class="en">Internal Transfer</span>
+                    </span>
                 {% else %}
                     N/A
                 {% endif %}
             </div>
             <div>
-                <strong>{% if language == 'ar' %}حالة الدفع:{% else %}Payment Status:{% endif %}</strong>
+                <strong>
+                    <span class="bilingual-text">
+                        <span class="ar">حالة الدفع:</span>
+                        <span class="en">Payment Status:</span>
+                    </span>
+                </strong>
                 <span class="badge {% if shipment.payment_status == 'paid' %}badge-paid{% else %}badge-pending{% endif %}">
                     {% if shipment.payment_status == 'paid' %}
-                        {% if language == 'ar' %}مدفوع{% else %}Paid{% endif %}
+                        <span class="bilingual-text">
+                            <span class="ar">مدفوع</span>
+                            <span class="en">Paid</span>
+                        </span>
                     {% else %}
-                        {% if language == 'ar' %}قيد الانتظار{% else %}Pending{% endif %}
+                        <span class="bilingual-text">
+                            <span class="ar">قيد الانتظار</span>
+                            <span class="en">Pending</span>
+                        </span>
                     {% endif %}
                 </span>
             </div>
@@ -340,19 +549,64 @@
 
     <!-- Items Table -->
     <div class="section">
-        <div class="section-title">{% if language == 'ar' %}البنود{% else %}ITEMS{% endif %}</div>
+        <div class="section-title">
+            <span class="bilingual-text">
+                <span class="ar">البنود</span>
+                <span class="en">ITEMS</span>
+            </span>
+        </div>
         <table>
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>{% if language == 'ar' %}المنتج{% else %}Product{% endif %}</th>
-                    <th>{% if language == 'ar' %}الكمية{% else %}Qty{% endif %}</th>
-                    <th>{% if language == 'ar' %}الأبعاد{% else %}Dimensions{% endif %}</th>
-                    <th>{% if language == 'ar' %}الوزن{% else %}Weight{% endif %}</th>
-                    <th>{% if language == 'ar' %}الحجمي{% else %}Vol.{% endif %}</th>
-                    <th>{% if language == 'ar' %}المحاسَب{% else %}Chargeable{% endif %}</th>
-                    <th>{% if language == 'ar' %}السعر/كغ{% else %}Rate{% endif %}</th>
-                    <th class="text-right">{% if language == 'ar' %}الإجمالي{% else %}Total{% endif %}</th>
+                    <th>
+                        <span class="bilingual-text">
+                            <span class="ar">المنتج</span>
+                            <span class="en">Product</span>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="bilingual-text">
+                            <span class="ar">الكمية</span>
+                            <span class="en">Qty</span>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="bilingual-text">
+                            <span class="ar">الأبعاد</span>
+                            <span class="en">Dimensions</span>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="bilingual-text">
+                            <span class="ar">الوزن</span>
+                            <span class="en">Weight</span>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="bilingual-text">
+                            <span class="ar">الحجمي</span>
+                            <span class="en">Vol.</span>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="bilingual-text">
+                            <span class="ar">المحاسَب</span>
+                            <span class="en">Chargeable</span>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="bilingual-text">
+                            <span class="ar">السعر/كغ</span>
+                            <span class="en">Rate</span>
+                        </span>
+                    </th>
+                    <th class="text-right">
+                        <span class="bilingual-text">
+                            <span class="ar">الإجمالي</span>
+                            <span class="en">Total</span>
+                        </span>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -365,7 +619,12 @@
                         <br><small>HS: {{ calc.hs_code }}</small>
                         {% endif %}
                         {% if calc.shipment_type %}
-                        <br><small>{% if language == 'ar' %}نوع: {% if calc.shipment_type == 'personal' %}شخصي{% else %}تجاري{% endif %}{% else %}Type: {{ calc.shipment_type|title }}{% endif %}</small>
+                        <br><small>
+                            <span class="bilingual-text">
+                                <span class="ar">نوع: {% if calc.shipment_type == 'personal' %}شخصي{% else %}تجاري{% endif %}</span>
+                                <span class="en">Type: {{ calc.shipment_type|title }}</span>
+                            </span>
+                        </small>
                         {% endif %}
                     </td>
                     <td class="text-center">{{ calc.repeat_count }}</td>
@@ -401,81 +660,153 @@
 
     <!-- Pricing Summary -->
     <div class="section">
-        <div class="section-title">{% if language == 'ar' %}ملخص الأسعار{% else %}PRICING SUMMARY{% endif %}</div>
+        <div class="section-title">
+            <span class="bilingual-text">
+                <span class="ar">ملخص الأسعار</span>
+                <span class="en">PRICING SUMMARY</span>
+            </span>
+        </div>
         <div class="summary-box">
             <div class="summary-row">
-                <span class="summary-label">{% if language == 'ar' %}Base LCL Price:{% else %}Base LCL Price:{% endif %}</span>
+                <span class="summary-label">Base LCL Price:</span>
                 <span class="summary-value">€{{ pricing.base_lcl_price }}</span>
             </div>
             {% if pricing.packaging_cost > 0 %}
             <div class="summary-row">
-                <span class="summary-label">{% if language == 'ar' %}Packaging Cost:{% else %}Packaging Cost:{% endif %}</span>
+                <span class="summary-label">
+                    <span class="bilingual-text">
+                        <span class="ar">تكلفة التغليف:</span>
+                        <span class="en">Packaging Cost:</span>
+                    </span>
+                </span>
                 <span class="summary-value">€{{ pricing.packaging_cost }}</span>
             </div>
             {% endif %}
             {% if pricing.insurance_cost > 0 %}
             <div class="summary-row">
-                <span class="summary-label">{% if language == 'ar' %}Insurance Cost:{% else %}Insurance Cost:{% endif %}</span>
+                <span class="summary-label">
+                    <span class="bilingual-text">
+                        <span class="ar">تكلفة التأمين:</span>
+                        <span class="en">Insurance Cost:</span>
+                    </span>
+                </span>
                 <span class="summary-value">€{{ pricing.insurance_cost }}</span>
             </div>
             {% endif %}
             {% if shipment.selected_eu_shipping_name %}
             <div class="summary-row">
-                <span class="summary-label">{% if language == 'ar' %}EU Shipping ({{ shipment.selected_eu_shipping_name }}):{% else %}EU Shipping ({{ shipment.selected_eu_shipping_name }}):{% endif %}</span>
+                <span class="summary-label">
+                    <span class="bilingual-text">
+                        <span class="ar">شحن الاتحاد الأوروبي ({{ shipment.selected_eu_shipping_name }}):</span>
+                        <span class="en">EU Shipping ({{ shipment.selected_eu_shipping_name }}):</span>
+                    </span>
+                </span>
                 <span class="summary-value">
-                    {% comment %}EU shipping cost needs to be calculated from total_price breakdown{% endcomment %}
-                    {% if language == 'ar' %}مشمول{% else %}Included{% endif %}
+                    <span class="bilingual-text">
+                        <span class="ar">مشمول</span>
+                        <span class="en">Included</span>
+                    </span>
                 </span>
             </div>
             {% endif %}
             {% if shipment.syria_province %}
             <div class="summary-row">
-                <span class="summary-label">{% if language == 'ar' %}Syria Transport ({{ shipment.syria_province }}):{% else %}Syria Transport ({{ shipment.syria_province }}):{% endif %}</span>
+                <span class="summary-label">
+                    <span class="bilingual-text">
+                        <span class="ar">نقل سوريا ({{ shipment.syria_province }}):</span>
+                        <span class="en">Syria Transport ({{ shipment.syria_province }}):</span>
+                    </span>
+                </span>
                 <span class="summary-value">€{{ pricing.syria_transport_cost }}</span>
             </div>
             {% endif %}
             <div class="summary-row total-row">
-                <span>{% if language == 'ar' %}الإجمالي:{% else %}TOTAL:{% endif %}</span>
+                <span>
+                    <span class="bilingual-text">
+                        <span class="ar">الإجمالي:</span>
+                        <span class="en">TOTAL:</span>
+                    </span>
+                </span>
                 <span>€{{ shipment.total_price }}</span>
             </div>
             <div class="summary-row">
-                <span class="summary-label">{% if language == 'ar' %}المبلغ المدفوع:{% else %}Amount Paid:{% endif %}</span>
+                <span class="summary-label">
+                    <span class="bilingual-text">
+                        <span class="ar">المبلغ المدفوع:</span>
+                        <span class="en">Amount Paid:</span>
+                    </span>
+                </span>
                 <span class="summary-value">€{{ shipment.amount_paid }}</span>
             </div>
             {% if shipment.total_price > shipment.amount_paid %}
             <div class="summary-row">
-                <span class="summary-label">{% if language == 'ar' %}المبلغ المتبقي:{% else %}Remaining:{% endif %}</span>
+                <span class="summary-label">
+                    <span class="bilingual-text">
+                        <span class="ar">المبلغ المتبقي:</span>
+                        <span class="en">Remaining:</span>
+                    </span>
+                </span>
                 <span class="summary-value">€{{ remaining_amount }}</span>
             </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Notes -->
-    <div class="notes">
-        <div class="notes-title">{% if language == 'ar' %}ملاحظات:{% else %}NOTES:{% endif %}</div>
-        <div class="notes-content">
-            {% if language == 'ar' %}
-            - Base LCL Price: max({{ pricing.total_price_by_weight }}, {{ pricing.total_price_by_cbm }}, 75) = {{ pricing.base_lcl_price }}<br>
-            {% if pricing.insurance_cost > 0 %}
-            - Insurance: ({{ pricing.base_lcl_price }} + {{ pricing.declared_shipment_value }}) × 1.5% = {{ pricing.insurance_cost }}<br>
-            {% endif %}
-            - شكراً لتعاملكم معنا!
-            {% else %}
-            - Base LCL Price: max({{ pricing.total_price_by_weight }}, {{ pricing.total_price_by_cbm }}, 75) = {{ pricing.base_lcl_price }}<br>
-            {% if pricing.insurance_cost > 0 %}
-            - Insurance: ({{ pricing.base_lcl_price }} + {{ pricing.declared_shipment_value }}) × 1.5% = {{ pricing.insurance_cost }}<br>
-            {% endif %}
-            - Thank you for your business!
-            {% endif %}
+    <!-- Signature Section -->
+    <div class="signature-section">
+        <div class="signature-container">
+            <div class="signature-box">
+                <div class="signature-label">
+                    <span class="bilingual-text">
+                        <span class="ar">توقيع الشركة</span>
+                        <span class="en">Company Signature</span>
+                    </span>
+                </div>
+                {% if signature_base64 %}
+                <img src="data:image/png;base64,{{ signature_base64 }}" alt="Company Signature" class="signature-image">
+                {% else %}
+                <div class="signature-placeholder">
+                    <span class="bilingual-text">
+                        <span class="ar">توقيع إلكتروني</span>
+                        <span class="en">Electronic Signature</span>
+                    </span>
+                </div>
+                {% endif %}
+                <div class="signature-line"></div>
+                <div class="signature-label" style="margin-top: 5px; font-size: 10px;">
+                    <strong>{{ company.name }}</strong>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-label">
+                    <span class="bilingual-text">
+                        <span class="ar">توقيع المستلم</span>
+                        <span class="en">Receiver Signature</span>
+                    </span>
+                </div>
+                <div class="signature-placeholder">
+                    <span class="bilingual-text">
+                        <span class="ar">توقيع المستلم</span>
+                        <span class="en">Receiver Signature</span>
+                    </span>
+                </div>
+                <div class="signature-line"></div>
+                <div class="signature-label" style="margin-top: 5px; font-size: 10px;">
+                    <strong>{{ shipment.receiver_name }}</strong>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Footer -->
     <div class="footer">
         <p><strong>Medo-Freight EU</strong> | {{ company.website }} | {{ company.email }}</p>
-        <p>{% if language == 'ar' %}هذه فاتورة رسمية.{% else %}This is an official invoice.{% endif %}</p>
+        <p>
+            <span class="bilingual-text">
+                <span class="ar">هذه فاتورة رسمية.</span>
+                <span class="en">This is an official invoice.</span>
+            </span>
+        </p>
     </div>
 </body>
 </html>
-
