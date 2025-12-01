@@ -4262,6 +4262,15 @@ def download_consolidated_export_invoice_view(request, pk):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
+        # Send consolidated export invoice by email to admin
+        try:
+            from .email_service import send_consolidated_export_invoice_email_to_admin
+            send_consolidated_export_invoice_email_to_admin(shipment, pdf_bytes)
+            logger.info(f"✅ Consolidated export invoice email sent to admin for shipment {shipment.id}")
+        except Exception as email_error:
+            logger.warning(f"Failed to send consolidated export invoice email: {str(email_error)}")
+            # Don't fail if email fails - still return the PDF
+        
         # Return PDF as response
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="Consolidated-Export-Invoice-{shipment.shipment_number}.pdf"'

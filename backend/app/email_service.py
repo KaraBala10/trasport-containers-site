@@ -1993,6 +1993,8 @@ def send_consolidated_export_invoice_email_to_admin(shipment, pdf_bytes):
             if getattr(settings, "ADMIN_EMAIL", None)
             else settings.DEFAULT_FROM_EMAIL
         )
+        
+        logger.info(f"📧 Preparing to send consolidated export invoice email to: {admin_email}")
 
         user_name = (
             shipment.user.get_full_name() or shipment.user.username
