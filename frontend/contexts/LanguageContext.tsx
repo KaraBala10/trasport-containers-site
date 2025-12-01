@@ -46,22 +46,27 @@ function getInitialLanguage(): Language {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  // Initialize with saved language from localStorage immediately to prevent flash
-  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
+  // Always initialize with DEFAULT_LANGUAGE to ensure server and client match
+  // This prevents hydration errors - we'll update from localStorage after mount
+  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  // Set mounted flag after hydration
+  // Set mounted flag and load language from localStorage after hydration
   useEffect(() => {
     setMounted(true);
 
-    // Double-check localStorage in case it changed
+    // Load saved language from localStorage after mount
     if (typeof window !== "undefined") {
-      const savedLanguage = localStorage.getItem(
-        LANGUAGE_STORAGE_KEY
-      ) as Language | null;
-      if (savedLanguage === "ar" || savedLanguage === "en") {
-        setLanguageState(savedLanguage);
+      try {
+        const savedLanguage = localStorage.getItem(
+          LANGUAGE_STORAGE_KEY
+        ) as Language | null;
+        if (savedLanguage === "ar" || savedLanguage === "en") {
+          setLanguageState(savedLanguage);
+        }
+      } catch (error) {
+        console.warn("Failed to read language from localStorage:", error);
       }
     }
   }, []);
