@@ -351,12 +351,6 @@ export const apiService = {
   },
 
   // Document endpoints
-  downloadPackingList: (shipmentId: string) => {
-    return apiClient.get(`/shipments/${shipmentId}/packing-list/`, {
-      responseType: 'blob',
-    });
-  },
-
   downloadCommercialInvoice: (shipmentId: string) => {
     return apiClient.get(`/shipments/${shipmentId}/commercial-invoice/`, {
       responseType: 'blob',

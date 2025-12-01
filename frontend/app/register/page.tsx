@@ -616,7 +616,7 @@ export default function RegisterPage() {
                         setFormData({ ...formData, password: e.target.value });
                         if (fieldErrors.password) {
                           setFieldErrors({ ...fieldErrors, password: undefined });
-                        }
+                      }
                         // Also clear password2 error if passwords match
                         if (fieldErrors.password2 && e.target.value === formData.password2) {
                           setFieldErrors({ ...fieldErrors, password2: undefined });
