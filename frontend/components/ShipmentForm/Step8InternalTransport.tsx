@@ -232,7 +232,7 @@ export default function Step8InternalTransport({
       email: "البريد الإلكتروني",
       telephone: "رقم الهاتف",
       syriaTransport: "النقل الداخلي في سورية",
-      syriaTransportDesc: "توصيل من مركز حلب إلى المحافظة المحددة",
+      syriaTransportDesc: "توصيل من مركز الشرق الأوسط إلى المحافظة المحددة",
       selectProvince: "اختر المحافظة",
       weight: "الوزن (كغ)",
       minPrice: "الحد الأدنى",
@@ -280,7 +280,7 @@ export default function Step8InternalTransport({
       email: "Email",
       telephone: "Telephone",
       syriaTransport: "Internal Transport in Syria",
-      syriaTransportDesc: "Delivery from Aleppo center to selected province",
+      syriaTransportDesc: "Delivery from Middle East center to selected province",
       selectProvince: "Select Province",
       weight: "Weight (kg)",
       minPrice: "Minimum Price",
@@ -1102,8 +1102,8 @@ export default function Step8InternalTransport({
               </h3>
               <p className="text-sm text-gray-600 mb-2">
                 {language === "ar"
-                  ? "استلام من عنوانك في سورية إلى مركز حلب"
-                  : "Pickup from your address in Syria to Aleppo center"}
+                  ? "استلام من عنوانك في الشرق الأوسط إلى مركز الشرق الأوسط"
+                  : "Pickup from your address in the Middle East to Middle East center"}
               </p>
               <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
                 {t.optional}

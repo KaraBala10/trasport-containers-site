@@ -69,12 +69,12 @@ export default function Step9Payment({
       stripeDesc:
         "Pay securely via Stripe - all payment methods available (Credit Cards, Apple Pay, Google Pay)",
       paymentMethods: "Available Payment Methods",
-      cashPayment: "Cash Payment at Aleppo Center",
+      cashPayment: "Cash Payment at Middle East Center",
       cashDesc:
-        "Pay full shipping amount in cash when delivering parcels at our center in Aleppo",
+        "Pay full shipping amount in cash when delivering parcels at our center in the Middle East",
       transferPayment: "Payment via Internal Transfer",
       transferDesc:
-        "You can pay via local transfer (bank / exchange) to our account in Syria",
+        "You can pay via local transfer (bank / exchange) to our account in the Middle East",
       transferInfo: "Transfer Information",
       transferSenderName: "Sender Name in Transfer",
       transferReference: "Transfer Number or Code",
@@ -232,12 +232,12 @@ export default function Step9Payment({
         >
           <div className="mb-4">
             <h3 className="text-xl font-bold text-primary-dark mb-2">
-              {language === "ar" ? "الدفع في سورية" : "Payment in Syria"}
+              {language === "ar" ? "الدفع في الشرق الأوسط" : "Payment in the Middle East"}
             </h3>
             <p className="text-sm text-gray-600 mb-2">
               {language === "ar"
-                ? "يمكنك اختيار الدفع في سورية عند استلام الطرود"
-                : "You can choose to pay in Syria when receiving parcels"}
+                ? "يمكنك اختيار الدفع في الشرق الأوسط عند استلام الطرود"
+                : "You can choose to pay in the Middle East when receiving parcels"}
             </p>
           </div>
 
@@ -418,12 +418,12 @@ export default function Step9Payment({
         >
           <div className="mb-4">
             <h3 className="text-xl font-bold text-primary-dark mb-2">
-              {language === "ar" ? "الدفع في سورية" : "Payment in Syria"}
+              {language === "ar" ? "الدفع في الشرق الأوسط" : "Payment in the Middle East"}
             </h3>
             <p className="text-sm text-gray-600 mb-2">
               {language === "ar"
-                ? "لا يوجد حالياً دفع إلكتروني داخل سورية. يمكنك اختيار إحدى الطريقتين التاليتين:"
-                : "Currently no electronic payment in Syria. You can choose one of the following methods:"}
+                ? "لا يوجد حالياً دفع إلكتروني داخل الشرق الأوسط. يمكنك اختيار إحدى الطريقتين التاليتين:"
+                : "Currently no electronic payment in the Middle East. You can choose one of the following methods:"}
             </p>
           </div>
 

@@ -24,7 +24,7 @@ export default function Step1Direction({
       syToEu: {
         title: "من الشرق الأوسط إلى أوروبا",
         description:
-          "تجميع من المحافظات، حلب، الشحن إلى Bergen op Zoom (هولندا)، ثم إلى أوروبا",
+          "تجميع من المحافظات، الشرق الأوسط، الشحن إلى Bergen op Zoom (هولندا)، ثم إلى أوروبا",
       },
       continue: "متابعة",
     },
@@ -37,7 +37,7 @@ export default function Step1Direction({
       syToEu: {
         title: "Middle East to Europe",
         description:
-          "Collection from Provinces, Aleppo, shipping to Bergen op Zoom (Netherlands), then to Europe",
+          "Collection from Provinces, Middle East, shipping to Bergen op Zoom (Netherlands), then to Europe",
       },
       continue: "Continue",
     },
