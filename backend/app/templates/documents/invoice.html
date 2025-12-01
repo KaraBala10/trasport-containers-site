@@ -7,7 +7,7 @@
     <style>
         @page {
             size: A4;
-            margin: 2cm;
+            margin: 1cm;
         }
         
         * {
@@ -19,27 +19,50 @@
         body {
             font-family: {% if language == 'ar' %}'Cairo', 'Arial', sans-serif{% else %}'Inter', 'Arial', sans-serif{% endif %};
             font-size: 12px;
-            line-height: 1.6;
+            line-height: 1.5;
             color: #1a365d;
             direction: {% if language == 'ar' %}rtl{% else %}ltr{% endif %};
+            background: #ffffff;
+        }
+        
+        /* Page break controls */
+        .page-break-before {
+            page-break-before: always;
+        }
+        
+        .page-break-after {
+            page-break-after: always;
+        }
+        
+        .page-break-inside-avoid {
+            page-break-inside: avoid;
+        }
+        
+        .no-page-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
         
         .header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
+            margin-bottom: 15px;
+            padding: 12px;
+            padding-bottom: 12px;
             border-bottom: 3px solid #1a365d;
+            background: linear-gradient(135deg, #f7fafc 0%, #ffffff 100%);
+            border-radius: 6px;
+            page-break-inside: avoid;
         }
         
         .logo-container {
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
         
         .logo-container img {
-            max-width: 150px;
-            max-height: 80px;
+            max-width: 140px;
+            max-height: 70px;
             object-fit: contain;
         }
         
@@ -49,79 +72,105 @@
         
         .company-name {
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 900;
             color: #1a365d;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
         }
         
         .company-tagline {
             font-size: 14px;
             color: #fbbf24;
-            font-weight: 600;
-            margin-bottom: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
         }
         
         .company-details {
             font-size: 11px;
-            color: #4a5568;
-            line-height: 1.8;
+            color: #2d3748;
+            line-height: 1.6;
+            font-weight: 500;
         }
         
         .invoice-info {
             text-align: {% if language == 'ar' %}left{% else %}right{% endif %};
+            min-width: 220px;
         }
         
         .invoice-title {
             font-size: 32px;
-            font-weight: bold;
+            font-weight: 900;
             color: #1a365d;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            line-height: 1.2;
         }
         
         .invoice-details {
             font-size: 11px;
-            color: #4a5568;
+            color: #2d3748;
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 4px;
+            border: 2px solid #e2e8f0;
         }
         
         .invoice-details p {
             margin: 5px 0;
+            font-weight: 500;
+            line-height: 1.5;
         }
         
         .invoice-label {
-            font-weight: bold;
+            font-weight: 700;
             color: #1a365d;
+            font-size: 11px;
         }
         
         .qr-code-container {
-            margin-top: 15px;
+            margin-top: 10px;
             text-align: center;
+            padding: 8px;
+            background: #ffffff;
+            border-radius: 4px;
+            border: 2px solid #e2e8f0;
         }
         
         .qr-code-container img {
-            width: 100px;
-            height: 100px;
-            border: 2px solid #e2e8f0;
-            padding: 5px;
+            width: 90px;
+            height: 90px;
+            border: 2px solid #1a365d;
+            padding: 6px;
             background: white;
+            border-radius: 4px;
         }
         
         .qr-code-label {
             font-size: 9px;
-            color: #4a5568;
-            margin-top: 5px;
+            color: #1a365d;
+            margin-top: 6px;
+            font-weight: 600;
         }
         
         .section {
-            margin-bottom: 25px;
+            margin-bottom: 18px;
+            page-break-inside: avoid;
         }
         
         .section-title {
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 800;
             color: #1a365d;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #fbbf24;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 3px solid #fbbf24;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            line-height: 1.3;
         }
         
         .bilingual-text {
@@ -130,61 +179,96 @@
         
         .bilingual-text .ar {
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
         
         .bilingual-text .en {
             display: block;
-            font-size: 10px;
+            font-size: 9px;
             color: #718096;
             font-style: italic;
         }
         
         .address-box {
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 5px;
+            background: linear-gradient(135deg, #f7fafc 0%, #ffffff 100%);
+            padding: 12px;
+            border-radius: 6px;
             border-left: 4px solid #1a365d;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
         
         .address-label {
-            font-weight: bold;
+            font-weight: 800;
             color: #1a365d;
             margin-bottom: 8px;
-            font-size: 12px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
         }
         
         .address-content {
             font-size: 11px;
-            color: #4a5568;
-            line-height: 1.8;
+            color: #2d3748;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+        
+        .address-content strong {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1a365d;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            font-size: 10px;
         }
         
         table th {
-            background: #1a365d;
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
             color: white;
-            padding: 12px 8px;
+            padding: 8px 6px;
             text-align: {% if language == 'ar' %}right{% else %}left{% endif %};
-            font-size: 11px;
-            font-weight: bold;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            line-height: 1.2;
         }
         
         table td {
-            padding: 10px 8px;
+            padding: 8px 6px;
             border-bottom: 1px solid #e2e8f0;
-            font-size: 11px;
-            color: #4a5568;
+            font-size: 9px;
+            color: #2d3748;
+            font-weight: 500;
+            line-height: 1.3;
         }
         
         table tr:nth-child(even) {
             background: #f7fafc;
+        }
+        
+        table tr:hover {
+            background: #edf2f7;
+        }
+        
+        table td strong {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1a365d;
+        }
+        
+        table td small {
+            font-size: 9px;
+            color: #718096;
         }
         
         .text-right {
@@ -196,11 +280,12 @@
         }
         
         .summary-box {
-            background: #f7fafc;
-            padding: 20px;
-            border-radius: 5px;
-            border: 2px solid #e2e8f0;
-            margin-top: 20px;
+            background: linear-gradient(135deg, #f7fafc 0%, #ffffff 100%);
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px solid #1a365d;
+            margin-top: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         
         .summary-row {
@@ -208,6 +293,7 @@
             justify-content: space-between;
             padding: 8px 0;
             border-bottom: 1px solid #e2e8f0;
+            align-items: center;
         }
         
         .summary-row:last-child {
@@ -216,122 +302,154 @@
         
         .summary-label {
             font-weight: 600;
-            color: #4a5568;
+            color: #2d3748;
+            font-size: 11px;
         }
         
         .summary-value {
-            font-weight: bold;
+            font-weight: 700;
             color: #1a365d;
+            font-size: 12px;
         }
         
         .total-row {
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 900;
             color: #1a365d;
             padding-top: 10px;
             margin-top: 10px;
             border-top: 3px solid #1a365d;
+            background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .total-row .summary-value {
+            font-size: 18px;
+            color: #1a365d;
         }
         
         .notes {
-            margin-top: 30px;
-            padding: 15px;
-            background: #fffbf0;
+            margin-top: 18px;
+            padding: 12px;
+            background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
             border-left: 4px solid #fbbf24;
-            border-radius: 5px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
         
         .notes-title {
-            font-weight: bold;
+            font-weight: 800;
             color: #1a365d;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            text-transform: uppercase;
         }
         
         .notes-content {
             font-size: 10px;
-            color: #4a5568;
-            line-height: 1.8;
+            color: #2d3748;
+            line-height: 1.6;
+            font-weight: 500;
         }
         
         .footer {
-            margin-top: 40px;
-            padding-top: 20px;
+            margin-top: 20px;
+            padding-top: 12px;
             border-top: 2px solid #e2e8f0;
             text-align: center;
             font-size: 10px;
-            color: #718096;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        
+        .footer strong {
+            font-size: 11px;
+            color: #1a365d;
+            font-weight: 700;
         }
         
         .badge {
             display: inline-block;
-            padding: 4px 8px;
+            padding: 5px 10px;
             border-radius: 4px;
             font-size: 10px;
-            font-weight: bold;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         
         .badge-paid {
-            background: #c6f6d5;
+            background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
             color: #22543d;
+            border: 2px solid #48bb78;
         }
         
         .badge-pending {
-            background: #feebc8;
+            background: linear-gradient(135deg, #feebc8 0%, #fbd38d 100%);
             color: #7c2d12;
+            border: 2px solid #ed8936;
         }
         
         /* Signature Section */
         .signature-section {
-            margin-top: 50px;
-            padding-top: 30px;
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 2px solid #e2e8f0;
+            page-break-inside: avoid;
         }
         
         .signature-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-top: 30px;
+            gap: 30px;
+            margin-top: 15px;
         }
         
         .signature-box {
             text-align: center;
-            padding: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f7fafc 0%, #ffffff 100%);
+            border-radius: 6px;
+            border: 2px solid #e2e8f0;
         }
         
         .signature-line {
             border-top: 2px solid #1a365d;
-            margin: 60px auto 10px;
+            margin: 30px auto 8px;
             width: 200px;
         }
         
         .signature-image {
             max-width: 200px;
             max-height: 80px;
-            margin: 10px auto;
+            margin: 8px auto;
             object-fit: contain;
         }
         
         .signature-label {
             font-size: 11px;
-            color: #4a5568;
-            font-weight: 600;
-            margin-top: 10px;
+            color: #1a365d;
+            font-weight: 700;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         
         .signature-placeholder {
             border: 2px dashed #cbd5e0;
             border-radius: 4px;
-            padding: 40px 20px;
-            margin: 10px auto;
+            padding: 30px 15px;
+            margin: 8px auto;
             width: 200px;
-            min-height: 80px;
+            min-height: 70px;
             background: #f7fafc;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #a0aec0;
+            color: #718096;
             font-size: 10px;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -412,7 +530,7 @@
 
     <!-- FROM / TO -->
     <div class="section">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="address-box">
                 <div class="address-label">
                     <span class="bilingual-text">
@@ -443,7 +561,7 @@
                 </div>
             </div>
         </div>
-        <div class="address-box" style="margin-top: 15px;">
+        <div class="address-box" style="margin-top: 10px;">
             <div class="address-label">
                 <span class="bilingual-text">
                     <span class="ar">فاتورة إلى:</span>
@@ -468,14 +586,15 @@
                 <span class="en">SHIPMENT DETAILS</span>
             </span>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 11px;">
-            <div>
-                <strong>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 11px; background: linear-gradient(135deg, #f7fafc 0%, #ffffff 100%); padding: 12px; border-radius: 6px; border: 2px solid #e2e8f0;">
+            <div style="padding: 8px; background: white; border-radius: 4px; border-left: 3px solid #1a365d;">
+                <strong style="font-size: 12px; color: #1a365d; display: block; margin-bottom: 5px;">
                     <span class="bilingual-text">
                         <span class="ar">الاتجاه:</span>
                         <span class="en">Direction:</span>
                     </span>
                 </strong>
+                <span style="font-size: 11px; font-weight: 600; color: #2d3748;">
                 {% if shipment.direction == 'eu-sy' %}
                     <span class="bilingual-text">
                         <span class="ar">من أوروبا إلى الشرق الأوسط</span>
@@ -487,23 +606,25 @@
                         <span class="en">Middle East to Europe</span>
                     </span>
                 {% endif %}
+                </span>
             </div>
-            <div>
-                <strong>
+            <div style="padding: 8px; background: white; border-radius: 4px; border-left: 3px solid #1a365d;">
+                <strong style="font-size: 12px; color: #1a365d; display: block; margin-bottom: 5px;">
                     <span class="bilingual-text">
                         <span class="ar">الحالة:</span>
                         <span class="en">Status:</span>
                     </span>
                 </strong>
-                {{ status_display }}
+                <span style="font-size: 11px; font-weight: 600; color: #2d3748;">{{ status_display }}</span>
             </div>
-            <div>
-                <strong>
+            <div style="padding: 8px; background: white; border-radius: 4px; border-left: 3px solid #1a365d;">
+                <strong style="font-size: 12px; color: #1a365d; display: block; margin-bottom: 5px;">
                     <span class="bilingual-text">
                         <span class="ar">طريقة الدفع:</span>
                         <span class="en">Payment Method:</span>
                     </span>
                 </strong>
+                <span style="font-size: 11px; font-weight: 600; color: #2d3748;">
                 {% if shipment.payment_method == 'stripe' %}
                     <span class="bilingual-text">
                         <span class="ar">إلكتروني (Stripe)</span>
@@ -522,9 +643,10 @@
                 {% else %}
                     N/A
                 {% endif %}
+                </span>
             </div>
-            <div>
-                <strong>
+            <div style="padding: 8px; background: white; border-radius: 4px; border-left: 3px solid #1a365d;">
+                <strong style="font-size: 12px; color: #1a365d; display: block; margin-bottom: 5px;">
                     <span class="bilingual-text">
                         <span class="ar">حالة الدفع:</span>
                         <span class="en">Payment Status:</span>
@@ -548,14 +670,14 @@
     </div>
 
     <!-- Items Table -->
-    <div class="section">
+    <div class="section no-page-break">
         <div class="section-title">
             <span class="bilingual-text">
                 <span class="ar">البنود</span>
                 <span class="en">ITEMS</span>
             </span>
         </div>
-        <table>
+        <table class="no-page-break">
             <thead>
                 <tr>
                     <th>#</th>
@@ -659,14 +781,14 @@
     </div>
 
     <!-- Pricing Summary -->
-    <div class="section">
+    <div class="section no-page-break">
         <div class="section-title">
             <span class="bilingual-text">
                 <span class="ar">ملخص الأسعار</span>
                 <span class="en">PRICING SUMMARY</span>
             </span>
         </div>
-        <div class="summary-box">
+        <div class="summary-box no-page-break">
             <div class="summary-row">
                 <span class="summary-label">Base LCL Price:</span>
                 <span class="summary-value">€{{ pricing.base_lcl_price }}</span>
@@ -773,7 +895,7 @@
                 </div>
                 {% endif %}
                 <div class="signature-line"></div>
-                <div class="signature-label" style="margin-top: 5px; font-size: 10px;">
+                <div class="signature-label" style="margin-top: 5px; font-size: 9px;">
                     <strong>{{ company.name }}</strong>
                 </div>
             </div>
@@ -791,7 +913,7 @@
                     </span>
                 </div>
                 <div class="signature-line"></div>
-                <div class="signature-label" style="margin-top: 5px; font-size: 10px;">
+                <div class="signature-label" style="margin-top: 5px; font-size: 9px;">
                     <strong>{{ shipment.receiver_name }}</strong>
                 </div>
             </div>
