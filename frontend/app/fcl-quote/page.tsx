@@ -2714,6 +2714,7 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="total_weight"
+                        type="text"
                         inputMode="decimal"
                         value={formData.total_weight}
                         onChange={handleChange}
@@ -2744,6 +2745,7 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="total_volume"
+                        type="text"
                         inputMode="decimal"
                         value={formData.total_volume}
                         onChange={handleChange}
@@ -2774,6 +2776,7 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="cargo_value"
+                        type="text"
                         inputMode="decimal"
                         value={formData.cargo_value}
                         onChange={handleChange}

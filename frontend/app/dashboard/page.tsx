@@ -1139,7 +1139,10 @@ export default function DashboardPage() {
           const updated = prevShipments.map((s) =>
             s.id === shipmentId ? { ...s, ...updatedShipment } : s
           );
-          console.log("Updated shipments state:", updated.find(s => s.id === shipmentId));
+          console.log(
+            "Updated shipments state:",
+            updated.find((s) => s.id === shipmentId)
+          );
           return updated;
         });
       }
@@ -4671,37 +4674,49 @@ export default function DashboardPage() {
                               </div>
 
                               {/* Shipment Type (Personal/Commercial) */}
-                              {shipment.parcels && shipment.parcels.length > 0 && (() => {
-                                const shipmentTypes = shipment.parcels
-                                  .map((p: any) => p.shipmentType)
-                                  .filter((type: string) => type);
-                                const uniqueTypes = [...new Set(shipmentTypes)];
-                                const isMixed = uniqueTypes.length > 1;
-                                const displayType = isMixed 
-                                  ? (language === "ar" ? "مختلط" : "Mixed")
-                                  : (uniqueTypes[0] === "commercial" 
-                                      ? (language === "ar" ? "تجارية" : "Commercial")
-                                      : (language === "ar" ? "شخصية" : "Personal"));
-                                
-                                return (
-                                  <div className="space-y-2">
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                      {language === "ar" ? "نوع الشحنة" : "Shipment Type"}
-                                    </p>
-                                    <span
-                                      className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm ${
-                                        isMixed
-                                          ? "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300"
-                                          : uniqueTypes[0] === "commercial"
-                                          ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300"
-                                          : "bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300"
-                                      }`}
-                                    >
-                                      {displayType}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
+                              {shipment.parcels &&
+                                shipment.parcels.length > 0 &&
+                                (() => {
+                                  const shipmentTypes = shipment.parcels
+                                    .map((p: any) => p.shipmentType)
+                                    .filter((type: string) => type);
+                                  const uniqueTypes = Array.from(
+                                    new Set(shipmentTypes)
+                                  );
+                                  const isMixed = uniqueTypes.length > 1;
+                                  const displayType = isMixed
+                                    ? language === "ar"
+                                      ? "مختلط"
+                                      : "Mixed"
+                                    : uniqueTypes[0] === "commercial"
+                                    ? language === "ar"
+                                      ? "تجارية"
+                                      : "Commercial"
+                                    : language === "ar"
+                                    ? "شخصية"
+                                    : "Personal";
+
+                                  return (
+                                    <div className="space-y-2">
+                                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                        {language === "ar"
+                                          ? "نوع الشحنة"
+                                          : "Shipment Type"}
+                                      </p>
+                                      <span
+                                        className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm ${
+                                          isMixed
+                                            ? "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300"
+                                            : uniqueTypes[0] === "commercial"
+                                            ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300"
+                                            : "bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300"
+                                        }`}
+                                      >
+                                        {displayType}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
 
                               {/* Status */}
                               <div className="space-y-2">
@@ -4723,38 +4738,38 @@ export default function DashboardPage() {
                               {/* Payment Progress - Show for all shipments with total_price (same as FCL logic) */}
                               {shipment.total_price &&
                                 shipment.total_price > 0 && (
-                                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                    {t.paymentProgress}
-                                  </p>
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-xs">
-                                      <span className="text-gray-600 font-medium">
-                                        {t.amountPaid}
-                                      </span>
-                                      <span 
-                                        key={`amount-${shipment.id}-${shipment.amount_paid}`}
-                                        className="font-bold text-primary-dark"
-                                      >
-                                        €{shipment.amount_paid || 0}
-                                      </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                      <div
-                                        key={`progress-${shipment.id}-${shipment.amount_paid}`}
-                                        className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
-                                        style={{
-                                          width: `${Math.min(
-                                            100,
-                                            ((shipment.amount_paid || 0) /
-                                              shipment.total_price) *
-                                              100
-                                          )}%`,
-                                        }}
-                                      ></div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <p 
+                                  <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                      {t.paymentProgress}
+                                    </p>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-center text-xs">
+                                        <span className="text-gray-600 font-medium">
+                                          {t.amountPaid}
+                                        </span>
+                                        <span
+                                          key={`amount-${shipment.id}-${shipment.amount_paid}`}
+                                          className="font-bold text-primary-dark"
+                                        >
+                                          €{shipment.amount_paid || 0}
+                                        </span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                        <div
+                                          key={`progress-${shipment.id}-${shipment.amount_paid}`}
+                                          className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
+                                          style={{
+                                            width: `${Math.min(
+                                              100,
+                                              ((shipment.amount_paid || 0) /
+                                                shipment.total_price) *
+                                                100
+                                            )}%`,
+                                          }}
+                                        ></div>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <p
                                           key={`percentage-${shipment.id}-${shipment.amount_paid}`}
                                           className="text-xs font-bold text-gray-700"
                                         >
@@ -4765,86 +4780,88 @@ export default function DashboardPage() {
                                           )}
                                           %
                                         </p>
-                                      <p className="text-xs text-gray-600">
-                                        {t.totalPrice}: €
-                                        {shipment.total_price || 0}
-                                      </p>
-                                    </div>
-                                    {/* Warning message if payment is not 100% */}
-                                    {((Number(shipment.amount_paid) || 0) /
-                                      Number(shipment.total_price)) *
-                                      100 <
-                                      100 && (
-                                      <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
-                                        <p className="text-xs font-semibold text-yellow-800">
-                                          {language === "ar"
-                                            ? "⚠️ يرجى إكمال الدفع للمتابعة"
-                                            : "⚠️ Please complete payment to continue"}
-                                        </p>
-                                        <p className="text-xs text-yellow-700 mt-1">
-                                          {language === "ar"
-                                            ? `المبلغ المتبقي: €${(
-                                                Number(shipment.total_price) -
-                                                (Number(shipment.amount_paid) ||
-                                                  0)
-                                              ).toFixed(2)}`
-                                            : `Remaining amount: €${(
-                                                Number(shipment.total_price) -
-                                                (Number(shipment.amount_paid) ||
-                                                  0)
-                                              ).toFixed(2)}`}
+                                        <p className="text-xs text-gray-600">
+                                          {t.totalPrice}: €
+                                          {shipment.total_price || 0}
                                         </p>
                                       </div>
-                                    )}
-                                  </div>
-                                  {isAdmin && (
-                                    <div className="mt-2 space-y-2">
-                                      <button
-                                        onClick={() =>
-                                          handleUpdateShipmentPaidAmount(
-                                            shipment.id
-                                          )
-                                        }
-                                        className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-                                      >
-                                        {t.updatePaidAmount}
-                                      </button>
+                                      {/* Warning message if payment is not 100% */}
                                       {((Number(shipment.amount_paid) || 0) /
                                         Number(shipment.total_price)) *
                                         100 <
                                         100 && (
+                                        <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+                                          <p className="text-xs font-semibold text-yellow-800">
+                                            {language === "ar"
+                                              ? "⚠️ يرجى إكمال الدفع للمتابعة"
+                                              : "⚠️ Please complete payment to continue"}
+                                          </p>
+                                          <p className="text-xs text-yellow-700 mt-1">
+                                            {language === "ar"
+                                              ? `المبلغ المتبقي: €${(
+                                                  Number(shipment.total_price) -
+                                                  (Number(
+                                                    shipment.amount_paid
+                                                  ) || 0)
+                                                ).toFixed(2)}`
+                                              : `Remaining amount: €${(
+                                                  Number(shipment.total_price) -
+                                                  (Number(
+                                                    shipment.amount_paid
+                                                  ) || 0)
+                                                ).toFixed(2)}`}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {isAdmin && (
+                                      <div className="mt-2 space-y-2">
                                         <button
                                           onClick={() =>
-                                            handleSendShipmentPaymentReminder(
+                                            handleUpdateShipmentPaidAmount(
                                               shipment.id
                                             )
                                           }
-                                          className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                          className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                         >
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                            />
-                                          </svg>
-                                          <span>
-                                            {language === "ar"
-                                              ? "إرسال تذكير الدفع"
-                                              : "Send Payment Reminder"}
-                                          </span>
+                                          {t.updatePaidAmount}
                                         </button>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
+                                        {((Number(shipment.amount_paid) || 0) /
+                                          Number(shipment.total_price)) *
+                                          100 <
+                                          100 && (
+                                          <button
+                                            onClick={() =>
+                                              handleSendShipmentPaymentReminder(
+                                                shipment.id
+                                              )
+                                            }
+                                            className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                          >
+                                            <svg
+                                              className="w-4 h-4"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                              />
+                                            </svg>
+                                            <span>
+                                              {language === "ar"
+                                                ? "إرسال تذكير الدفع"
+                                                : "Send Payment Reminder"}
+                                            </span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                             </div>
 
                             {/* Action Buttons */}
@@ -5921,7 +5938,9 @@ export default function DashboardPage() {
                                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
                                   <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
                                   <h4 className="font-bold text-primary-dark text-lg">
-                                    {language === "ar" ? "المستندات" : "Documents"}
+                                    {language === "ar"
+                                      ? "المستندات"
+                                      : "Documents"}
                                   </h4>
                                 </div>
 
@@ -5932,15 +5951,24 @@ export default function DashboardPage() {
                                     payment_status: shipment.payment_status,
                                     status: shipment.status,
                                     invoice_file: shipment.invoice_file,
-                                    invoice_generated_at: shipment.invoice_generated_at,
+                                    invoice_generated_at:
+                                      shipment.invoice_generated_at,
                                   });
-                                  
-                                  const canGenerateInvoice = shipment.payment_status === "paid" && shipment.status !== "PENDING_PAYMENT";
-                                  const hasInvoice = !!(shipment.invoice_file || shipment.invoice_generated_at);
-                                  
+
+                                  const canGenerateInvoice =
+                                    shipment.payment_status === "paid" &&
+                                    shipment.status !== "PENDING_PAYMENT";
+                                  const hasInvoice = !!(
+                                    shipment.invoice_file ||
+                                    shipment.invoice_generated_at
+                                  );
+
                                   if (canGenerateInvoice && hasInvoice) {
                                     return "has_invoice"; // Show invoice download
-                                  } else if (canGenerateInvoice && !hasInvoice) {
+                                  } else if (
+                                    canGenerateInvoice &&
+                                    !hasInvoice
+                                  ) {
                                     return "can_generate"; // Show generate button
                                   } else {
                                     return "not_available"; // Show not available
@@ -5949,15 +5977,23 @@ export default function DashboardPage() {
                                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-200">
                                     <div className="flex items-center justify-between mb-3">
                                       <div className="flex items-center gap-2">
-                                        <span className="text-green-600 font-bold text-lg">✓</span>
+                                        <span className="text-green-600 font-bold text-lg">
+                                          ✓
+                                        </span>
                                         <h5 className="font-bold text-primary-dark">
-                                          {language === "ar" ? "الفاتورة" : "Invoice"}
+                                          {language === "ar"
+                                            ? "الفاتورة"
+                                            : "Invoice"}
                                         </h5>
                                       </div>
                                       {shipment.invoice_generated_at && (
                                         <span className="text-xs text-gray-500">
-                                          {new Date(shipment.invoice_generated_at).toLocaleDateString(
-                                            language === "ar" ? "ar-SA" : "en-US"
+                                          {new Date(
+                                            shipment.invoice_generated_at
+                                          ).toLocaleDateString(
+                                            language === "ar"
+                                              ? "ar-SA"
+                                              : "en-US"
                                           )}
                                         </span>
                                       )}
@@ -5972,9 +6008,15 @@ export default function DashboardPage() {
                                       </div>
                                       {shipment.invoice_generated_at && (
                                         <p className="text-xs text-gray-500">
-                                          {language === "ar" ? "تم التوليد:" : "Generated:"}{" "}
-                                          {new Date(shipment.invoice_generated_at).toLocaleString(
-                                            language === "ar" ? "ar-SA" : "en-US"
+                                          {language === "ar"
+                                            ? "تم التوليد:"
+                                            : "Generated:"}{" "}
+                                          {new Date(
+                                            shipment.invoice_generated_at
+                                          ).toLocaleString(
+                                            language === "ar"
+                                              ? "ar-SA"
+                                              : "en-US"
                                           )}
                                         </p>
                                       )}
@@ -5984,15 +6026,21 @@ export default function DashboardPage() {
                                       <button
                                         onClick={async () => {
                                           try {
-                                            const response = await apiService.downloadInvoice(
-                                              shipment.id,
-                                              language
+                                            const response =
+                                              await apiService.downloadInvoice(
+                                                shipment.id,
+                                                language
+                                              );
+                                            const blob = new Blob(
+                                              [response.data],
+                                              {
+                                                type: "application/pdf",
+                                              }
                                             );
-                                            const blob = new Blob([response.data], {
-                                              type: "application/pdf",
-                                            });
-                                            const url = window.URL.createObjectURL(blob);
-                                            const link = document.createElement("a");
+                                            const url =
+                                              window.URL.createObjectURL(blob);
+                                            const link =
+                                              document.createElement("a");
                                             link.href = url;
                                             link.download = `Invoice-${shipment.shipment_number}.pdf`;
                                             document.body.appendChild(link);
@@ -6000,7 +6048,10 @@ export default function DashboardPage() {
                                             document.body.removeChild(link);
                                             window.URL.revokeObjectURL(url);
                                           } catch (error: any) {
-                                            console.error("Error downloading invoice:", error);
+                                            console.error(
+                                              "Error downloading invoice:",
+                                              error
+                                            );
                                             showSuccess(
                                               language === "ar"
                                                 ? "حدث خطأ أثناء تحميل الفاتورة. يرجى المحاولة لاحقاً."
@@ -6023,28 +6074,40 @@ export default function DashboardPage() {
                                             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                                           />
                                         </svg>
-                                        {language === "ar" ? "تحميل الفاتورة" : "Download Invoice"}
+                                        {language === "ar"
+                                          ? "تحميل الفاتورة"
+                                          : "Download Invoice"}
                                       </button>
                                     </div>
                                   </div>
                                 ) : (() => {
-                                  const canGenerateInvoice = shipment.payment_status === "paid" && shipment.status !== "PENDING_PAYMENT";
-                                  const hasInvoice = !!(shipment.invoice_file || shipment.invoice_generated_at);
-                                  console.log("Invoice Generate Check:", {
-                                    canGenerateInvoice,
-                                    hasInvoice,
-                                    payment_status: shipment.payment_status,
-                                    status: shipment.status,
-                                    shouldShow: canGenerateInvoice && !hasInvoice,
-                                  });
-                                  return canGenerateInvoice && !hasInvoice;
-                                })() ? (
+                                    const canGenerateInvoice =
+                                      shipment.payment_status === "paid" &&
+                                      shipment.status !== "PENDING_PAYMENT";
+                                    const hasInvoice = !!(
+                                      shipment.invoice_file ||
+                                      shipment.invoice_generated_at
+                                    );
+                                    console.log("Invoice Generate Check:", {
+                                      canGenerateInvoice,
+                                      hasInvoice,
+                                      payment_status: shipment.payment_status,
+                                      status: shipment.status,
+                                      shouldShow:
+                                        canGenerateInvoice && !hasInvoice,
+                                    });
+                                    return canGenerateInvoice && !hasInvoice;
+                                  })() ? (
                                   // This should not happen, but just in case - show generate button
                                   <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-200">
                                     <div className="flex items-center gap-2 mb-2">
-                                      <span className="text-yellow-600">⏳</span>
+                                      <span className="text-yellow-600">
+                                        ⏳
+                                      </span>
                                       <h5 className="font-bold text-primary-dark">
-                                        {language === "ar" ? "الفاتورة" : "Invoice"}
+                                        {language === "ar"
+                                          ? "الفاتورة"
+                                          : "Invoice"}
                                       </h5>
                                     </div>
                                     <p className="text-sm text-gray-700 mb-3">
@@ -6060,36 +6123,48 @@ export default function DashboardPage() {
                                               ? "جاري توليد الفاتورة..."
                                               : "Generating invoice..."
                                           );
-                                          
-                                          const response = await apiService.downloadInvoice(
-                                            shipment.id,
-                                            language
+
+                                          const response =
+                                            await apiService.downloadInvoice(
+                                              shipment.id,
+                                              language
+                                            );
+
+                                          const blob = new Blob(
+                                            [response.data],
+                                            {
+                                              type: "application/pdf",
+                                            }
                                           );
-                                          
-                                          const blob = new Blob([response.data], {
-                                            type: "application/pdf",
-                                          });
-                                          const url = window.URL.createObjectURL(blob);
-                                          const link = document.createElement("a");
+                                          const url =
+                                            window.URL.createObjectURL(blob);
+                                          const link =
+                                            document.createElement("a");
                                           link.href = url;
                                           link.download = `Invoice-${shipment.shipment_number}.pdf`;
                                           document.body.appendChild(link);
                                           link.click();
                                           document.body.removeChild(link);
                                           window.URL.revokeObjectURL(url);
-                                          
+
                                           showSuccess(
                                             language === "ar"
                                               ? "تم تحميل الفاتورة بنجاح! جاري تحديث الصفحة..."
                                               : "Invoice downloaded successfully! Refreshing page..."
                                           );
-                                          
+
                                           setTimeout(() => {
                                             window.location.reload();
                                           }, 1500);
                                         } catch (error: any) {
-                                          console.error("Error downloading invoice:", error);
-                                          const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                          console.error(
+                                            "Error downloading invoice:",
+                                            error
+                                          );
+                                          const errorMessage =
+                                            error.response?.data?.error ||
+                                            error.message ||
+                                            "Unknown error";
                                           showSuccess(
                                             language === "ar"
                                               ? `حدث خطأ: ${errorMessage}`
@@ -6099,7 +6174,9 @@ export default function DashboardPage() {
                                       }}
                                       className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md"
                                     >
-                                      {language === "ar" ? "توليد وتحميل الفاتورة" : "Generate & Download Invoice"}
+                                      {language === "ar"
+                                        ? "توليد وتحميل الفاتورة"
+                                        : "Generate & Download Invoice"}
                                     </button>
                                   </div>
                                 ) : (
@@ -6107,11 +6184,14 @@ export default function DashboardPage() {
                                     <div className="flex items-center gap-2 mb-2">
                                       <span className="text-gray-400">⏳</span>
                                       <h5 className="font-bold text-gray-600">
-                                        {language === "ar" ? "الفاتورة" : "Invoice"}
+                                        {language === "ar"
+                                          ? "الفاتورة"
+                                          : "Invoice"}
                                       </h5>
                                     </div>
                                     <p className="text-sm text-gray-500">
-                                      {shipment.status === "PENDING_PAYMENT" || shipment.payment_status !== "paid"
+                                      {shipment.status === "PENDING_PAYMENT" ||
+                                      shipment.payment_status !== "paid"
                                         ? language === "ar"
                                           ? "سيتم توليد الفاتورة بعد تأكيد الدفع"
                                           : "Invoice will be generated after payment confirmation"
@@ -6124,27 +6204,42 @@ export default function DashboardPage() {
 
                                 {/* Receipt Card */}
                                 {(() => {
-                                  const hasReceipt = !!(shipment.receipt_file || shipment.receipt_generated_at);
-                                  
+                                  const hasReceipt = !!(
+                                    shipment.receipt_file ||
+                                    shipment.receipt_generated_at
+                                  );
+
                                   // Check if receipt should be available based on status and direction
-                                  const shouldHaveReceipt = 
-                                    (shipment.direction === "eu-sy" && shipment.status === "ARRIVED_WATTWEG_5") ||
-                                    (shipment.direction === "sy-eu" && shipment.status === "ARRIVED_DESTINATION");
-                                  
+                                  const shouldHaveReceipt =
+                                    (shipment.direction === "eu-sy" &&
+                                      shipment.status ===
+                                        "ARRIVED_WATTWEG_5") ||
+                                    (shipment.direction === "sy-eu" &&
+                                      shipment.status ===
+                                        "ARRIVED_DESTINATION");
+
                                   if (hasReceipt) {
                                     return (
                                       <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-4 border-2 border-purple-200 mt-4">
                                         <div className="flex items-center justify-between mb-3">
                                           <div className="flex items-center gap-2">
-                                            <span className="text-purple-600 font-bold text-lg">✓</span>
+                                            <span className="text-purple-600 font-bold text-lg">
+                                              ✓
+                                            </span>
                                             <h5 className="font-bold text-primary-dark">
-                                              {language === "ar" ? "إيصال الاستلام" : "Receipt"}
+                                              {language === "ar"
+                                                ? "إيصال الاستلام"
+                                                : "Receipt"}
                                             </h5>
                                           </div>
                                           {shipment.receipt_generated_at && (
                                             <span className="text-xs text-gray-500">
-                                              {new Date(shipment.receipt_generated_at).toLocaleDateString(
-                                                language === "ar" ? "ar-SA" : "en-US"
+                                              {new Date(
+                                                shipment.receipt_generated_at
+                                              ).toLocaleDateString(
+                                                language === "ar"
+                                                  ? "ar-SA"
+                                                  : "en-US"
                                               )}
                                             </span>
                                           )}
@@ -6154,14 +6249,21 @@ export default function DashboardPage() {
                                           <div className="flex items-center gap-2 text-sm">
                                             <span>📄</span>
                                             <span className="font-mono text-gray-700">
-                                              Receipt-{shipment.shipment_number}.pdf
+                                              Receipt-{shipment.shipment_number}
+                                              .pdf
                                             </span>
                                           </div>
                                           {shipment.receipt_generated_at && (
                                             <p className="text-xs text-gray-500">
-                                              {language === "ar" ? "تم التوليد:" : "Generated:"}{" "}
-                                              {new Date(shipment.receipt_generated_at).toLocaleString(
-                                                language === "ar" ? "ar-SA" : "en-US"
+                                              {language === "ar"
+                                                ? "تم التوليد:"
+                                                : "Generated:"}{" "}
+                                              {new Date(
+                                                shipment.receipt_generated_at
+                                              ).toLocaleString(
+                                                language === "ar"
+                                                  ? "ar-SA"
+                                                  : "en-US"
                                               )}
                                             </p>
                                           )}
@@ -6177,24 +6279,32 @@ export default function DashboardPage() {
                                                     ? "⏳ جاري توليد الإيصال وإرساله عبر البريد الإلكتروني... يرجى الانتظار"
                                                     : "⏳ Generating receipt and sending via email... Please wait"
                                                 );
-                                                
-                                                const response = await apiService.downloadReceipt(
-                                                  shipment.id,
-                                                  language
+
+                                                const response =
+                                                  await apiService.downloadReceipt(
+                                                    shipment.id,
+                                                    language
+                                                  );
+
+                                                const blob = new Blob(
+                                                  [response.data],
+                                                  {
+                                                    type: "application/pdf",
+                                                  }
                                                 );
-                                                
-                                                const blob = new Blob([response.data], {
-                                                  type: "application/pdf",
-                                                });
-                                                const url = window.URL.createObjectURL(blob);
-                                                const link = document.createElement("a");
+                                                const url =
+                                                  window.URL.createObjectURL(
+                                                    blob
+                                                  );
+                                                const link =
+                                                  document.createElement("a");
                                                 link.href = url;
                                                 link.download = `Receipt-${shipment.shipment_number}.pdf`;
                                                 document.body.appendChild(link);
                                                 link.click();
                                                 document.body.removeChild(link);
                                                 window.URL.revokeObjectURL(url);
-                                                
+
                                                 // Show success message
                                                 showSuccess(
                                                   language === "ar"
@@ -6202,8 +6312,14 @@ export default function DashboardPage() {
                                                     : "✅ Receipt downloaded successfully! A copy has been sent to your email as well"
                                                 );
                                               } catch (error: any) {
-                                                console.error("Error downloading receipt:", error);
-                                                const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                                console.error(
+                                                  "Error downloading receipt:",
+                                                  error
+                                                );
+                                                const errorMessage =
+                                                  error.response?.data?.error ||
+                                                  error.message ||
+                                                  "Unknown error";
                                                 showError(
                                                   language === "ar"
                                                     ? `حدث خطأ أثناء تحميل الإيصال: ${errorMessage}`
@@ -6226,7 +6342,9 @@ export default function DashboardPage() {
                                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                                               />
                                             </svg>
-                                            {language === "ar" ? "تحميل الإيصال" : "Download Receipt"}
+                                            {language === "ar"
+                                              ? "تحميل الإيصال"
+                                              : "Download Receipt"}
                                           </button>
                                         </div>
                                       </div>
@@ -6235,9 +6353,13 @@ export default function DashboardPage() {
                                     return (
                                       <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-200 mt-4">
                                         <div className="flex items-center gap-2 mb-2">
-                                          <span className="text-yellow-600">⏳</span>
+                                          <span className="text-yellow-600">
+                                            ⏳
+                                          </span>
                                           <h5 className="font-bold text-primary-dark">
-                                            {language === "ar" ? "إيصال الاستلام" : "Receipt"}
+                                            {language === "ar"
+                                              ? "إيصال الاستلام"
+                                              : "Receipt"}
                                           </h5>
                                         </div>
                                         <p className="text-sm text-gray-700 mb-3">
@@ -6254,37 +6376,51 @@ export default function DashboardPage() {
                                                   ? "⏳ جاري توليد الإيصال وإرساله عبر البريد الإلكتروني... يرجى الانتظار"
                                                   : "⏳ Generating receipt and sending via email... Please wait"
                                               );
-                                              
-                                              const response = await apiService.downloadReceipt(
-                                                shipment.id,
-                                                language
+
+                                              const response =
+                                                await apiService.downloadReceipt(
+                                                  shipment.id,
+                                                  language
+                                                );
+
+                                              const blob = new Blob(
+                                                [response.data],
+                                                {
+                                                  type: "application/pdf",
+                                                }
                                               );
-                                              
-                                              const blob = new Blob([response.data], {
-                                                type: "application/pdf",
-                                              });
-                                              const url = window.URL.createObjectURL(blob);
-                                              const link = document.createElement("a");
+                                              const url =
+                                                window.URL.createObjectURL(
+                                                  blob
+                                                );
+                                              const link =
+                                                document.createElement("a");
                                               link.href = url;
                                               link.download = `Receipt-${shipment.shipment_number}.pdf`;
                                               document.body.appendChild(link);
                                               link.click();
                                               document.body.removeChild(link);
                                               window.URL.revokeObjectURL(url);
-                                              
+
                                               // Show success message
                                               showSuccess(
                                                 language === "ar"
                                                   ? "✅ تم تحميل الإيصال بنجاح! تم إرسال نسخة إلى بريدك الإلكتروني أيضاً. جاري تحديث الصفحة..."
                                                   : "✅ Receipt downloaded successfully! A copy has been sent to your email as well. Refreshing page..."
                                               );
-                                              
+
                                               setTimeout(() => {
                                                 window.location.reload();
                                               }, 2000);
                                             } catch (error: any) {
-                                              console.error("Error downloading receipt:", error);
-                                              const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                              console.error(
+                                                "Error downloading receipt:",
+                                                error
+                                              );
+                                              const errorMessage =
+                                                error.response?.data?.error ||
+                                                error.message ||
+                                                "Unknown error";
                                               showError(
                                                 language === "ar"
                                                   ? `حدث خطأ: ${errorMessage}`
@@ -6294,7 +6430,9 @@ export default function DashboardPage() {
                                           }}
                                           className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md"
                                         >
-                                          {language === "ar" ? "توليد وتحميل الإيصال" : "Generate & Download Receipt"}
+                                          {language === "ar"
+                                            ? "توليد وتحميل الإيصال"
+                                            : "Generate & Download Receipt"}
                                         </button>
                                       </div>
                                     );
@@ -6307,7 +6445,9 @@ export default function DashboardPage() {
                                   <div className="flex items-center gap-2 mb-2">
                                     <span className="text-blue-600">📦</span>
                                     <h5 className="font-bold text-primary-dark">
-                                      {language === "ar" ? "ملصقات الشحن" : "Shipping Labels"}
+                                      {language === "ar"
+                                        ? "ملصقات الشحن"
+                                        : "Shipping Labels"}
                                     </h5>
                                   </div>
                                   <p className="text-sm text-gray-700 mb-3">
@@ -6315,11 +6455,13 @@ export default function DashboardPage() {
                                       ? "قم بتحميل ملصقات الشحن (حجم 6×4 بوصة)"
                                       : "Download shipping labels (6×4 inch size)"}
                                   </p>
-                                  
+
                                   {/* Number of Labels Input */}
                                   <div className="mb-3">
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                      {language === "ar" ? "عدد الملصقات المطلوبة:" : "Number of Labels:"}
+                                      {language === "ar"
+                                        ? "عدد الملصقات المطلوبة:"
+                                        : "Number of Labels:"}
                                     </label>
                                     <input
                                       type="number"
@@ -6336,7 +6478,11 @@ export default function DashboardPage() {
                                         return total || 1;
                                       })()}
                                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                      placeholder={language === "ar" ? "عدد الملصقات" : "Number of labels"}
+                                      placeholder={
+                                        language === "ar"
+                                          ? "عدد الملصقات"
+                                          : "Number of labels"
+                                      }
                                     />
                                     <p className="text-xs text-gray-500 mt-1">
                                       {language === "ar"
@@ -6344,14 +6490,22 @@ export default function DashboardPage() {
                                         : "Leave empty to use default count from parcels"}
                                     </p>
                                   </div>
-                                  
+
                                   <button
                                     onClick={async () => {
                                       try {
-                                        const labelCountInput = document.getElementById(`label-count-${shipment.id}`) as HTMLInputElement;
-                                        const numLabels = labelCountInput?.value ? parseInt(labelCountInput.value) : undefined;
-                                        
-                                        if (numLabels !== undefined && (numLabels < 1 || numLabels > 100)) {
+                                        const labelCountInput =
+                                          document.getElementById(
+                                            `label-count-${shipment.id}`
+                                          ) as HTMLInputElement;
+                                        const numLabels = labelCountInput?.value
+                                          ? parseInt(labelCountInput.value)
+                                          : undefined;
+
+                                        if (
+                                          numLabels !== undefined &&
+                                          (numLabels < 1 || numLabels > 100)
+                                        ) {
                                           showSuccess(
                                             language === "ar"
                                               ? "يرجى إدخال عدد بين 1 و 100"
@@ -6359,39 +6513,48 @@ export default function DashboardPage() {
                                           );
                                           return;
                                         }
-                                        
+
                                         showSuccess(
                                           language === "ar"
                                             ? "جاري توليد ملصقات الشحن..."
                                             : "Generating shipping labels..."
                                         );
-                                        
-                                        const response = await apiService.downloadShippingLabels(
-                                          shipment.id,
-                                          language,
-                                          numLabels
-                                        );
-                                        
+
+                                        const response =
+                                          await apiService.downloadShippingLabels(
+                                            shipment.id,
+                                            language,
+                                            numLabels
+                                          );
+
                                         const blob = new Blob([response.data], {
                                           type: "application/pdf",
                                         });
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement("a");
+                                        const url =
+                                          window.URL.createObjectURL(blob);
+                                        const link =
+                                          document.createElement("a");
                                         link.href = url;
                                         link.download = `Shipping-Labels-${shipment.shipment_number}.pdf`;
                                         document.body.appendChild(link);
                                         link.click();
                                         document.body.removeChild(link);
                                         window.URL.revokeObjectURL(url);
-                                        
+
                                         showSuccess(
                                           language === "ar"
                                             ? "تم تحميل ملصقات الشحن بنجاح!"
                                             : "Shipping labels downloaded successfully!"
                                         );
                                       } catch (error: any) {
-                                        console.error("Error downloading shipping labels:", error);
-                                        const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                        console.error(
+                                          "Error downloading shipping labels:",
+                                          error
+                                        );
+                                        const errorMessage =
+                                          error.response?.data?.error ||
+                                          error.message ||
+                                          "Unknown error";
                                         showSuccess(
                                           language === "ar"
                                             ? `حدث خطأ: ${errorMessage}`
@@ -6414,159 +6577,201 @@ export default function DashboardPage() {
                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                                       />
                                     </svg>
-                                    {language === "ar" ? "تحميل ملصقات الشحن" : "Download Shipping Labels"}
+                                    {language === "ar"
+                                      ? "تحميل ملصقات الشحن"
+                                      : "Download Shipping Labels"}
                                   </button>
                                 </div>
 
                                 {/* Consolidated Export Invoice - Admin Only */}
-                                {isAdmin && shipment.payment_status === "paid" && shipment.status !== "PENDING_PAYMENT" && (
-                                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border-2 border-indigo-200 mt-4">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <span className="text-indigo-600 font-bold text-lg">📋</span>
-                                      <h5 className="font-bold text-primary-dark">
-                                        {language === "ar" ? "فاتورة التصدير الموحدة" : "Consolidated Export Invoice"}
-                                      </h5>
-                                    </div>
-                                    <p className="text-sm text-gray-700 mb-3">
-                                      {language === "ar"
-                                        ? "فاتورة التصدير الموحدة - للشحنات المختلطة (شخصية وتجارية)"
-                                        : "Consolidated Export Invoice – Mixed Shipment (Personal & Commercial Goods)"}
-                                    </p>
-                                    <button
-                                      onClick={async () => {
-                                        try {
-                                          showInfo(
-                                            language === "ar"
-                                              ? "⏳ جاري توليد فاتورة التصدير الموحدة... يرجى الانتظار"
-                                              : "⏳ Generating consolidated export invoice... Please wait"
-                                          );
-                                          
-                                          const response = await apiService.downloadConsolidatedExportInvoice(
-                                            shipment.id,
-                                            "en"
-                                          );
-                                          
-                                          const blob = new Blob([response.data], {
-                                            type: "application/pdf",
-                                          });
-                                          const url = window.URL.createObjectURL(blob);
-                                          const link = document.createElement("a");
-                                          link.href = url;
-                                          link.download = `Consolidated-Export-Invoice-${shipment.shipment_number}.pdf`;
-                                          document.body.appendChild(link);
-                                          link.click();
-                                          document.body.removeChild(link);
-                                          window.URL.revokeObjectURL(url);
-                                          
-                                          showSuccess(
-                                            language === "ar"
-                                              ? "✅ تم تحميل فاتورة التصدير الموحدة بنجاح!"
-                                              : "✅ Consolidated export invoice downloaded successfully!"
-                                          );
-                                        } catch (error: any) {
-                                          console.error("Error downloading consolidated export invoice:", error);
-                                          const errorMessage = error.response?.data?.error || error.message || "Unknown error";
-                                          showError(
-                                            language === "ar"
-                                              ? `حدث خطأ أثناء تحميل فاتورة التصدير الموحدة: ${errorMessage}`
-                                              : `Error downloading consolidated export invoice: ${errorMessage}`
-                                      );
-                                    }
-                                  }}
-                                  className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
-                                >
-                                  <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                    />
-                                  </svg>
-                                  {language === "ar" ? "تحميل فاتورة التصدير الموحدة" : "Download Consolidated Export Invoice"}
-                                </button>
-                              </div>
-                            )}
+                                {isAdmin &&
+                                  shipment.payment_status === "paid" &&
+                                  shipment.status !== "PENDING_PAYMENT" && (
+                                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border-2 border-indigo-200 mt-4">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-indigo-600 font-bold text-lg">
+                                          📋
+                                        </span>
+                                        <h5 className="font-bold text-primary-dark">
+                                          {language === "ar"
+                                            ? "فاتورة التصدير الموحدة"
+                                            : "Consolidated Export Invoice"}
+                                        </h5>
+                                      </div>
+                                      <p className="text-sm text-gray-700 mb-3">
+                                        {language === "ar"
+                                          ? "فاتورة التصدير الموحدة - للشحنات المختلطة (شخصية وتجارية)"
+                                          : "Consolidated Export Invoice – Mixed Shipment (Personal & Commercial Goods)"}
+                                      </p>
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            showInfo(
+                                              language === "ar"
+                                                ? "⏳ جاري توليد فاتورة التصدير الموحدة... يرجى الانتظار"
+                                                : "⏳ Generating consolidated export invoice... Please wait"
+                                            );
 
-                            {/* Packing List - Admin Only */}
-                            {isAdmin && shipment.payment_status === "paid" && shipment.status !== "PENDING_PAYMENT" && (
-                              <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-4 border-2 border-teal-200 mt-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className="text-teal-600 font-bold text-lg">📦</span>
-                                  <h5 className="font-bold text-primary-dark">
-                                    {language === "ar" ? "قائمة التعبئة" : "Packing List"}
-                                  </h5>
-                                </div>
-                                <p className="text-sm text-gray-700 mb-3">
-                                  {language === "ar"
-                                    ? "قائمة التعبئة - لأغراض تحديد البضائع فقط"
-                                    : "Packing List - For cargo identification purposes only"}
-                                </p>
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      showInfo(
-                                        language === "ar"
-                                          ? "⏳ جاري توليد قائمة التعبئة... يرجى الانتظار"
-                                          : "⏳ Generating packing list... Please wait"
-                                      );
-                                      
-                                      const response = await apiService.downloadPackingList(
-                                        shipment.id,
-                                        "en"
-                                      );
-                                      
-                                      const blob = new Blob([response.data], {
-                                        type: "application/pdf",
-                                      });
-                                      const url = window.URL.createObjectURL(blob);
-                                      const link = document.createElement("a");
-                                      link.href = url;
-                                      link.download = `Packing-List-${shipment.shipment_number}.pdf`;
-                                      document.body.appendChild(link);
-                                      link.click();
-                                      document.body.removeChild(link);
-                                      window.URL.revokeObjectURL(url);
-                                      
-                                      showSuccess(
-                                        language === "ar"
-                                          ? "✅ تم تحميل قائمة التعبئة بنجاح!"
-                                          : "✅ Packing list downloaded successfully!"
-                                      );
-                                    } catch (error: any) {
-                                      console.error("Error downloading packing list:", error);
-                                      const errorMessage = error.response?.data?.error || error.message || "Unknown error";
-                                      showError(
-                                        language === "ar"
-                                          ? `حدث خطأ أثناء تحميل قائمة التعبئة: ${errorMessage}`
-                                          : `Error downloading packing list: ${errorMessage}`
-                                      );
-                                    }
-                                  }}
-                                  className="w-full px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
-                                >
-                                  <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                    />
-                                  </svg>
-                                  {language === "ar" ? "تحميل قائمة التعبئة" : "Download Packing List"}
-                                </button>
-                              </div>
-                            )}
+                                            const response =
+                                              await apiService.downloadConsolidatedExportInvoice(
+                                                shipment.id,
+                                                "en"
+                                              );
+
+                                            const blob = new Blob(
+                                              [response.data],
+                                              {
+                                                type: "application/pdf",
+                                              }
+                                            );
+                                            const url =
+                                              window.URL.createObjectURL(blob);
+                                            const link =
+                                              document.createElement("a");
+                                            link.href = url;
+                                            link.download = `Consolidated-Export-Invoice-${shipment.shipment_number}.pdf`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                            window.URL.revokeObjectURL(url);
+
+                                            showSuccess(
+                                              language === "ar"
+                                                ? "✅ تم تحميل فاتورة التصدير الموحدة بنجاح!"
+                                                : "✅ Consolidated export invoice downloaded successfully!"
+                                            );
+                                          } catch (error: any) {
+                                            console.error(
+                                              "Error downloading consolidated export invoice:",
+                                              error
+                                            );
+                                            const errorMessage =
+                                              error.response?.data?.error ||
+                                              error.message ||
+                                              "Unknown error";
+                                            showError(
+                                              language === "ar"
+                                                ? `حدث خطأ أثناء تحميل فاتورة التصدير الموحدة: ${errorMessage}`
+                                                : `Error downloading consolidated export invoice: ${errorMessage}`
+                                            );
+                                          }
+                                        }}
+                                        className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                      >
+                                        <svg
+                                          className="w-5 h-5"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                          />
+                                        </svg>
+                                        {language === "ar"
+                                          ? "تحميل فاتورة التصدير الموحدة"
+                                          : "Download Consolidated Export Invoice"}
+                                      </button>
+                                    </div>
+                                  )}
+
+                                {/* Packing List - Admin Only */}
+                                {isAdmin &&
+                                  shipment.payment_status === "paid" &&
+                                  shipment.status !== "PENDING_PAYMENT" && (
+                                    <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-4 border-2 border-teal-200 mt-4">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-teal-600 font-bold text-lg">
+                                          📦
+                                        </span>
+                                        <h5 className="font-bold text-primary-dark">
+                                          {language === "ar"
+                                            ? "قائمة التعبئة"
+                                            : "Packing List"}
+                                        </h5>
+                                      </div>
+                                      <p className="text-sm text-gray-700 mb-3">
+                                        {language === "ar"
+                                          ? "قائمة التعبئة - لأغراض تحديد البضائع فقط"
+                                          : "Packing List - For cargo identification purposes only"}
+                                      </p>
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            showInfo(
+                                              language === "ar"
+                                                ? "⏳ جاري توليد قائمة التعبئة... يرجى الانتظار"
+                                                : "⏳ Generating packing list... Please wait"
+                                            );
+
+                                            const response =
+                                              await apiService.downloadPackingList(
+                                                shipment.id,
+                                                "en"
+                                              );
+
+                                            const blob = new Blob(
+                                              [response.data],
+                                              {
+                                                type: "application/pdf",
+                                              }
+                                            );
+                                            const url =
+                                              window.URL.createObjectURL(blob);
+                                            const link =
+                                              document.createElement("a");
+                                            link.href = url;
+                                            link.download = `Packing-List-${shipment.shipment_number}.pdf`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                            window.URL.revokeObjectURL(url);
+
+                                            showSuccess(
+                                              language === "ar"
+                                                ? "✅ تم تحميل قائمة التعبئة بنجاح!"
+                                                : "✅ Packing list downloaded successfully!"
+                                            );
+                                          } catch (error: any) {
+                                            console.error(
+                                              "Error downloading packing list:",
+                                              error
+                                            );
+                                            const errorMessage =
+                                              error.response?.data?.error ||
+                                              error.message ||
+                                              "Unknown error";
+                                            showError(
+                                              language === "ar"
+                                                ? `حدث خطأ أثناء تحميل قائمة التعبئة: ${errorMessage}`
+                                                : `Error downloading packing list: ${errorMessage}`
+                                            );
+                                          }
+                                        }}
+                                        className="w-full px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                      >
+                                        <svg
+                                          className="w-5 h-5"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                          />
+                                        </svg>
+                                        {language === "ar"
+                                          ? "تحميل قائمة التعبئة"
+                                          : "Download Packing List"}
+                                      </button>
+                                    </div>
+                                  )}
                               </div>
 
                               {/* EU Pickup Information */}
