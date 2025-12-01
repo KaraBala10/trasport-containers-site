@@ -6384,46 +6384,7 @@ export default function DashboardPage() {
                                     {language === "ar" ? "تحميل ملصقات الشحن" : "Download Shipping Labels"}
                                   </button>
                                 </div>
-
-                                  {/* Coming Soon Documents */}
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 opacity-60">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-gray-400">⏳</span>
-                                        <p className="text-sm font-semibold text-gray-600">
-                                          {language === "ar" ? "قائمة التعبئة" : "Packing List"}
-                                        </p>
-                                      </div>
-                                      <p className="text-xs text-gray-500">
-                                        {language === "ar" ? "قريباً" : "Coming Soon"}
-                                      </p>
-                                    </div>
-
-                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 opacity-60">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-gray-400">⏳</span>
-                                        <p className="text-sm font-semibold text-gray-600">
-                                          {language === "ar" ? "وثيقة التصدير" : "Export Document"}
-                                        </p>
-                                      </div>
-                                      <p className="text-xs text-gray-500">
-                                        {language === "ar" ? "قريباً" : "Coming Soon"}
-                                      </p>
-                                    </div>
-
-                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 opacity-60">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-gray-400">⏳</span>
-                                        <p className="text-sm font-semibold text-gray-600">
-                                          {language === "ar" ? "الإيصال" : "Receipt"}
-                                        </p>
-                                      </div>
-                                      <p className="text-xs text-gray-500">
-                                        {language === "ar" ? "قريباً" : "Coming Soon"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
+                              </div>
 
                               {/* EU Pickup Information */}
                               {shipment.direction === "eu-sy" &&
