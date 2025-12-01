@@ -598,7 +598,11 @@ export default function Step4ParcelDetails({
                 regularProducts.find((p) => p.id.toString() === value) ||
                 perPieceProducts.find((p) => p.id.toString() === value);
 
-              if (selectedProduct && selectedProduct.hs_code) {
+              if (
+                selectedProduct &&
+                "hs_code" in selectedProduct &&
+                selectedProduct.hs_code
+              ) {
                 updatedParcel.hs_code = selectedProduct.hs_code;
               } else {
                 // Clear HS Code if product doesn't have one

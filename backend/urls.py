@@ -17,11 +17,19 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import include, path
+
+
+def health_check(request):
+    """Health check endpoint for Docker and load balancers"""
+    return HttpResponse("healthy\n", content_type="text/plain")
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("backend.app.urls")),
+    path("health/", health_check, name="health"),
 ]
 
 # Serve media files in development

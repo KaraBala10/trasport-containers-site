@@ -4,6 +4,22 @@ import { useState } from "react";
 
 type Language = "ar" | "en";
 
+interface Center {
+  id: number;
+  country: string;
+  countryAr: string;
+  city: string;
+  cityAr: string;
+  address: string;
+  addressAr: string;
+  services: string[];
+  x: string;
+  y: string;
+  flag: string;
+  useSvg: boolean;
+  svgPath?: string;
+}
+
 interface InteractiveMapProps {
   language: Language;
 }
@@ -33,7 +49,7 @@ export default function InteractiveMap({ language }: InteractiveMapProps) {
   const t = translations[language];
 
   // Centers (3 points)
-  const centers = [
+  const centers: Center[] = [
     {
       id: 1,
       country: "Netherlands",

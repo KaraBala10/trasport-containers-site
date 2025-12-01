@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
-# Install openssl for certificate generation
-RUN apk add --no-cache openssl
+# Install openssl for certificate generation and wget for healthchecks
+RUN apk add --no-cache openssl wget
 
 # Generate self-signed SSL certificates during build
 RUN mkdir -p /etc/nginx/ssl && \

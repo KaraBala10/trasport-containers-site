@@ -3,6 +3,18 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
+interface Partner {
+  id: number;
+  name: string;
+  nameAr: string;
+  location: string;
+  locationAr: string;
+  icon: string;
+  useSvg?: boolean;
+  svgPath?: string;
+  isFuture?: boolean;
+}
+
 export default function PartnerLogos() {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -10,7 +22,7 @@ export default function PartnerLogos() {
     setIsMounted(true);
   }, []);
 
-  const partners = [
+  const partners: Partner[] = [
     {
       id: 1,
       name: "Medo-Freight EU",

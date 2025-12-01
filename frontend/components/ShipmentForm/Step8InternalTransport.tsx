@@ -12,6 +12,7 @@ import {
   validateNumber,
   formatPhoneInput,
   formatNumericInput,
+  formatIntegerInput,
   handleNumericInput,
   handleIntegerInput,
 } from "@/utils/validation";
@@ -177,7 +178,7 @@ export default function Step8InternalTransport({
   const [shippingError, setShippingError] = useState<string | null>(null);
   const [canCalculate, setCanCalculate] = useState(false);
   const [postalCodeError, setPostalCodeError] = useState<string | null>(null);
-  
+
   // Validation errors state
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
@@ -596,7 +597,10 @@ export default function Step8InternalTransport({
                     2,
                     200
                   );
-                  setFieldErrors({ ...fieldErrors, address: error || undefined });
+                  setFieldErrors({
+                    ...fieldErrors,
+                    address: error || undefined,
+                  });
                 }}
                 className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
                   fieldErrors.address
@@ -608,7 +612,9 @@ export default function Step8InternalTransport({
                 }
               />
               {fieldErrors.address && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.address}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {fieldErrors.address}
+                </p>
               )}
             </div>
 
@@ -634,7 +640,10 @@ export default function Step8InternalTransport({
                     1,
                     50
                   );
-                  setFieldErrors({ ...fieldErrors, houseNumber: error || undefined });
+                  setFieldErrors({
+                    ...fieldErrors,
+                    houseNumber: error || undefined,
+                  });
                 }}
                 onKeyDown={handleIntegerInput}
                 className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
@@ -645,7 +654,9 @@ export default function Step8InternalTransport({
                 placeholder={language === "ar" ? "مثال: 123" : "e.g., 123"}
               />
               {fieldErrors.houseNumber && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.houseNumber}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {fieldErrors.houseNumber}
+                </p>
               )}
             </div>
 
@@ -664,12 +675,7 @@ export default function Step8InternalTransport({
                   }
                 }}
                 onBlur={() => {
-                  const error = validateRequired(
-                    euPickupCity,
-                    t.city,
-                    2,
-                    100
-                  );
+                  const error = validateRequired(euPickupCity, t.city, 2, 100);
                   setFieldErrors({ ...fieldErrors, city: error || undefined });
                 }}
                 className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${

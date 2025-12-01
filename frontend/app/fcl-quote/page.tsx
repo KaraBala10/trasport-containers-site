@@ -1081,8 +1081,10 @@ export default function FCLQuotePage() {
       unNumber: "UN Number",
       dangerousClass: "Class",
       dangerousGoodsInfo: "معلومات مهمة",
-      unNumberDescription: "UN Number هو رقم تعريف فريد من 4 أرقام يُستخدم لتحديد المواد الخطرة أثناء النقل. مثال: UN 1202 (البنزين)، UN 1963 (غاز البترول المسال).",
-      classDescription: "Class هو تصنيف المواد الخطرة إلى 9 فئات حسب نوع الخطر: الفئة 1 (متفجرات)، الفئة 2 (غازات)، الفئة 3 (سوائل قابلة للاشتعال)، الفئة 4 (مواد صلبة قابلة للاشتعال)، الفئة 5 (مواد مؤكسدة)، الفئة 6 (مواد سامة)، الفئة 7 (مواد مشعة)، الفئة 8 (مواد مسببة للتآكل)، الفئة 9 (مواد وأشياء خطرة متنوعة).",
+      unNumberDescription:
+        "UN Number هو رقم تعريف فريد من 4 أرقام يُستخدم لتحديد المواد الخطرة أثناء النقل. مثال: UN 1202 (البنزين)، UN 1963 (غاز البترول المسال).",
+      classDescription:
+        "Class هو تصنيف المواد الخطرة إلى 9 فئات حسب نوع الخطر: الفئة 1 (متفجرات)، الفئة 2 (غازات)، الفئة 3 (سوائل قابلة للاشتعال)، الفئة 4 (مواد صلبة قابلة للاشتعال)، الفئة 5 (مواد مؤكسدة)، الفئة 6 (مواد سامة)، الفئة 7 (مواد مشعة)، الفئة 8 (مواد مسببة للتآكل)، الفئة 9 (مواد وأشياء خطرة متنوعة).",
 
       // Additional Services
       pickupRequired: "Pickup من الباب في المنشأ؟",
@@ -1094,7 +1096,7 @@ export default function FCLQuotePage() {
       certificateOfOrigin: "شهادة المنشأ",
       certificateOfOriginSelect: "اختر نوع شهادة المنشأ",
       destinationCustomsClearance: "تخليص جمركي في الوجهة",
-      
+
       // Certificate of Origin Types
       cert_none: "بدون شهادة",
       cert_non_preferential: "شهادة منشأ غير تفضيلية",
@@ -1170,20 +1172,32 @@ export default function FCLQuotePage() {
       numberOfContainers: "Number of Containers",
       cargoReadyDate: "Cargo Ready Date",
       viewContainerImages: "View Container Images",
-      container_20ft_standard: "20ft Standard Dry Container - Most commonly used worldwide",
-      container_40ft_standard: "40ft Standard Dry Container - Double capacity of 20ft",
-      container_40ft_high_cube: "40ft High Cube Container (HC) - Extra 30cm height",
+      container_20ft_standard:
+        "20ft Standard Dry Container - Most commonly used worldwide",
+      container_40ft_standard:
+        "40ft Standard Dry Container - Double capacity of 20ft",
+      container_40ft_high_cube:
+        "40ft High Cube Container (HC) - Extra 30cm height",
       container_reefer: "Reefer Container - For refrigerated/frozen goods",
       container_open_top: "Open Top Container - For tall cargo loaded from top",
-      container_flat_rack: "Flat Rack Container - For heavy machinery and oversized cargo",
-      container_flat_bed: "Flat Bed / Flat Platform Container - For very long/large cargo",
-      container_iso_tank: "ISO Tank Container - For liquids: chemicals, oils, food liquids",
-      container_bulk: "Bulk Container - For bulk materials like grains and metals",
-      container_ventilated: "Ventilated Container - For wood, coffee, and items needing ventilation",
-      container_insulated: "Insulated / Thermal Container - Temperature maintenance without mechanical cooling",
-      container_car_carrier: "Car Carrier Container - For vehicle transportation",
-      container_double_door: "Double Door Container - Doors on both ends for easy loading",
-      container_side_door: "Side Door Container - Full side opening for quick loading",
+      container_flat_rack:
+        "Flat Rack Container - For heavy machinery and oversized cargo",
+      container_flat_bed:
+        "Flat Bed / Flat Platform Container - For very long/large cargo",
+      container_iso_tank:
+        "ISO Tank Container - For liquids: chemicals, oils, food liquids",
+      container_bulk:
+        "Bulk Container - For bulk materials like grains and metals",
+      container_ventilated:
+        "Ventilated Container - For wood, coffee, and items needing ventilation",
+      container_insulated:
+        "Insulated / Thermal Container - Temperature maintenance without mechanical cooling",
+      container_car_carrier:
+        "Car Carrier Container - For vehicle transportation",
+      container_double_door:
+        "Double Door Container - Doors on both ends for easy loading",
+      container_side_door:
+        "Side Door Container - Full side opening for quick loading",
 
       // Cargo Details
       commodityType: "Commodity Type",
@@ -1197,8 +1211,10 @@ export default function FCLQuotePage() {
       unNumber: "UN Number",
       dangerousClass: "Class",
       dangerousGoodsInfo: "Important Information",
-      unNumberDescription: "UN Number is a unique 4-digit identification number used to identify dangerous goods during transport. Example: UN 1202 (Gasoline), UN 1963 (Liquefied petroleum gas).",
-      classDescription: "Class is a classification of dangerous goods into 9 main categories according to the type of hazard: Class 1 (Explosives), Class 2 (Gases), Class 3 (Flammable liquids), Class 4 (Flammable solids), Class 5 (Oxidizing substances), Class 6 (Toxic substances), Class 7 (Radioactive materials), Class 8 (Corrosive substances), Class 9 (Miscellaneous dangerous substances and articles).",
+      unNumberDescription:
+        "UN Number is a unique 4-digit identification number used to identify dangerous goods during transport. Example: UN 1202 (Gasoline), UN 1963 (Liquefied petroleum gas).",
+      classDescription:
+        "Class is a classification of dangerous goods into 9 main categories according to the type of hazard: Class 1 (Explosives), Class 2 (Gases), Class 3 (Flammable liquids), Class 4 (Flammable solids), Class 5 (Oxidizing substances), Class 6 (Toxic substances), Class 7 (Radioactive materials), Class 8 (Corrosive substances), Class 9 (Miscellaneous dangerous substances and articles).",
 
       // Additional Services
       pickupRequired: "Pickup from door at origin?",
@@ -1210,7 +1226,7 @@ export default function FCLQuotePage() {
       certificateOfOrigin: "Certificate of Origin",
       certificateOfOriginSelect: "Select Certificate of Origin Type",
       destinationCustomsClearance: "Destination Customs Clearance",
-      
+
       // Certificate of Origin Types
       cert_none: "None",
       cert_non_preferential: "Non-Preferential Certificate of Origin",
@@ -1222,7 +1238,8 @@ export default function FCLQuotePage() {
       cert_eur_med: "EUR-MED Movement Certificate",
       cert_gsp_form_a: "GSP Certificate of Origin – Form A",
       cert_consular: "Consular Certificate of Origin",
-      cert_product_specific: "Special Certificates of Origin (Product-Specific)",
+      cert_product_specific:
+        "Special Certificates of Origin (Product-Specific)",
 
       // Customer Details
       fullName: "Full Name",
@@ -1332,11 +1349,15 @@ export default function FCLQuotePage() {
     const checked = (e.target as HTMLInputElement).checked;
 
     let formattedValue: any = value;
-    
+
     // Format values based on field type
     if (name === "phone") {
       formattedValue = formatPhoneInput(value);
-    } else if (name === "total_weight" || name === "total_volume" || name === "cargo_value") {
+    } else if (
+      name === "total_weight" ||
+      name === "total_volume" ||
+      name === "cargo_value"
+    ) {
       formattedValue = formatNumericInput(value);
     }
 
@@ -1357,19 +1378,38 @@ export default function FCLQuotePage() {
 
   const handleBlur = (fieldName: string, fieldValue: string) => {
     let error: string | null = null;
-    
+
     if (fieldName === "email") {
       error = validateEmail(fieldValue);
     } else if (fieldName === "phone") {
       error = validatePhone(fieldValue);
     } else if (fieldName === "full_name") {
-      error = validateRequired(fieldValue, language === "ar" ? "الاسم الكامل" : "Full Name", 2, 100);
+      error = validateRequired(
+        fieldValue,
+        language === "ar" ? "الاسم الكامل" : "Full Name",
+        2,
+        100
+      );
     } else if (fieldName === "total_weight" || fieldName === "total_volume") {
-      error = validateNumber(fieldValue, language === "ar" ? (fieldName === "total_weight" ? "الوزن" : "الحجم") : (fieldName === "total_weight" ? "Weight" : "Volume"), 0.01);
+      error = validateNumber(
+        fieldValue,
+        language === "ar"
+          ? fieldName === "total_weight"
+            ? "الوزن"
+            : "الحجم"
+          : fieldName === "total_weight"
+          ? "Weight"
+          : "Volume",
+        0.01
+      );
     } else if (fieldName === "cargo_value") {
-      error = validateNumber(fieldValue, language === "ar" ? "قيمة البضاعة" : "Cargo Value", 0);
+      error = validateNumber(
+        fieldValue,
+        language === "ar" ? "قيمة البضاعة" : "Cargo Value",
+        0
+      );
     }
-    
+
     if (error) {
       setErrors((prev) => ({ ...prev, [fieldName]: error! }));
     } else if (errors[fieldName]) {
@@ -1413,13 +1453,21 @@ export default function FCLQuotePage() {
       if (!formData.total_weight) {
         newErrors.total_weight = t.required;
       } else {
-        const weightError = validateNumber(formData.total_weight, language === "ar" ? "الوزن" : "Weight", 0.01);
+        const weightError = validateNumber(
+          formData.total_weight,
+          language === "ar" ? "الوزن" : "Weight",
+          0.01
+        );
         if (weightError) newErrors.total_weight = weightError;
       }
       if (!formData.total_volume) {
         newErrors.total_volume = t.required;
       } else {
-        const volumeError = validateNumber(formData.total_volume, language === "ar" ? "الحجم" : "Volume", 0.01);
+        const volumeError = validateNumber(
+          formData.total_volume,
+          language === "ar" ? "الحجم" : "Volume",
+          0.01
+        );
         if (volumeError) newErrors.total_volume = volumeError;
       }
       if (!formData.cargo_value) newErrors.cargo_value = t.required;
@@ -2021,11 +2069,11 @@ export default function FCLQuotePage() {
                         name="origin_country"
                         value={formData.origin_country}
                         onChange={(value) => {
-                          setFormData((prev) => ({ 
-                            ...prev, 
+                          setFormData((prev) => ({
+                            ...prev,
                             origin_country: value,
-                            origin_city: "", 
-                            port_of_loading: "" 
+                            origin_city: "",
+                            port_of_loading: "",
                           }));
                         }}
                         options={countries.map((country) => ({
@@ -2033,7 +2081,11 @@ export default function FCLQuotePage() {
                           label: country.name_en,
                           labelAr: country.name_ar,
                         }))}
-                        placeholder={language === "ar" ? "ابحث أو اختر البلد" : "Search or select country"}
+                        placeholder={
+                          language === "ar"
+                            ? "ابحث أو اختر البلد"
+                            : "Search or select country"
+                        }
                         error={errors.origin_country}
                         language={language}
                         required
@@ -2055,7 +2107,10 @@ export default function FCLQuotePage() {
                         name="origin_city"
                         value={formData.origin_city}
                         onChange={(value) => {
-                          setFormData((prev) => ({ ...prev, origin_city: value }));
+                          setFormData((prev) => ({
+                            ...prev,
+                            origin_city: value,
+                          }));
                         }}
                         options={originCities.map((city) => ({
                           value: city.name_en,
@@ -2111,7 +2166,10 @@ export default function FCLQuotePage() {
                         name="port_of_loading"
                         value={formData.port_of_loading}
                         onChange={(value) => {
-                          setFormData((prev) => ({ ...prev, port_of_loading: value }));
+                          setFormData((prev) => ({
+                            ...prev,
+                            port_of_loading: value,
+                          }));
                         }}
                         options={originPorts.map((port) => ({
                           value: port.name_en,
@@ -2161,7 +2219,11 @@ export default function FCLQuotePage() {
                           label: country.name_en,
                           labelAr: country.name_ar,
                         }))}
-                        placeholder={language === "ar" ? "ابحث أو اختر البلد" : "Search or select country"}
+                        placeholder={
+                          language === "ar"
+                            ? "ابحث أو اختر البلد"
+                            : "Search or select country"
+                        }
                         error={errors.destination_country}
                         language={language}
                         required
@@ -2183,7 +2245,10 @@ export default function FCLQuotePage() {
                         name="destination_city"
                         value={formData.destination_city}
                         onChange={(value) => {
-                          setFormData((prev) => ({ ...prev, destination_city: value }));
+                          setFormData((prev) => ({
+                            ...prev,
+                            destination_city: value,
+                          }));
                         }}
                         options={destinationCities.map((city) => ({
                           value: city.name_en,
@@ -2222,7 +2287,10 @@ export default function FCLQuotePage() {
                         name="port_of_discharge"
                         value={formData.port_of_discharge}
                         onChange={(value) => {
-                          setFormData((prev) => ({ ...prev, port_of_discharge: value }));
+                          setFormData((prev) => ({
+                            ...prev,
+                            port_of_discharge: value,
+                          }));
                         }}
                         options={destinationPorts.map((port) => ({
                           value: port.name_en,
@@ -2340,22 +2408,40 @@ export default function FCLQuotePage() {
                         }`}
                       >
                         <option value="">{t.containerType}</option>
-                        <option value="20ft_standard">{t.container_20ft_standard}</option>
-                        <option value="40ft_standard">{t.container_40ft_standard}</option>
-                        <option value="40ft_high_cube">{t.container_40ft_high_cube}</option>
+                        <option value="20ft_standard">
+                          {t.container_20ft_standard}
+                        </option>
+                        <option value="40ft_standard">
+                          {t.container_40ft_standard}
+                        </option>
+                        <option value="40ft_high_cube">
+                          {t.container_40ft_high_cube}
+                        </option>
                         <option value="reefer">{t.container_reefer}</option>
                         <option value="open_top">{t.container_open_top}</option>
-                        <option value="flat_rack">{t.container_flat_rack}</option>
+                        <option value="flat_rack">
+                          {t.container_flat_rack}
+                        </option>
                         <option value="flat_bed">{t.container_flat_bed}</option>
                         <option value="iso_tank">{t.container_iso_tank}</option>
                         <option value="bulk">{t.container_bulk}</option>
-                        <option value="ventilated">{t.container_ventilated}</option>
-                        <option value="insulated">{t.container_insulated}</option>
-                        <option value="car_carrier">{t.container_car_carrier}</option>
-                        <option value="double_door">{t.container_double_door}</option>
-                        <option value="side_door">{t.container_side_door}</option>
+                        <option value="ventilated">
+                          {t.container_ventilated}
+                        </option>
+                        <option value="insulated">
+                          {t.container_insulated}
+                        </option>
+                        <option value="car_carrier">
+                          {t.container_car_carrier}
+                        </option>
+                        <option value="double_door">
+                          {t.container_double_door}
+                        </option>
+                        <option value="side_door">
+                          {t.container_side_door}
+                        </option>
                       </select>
-                      
+
                       {/* View Container Images Button */}
                       <motion.button
                         type="button"
@@ -2364,8 +2450,18 @@ export default function FCLQuotePage() {
                         whileTap={{ scale: 0.98 }}
                         className="mt-2 w-full px-4 py-2 text-sm font-semibold text-primary-dark bg-gradient-to-r from-primary-yellow/20 to-primary-yellow/30 hover:from-primary-yellow/30 hover:to-primary-yellow/40 rounded-xl transition-all duration-200 border border-primary-yellow/30 flex items-center justify-center gap-2"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
                         </svg>
                         <span>{t.viewContainerImages}</span>
                       </motion.button>
@@ -2618,11 +2714,12 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="total_weight"
-                        type="text"
                         inputMode="decimal"
                         value={formData.total_weight}
                         onChange={handleChange}
-                        onBlur={() => handleBlur("total_weight", formData.total_weight)}
+                        onBlur={() =>
+                          handleBlur("total_weight", formData.total_weight)
+                        }
                         onKeyDown={handleNumericInput}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.total_weight
@@ -2647,11 +2744,12 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="total_volume"
-                        type="text"
                         inputMode="decimal"
                         value={formData.total_volume}
                         onChange={handleChange}
-                        onBlur={() => handleBlur("total_volume", formData.total_volume)}
+                        onBlur={() =>
+                          handleBlur("total_volume", formData.total_volume)
+                        }
                         onKeyDown={handleNumericInput}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.total_volume
@@ -2676,11 +2774,12 @@ export default function FCLQuotePage() {
                       <input
                         type="number"
                         name="cargo_value"
-                        type="text"
                         inputMode="decimal"
                         value={formData.cargo_value}
                         onChange={handleChange}
-                        onBlur={() => handleBlur("cargo_value", formData.cargo_value)}
+                        onBlur={() =>
+                          handleBlur("cargo_value", formData.cargo_value)
+                        }
                         onKeyDown={handleNumericInput}
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.cargo_value
@@ -2732,7 +2831,8 @@ export default function FCLQuotePage() {
                               </h4>
                               <div className="space-y-2 text-xs text-blue-800">
                                 <p>
-                                  <strong>UN Number:</strong> {t.unNumberDescription}
+                                  <strong>UN Number:</strong>{" "}
+                                  {t.unNumberDescription}
                                 </p>
                                 <p>
                                   <strong>Class:</strong> {t.classDescription}
@@ -2987,16 +3087,26 @@ export default function FCLQuotePage() {
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-primary-yellow focus:ring focus:ring-primary-yellow/20 transition-all duration-300"
                       >
                         <option value="none">{t.cert_none}</option>
-                        <option value="non_preferential">{t.cert_non_preferential}</option>
-                        <option value="preferential">{t.cert_preferential}</option>
-                        <option value="chamber_of_commerce">{t.cert_chamber_of_commerce}</option>
-                        <option value="manufacturer">{t.cert_manufacturer}</option>
+                        <option value="non_preferential">
+                          {t.cert_non_preferential}
+                        </option>
+                        <option value="preferential">
+                          {t.cert_preferential}
+                        </option>
+                        <option value="chamber_of_commerce">
+                          {t.cert_chamber_of_commerce}
+                        </option>
+                        <option value="manufacturer">
+                          {t.cert_manufacturer}
+                        </option>
                         <option value="electronic">{t.cert_electronic}</option>
                         <option value="eur1">{t.cert_eur1}</option>
                         <option value="eur_med">{t.cert_eur_med}</option>
                         <option value="gsp_form_a">{t.cert_gsp_form_a}</option>
                         <option value="consular">{t.cert_consular}</option>
-                        <option value="product_specific">{t.cert_product_specific}</option>
+                        <option value="product_specific">
+                          {t.cert_product_specific}
+                        </option>
                       </select>
                     </div>
 
@@ -3125,7 +3235,9 @@ export default function FCLQuotePage() {
                         name="full_name"
                         value={formData.full_name}
                         onChange={handleChange}
-                        onBlur={() => handleBlur("full_name", formData.full_name)}
+                        onBlur={() =>
+                          handleBlur("full_name", formData.full_name)
+                        }
                         className={`w-full px-4 py-3 border rounded-lg ${
                           errors.full_name
                             ? "border-red-500"
@@ -3568,8 +3680,18 @@ export default function FCLQuotePage() {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary-dark to-primary-dark/90">
                 <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
                   <span>{t.viewContainerImages}</span>
                 </h2>
@@ -3577,8 +3699,18 @@ export default function FCLQuotePage() {
                   onClick={() => setShowContainerImages(false)}
                   className="text-white hover:text-primary-yellow transition-colors p-2"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
