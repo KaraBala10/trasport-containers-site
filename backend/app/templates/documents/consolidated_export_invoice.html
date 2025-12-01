@@ -88,7 +88,7 @@
 
         .info-grid td {
             border: 1px solid #d1d5db;
-            padding: 4px 6px;
+            padding: 8px 10px;
             vertical-align: top;
         }
 
@@ -99,8 +99,11 @@
         }
 
         .info-value {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
+            min-height: 20px;
+            line-height: 1.5;
+            padding: 2px 0;
         }
 
         .invoice-title-row {
@@ -126,7 +129,7 @@
         .light-border-table th,
         .light-border-table td {
             border: 1px solid #d1d5db;
-            padding: 5px 6px;
+            padding: 8px 10px;
         }
 
         .light-border-table th {
@@ -238,23 +241,44 @@
                     <div class="info-label">Deliver To Consignee</div>
                     <div class="info-value">&nbsp;</div>
                 </td>
-                <td>
+            </tr>
+        </table>
+
+        <table class="info-grid">
+            <tr>
+                <td style="width: 50%;">
                     <div class="info-label">Customer No.</div>
-                    <div class="info-value">&nbsp;</div>
-                    <div class="info-label" style="margin-top:4px;">Currency</div>
-                    <div class="info-value">EUR</div>
+                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">&nbsp;</div>
                 </td>
-                <td>
+                <td style="width: 50%;">
+                    <div class="info-label">Currency</div>
+                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">EUR</div>
+                </td>
+            </tr>
+        </table>
+
+        <table class="info-grid">
+            <tr>
+                <td style="width: 50%;">
                     <div class="info-label">Payment Terms</div>
-                    <div class="info-value">Prepaid</div>
-                    <div class="info-label" style="margin-top:4px;">Sales Area</div>
-                    <div class="info-value">&nbsp;</div>
+                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">Prepaid</div>
                 </td>
-                <td>
+                <td style="width: 50%;">
+                    <div class="info-label">Sales Area</div>
+                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">&nbsp;</div>
+                </td>
+            </tr>
+        </table>
+
+        <table class="info-grid">
+            <tr>
+                <td style="width: 50%;">
                     <div class="info-label">Incoterms</div>
-                    <div class="info-value">&nbsp;</div>
-                    <div class="info-label" style="margin-top:4px;">Bank Details</div>
-                    <div class="info-value">&nbsp;</div>
+                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">&nbsp;</div>
+                </td>
+                <td style="width: 50%;">
+                    <div class="info-label">Bank Details</div>
+                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">&nbsp;</div>
                 </td>
             </tr>
         </table>
