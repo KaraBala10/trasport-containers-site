@@ -651,12 +651,15 @@ def get_shipping_methods_simple(
 
     auth = HTTPBasicAuth(settings.SENDCLOUD_PUBLIC_KEY, settings.SENDCLOUD_SECRET_KEY)
 
-    # Use test=1 parameter as requested
-    params = {"test": "1"}
+    # Use test=1 parameter only in development (DEBUG=True)
+    params = {}
+    if settings.DEBUG:
+        params["test"] = "1"
 
     try:
+        mode_str = "test mode" if settings.DEBUG else "production mode"
         logger.info(
-            f"Requesting Sendcloud shipping methods (test mode): Weight={weight}kg, Country={country}"
+            f"Requesting Sendcloud shipping methods ({mode_str}): Weight={weight}kg, Country={country}"
         )
 
         response = requests.get(
@@ -998,8 +1001,10 @@ def create_parcel(
             f"Parcel fields - City: {receiver_city}, Postal Code: {receiver_postal_code}, House Number: {parcel_data['parcel'].get('house_number', 'N/A')}"
         )
 
-        # Add test=1 parameter for testing (as per user request)
-        params = {"test": "1"}
+        # Add test=1 parameter only in development (DEBUG=True)
+        params = {}
+        if settings.DEBUG:
+            params["test"] = "1"
 
         # Make API request
         try:
@@ -1306,20 +1311,23 @@ def download_label(parcel_id: int, label_type: str = "normal_printer") -> bytes:
         logger.error("Sendcloud API credentials not configured")
         raise SendcloudAPIError("Sendcloud API credentials missing")
 
-    # Build URL based on label type - using test=1 parameter
+    # Build URL based on label type - add test=1 parameter only in development (DEBUG=True)
     if label_type == "normal_printer":
-        # A4 label: /api/v2/labels/normal_printer/{parcel_id}?start_from=0&test=1
-        url = f"{settings.SENDCLOUD_API_URL}labels/normal_printer/{parcel_id_int}?start_from=0&test=1"
+        # A4 label: /api/v2/labels/normal_printer/{parcel_id}?start_from=0[&test=1]
+        test_param = "&test=1" if settings.DEBUG else ""
+        url = f"{settings.SENDCLOUD_API_URL}labels/normal_printer/{parcel_id_int}?start_from=0{test_param}"
     else:
-        # A6 label: /api/v2/parcels/{parcel_id}/documents/label?test=1
-        url = f"{settings.SENDCLOUD_API_URL}parcels/{parcel_id_int}/documents/label?test=1"
+        # A6 label: /api/v2/parcels/{parcel_id}/documents/label[?test=1]
+        test_param = "?test=1" if settings.DEBUG else ""
+        url = f"{settings.SENDCLOUD_API_URL}parcels/{parcel_id_int}/documents/label{test_param}"
 
     # Prepare authentication
     auth = HTTPBasicAuth(settings.SENDCLOUD_PUBLIC_KEY, settings.SENDCLOUD_SECRET_KEY)
 
     try:
+        mode_str = "test mode" if settings.DEBUG else "production mode"
         logger.info(
-            f"Downloading {label_type} label for parcel {parcel_id_int} (test mode)"
+            f"Downloading {label_type} label for parcel {parcel_id_int} ({mode_str})"
         )
 
         response = requests.get(
