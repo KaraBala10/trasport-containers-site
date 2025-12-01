@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Packing List</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Arial', sans-serif;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #111827;
+        }
+
+        .page {
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            border-bottom: 2px solid #111827;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        .logo-title {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .logo {
+            max-width: 150px;
+            max-height: 60px;
+            margin-bottom: 4px;
+        }
+
+        .brand-line {
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .qr-container {
+            text-align: right;
+            font-size: 9px;
+        }
+
+        .qr-container img {
+            width: 70px;
+            height: 70px;
+        }
+
+        .section-title {
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-top: 6px;
+            margin-bottom: 2px;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        .shipper-block {
+            margin-top: 4px;
+            font-size: 10px;
+        }
+
+        .info-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .info-grid td {
+            border: 1px solid #d1d5db;
+            padding: 4px 6px;
+            vertical-align: top;
+        }
+
+        .info-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #6b7280;
+        }
+
+        .info-value {
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .invoice-title-row {
+            text-align: center;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+
+        .invoice-main-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .light-border-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+            margin-bottom: 8px;
+            font-size: 9px;
+        }
+
+        .light-border-table th,
+        .light-border-table td {
+            border: 1px solid #d1d5db;
+            padding: 3px 4px;
+        }
+
+        .light-border-table th {
+            background-color: #f3f4f6;
+            font-weight: 700;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .totals-row td {
+            font-weight: 700;
+        }
+
+        .small-text {
+            font-size: 9px;
+        }
+
+        .footer-notes {
+            margin-top: 10px;
+            font-size: 8px;
+            line-height: 1.5;
+            color: #374151;
+        }
+
+        .packing-list-note {
+            margin-top: 12px;
+            margin-bottom: 12px;
+            padding: 8px;
+            font-size: 9px;
+            line-height: 1.6;
+            color: #111827;
+            border: 1px solid #d1d5db;
+            background-color: #f9fafb;
+        }
+
+        .signature-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #111827;
+        }
+
+        .signature-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .signature-box {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .signature-line {
+            border-top: 2px solid #111827;
+            margin: 50px auto 10px;
+            width: 200px;
+        }
+
+        .signature-label {
+            font-size: 10px;
+            color: #374151;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .signature-placeholder {
+            border: 2px dashed #9ca3af;
+            border-radius: 4px;
+            padding: 30px 20px;
+            margin: 10px auto;
+            width: 200px;
+            min-height: 60px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-size: 9px;
+        }
+
+        .signature-image {
+            max-width: 200px;
+            max-height: 80px;
+            margin: 10px auto;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="logo-title">
+                {% if company.logo_base64 %}
+                    <img class="logo" src="data:image/png;base64,{{ company.logo_base64 }}" alt="Medo-Freight Logo" />
+                {% endif %}
+                <div class="brand-line">
+                    medo-freight.eu Ship. Route. Deliver
+                </div>
+                <div class="shipper-block">
+                    <div class="section-title">Shipper Address</div>
+                    <div class="small-text">
+                        Titanlaan 1, 4624 AX Bergen op Zoom, The Netherlands<br>
+                        Kvk nr: 75251663<br>
+                        TAX nr: NL002518102B41<br>
+                        EORI number: NL1320963189<br>
+                        Tel: +31 6 39 788 989 &nbsp;&nbsp; E-mail: contact@medo-freight.eu<br>
+                        Website: http://medo-freight.eu
+                    </div>
+                </div>
+            </div>
+
+            <div class="qr-container">
+                {% if qr_code_base64 %}
+                    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="Tracking QR" />
+                    <div>Shipment: {{ shipment.shipment_number }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <table class="info-grid">
+            <tr>
+                <td>
+                    <div class="info-label">Packing List No.</div>
+                    <div class="info-value">{{ invoice_number }}</div>
+                </td>
+                <td>
+                    <div class="info-label">Date</div>
+                    <div class="info-value">{{ invoice_date|date:"Y-m-d" }}</div>
+                </td>
+                <td>
+                    <div class="info-label">GST Reg No.</div>
+                    <div class="info-value">0.00%</div>
+                </td>
+                <td>
+                    <div class="info-label">Your Order No.</div>
+                    <div class="info-value">{{ shipment.id }}</div>
+                </td>
+                <td>
+                    <div class="info-label">Page No.</div>
+                    <div class="info-value">1</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="invoice-title-row">
+            <div class="invoice-main-title">
+                Packing List
+            </div>
+        </div>
+
+        <table class="info-grid">
+            <tr>
+                <td>
+                    <div class="info-label">For Account of Consignee</div>
+                    <div class="info-value">
+                        {{ shipment.receiver_name|default_if_none:"" }}<br>
+                        {{ shipment.receiver_address|default_if_none:"" }}<br>
+                        {{ shipment.receiver_city|default_if_none:"" }} {{ shipment.receiver_postcode|default_if_none:"" }}<br>
+                        {{ shipment.receiver_country|default_if_none:"" }}
+                    </div>
+                </td>
+                <td>
+                    <div class="info-label">Deliver To Consignee</div>
+                    <div class="info-value">
+                        {{ shipment.receiver_name|default_if_none:"" }}<br>
+                        {{ shipment.receiver_address|default_if_none:"" }}<br>
+                        {{ shipment.receiver_city|default_if_none:"" }} {{ shipment.receiver_postcode|default_if_none:"" }}<br>
+                        {{ shipment.receiver_country|default_if_none:"" }}
+                    </div>
+                </td>
+                <td>
+                    <div class="info-label">Customer No.</div>
+                    <div class="info-value">{% if shipment.user %}{{ shipment.user.id }}{% else %}N/A{% endif %}</div>
+                    <div class="info-label" style="margin-top:4px;">Currency</div>
+                    <div class="info-value">EUR</div>
+                </td>
+                <td>
+                    <div class="info-label">Payment Terms</div>
+                    <div class="info-value">Prepaid</div>
+                    <div class="info-label" style="margin-top:4px;">Bank Details</div>
+                    <div class="small-text">
+                        As per Medo-Freight EU standard terms.
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <table class="light-border-table">
+            <tr>
+                <th>HS Tariff Code</th>
+                <th>Made In Country of Origin</th>
+                <th>Bill of Lading</th>
+                <th>Loading Port / City</th>
+                <th>Destination Port</th>
+                <th>Despatch</th>
+                <th>Mode / Vessel Name</th>
+                <th>Container No.</th>
+                <th>Voyage No.</th>
+            </tr>
+            <tr>
+                <td class="small-text">
+                    <!-- HS codes per parcel appear in detail table below -->
+                </td>
+                <td class="small-text">
+                    {{ shipment.origin_country|default_if_none:"" }}
+                </td>
+                <td class="small-text">
+                    {{ shipment.bill_of_lading|default_if_none:"" }}
+                </td>
+                <td class="small-text">
+                    {{ shipment.origin_city|default_if_none:"" }} / {{ shipment.origin_country|default_if_none:"" }}
+                </td>
+                <td class="small-text">
+                    {{ shipment.destination_city|default_if_none:"" }} / {{ shipment.destination_country|default_if_none:"" }}
+                </td>
+                <td class="small-text">
+                    {{ shipment.created_at|date:"Y-m-d" }}
+                </td>
+                <td class="small-text">
+                    LCL Consolidation
+                </td>
+                <td class="small-text">
+                    {{ shipment.container_number|default_if_none:"" }}
+                </td>
+                <td class="small-text">
+                    {{ shipment.voyage_number|default_if_none:"" }}
+                </td>
+            </tr>
+        </table>
+
+        <table class="light-border-table">
+            <tr>
+                <th>Product Code</th>
+                <th>Description / Client Name / Ref No</th>
+                <th class="text-center">HS Code</th>
+                <th class="text-center">CBM</th>
+                <th class="text-center">Unit</th>
+                <th class="text-center">Quantity</th>
+                <th class="text-right">Unit Price (EUR)</th>
+                <th class="text-right">Value (EUR)</th>
+            </tr>
+            {% for item in pricing.parcel_calculations %}
+                <tr>
+                    <td class="small-text">
+                        {{ item.product_id }}
+                    </td>
+                    <td class="small-text">
+                        {{ item.product_name_en|default_if_none:"" }} / {{ item.product_name_ar|default_if_none:"" }}<br>
+                        Client: {{ shipment.receiver_name|default_if_none:"" }}<br>
+                        Ref: {{ shipment.shipment_number|default_if_none:"" }}
+                    </td>
+                    <td class="small-text text-center">
+                        {{ item.hs_code|default_if_none:"" }}
+                    </td>
+                    <td class="small-text text-center">
+                        {{ item.cbm|default_if_none:0|floatformat:3 }}
+                    </td>
+                    <td class="small-text text-center">
+                        PCS
+                    </td>
+                    <td class="small-text text-center">
+                        {{ item.repeat_count|default:1 }}
+                    </td>
+                    <td class="small-text text-right">
+                        {{ item.price_per_kg|floatformat:2 }}
+                    </td>
+                    <td class="small-text text-right">
+                        {{ item.price_by_weight|floatformat:2 }}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8" class="small-text">
+                        No parcel breakdown available.
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr class="totals-row">
+                <td colspan="3" class="text-right">TOTAL QUANTITY</td>
+                <td class="text-center">
+                    {{ total_cbm|floatformat:3 }} m³
+                </td>
+                <td colspan="2" class="text-center">
+                    {{ total_packages }}
+                </td>
+                <td class="text-right">TOTAL</td>
+                <td class="text-right">
+                    {{ pricing.total_price|floatformat:2 }}
+                </td>
+            </tr>
+        </table>
+
+        <div class="packing-list-note">
+            <strong>Note:</strong> This packing list is issued for cargo identification purposes only. All packages have been checked, weighed, and sealed before loading.
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-container">
+                <div class="signature-box">
+                    <div class="signature-label">Company Signature</div>
+                    {% if signature_base64 %}
+                        <img src="data:image/png;base64,{{ signature_base64 }}" alt="Company Signature" class="signature-image">
+                    {% else %}
+                        <div class="signature-placeholder">
+                            Signature
+                        </div>
+                    {% endif %}
+                    <div class="signature-line"></div>
+                    <div class="signature-label" style="margin-top: 5px; font-size: 9px;">
+                        <strong>Medo-Freight EU</strong>
+                    </div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-label">Authorized Signature</div>
+                    <div class="signature-placeholder">
+                        Signature
+                    </div>
+                    <div class="signature-line"></div>
+                    <div class="signature-label" style="margin-top: 5px; font-size: 9px;">
+                        <strong>Authorized Representative</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

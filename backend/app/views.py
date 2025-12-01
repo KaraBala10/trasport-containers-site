@@ -4291,6 +4291,86 @@ def download_consolidated_export_invoice_view(request, pk):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+def download_packing_list_view(request, pk):
+    """
+    Download Packing List PDF for LCL shipment.
+    GET /api/shipments/{id}/packing-list/
+    
+    Only available for admin users.
+    Requirements:
+    - User must be admin (is_superuser)
+    - Payment status must be 'paid'
+    - Status must not be PENDING_PAYMENT
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        shipment = LCLShipment.objects.get(pk=pk)
+        
+        # Check permissions: only admin can download packing list
+        if not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "Only admin users can download packing list."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
+        # Validate shipment status
+        if shipment.status == "PENDING_PAYMENT":
+            return Response(
+                {"success": False, "error": "Packing list can only be generated after payment is confirmed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Validate payment status
+        if shipment.payment_status != "paid":
+            return Response(
+                {"success": False, "error": "Payment must be confirmed before generating packing list."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Import document service
+        from .document_service import generate_packing_list
+        
+        # Get language from request (default: 'en' for packing list)
+        language = request.GET.get('language', 'en')
+        if language not in ['ar', 'en']:
+            language = 'en'
+        
+        # Generate packing list PDF
+        try:
+            pdf_bytes = generate_packing_list(shipment, language=language)
+        except ValueError as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as gen_error:
+            logger.error(f"Error generating packing list PDF: {str(gen_error)}", exc_info=True)
+            return Response(
+                {"success": False, "error": f"Failed to generate packing list: {str(gen_error)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+        # Return PDF as response
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="Packing-List-{shipment.shipment_number}.pdf"'
+        return response
+        
+    except LCLShipment.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Shipment not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error generating packing list: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": f"An error occurred while generating packing list: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def download_receipt_view(request, pk):
     """
     Download receipt PDF for LCL shipment.

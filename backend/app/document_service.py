@@ -438,6 +438,99 @@ def generate_consolidated_export_invoice(shipment: LCLShipment, language: str = 
         raise
 
 
+def generate_packing_list(shipment: LCLShipment, language: str = 'en') -> bytes:
+    """
+    Generate Packing List for LCL shipment.
+    This document is for cargo identification purposes only.
+
+    Args:
+        shipment: LCLShipment instance
+        language: kept for future use (currently template is EN)
+
+    Returns:
+        PDF bytes
+    """
+    try:
+        # Reuse invoice pricing calculations (includes CBM per parcel)
+        pricing = calculate_invoice_totals(shipment)
+
+        # Company info (for logo and site URL)
+        company_info = get_company_info()
+
+        # Generate QR Code for tracking (same logic as regular invoice)
+        tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
+        qr_code_base64 = None
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(tracking_url)
+            qr.make(fit=True)
+
+            img = qr.make_image(fill_color="black", back_color="white")
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format="PNG")
+            img_buffer.seek(0)
+            qr_code_base64 = base64.b64encode(img_buffer.read()).decode("utf-8")
+        except Exception as e:
+            logger.warning(f"Could not generate QR code for packing list: {str(e)}")
+
+        # Aggregate totals for CBM and packages
+        total_cbm = 0.0
+        total_packages = 0
+        for item in pricing.get("parcel_calculations", []):
+            try:
+                cbm_value = float(item.get("cbm", 0) or 0)
+            except (TypeError, ValueError):
+                cbm_value = 0.0
+            total_cbm += cbm_value
+            repeat_count = int(item.get("repeat_count", 1) or 1)
+            total_packages += repeat_count
+
+        # Get signature if exists
+        signature_base64 = None
+        if shipment.invoice_signature:
+            try:
+                signature_path = shipment.invoice_signature.path
+                if os.path.exists(signature_path):
+                    with open(signature_path, 'rb') as f:
+                        signature_data = f.read()
+                        signature_base64 = base64.b64encode(signature_data).decode('utf-8')
+                        logger.info(f"Successfully loaded signature for packing list shipment {shipment.id}")
+            except Exception as e:
+                logger.warning(f"Could not read signature file: {str(e)}")
+
+        context = {
+            "shipment": shipment,
+            "company": company_info,
+            "pricing": pricing,
+            "language": language,
+            "invoice_date": shipment.paid_at or shipment.created_at,
+            "invoice_number": shipment.shipment_number,
+            "tracking_url": tracking_url,
+            "qr_code_base64": qr_code_base64,
+            "total_cbm": total_cbm,
+            "total_packages": total_packages,
+            "signature_base64": signature_base64,
+        }
+
+        html_string = render_to_string("documents/packing_list.html", context)
+
+        font_config = FontConfiguration()
+        html = HTML(string=html_string, base_url=settings.BASE_DIR)
+        pdf_bytes = html.write_pdf(font_config=font_config)
+
+        logger.info(f"Successfully generated packing list PDF for shipment {shipment.id}")
+        return pdf_bytes
+
+    except Exception as e:
+        logger.error(f"Error generating packing list: {str(e)}", exc_info=True)
+        raise
+
+
 def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_labels: Optional[int] = None) -> bytes:
     """
     Generate shipping labels PDF for LCL shipment.

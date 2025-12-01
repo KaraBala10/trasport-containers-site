@@ -377,6 +377,13 @@ export const apiService = {
     });
   },
 
+  downloadPackingList: (shipmentId: string | number, language?: string) => {
+    return apiClient.get(`/shipments/${shipmentId}/packing-list/`, {
+      responseType: 'blob',
+      params: language ? { language } : {},
+    });
+  },
+
   downloadReceipt: (shipmentId: string | number, language?: string) => {
     return apiClient.get(`/shipments/${shipmentId}/receipt/`, {
       responseType: 'blob',

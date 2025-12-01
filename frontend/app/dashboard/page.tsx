@@ -6437,28 +6437,103 @@ export default function DashboardPage() {
                                             language === "ar"
                                               ? `حدث خطأ أثناء تحميل فاتورة التصدير الموحدة: ${errorMessage}`
                                               : `Error downloading consolidated export invoice: ${errorMessage}`
-                                          );
-                                        }
-                                      }}
-                                      className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
-                                    >
-                                      <svg
-                                        className="w-5 h-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                        />
-                                      </svg>
-                                      {language === "ar" ? "تحميل فاتورة التصدير الموحدة" : "Download Consolidated Export Invoice"}
-                                    </button>
-                                  </div>
-                                )}
+                                      );
+                                    }
+                                  }}
+                                  className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                    />
+                                  </svg>
+                                  {language === "ar" ? "تحميل فاتورة التصدير الموحدة" : "Download Consolidated Export Invoice"}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Packing List - Admin Only */}
+                            {isAdmin && shipment.payment_status === "paid" && shipment.status !== "PENDING_PAYMENT" && (
+                              <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-4 border-2 border-teal-200 mt-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-teal-600 font-bold text-lg">📦</span>
+                                  <h5 className="font-bold text-primary-dark">
+                                    {language === "ar" ? "قائمة التعبئة" : "Packing List"}
+                                  </h5>
+                                </div>
+                                <p className="text-sm text-gray-700 mb-3">
+                                  {language === "ar"
+                                    ? "قائمة التعبئة - لأغراض تحديد البضائع فقط"
+                                    : "Packing List - For cargo identification purposes only"}
+                                </p>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      showInfo(
+                                        language === "ar"
+                                          ? "⏳ جاري توليد قائمة التعبئة... يرجى الانتظار"
+                                          : "⏳ Generating packing list... Please wait"
+                                      );
+                                      
+                                      const response = await apiService.downloadPackingList(
+                                        shipment.id,
+                                        "en"
+                                      );
+                                      
+                                      const blob = new Blob([response.data], {
+                                        type: "application/pdf",
+                                      });
+                                      const url = window.URL.createObjectURL(blob);
+                                      const link = document.createElement("a");
+                                      link.href = url;
+                                      link.download = `Packing-List-${shipment.shipment_number}.pdf`;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                      window.URL.revokeObjectURL(url);
+                                      
+                                      showSuccess(
+                                        language === "ar"
+                                          ? "✅ تم تحميل قائمة التعبئة بنجاح!"
+                                          : "✅ Packing list downloaded successfully!"
+                                      );
+                                    } catch (error: any) {
+                                      console.error("Error downloading packing list:", error);
+                                      const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+                                      showError(
+                                        language === "ar"
+                                          ? `حدث خطأ أثناء تحميل قائمة التعبئة: ${errorMessage}`
+                                          : `Error downloading packing list: ${errorMessage}`
+                                      );
+                                    }
+                                  }}
+                                  className="w-full px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                    />
+                                  </svg>
+                                  {language === "ar" ? "تحميل قائمة التعبئة" : "Download Packing List"}
+                                </button>
+                              </div>
+                            )}
                               </div>
 
                               {/* EU Pickup Information */}
