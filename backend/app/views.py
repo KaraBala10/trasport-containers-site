@@ -4038,10 +4038,18 @@ def update_lcl_shipment_status_view(request, pk):
 
                     # Send standard invoice by email (user + admin)
                     try:
-                        send_invoice_email_to_user(shipment, pdf_bytes)
-                        send_invoice_email_to_admin(shipment, pdf_bytes)
+                        user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
+                        admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
+                        if user_sent:
+                            logger.info(f"✅ Invoice email sent to user for shipment {shipment.id}")
+                        else:
+                            logger.warning(f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)")
+                        if admin_sent:
+                            logger.info(f"✅ Invoice email sent to admin for shipment {shipment.id}")
+                        else:
+                            logger.warning(f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)")
                     except Exception as email_error:
-                        logger.warning(f"Failed to send invoice emails: {str(email_error)}")
+                        logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
                         # Don't fail if email fails
 
                     logger.info(f"✅ Invoice generated and saved for shipment {shipment.id}")
@@ -4064,12 +4072,17 @@ def update_lcl_shipment_status_view(request, pk):
                     consolidated_pdf = generate_consolidated_export_invoice(
                         shipment, language="en"
                     )
-                    send_consolidated_export_invoice_email_to_admin(
+                    admin_sent = send_consolidated_export_invoice_email_to_admin(
                         shipment, consolidated_pdf
                     )
-                    logger.info(
-                        f"✅ Consolidated export invoice generated and emailed for shipment {shipment.id}"
-                    )
+                    if admin_sent:
+                        logger.info(
+                            f"✅ Consolidated export invoice generated and emailed for shipment {shipment.id}"
+                        )
+                    else:
+                        logger.warning(
+                            f"⚠️ Consolidated export invoice generated but email failed for shipment {shipment.id} (check email config)"
+                        )
                 except Exception as consolidated_error:
                     logger.error(
                         f"Failed to generate/send consolidated export invoice: {str(consolidated_error)}",
@@ -4100,10 +4113,18 @@ def update_lcl_shipment_status_view(request, pk):
                     
                     # Send receipt by email
                     try:
-                        send_receipt_email_to_user(shipment, pdf_bytes)
-                        send_receipt_email_to_admin(shipment, pdf_bytes)
+                        user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
+                        admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
+                        if user_sent:
+                            logger.info(f"✅ Receipt email sent to user for shipment {shipment.id}")
+                        else:
+                            logger.warning(f"⚠️ Receipt email to user failed for shipment {shipment.id} (check email config or user email)")
+                        if admin_sent:
+                            logger.info(f"✅ Receipt email sent to admin for shipment {shipment.id}")
+                        else:
+                            logger.warning(f"⚠️ Receipt email to admin failed for shipment {shipment.id} (check email config)")
                     except Exception as email_error:
-                        logger.warning(f"Failed to send receipt emails: {str(email_error)}")
+                        logger.error(f"❌ Failed to send receipt emails: {str(email_error)}", exc_info=True)
                         # Don't fail if email fails
                     
                     logger.info(f"✅ Receipt generated and saved for shipment {shipment.id}")
@@ -4215,6 +4236,36 @@ def download_invoice_view(request, pk):
         if language not in ['ar', 'en']:
             language = 'ar'
         
+        # If invoice file exists, read it and send email, then return
+        if shipment.invoice_file:
+            try:
+                with open(shipment.invoice_file.path, 'rb') as pdf_file:
+                    pdf_bytes = pdf_file.read()
+                    
+                    # Send emails even if invoice already exists (same as shipping labels)
+                    try:
+                        logger.info(f"📧 Invoice file exists, sending emails for shipment {shipment.id}")
+                        from .email_service import send_invoice_email_to_user, send_invoice_email_to_admin
+                        user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
+                        admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
+                        if user_sent:
+                            logger.info(f"✅ Invoice email sent to user for shipment {shipment.id}")
+                        else:
+                            logger.warning(f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)")
+                        if admin_sent:
+                            logger.info(f"✅ Invoice email sent to admin for shipment {shipment.id}")
+                        else:
+                            logger.warning(f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)")
+                    except Exception as email_error:
+                        logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                        # Don't fail if email fails
+                    
+                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                    response['Content-Disposition'] = f'inline; filename="Invoice-{shipment.shipment_number}.pdf"'
+                    return response
+            except Exception as file_error:
+                logger.warning(f"Error reading invoice file, will regenerate: {str(file_error)}")
+        
         # Generate invoice PDF
         try:
             pdf_bytes = generate_invoice(shipment, language=language)
@@ -4231,13 +4282,33 @@ def download_invoice_view(request, pk):
             )
         
         # Save to storage if not already saved (always try to save)
+        invoice_saved = False
         if not shipment.invoice_file:
             try:
                 save_invoice_to_storage(shipment, pdf_bytes)
                 logger.info(f"✅ Invoice saved to storage for shipment {shipment.id}")
+                invoice_saved = True
             except Exception as save_error:
                 logger.error(f"Failed to save invoice to storage: {str(save_error)}", exc_info=True)
                 # Continue anyway - we can still return the PDF
+        
+        # Send emails if invoice was just generated (not already existed)
+        if invoice_saved:
+            try:
+                from .email_service import send_invoice_email_to_user, send_invoice_email_to_admin
+                user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
+                admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
+                if user_sent:
+                    logger.info(f"✅ Invoice email sent to user for shipment {shipment.id}")
+                else:
+                    logger.warning(f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)")
+                if admin_sent:
+                    logger.info(f"✅ Invoice email sent to admin for shipment {shipment.id}")
+                else:
+                    logger.warning(f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)")
+            except Exception as email_error:
+                logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                # Don't fail if email fails
         
         # Return PDF as response
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
@@ -4322,10 +4393,13 @@ def download_consolidated_export_invoice_view(request, pk):
         # Send consolidated export invoice by email to admin
         try:
             from .email_service import send_consolidated_export_invoice_email_to_admin
-            send_consolidated_export_invoice_email_to_admin(shipment, pdf_bytes)
-            logger.info(f"✅ Consolidated export invoice email sent to admin for shipment {shipment.id}")
+            admin_sent = send_consolidated_export_invoice_email_to_admin(shipment, pdf_bytes)
+            if admin_sent:
+                logger.info(f"✅ Consolidated export invoice email sent to admin for shipment {shipment.id}")
+            else:
+                logger.warning(f"⚠️ Consolidated export invoice email to admin failed for shipment {shipment.id} (check email config)")
         except Exception as email_error:
-            logger.warning(f"Failed to send consolidated export invoice email: {str(email_error)}")
+            logger.error(f"❌ Failed to send consolidated export invoice email: {str(email_error)}", exc_info=True)
             # Don't fail if email fails - still return the PDF
         
         # Return PDF as response
@@ -4489,10 +4563,18 @@ def download_receipt_view(request, pk):
                     try:
                         logger.info(f"📧 Receipt file exists, sending emails for shipment {shipment.id}")
                         from .email_service import send_receipt_email_to_user, send_receipt_email_to_admin
-                        send_receipt_email_to_user(shipment, pdf_bytes)
-                        send_receipt_email_to_admin(shipment, pdf_bytes)
+                        user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
+                        admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
+                        if user_sent:
+                            logger.info(f"✅ Receipt email sent to user for shipment {shipment.id}")
+                        else:
+                            logger.warning(f"⚠️ Receipt email to user failed for shipment {shipment.id} (check email config or user email)")
+                        if admin_sent:
+                            logger.info(f"✅ Receipt email sent to admin for shipment {shipment.id}")
+                        else:
+                            logger.warning(f"⚠️ Receipt email to admin failed for shipment {shipment.id} (check email config)")
                     except Exception as email_error:
-                        logger.warning(f"Failed to send receipt emails: {str(email_error)}")
+                        logger.error(f"❌ Failed to send receipt emails: {str(email_error)}", exc_info=True)
                         # Don't fail if email fails
                     
                     response = HttpResponse(pdf_bytes, content_type='application/pdf')
@@ -4592,11 +4674,30 @@ def download_fcl_invoice_view(request, pk):
         if language not in ['ar', 'en']:
             language = 'en'
         
-        # If invoice file exists, read it and return
+        # If invoice file exists, read it and send email, then return
         if quote.invoice_file:
             try:
                 with open(quote.invoice_file.path, 'rb') as pdf_file:
                     pdf_bytes = pdf_file.read()
+                    
+                    # Send emails even if invoice already exists (same as shipping labels)
+                    try:
+                        logger.info(f"📧 Invoice file exists, sending emails for FCL quote {quote.id}")
+                        from .email_service import send_fcl_invoice_email_to_user, send_fcl_invoice_email_to_admin
+                        user_sent = send_fcl_invoice_email_to_user(quote, pdf_bytes)
+                        admin_sent = send_fcl_invoice_email_to_admin(quote, pdf_bytes)
+                        if user_sent:
+                            logger.info(f"✅ Invoice email sent to user for FCL quote {quote.id}")
+                        else:
+                            logger.warning(f"⚠️ Invoice email to user failed for FCL quote {quote.id} (check email config or user email)")
+                        if admin_sent:
+                            logger.info(f"✅ Invoice email sent to admin for FCL quote {quote.id}")
+                        else:
+                            logger.warning(f"⚠️ Invoice email to admin failed for FCL quote {quote.id} (check email config)")
+                    except Exception as email_error:
+                        logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                        # Don't fail if email fails
+                    
                     response = HttpResponse(pdf_bytes, content_type='application/pdf')
                     response['Content-Disposition'] = f'inline; filename="FCL-Invoice-{quote.quote_number or quote.id}.pdf"'
                     return response
@@ -4711,10 +4812,18 @@ def download_shipping_labels_view(request, pk):
         # Send shipping labels by email
         try:
             from .email_service import send_shipping_labels_email_to_user, send_shipping_labels_email_to_admin
-            send_shipping_labels_email_to_user(shipment, pdf_bytes, num_labels=num_labels)
-            send_shipping_labels_email_to_admin(shipment, pdf_bytes, num_labels=num_labels)
+            user_sent = send_shipping_labels_email_to_user(shipment, pdf_bytes, num_labels=num_labels)
+            admin_sent = send_shipping_labels_email_to_admin(shipment, pdf_bytes, num_labels=num_labels)
+            if user_sent:
+                logger.info(f"✅ Shipping labels email sent to user for shipment {shipment.id}")
+            else:
+                logger.warning(f"⚠️ Shipping labels email to user failed for shipment {shipment.id} (check email config or user email)")
+            if admin_sent:
+                logger.info(f"✅ Shipping labels email sent to admin for shipment {shipment.id}")
+            else:
+                logger.warning(f"⚠️ Shipping labels email to admin failed for shipment {shipment.id} (check email config)")
         except Exception as email_error:
-            logger.warning(f"Failed to send shipping labels emails: {str(email_error)}")
+            logger.error(f"❌ Failed to send shipping labels emails: {str(email_error)}", exc_info=True)
             # Don't fail if email fails
         
         # Return PDF as response
