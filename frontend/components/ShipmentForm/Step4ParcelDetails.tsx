@@ -499,7 +499,7 @@ export default function Step4ParcelDetails({
   };
 
   const updateParcel = async (id: string, field: keyof Parcel, value: any) => {
-    // Format numeric fields
+    // Format numeric fields - keep as string during typing, convert to number only when needed
     let formattedValue = value;
     if (
       (field === "length" ||
@@ -508,7 +508,15 @@ export default function Step4ParcelDetails({
         field === "weight") &&
       typeof value === "string"
     ) {
-      formattedValue = parseFloat(formatNumericInput(value)) || 0;
+      // Keep the formatted string value for display, but store as number for calculations
+      // Only convert to number if it's a valid number (not empty and not just a decimal point)
+      const cleaned = formatNumericInput(value);
+      if (cleaned === "" || cleaned === ".") {
+        formattedValue = ""; // Keep empty string during typing
+      } else {
+        const numValue = parseFloat(cleaned);
+        formattedValue = isNaN(numValue) ? "" : numValue;
+      }
     }
 
     const updatedParcels = await Promise.all(
@@ -535,35 +543,45 @@ export default function Step4ParcelDetails({
 
           // Automatically calculate CBM when any dimension changes
           if (field === "length" || field === "width" || field === "height") {
-            const length = field === "length" ? value : parcel.length || 0;
-            const width = field === "width" ? value : parcel.width || 0;
-            const height = field === "height" ? value : parcel.height || 0;
+            // Convert to numbers for calculation, use 0 if empty or invalid
+            const length = field === "length" 
+              ? (typeof value === "string" ? parseFloat(value) || 0 : value || 0)
+              : (typeof parcel.length === "number" ? parcel.length : parseFloat(String(parcel.length || "")) || 0);
+            const width = field === "width"
+              ? (typeof value === "string" ? parseFloat(value) || 0 : value || 0)
+              : (typeof parcel.width === "number" ? parcel.width : parseFloat(String(parcel.width || "")) || 0);
+            const height = field === "height"
+              ? (typeof value === "string" ? parseFloat(value) || 0 : value || 0)
+              : (typeof parcel.height === "number" ? parcel.height : parseFloat(String(parcel.height || "")) || 0);
 
-            // Calculate CBM using Backend API only
-            try {
-              const response = await apiService.calculateCBM(
-                length,
-                width,
-                height
-              );
-              if (response.data.success) {
-                updatedParcel.cbm = response.data.cbm;
-                console.log(
-                  "✅ CBM calculated from Backend API:",
-                  response.data.cbm
+            // Only calculate CBM if all dimensions are valid (greater than 0)
+            if (length > 0 && width > 0 && height > 0) {
+              // Calculate CBM using Backend API only
+              try {
+                const response = await apiService.calculateCBM(
+                  length,
+                  width,
+                  height
                 );
-              } else {
+                if (response.data.success) {
+                  updatedParcel.cbm = response.data.cbm;
+                  console.log(
+                    "✅ CBM calculated from Backend API:",
+                    response.data.cbm
+                  );
+                } else {
+                  console.error(
+                    "❌ Backend API returned error for CBM calculation"
+                  );
+                  updatedParcel.cbm = 0;
+                }
+              } catch (error) {
                 console.error(
-                  "❌ Backend API returned error for CBM calculation"
+                  "❌ Backend API failed for CBM calculation:",
+                  error
                 );
                 updatedParcel.cbm = 0;
               }
-            } catch (error) {
-              console.error(
-                "❌ Backend API failed for CBM calculation:",
-                error
-              );
-              updatedParcel.cbm = 0;
             }
           }
 
