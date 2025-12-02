@@ -39,7 +39,8 @@ services:
       - RECAPTCHA_ENTERPRISE_API_KEY=${RECAPTCHA_ENTERPRISE_API_KEY:-}
       - RECAPTCHA_ENTERPRISE_PROJECT_ID=${RECAPTCHA_ENTERPRISE_PROJECT_ID:-centering-vine-476709-t9}
       - NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${NEXT_PUBLIC_RECAPTCHA_SITE_KEY:-}
-    command: sh -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile -"
+    # Note: makemigrations is included for convenience, but migrations should typically be created in development
+    command: sh -c "python manage.py makemigrations && python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile -"
     depends_on:
       db:
         condition: service_healthy
