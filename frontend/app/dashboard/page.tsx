@@ -5158,6 +5158,91 @@ export default function DashboardPage() {
                                                 </p>
                                               )}
                                             </div>
+                                            
+                                            {/* Debug: Show parcel data in UI for testing */}
+                                            {(parcel.photo_urls || parcel.device_photo_url || parcel.electronics_picture_url) && (
+                                              <div className="mt-2 text-xs text-gray-400 bg-gray-100 p-2 rounded">
+                                                <p>Debug Info:</p>
+                                                <p>photo_urls: {parcel.photo_urls ? `${parcel.photo_urls.length} photos` : 'none'}</p>
+                                                <p>device_photo_url: {parcel.device_photo_url ? 'exists' : 'none'}</p>
+                                                <p>electronics_picture_url: {parcel.electronics_picture_url ? 'exists' : 'none'}</p>
+                                              </div>
+                                            )}
+                                            
+                                            {/* Parcel Photos */}
+                                            {parcel.photo_urls && Array.isArray(parcel.photo_urls) && parcel.photo_urls.length > 0 && (
+                                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                                <p className="text-xs font-semibold text-gray-700 mb-2">
+                                                  {language === "ar" ? "صور الطرد" : "Parcel Photos"}
+                                                </p>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                  {parcel.photo_urls.map((photoUrl: string, photoIdx: number) => (
+                                                    <a
+                                                      key={photoIdx}
+                                                      href={photoUrl}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="block aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary-yellow transition-all"
+                                                    >
+                                                      <img
+                                                        src={photoUrl}
+                                                        alt={`${language === "ar" ? "صورة الطرد" : "Parcel photo"} ${photoIdx + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                      />
+                                                    </a>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                            
+                                            {/* Electronics Photos */}
+                                            {(parcel.device_photo_url || parcel.electronics_picture_url) && (
+                                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                                <p className="text-xs font-semibold text-gray-700 mb-2">
+                                                  {language === "ar" ? "صور الإلكترونيات" : "Electronics Photos"}
+                                                </p>
+                                                <div className="space-y-2">
+                                                  {parcel.device_photo_url && (
+                                                    <div>
+                                                      <p className="text-xs text-gray-600 mb-1">
+                                                        {language === "ar" ? "صورة الجهاز" : "Device Photo"}
+                                                      </p>
+                                                      <a
+                                                        href={parcel.device_photo_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="block rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary-yellow transition-all"
+                                                      >
+                                                        <img
+                                                          src={parcel.device_photo_url}
+                                                          alt={language === "ar" ? "صورة الجهاز" : "Device photo"}
+                                                          className="w-full h-32 object-cover"
+                                                        />
+                                                      </a>
+                                                    </div>
+                                                  )}
+                                                  {parcel.electronics_picture_url && (
+                                                    <div>
+                                                      <p className="text-xs text-gray-600 mb-1">
+                                                        {language === "ar" ? "صورة الإلكترونيات" : "Electronics Picture"}
+                                                      </p>
+                                                      <a
+                                                        href={parcel.electronics_picture_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="block rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary-yellow transition-all"
+                                                      >
+                                                        <img
+                                                          src={parcel.electronics_picture_url}
+                                                          alt={language === "ar" ? "صورة الإلكترونيات" : "Electronics picture"}
+                                                          className="w-full h-32 object-cover"
+                                                        />
+                                                      </a>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
                                           </div>
                                         )
                                       )}

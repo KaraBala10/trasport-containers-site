@@ -123,6 +123,22 @@ export const apiService = {
   },
 
   createShipment: (data: any) => {
+    // If data is FormData, don't set Content-Type header (let browser set it with boundary)
+    if (data instanceof FormData) {
+      // Get auth token if available
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      
+      // Create headers without Content-Type (browser will add it with boundary)
+      const headers: any = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      return axios.post(`${API_BASE_URL}/shipments/`, data, {
+        headers: headers,
+      });
+    }
+    // Otherwise, send as JSON
     return apiClient.post('/shipments/', data);
   },
 
