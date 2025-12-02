@@ -1,7 +1,15 @@
 import axios from 'axios';
 
 // Get API URL from environment or use default
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+let API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+// Normalize API URL: ensure absolute URLs end with /api
+// Relative paths (like /api) are left as-is for development
+if ((API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) && !API_BASE_URL.endsWith('/api')) {
+  // Absolute URL: remove trailing slash and append /api if not present
+  API_BASE_URL = API_BASE_URL.replace(/\/$/, '');
+  API_BASE_URL = `${API_BASE_URL}/api`;
+}
 
 // Create axios instance with default config
 const apiClient = axios.create({
