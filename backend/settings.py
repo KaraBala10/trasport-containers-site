@@ -30,18 +30,9 @@ SECRET_KEY = config(
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=True, cast=bool)
-
-# ALLOWED_HOSTS - restrict to your domain only for security
-# In production, only allow medo-freight.eu
-# In development (DEBUG=True), also allow localhost for local testing
-if DEBUG:
-    # Development: allow localhost and production domain
-    ALLOWED_HOSTS_ENV = config(
-        "ALLOWED_HOSTS", default="medo-freight.eu,localhost,127.0.0.1"
-    )
-else:
-    # Production: only allow production domain
-    ALLOWED_HOSTS_ENV = config("ALLOWED_HOSTS", default="medo-freight.eu")
+ALLOWED_HOSTS_ENV = config(
+    "ALLOWED_HOSTS", default="medo-freight.eu,localhost,127.0.0.1"
+)
 
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()]
 
