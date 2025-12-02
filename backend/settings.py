@@ -31,7 +31,19 @@ SECRET_KEY = config(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = ["*"]
+# ALLOWED_HOSTS - restrict to your domain only for security
+# In production, only allow medo-freight.eu
+# In development (DEBUG=True), also allow localhost for local testing
+if DEBUG:
+    # Development: allow localhost and production domain
+    ALLOWED_HOSTS_ENV = config(
+        "ALLOWED_HOSTS", default="medo-freight.eu,localhost,127.0.0.1"
+    )
+else:
+    # Production: only allow production domain
+    ALLOWED_HOSTS_ENV = config("ALLOWED_HOSTS", default="medo-freight.eu")
+
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()]
 
 
 # Application definition
@@ -267,4 +279,13 @@ SENDCLOUD_API_URL = config(
 )
 SENDCLOUD_USE_TEST_MODE = config("SENDCLOUD_USE_TEST_MODE", default=True, cast=bool)
 SENDCLOUD_WEBHOOK_SECRET = config("SENDCLOUD_WEBHOOK_SECRET", default="")
+
+# reCAPTCHA Enterprise Configuration
+RECAPTCHA_SITE_KEY = config("NEXT_PUBLIC_RECAPTCHA_SITE_KEY", default="").strip()
+RECAPTCHA_ENTERPRISE_API_KEY = config(
+    "RECAPTCHA_ENTERPRISE_API_KEY", default=""
+).strip()
+RECAPTCHA_ENTERPRISE_PROJECT_ID = config(
+    "RECAPTCHA_ENTERPRISE_PROJECT_ID", default="centering-vine-476709-t9"
+).strip()
 SENDCLOUD_WEBHOOK_URL = config("SENDCLOUD_WEBHOOK_URL", default="")
