@@ -1517,7 +1517,6 @@ export default function CreateShipmentPage() {
                 grandTotal={grandTotalWithTransport}
                 onStripePayment={handleStripePayment}
                 isProcessingPayment={isProcessingPayment}
-                isRecaptchaValid={isRecaptchaValid}
                 hasInternalTransport={selectedEUShippingMethod !== null}
               />
               <motion.div

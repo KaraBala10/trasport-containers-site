@@ -341,8 +341,6 @@ class FCLQuoteView(generics.CreateAPIView):
         recaptcha_token = request.data.get("recaptcha_token")
 
         # Check if reCAPTCHA is configured (standard v3 only)
-        from django.conf import settings
-
         has_recaptcha_config = getattr(settings, "RECAPTCHA_SECRET_KEY", None)
 
         if has_recaptcha_config:

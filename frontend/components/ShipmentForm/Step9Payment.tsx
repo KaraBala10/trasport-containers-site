@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ShippingDirection } from "@/types/shipment";
 import { useReCaptcha } from "@/components/ReCaptchaWrapper";
@@ -21,7 +21,6 @@ interface Step9PaymentProps {
   grandTotal?: number;
   onStripePayment?: () => Promise<void>;
   isProcessingPayment?: boolean;
-  isRecaptchaValid?: boolean;
   hasInternalTransport?: boolean; // If Internal Transport in Europe is selected
 }
 
@@ -39,7 +38,6 @@ export default function Step9Payment({
   grandTotal = 0,
   onStripePayment,
   isProcessingPayment = false,
-  isRecaptchaValid = true,
   hasInternalTransport = false,
 }: Step9PaymentProps) {
   const { executeRecaptcha } = useReCaptcha();
@@ -53,6 +51,8 @@ export default function Step9Payment({
   const isDevelopment = process.env.NODE_ENV === "development";
   const isRecaptchaRequired = !!recaptchaSiteKey && !isDevelopment;
   const isRecaptchaReady = !isRecaptchaRequired || !!executeRecaptcha;
+  const isRecaptchaValid =
+    !isRecaptchaRequired || (isRecaptchaReady && !recaptchaError);
 
   const handleStripePaymentClick = async () => {
     if (!onStripePayment) return;

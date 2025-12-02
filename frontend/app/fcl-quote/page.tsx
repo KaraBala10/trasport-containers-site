@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Autocomplete from "@/components/Autocomplete";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
+import { useReCaptcha } from "@/components/ReCaptchaWrapper";
 import { apiService } from "@/lib/api";
 import {
   validateRequired,
@@ -96,24 +96,28 @@ export default function FCLQuotePage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // reCAPTCHA state
-  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+  const { executeRecaptcha } = useReCaptcha();
 
   // Store env variable in constant to avoid issues with conditional access
-  // Use Google's test key for localhost development (works without domain configuration)
   const isDevelopment = process.env.NODE_ENV === "development";
-  const isLocalhost =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1");
-
-  // Use test key on localhost, otherwise use configured key
   const recaptchaSiteKey =
-    isDevelopment && isLocalhost
-      ? "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Google's test key (works with localhost)
-      : process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+      : "";
+
+  // Check if reCAPTCHA is required and ready (matching register page pattern)
+  const isRecaptchaValid = useMemo(() => {
+    // If no reCAPTCHA key is configured, it's not required
+    if (!recaptchaSiteKey) {
+      return true;
+    }
+    // In production, reCAPTCHA v3 is required and must be ready
+    if (!isDevelopment) {
+      return !!executeRecaptcha;
+    }
+    // In development, reCAPTCHA is optional
+    return true;
+  }, [recaptchaSiteKey, isDevelopment, executeRecaptcha]);
 
   // European countries and cities data
   const europeanCountries = {
@@ -1609,8 +1613,45 @@ export default function FCLQuotePage() {
     setIsSubmitting(true);
     setSubmitStatus("idle");
 
+    // Check reCAPTCHA before submitting (matching register page pattern)
+    if (!isRecaptchaValid) {
+      setErrors((prev) => ({
+        ...prev,
+        recaptcha:
+          language === "ar"
+            ? "يرجى التحقق من reCAPTCHA"
+            : "Please complete the reCAPTCHA verification",
+      }));
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
+      // Execute reCAPTCHA v3 before submitting
+      let recaptchaToken = "";
+      if (recaptchaSiteKey && executeRecaptcha) {
+        try {
+          recaptchaToken = await executeRecaptcha("fcl_quote");
+        } catch (recaptchaError) {
+          console.error("reCAPTCHA verification failed:", recaptchaError);
+          setErrors((prev) => ({
+            ...prev,
+            recaptcha:
+              language === "ar"
+                ? "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى."
+                : "reCAPTCHA verification failed. Please try again.",
+          }));
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const formDataToSend = new FormData();
+
+      // Add reCAPTCHA token if available
+      if (recaptchaToken) {
+        formDataToSend.append("recaptcha_token", recaptchaToken);
+      }
 
       // Add user ID to form data (for debugging and verification)
       if (user && user.id) {
@@ -1869,88 +1910,6 @@ export default function FCLQuotePage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Initialize reCAPTCHA widget after component mounts and script loads
-  useEffect(() => {
-    if (!mounted || !isDevelopment || !recaptchaSiteKey) return;
-
-    // Wait for script to load and widget element to exist
-    const initRecaptcha = () => {
-      const widgetElement = document.getElementById("recaptcha-widget-fcl");
-      if (!widgetElement) {
-        setTimeout(initRecaptcha, 200);
-        return;
-      }
-
-      if (!window.grecaptcha) {
-        setTimeout(initRecaptcha, 200);
-        return;
-      }
-
-      // Check if already rendered
-      if (widgetElement.hasChildNodes()) {
-        setRecaptchaLoaded(true);
-        return;
-      }
-
-      window.grecaptcha.ready(() => {
-        try {
-          const widgetId = window.grecaptcha!.render("recaptcha-widget-fcl", {
-            sitekey: recaptchaSiteKey,
-            size: "normal",
-            theme: "light",
-            callback: (token: string) => {
-              console.log(
-                "reCAPTCHA verified:",
-                token.substring(0, 20) + "..."
-              );
-              setRecaptchaToken(token);
-            },
-            "expired-callback": () => {
-              console.log("reCAPTCHA expired");
-              setRecaptchaToken("");
-            },
-            "error-callback": () => {
-              console.error("reCAPTCHA error");
-              setRecaptchaToken("");
-            },
-          });
-          console.log("reCAPTCHA widget rendered, widgetId:", widgetId);
-          setRecaptchaLoaded(true);
-        } catch (error) {
-          console.error("Error rendering reCAPTCHA:", error);
-          setRecaptchaLoaded(false);
-        }
-      });
-    };
-
-    // Start initialization after a delay to ensure script is loaded
-    const timer = setTimeout(initRecaptcha, 1000);
-    return () => clearTimeout(timer);
-  }, [mounted, isDevelopment, recaptchaSiteKey]);
-
-  // Check if reCAPTCHA is required and completed
-  const isRecaptchaValid = useMemo(() => {
-    // If no reCAPTCHA key is configured, it's not required
-    if (!recaptchaSiteKey) {
-      return true;
-    }
-
-    // In development mode with v2 widget (visible checkbox)
-    // Button should be disabled if widget is loaded but not checked
-    if (isDevelopment && recaptchaLoaded) {
-      return !!recaptchaToken; // Must have token if widget is loaded
-    }
-
-    // In production with v3 (invisible, executed on submit)
-    // Allow button to be enabled (v3 executes on submit)
-    if (!isDevelopment) {
-      return true;
-    }
-
-    // If widget hasn't loaded yet, allow button (will be disabled once loaded)
-    return true;
-  }, [recaptchaSiteKey, isDevelopment, recaptchaLoaded, recaptchaToken]);
-
   // Show loading state while checking authentication
   if (authLoading || !mounted) {
     return (
@@ -1973,19 +1932,6 @@ export default function FCLQuotePage() {
       className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50"
       dir={isRTL ? "rtl" : "ltr"}
     >
-      {/* reCAPTCHA Script */}
-      {isDevelopment && recaptchaSiteKey && (
-        <Script
-          src={`https://www.google.com/recaptcha/api.js?render=explicit&hl=${language}`}
-          strategy="lazyOnload"
-          onLoad={() => {
-            console.log("reCAPTCHA v2 script loaded successfully");
-          }}
-          onError={(e) => {
-            console.error("Failed to load reCAPTCHA script:", e);
-          }}
-        />
-      )}
       <Header />
       <div className="h-20" aria-hidden="true" />
 
@@ -2758,9 +2704,8 @@ export default function FCLQuotePage() {
                         )}
                       </label>
                       <input
-                        type="number"
-                        name="total_weight"
                         type="text"
+                        name="total_weight"
                         inputMode="decimal"
                         value={formData.total_weight}
                         onChange={handleChange}
@@ -2789,9 +2734,8 @@ export default function FCLQuotePage() {
                         )}
                       </label>
                       <input
-                        type="number"
-                        name="total_volume"
                         type="text"
+                        name="total_volume"
                         inputMode="decimal"
                         value={formData.total_volume}
                         onChange={handleChange}
@@ -2820,7 +2764,6 @@ export default function FCLQuotePage() {
                         )}
                       </label>
                       <input
-                        type="number"
                         name="cargo_value"
                         type="text"
                         inputMode="decimal"
@@ -3511,59 +3454,27 @@ export default function FCLQuotePage() {
                     </div>
                   </div>
 
-                  {/* reCAPTCHA Widget (Development Only) */}
-                  {isDevelopment && recaptchaSiteKey && (
-                    <div className="flex flex-col items-center justify-center py-4 mt-4">
-                      <div
-                        id="recaptcha-widget-fcl"
-                        className="flex justify-center items-center min-h-[78px] w-full"
-                        style={{ minWidth: "304px" }}
-                      ></div>
-                      {recaptchaSiteKey ===
-                        "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" && (
-                        <p className="mt-2 text-xs text-yellow-600 text-center">
-                          {language === "ar"
-                            ? "⚠️ استخدام مفتاح اختبار Google (localhost غير مدعوم)"
-                            : "⚠️ Using Google test key (localhost not supported)"}
-                        </p>
-                      )}
-                      {recaptchaLoaded && (
-                        <p className="mt-2 text-xs text-gray-500 text-center">
-                          {t.recaptchaDevelopment}
-                        </p>
-                      )}
-                      {!recaptchaLoaded && (
-                        <p className="mt-2 text-xs text-gray-400 text-center animate-pulse">
-                          {t.recaptchaLoading}
-                        </p>
-                      )}
+                  {/* reCAPTCHA Error Message */}
+                  {errors.recaptcha && (
+                    <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg flex items-start gap-3 mt-4">
+                      <svg
+                        className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium">
+                        {errors.recaptcha}
+                      </span>
                     </div>
                   )}
-
-                  {/* reCAPTCHA Required Message */}
-                  {isDevelopment &&
-                    recaptchaSiteKey &&
-                    recaptchaLoaded &&
-                    !recaptchaToken && (
-                      <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded-r-lg flex items-start gap-3 mt-4">
-                        <svg
-                          className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                          />
-                        </svg>
-                        <span className="text-sm font-medium">
-                          {t.recaptchaRequired}
-                        </span>
-                      </div>
-                    )}
 
                   {/* Submit Button */}
                   <div className="mt-8 flex justify-between">
@@ -3712,7 +3623,9 @@ export default function FCLQuotePage() {
                             {quoteNumber && (
                               <p className="text-sm text-gray-700 mb-4">
                                 <span className="font-semibold">
-                                  {language === "ar" ? "رقم الطلب:" : "Quote Number:"}
+                                  {language === "ar"
+                                    ? "رقم الطلب:"
+                                    : "Quote Number:"}
                                 </span>{" "}
                                 {quoteNumber}
                               </p>
@@ -3737,9 +3650,7 @@ export default function FCLQuotePage() {
                                   : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
                               }`}
                               whileHover={
-                                !isProcessingPayment
-                                  ? { scale: 1.02 }
-                                  : {}
+                                !isProcessingPayment ? { scale: 1.02 } : {}
                               }
                               whileTap={
                                 !isProcessingPayment ? { scale: 0.98 } : {}

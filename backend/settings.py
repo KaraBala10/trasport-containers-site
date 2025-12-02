@@ -271,14 +271,13 @@ SENDCLOUD_API_URL = config(
 SENDCLOUD_USE_TEST_MODE = config("SENDCLOUD_USE_TEST_MODE", default=True, cast=bool)
 SENDCLOUD_WEBHOOK_SECRET = config("SENDCLOUD_WEBHOOK_SECRET", default="")
 
-# reCAPTCHA Enterprise Configuration
+# reCAPTCHA Configuration
+# Site key (public key - used in frontend)
 RECAPTCHA_SITE_KEY = config("NEXT_PUBLIC_RECAPTCHA_SITE_KEY", default="").strip()
-RECAPTCHA_ENTERPRISE_API_KEY = config(
-    "RECAPTCHA_ENTERPRISE_API_KEY", default=""
-).strip()
-RECAPTCHA_ENTERPRISE_PROJECT_ID = config(
-    "RECAPTCHA_ENTERPRISE_PROJECT_ID", default="centering-vine-476709-t9"
-).strip()
+
+# Standard reCAPTCHA v3 Secret Key (for standard v3 verification)
+RECAPTCHA_SECRET_KEY = config("RECAPTCHA_SECRET_KEY", default="").strip()
+
 SENDCLOUD_WEBHOOK_URL = config("SENDCLOUD_WEBHOOK_URL", default="")
 
 # reCAPTCHA Configuration

@@ -227,6 +227,11 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
                     else:
                         data_dict[field] = ""
 
+        # Exclude read-only fields that don't exist in database yet
+        # These fields are set by the system, not during creation
+        data_dict.pop("invoice_file", None)
+        data_dict.pop("invoice_generated_at", None)
+
         return super().to_internal_value(data_dict)
 
     def validate_accepted_terms(self, value):
@@ -302,6 +307,11 @@ class FCLQuoteSerializer(serializers.ModelSerializer):
         # Ensure status is CREATED if not provided
         if "status" not in validated_data:
             validated_data["status"] = "CREATED"
+
+        # Exclude read-only fields that might not exist in database yet
+        # These fields are set by the system, not during creation
+        validated_data.pop("invoice_file", None)
+        validated_data.pop("invoice_generated_at", None)
 
         fcl_quote = FCLQuote.objects.create(
             **validated_data,
