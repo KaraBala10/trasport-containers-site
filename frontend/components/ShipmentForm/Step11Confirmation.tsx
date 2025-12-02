@@ -14,6 +14,9 @@ interface Step11ConfirmationProps {
   pricing: PricingResult | null;
   language: 'ar' | 'en';
   grandTotalWithTransport?: number;
+  hasInternalTransport?: boolean; // If Internal Transport in Europe is selected
+  onStripePayment?: () => Promise<void>; // Stripe payment handler
+  isProcessingPayment?: boolean; // Payment processing state
 }
 
 interface ShipmentData {
@@ -27,6 +30,9 @@ export default function Step11Confirmation({
   pricing,
   language,
   grandTotalWithTransport,
+  hasInternalTransport = false,
+  onStripePayment,
+  isProcessingPayment = false,
 }: Step11ConfirmationProps) {
   const { showSuccess, showError } = useToast();
   const translations = {
@@ -356,6 +362,67 @@ export default function Step11Confirmation({
                 : t.downloadInvoice}
             </motion.button>
           </div>
+        </motion.div>
+      )}
+
+      {/* Stripe Payment - Only show if Internal Transport is selected */}
+      {hasInternalTransport && isEUtoSY && onStripePayment && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.95 }}
+          className="bg-white rounded-2xl p-6 shadow-lg border-2 border-blue-200"
+        >
+          <h3 className="text-xl font-bold text-primary-dark mb-2">
+            {language === 'ar' ? 'الدفع عبر Stripe' : 'Pay via Stripe'}
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            {language === 'ar'
+              ? 'يمكنك الدفع الآن عبر Stripe لاستكمال عملية الشحن'
+              : 'You can pay now via Stripe to complete the shipping process'}
+          </p>
+          {grandTotalWithTransport && grandTotalWithTransport > 0 && (
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-300 mb-4">
+              <p className="text-sm font-semibold text-blue-900 mb-1">
+                {language === 'ar' ? 'المبلغ الإجمالي:' : 'Total Amount:'}
+              </p>
+              <p className="text-2xl font-bold text-blue-900">
+                €{grandTotalWithTransport.toFixed(2)}
+              </p>
+            </div>
+          )}
+          <motion.button
+            onClick={onStripePayment}
+            disabled={isProcessingPayment || !grandTotalWithTransport || grandTotalWithTransport <= 0}
+            className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
+              isProcessingPayment || !grandTotalWithTransport || grandTotalWithTransport <= 0
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl'
+            }`}
+            whileHover={
+              !isProcessingPayment && grandTotalWithTransport && grandTotalWithTransport > 0
+                ? { scale: 1.02 }
+                : {}
+            }
+            whileTap={
+              !isProcessingPayment && grandTotalWithTransport && grandTotalWithTransport > 0
+                ? { scale: 0.98 }
+                : {}
+            }
+          >
+            {isProcessingPayment
+              ? language === 'ar'
+                ? 'جاري التوجيه...'
+                : 'Redirecting...'
+              : language === 'ar'
+              ? 'الدفع الآن عبر Stripe'
+              : 'Pay Now via Stripe'}
+          </motion.button>
+          <p className="text-xs text-blue-700 mt-3">
+            {language === 'ar'
+              ? 'سيتم توجيهك إلى صفحة الدفع الآمنة من Stripe'
+              : 'You will be redirected to Stripe secure payment page'}
+          </p>
         </motion.div>
       )}
 

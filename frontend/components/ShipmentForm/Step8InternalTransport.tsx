@@ -5,14 +5,8 @@ import { motion } from "framer-motion";
 import { ShippingDirection } from "@/types/shipment";
 import apiService from "@/lib/api";
 import {
-  validateEmail,
-  validatePhone,
   validateRequired,
-  validateWeight,
-  validateNumber,
-  formatPhoneInput,
-  formatNumericInput,
-  handleNumericInput,
+  formatIntegerInput,
   handleIntegerInput,
 } from "@/utils/validation";
 

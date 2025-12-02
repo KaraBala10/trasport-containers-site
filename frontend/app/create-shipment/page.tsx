@@ -1517,6 +1517,7 @@ export default function CreateShipmentPage() {
                 onStripePayment={handleStripePayment}
                 isProcessingPayment={isProcessingPayment}
                 isRecaptchaValid={isRecaptchaValid}
+                hasInternalTransport={selectedEUShippingMethod !== null}
               />
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -1982,11 +1983,14 @@ export default function CreateShipmentPage() {
                 {t.step8Title}
               </h2>
               <Step11Confirmation
-                shipmentId={shipmentId}
+                shipmentId={shipmentId || ''}
                 direction={direction}
                 pricing={pricing}
                 language={language}
                 grandTotalWithTransport={grandTotalWithTransport}
+                hasInternalTransport={selectedEUShippingMethod !== null}
+                onStripePayment={handleStripePayment}
+                isProcessingPayment={isProcessingPayment}
               />
             </motion.div>
           )}

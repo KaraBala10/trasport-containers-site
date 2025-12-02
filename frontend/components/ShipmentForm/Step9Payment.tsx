@@ -21,6 +21,7 @@ interface Step9PaymentProps {
   onStripePayment?: () => Promise<void>;
   isProcessingPayment?: boolean;
   isRecaptchaValid?: boolean;
+  hasInternalTransport?: boolean; // If Internal Transport in Europe is selected
 }
 
 export default function Step9Payment({
@@ -38,6 +39,7 @@ export default function Step9Payment({
   onStripePayment,
   isProcessingPayment = false,
   isRecaptchaValid = true,
+  hasInternalTransport = false,
 }: Step9PaymentProps) {
   const translations = {
     ar: {
@@ -222,8 +224,8 @@ export default function Step9Payment({
         </motion.div>
       )}
 
-      {/* Syria Payment for EU→SY */}
-      {isEUtoSY && (
+      {/* Syria Payment for EU→SY - Hide if Internal Transport is selected */}
+      {isEUtoSY && !hasInternalTransport && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
