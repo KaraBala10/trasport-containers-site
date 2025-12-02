@@ -135,6 +135,7 @@ export default function Header() {
       <header
         className={`
           fixed top-0 left-0 right-0 z-[100] transition-all duration-300
+          w-full max-w-full overflow-x-hidden
           ${
             isScrolled
               ? "bg-[#0a1628] backdrop-blur-md shadow-lg"
@@ -143,26 +144,26 @@ export default function Header() {
         `}
         role="banner"
       >
-      <div className="container mx-auto px-4 lg:px-6">
-        <div className="flex items-center justify-between h-20">
+      <div className="container mx-auto px-4 lg:px-6 w-full max-w-full overflow-x-hidden">
+        <div className="flex items-center justify-between h-20 min-w-0 w-full">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center space-x-2 sm:space-x-3 focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded-lg px-2 py-1 -mx-2 -my-1 transition-transform hover:scale-105 flex-shrink-0 min-w-0"
+            className="flex items-center space-x-2 sm:space-x-3 focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 rounded-lg px-2 py-1 -mx-2 -my-1 transition-transform hover:scale-105 flex-shrink-0 min-w-0 max-w-[50%] sm:max-w-none"
             aria-label={
               language === "ar"
                 ? "العودة إلى الصفحة الرئيسية - MEDO-FREIGHT.EU"
                 : "Go to homepage - MEDO-FREIGHT.EU"
             }
           >
-            <div className="relative flex-shrink-0">
-              <div className="text-lg sm:text-xl md:text-2xl lg:text-2xl font-bold text-white tracking-tight whitespace-nowrap">
+            <div className="relative flex-shrink-0 min-w-0">
+              <div className="text-lg sm:text-xl md:text-2xl lg:text-2xl font-bold text-white tracking-tight truncate">
                 MEDO-FREIGHT
               </div>
               <div className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-yellow via-primary-yellow/80 to-transparent rounded-full" />
             </div>
             <div
-              className={`hidden sm:block text-xs md:text-sm text-gray-300 font-medium flex-shrink-0 ${
+              className={`hidden sm:block text-xs md:text-sm text-gray-300 font-medium flex-shrink-0 whitespace-nowrap ${
                 isRTL ? "mr-2" : "ml-2"
               }`}
               aria-hidden="true"
@@ -177,7 +178,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav
-            className="hidden lg:flex items-center gap-0.5"
+            className="hidden lg:flex items-center gap-0.5 flex-shrink-0 min-w-0"
             role="navigation"
             aria-label={
               language === "ar" ? "التنقل الرئيسي" : "Main navigation"
@@ -189,10 +190,10 @@ export default function Header() {
           </nav>
 
           {/* Right Side Actions */}
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 min-w-0">
             {/* Authentication Buttons - Desktop */}
             {mounted && (
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2 flex-shrink-0 min-w-0">
                 {isAuthenticated ? (
                   <>
                     <Link
@@ -274,7 +275,7 @@ export default function Header() {
     {/* Mobile Menu Overlay - Behind menu */}
     {isMobileMenuOpen && (
       <div
-        className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[99]"
+        className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[99] overflow-x-hidden"
         onClick={() => setIsMobileMenuOpen(false)}
         aria-hidden="true"
       />
@@ -283,11 +284,11 @@ export default function Header() {
     {/* Mobile Menu - Drops down from header */}
     {isMobileMenuOpen && (
       <div
-        className="lg:hidden fixed top-20 left-0 right-0 bottom-0 bg-white shadow-2xl z-[101]"
+        className="lg:hidden fixed top-20 left-0 right-0 bottom-0 bg-white shadow-2xl z-[101] w-full max-w-full overflow-x-hidden"
         style={{ backgroundColor: '#ffffff' }}
         aria-hidden={false}
       >
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-y-auto overflow-x-hidden">
           <nav
             className="w-full px-4 py-6 sm:py-8 space-y-2"
             role="navigation"
