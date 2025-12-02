@@ -66,9 +66,6 @@ interface FCLQuote {
   edit_request_status?: string;
   edit_request_messages?: EditRequestMessage[];
   created_at: string;
-  // Invoice
-  invoice_file?: string;
-  invoice_generated_at?: string;
   // User info (for admin view)
   user?: {
     id: number;
@@ -719,13 +716,6 @@ export default function DashboardPage() {
         // Handle both paginated and non-paginated responses
         const quotes = response.data?.results || response.data || [];
         setFclQuotes(Array.isArray(quotes) ? quotes : []);
-        // Debug: Log invoice data for all quotes
-        console.log("FCL Quotes with invoice data:", quotes.map((q: FCLQuote) => ({
-          id: q.id,
-          status: q.status,
-          invoice_file: q.invoice_file,
-          invoice_generated_at: q.invoice_generated_at
-        })));
       } catch (error: any) {
         console.error("Error fetching FCL quotes:", error);
         if (error.response?.status === 401) {
@@ -3908,113 +3898,6 @@ export default function DashboardPage() {
                               </div>
                             )}
 
-                            {/* Documents Section - Show invoice section when status is not PENDING_PAYMENT */}
-                            {quote.status !== "PENDING_PAYMENT" && (
-                              <div className="md:col-span-2 lg:col-span-3 space-y-4 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
-                                  <div className="w-1 h-6 bg-gradient-to-b from-primary-yellow to-primary-dark rounded-full"></div>
-                                  <h4 className="font-bold text-primary-dark text-lg">
-                                    {language === "ar" ? "الوثائق" : "Documents"}
-                                  </h4>
-                                </div>
-                                <div className="space-y-3">
-                                  {/* Invoice */}
-                                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                                        <svg
-                                          className="w-6 h-6 text-white"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                          />
-                                        </svg>
-                                      </div>
-                                      <div>
-                                        <p className="text-sm font-bold text-gray-900">
-                                          {language === "ar" ? "الفاتورة" : "Invoice"}
-                                        </p>
-                                        {quote.invoice_generated_at && (
-                                          <p className="text-xs text-gray-600">
-                                            {language === "ar" ? "تم التوليد: " : "Generated: "}
-                                            {new Date(quote.invoice_generated_at).toLocaleString(
-                                              language === "ar" ? "ar-SA" : "en-US",
-                                              {
-                                                year: "numeric",
-                                                month: "short",
-                                                day: "numeric",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                              }
-                                            )}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <button
-                                      onClick={async () => {
-                                        try {
-                                          showSuccess(
-                                            language === "ar"
-                                              ? "جاري تحميل الفاتورة..."
-                                              : "Downloading invoice..."
-                                          );
-                                          const response = await apiService.downloadFCLInvoice(
-                                            quote.id,
-                                            language
-                                          );
-                                          const blob = new Blob([response.data], {
-                                            type: "application/pdf",
-                                          });
-                                          const url = window.URL.createObjectURL(blob);
-                                          const link = document.createElement("a");
-                                          link.href = url;
-                                          link.download = `FCL-Invoice-${quote.quote_number || quote.id}.pdf`;
-                                          document.body.appendChild(link);
-                                          link.click();
-                                          document.body.removeChild(link);
-                                          window.URL.revokeObjectURL(url);
-                                          showSuccess(
-                                            language === "ar"
-                                              ? "تم تحميل الفاتورة بنجاح"
-                                              : "Invoice downloaded successfully"
-                                          );
-                                        } catch (error: any) {
-                                          console.error("Error downloading invoice:", error);
-                                          showError(
-                                            language === "ar"
-                                              ? "حدث خطأ أثناء تحميل الفاتورة"
-                                              : "Error downloading invoice"
-                                          );
-                                        }
-                                      }}
-                                      className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center gap-2"
-                                    >
-                                      <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                      </svg>
-                                      {language === "ar" ? "تحميل" : "Download"}
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         )}
                       </div>

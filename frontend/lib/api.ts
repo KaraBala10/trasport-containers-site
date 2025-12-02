@@ -371,12 +371,6 @@ export const apiService = {
       params: language ? { language } : {},
     });
   },
-  downloadFCLInvoice: (quoteId: string | number, language?: string) => {
-    return apiClient.get(`/fcl/quotes/${quoteId}/invoice/`, {
-      responseType: 'blob',
-      params: language ? { language } : {},
-    });
-  },
 
   downloadConsolidatedExportInvoice: (shipmentId: string | number, language?: string) => {
     return apiClient.get(`/shipments/${shipmentId}/consolidated-export-invoice/`, {

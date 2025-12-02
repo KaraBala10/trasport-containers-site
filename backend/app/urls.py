@@ -41,7 +41,6 @@ from .views import (
     download_packing_list_view,
     download_receipt_view,
     download_shipping_labels_view,
-    download_fcl_invoice_view,
     get_packaging_prices_view,
     get_per_piece_products_view,
     get_prices_view,
@@ -124,11 +123,6 @@ urlpatterns = [
         name="fcl_quote_initiate_stripe_payment",
     ),
     path("fcl/quotes/<int:pk>/", FCLQuoteDetailView.as_view(), name="fcl_quote_detail"),
-    path(
-        "fcl/quotes/<int:pk>/invoice/",
-        download_fcl_invoice_view,
-        name="fcl_quote_invoice",
-    ),
     # LCL Shipment endpoints
     path("shipments/", LCLShipmentView.as_view(), name="lcl_shipment_create"),
     path("shipments/list/", LCLShipmentListView.as_view(), name="lcl_shipment_list"),
