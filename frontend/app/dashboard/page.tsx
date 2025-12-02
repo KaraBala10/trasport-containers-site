@@ -1313,6 +1313,10 @@ export default function DashboardPage() {
 
       let offerMessage = "";
 
+      // Variables for total_price and amount_paid
+      let amountPaid: number | undefined = undefined;
+      let totalPrice: number | undefined = undefined;
+
       // If changing to OFFER_SENT, prompt for message
       if (newStatus === "OFFER_SENT") {
         offerMessage =
@@ -1330,11 +1334,28 @@ export default function DashboardPage() {
           );
           return;
         }
+        
+        // Optionally prompt for total price when sending offer
+        const quote = fclQuotes.find((q) => q.id === quoteId);
+        const currentTotalPrice = quote?.total_price || 0;
+        const totalPriceInput = prompt(
+          language === "ar"
+            ? `أدخل السعر الإجمالي (EUR) (اختياري)${
+                currentTotalPrice > 0 ? ` (الحالي: ${currentTotalPrice})` : ""
+              } - اضغط Cancel للتخطي:`
+            : `Enter total price (EUR) (optional)${
+                currentTotalPrice > 0 ? ` (Current: ${currentTotalPrice})` : ""
+              } - Press Cancel to skip:`
+        );
+        if (totalPriceInput !== null && totalPriceInput.trim() !== "") {
+          const parsedTotalPrice = parseFloat(totalPriceInput || "0");
+          if (!isNaN(parsedTotalPrice) && parsedTotalPrice > 0) {
+            totalPrice = parsedTotalPrice;
+          }
+        }
       }
 
       // If changing to PENDING_PAYMENT, always prompt for total price and amount paid
-      let amountPaid: number | undefined = undefined;
-      let totalPrice: number | undefined = undefined;
       if (newStatus === "PENDING_PAYMENT") {
         const quote = fclQuotes.find((q) => q.id === quoteId);
         const currentTotalPrice = quote?.total_price || 0;
@@ -2405,10 +2426,25 @@ export default function DashboardPage() {
                                 </span>
                               </div>
 
-                              {/* Payment Progress - Show for all statuses after OFFER_SENT */}
-                              {quote.status !== "CREATED" &&
-                                quote.total_price &&
-                                quote.total_price > 0 && (
+                              {/* Payment Progress - Show for all statuses after OFFER_SENT, or for admin when offer is accepted */}
+                              {(() => {
+                                // Show payment progress if:
+                                // 1. Status is not CREATED and total_price exists
+                                // 2. OR Admin viewing OFFER_SENT with ACCEPTED response
+                                const hasTotalPrice = quote.total_price && Number(quote.total_price) > 0;
+                                const isAfterCreated = quote.status !== "CREATED";
+                                const isAdminViewingAcceptedOffer = isAdmin && 
+                                                                   quote.status === "OFFER_SENT" && 
+                                                                   quote.user_response === "ACCEPTED";
+                                
+                                // For admin viewing accepted offer, show even if total_price is 0 or null
+                                if (isAdminViewingAcceptedOffer) {
+                                  return true;
+                                }
+                                
+                                // Otherwise, show only if status is after CREATED and total_price exists
+                                return isAfterCreated && hasTotalPrice;
+                              })() && (
                                   <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                       {t.paymentProgress}
@@ -2426,22 +2462,26 @@ export default function DashboardPage() {
                                         <div
                                           className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
                                           style={{
-                                            width: `${Math.min(
-                                              100,
-                                              ((quote.amount_paid || 0) /
-                                                quote.total_price) *
-                                                100
-                                            )}%`,
+                                            width: `${quote.total_price && quote.total_price > 0
+                                              ? Math.min(
+                                                  100,
+                                                  ((quote.amount_paid || 0) /
+                                                    quote.total_price) *
+                                                    100
+                                                )
+                                              : 0}%`,
                                           }}
                                         ></div>
                                       </div>
                                       <div className="flex justify-between items-center">
                                         <p className="text-xs font-bold text-gray-700">
-                                          {Math.round(
-                                            ((quote.amount_paid || 0) /
-                                              quote.total_price) *
-                                              100
-                                          )}
+                                          {quote.total_price && quote.total_price > 0
+                                            ? Math.round(
+                                                ((quote.amount_paid || 0) /
+                                                  quote.total_price) *
+                                                  100
+                                              )
+                                            : 0}
                                           %
                                         </p>
                                         <p className="text-xs text-gray-600">
@@ -2450,7 +2490,9 @@ export default function DashboardPage() {
                                         </p>
                                       </div>
                                       {/* Warning message if payment is not 100% */}
-                                      {((quote.amount_paid || 0) /
+                                      {quote.total_price && 
+                                       quote.total_price > 0 &&
+                                       ((quote.amount_paid || 0) /
                                         quote.total_price) *
                                         100 <
                                         100 && (
@@ -2542,7 +2584,9 @@ export default function DashboardPage() {
                                           </button>
                                         )}
                                     </div>
-                                    {isAdmin && (
+                                    {isAdmin && 
+                                      (quote.status === "PENDING_PAYMENT" || 
+                                       (quote.status === "OFFER_SENT" && quote.user_response === "ACCEPTED")) && (
                                       <div className="mt-2 space-y-2">
                                         <button
                                           onClick={() =>
@@ -2552,7 +2596,8 @@ export default function DashboardPage() {
                                         >
                                           {t.updatePaidAmount}
                                         </button>
-                                        {((quote.amount_paid || 0) /
+                                        {quote.total_price && 
+                                         ((quote.amount_paid || 0) /
                                           quote.total_price) *
                                           100 <
                                           100 && (
@@ -2582,6 +2627,72 @@ export default function DashboardPage() {
                                                 ? "إرسال تذكير الدفع"
                                                 : "Send Payment Reminder"}
                                             </span>
+                                          </button>
+                                        )}
+                                        {/* Stripe Payment Button for Admin when user accepted offer */}
+                                        {quote.status === "OFFER_SENT" && 
+                                         quote.user_response === "ACCEPTED" && 
+                                         quote.total_price && 
+                                         quote.total_price > 0 && (
+                                          <button
+                                            onClick={() =>
+                                              handleInitiatePayment(quote.id)
+                                            }
+                                            disabled={
+                                              processingPayment === quote.id
+                                            }
+                                            className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                                          >
+                                            {processingPayment === quote.id ? (
+                                              <>
+                                                <svg
+                                                  className="animate-spin h-4 w-4 text-white"
+                                                  xmlns="http://www.w3.org/2000/svg"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                  ></circle>
+                                                  <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                  ></path>
+                                                </svg>
+                                                <span>
+                                                  {language === "ar"
+                                                    ? "جاري التوجيه..."
+                                                    : "Redirecting..."}
+                                                </span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <svg
+                                                  className="w-4 h-4"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                                                  />
+                                                </svg>
+                                                <span>
+                                                  {language === "ar"
+                                                    ? "دفع عبر Stripe"
+                                                    : "Pay via Stripe"}
+                                                </span>
+                                              </>
+                                            )}
                                           </button>
                                         )}
                                       </div>

@@ -919,8 +919,8 @@ def update_fcl_quote_status_view(request, pk):
                 "PENDING"  # Reset user response when new offer is sent
             )
 
-        # If status is PENDING_PAYMENT (or already is), allow setting/updating total_price and amount_paid
-        if new_status == "PENDING_PAYMENT" or quote.status == "PENDING_PAYMENT":
+        # Allow setting/updating total_price and amount_paid for OFFER_SENT and PENDING_PAYMENT
+        if new_status == "OFFER_SENT" or new_status == "PENDING_PAYMENT" or quote.status == "PENDING_PAYMENT":
             # Allow setting/updating total_price
             total_price = request.data.get("total_price")
             if total_price is not None:
