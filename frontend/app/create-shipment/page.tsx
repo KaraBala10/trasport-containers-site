@@ -216,6 +216,7 @@ export default function CreateShipmentPage() {
 
   const isStep4Valid = useMemo(() => {
     // Internal Transport is optional, but if user starts filling a card, all required fields must be filled
+    // Note: Shipping method selection is optional - users can proceed without selecting a method
 
     // Check if EU Transport card is started (any field filled)
     const euTransportStarted =
@@ -224,18 +225,17 @@ export default function CreateShipmentPage() {
       euPickupCity?.trim() ||
       euPickupPostalCode?.trim() ||
       euPickupCountry?.trim() ||
-      euPickupWeight > 0 ||
-      selectedEUShippingMethod !== null;
+      euPickupWeight > 0;
 
-    // If EU Transport is started, validate all required fields
+    // If EU Transport is started, validate all required fields (except shipping method selection)
     if (euTransportStarted) {
       const euTransportValid =
         euPickupAddress?.trim() &&
         euPickupCity?.trim() &&
         euPickupPostalCode?.trim() &&
         euPickupCountry?.trim() &&
-        euPickupWeight > 0 &&
-        selectedEUShippingMethod !== null;
+        euPickupWeight > 0;
+        // Note: selectedEUShippingMethod is optional - users can proceed without selecting
 
       if (!euTransportValid) return false;
     }
@@ -258,7 +258,6 @@ export default function CreateShipmentPage() {
     euPickupPostalCode,
     euPickupCountry,
     euPickupWeight,
-    selectedEUShippingMethod,
     syriaProvince,
     syriaWeight,
   ]);

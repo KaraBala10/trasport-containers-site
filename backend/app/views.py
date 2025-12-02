@@ -11,7 +11,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (ListCreateAPIView,
+                                     RetrieveUpdateDestroyAPIView)
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -32,46 +33,22 @@ except ImportError:
     stripe = None
 
 from .email_service import (
-    send_contact_form_notification,
-    send_edit_request_confirmation_to_user,
-    send_fcl_quote_confirmation_email,
-    send_fcl_quote_notification,
+    send_contact_form_notification, send_edit_request_confirmation_to_user,
+    send_fcl_quote_confirmation_email, send_fcl_quote_notification,
     send_lcl_shipment_payment_reminder_email,
     send_lcl_shipment_payment_reminder_notification_to_admin,
-    send_payment_reminder_email,
-    send_payment_reminder_notification_to_admin,
-    send_status_update_email,
-    send_status_update_notification_to_admin,
-)
-from .models import (
-    City,
-    ContactMessage,
-    Country,
-    EditRequestMessage,
-    FCLQuote,
-    LCLShipment,
-    PackagingPrice,
-    Port,
-    Price,
-    ProductRequest,
-    SyrianProvincePrice,
-)
-from .serializers import (
-    ChangePasswordSerializer,
-    CitySerializer,
-    ContactMessageSerializer,
-    CountrySerializer,
-    EditRequestMessageSerializer,
-    FCLQuoteSerializer,
-    LCLShipmentSerializer,
-    PackagingPriceSerializer,
-    PortSerializer,
-    PriceSerializer,
-    ProductRequestSerializer,
-    RegisterSerializer,
-    SyrianProvincePriceSerializer,
-    UserSerializer,
-)
+    send_payment_reminder_email, send_payment_reminder_notification_to_admin,
+    send_status_update_email, send_status_update_notification_to_admin)
+from .models import (City, ContactMessage, Country, EditRequestMessage,
+                     FCLQuote, LCLShipment, PackagingPrice, Port, Price,
+                     ProductRequest, SyrianProvincePrice)
+from .serializers import (ChangePasswordSerializer, CitySerializer,
+                          ContactMessageSerializer, CountrySerializer,
+                          EditRequestMessageSerializer, FCLQuoteSerializer,
+                          LCLShipmentSerializer, PackagingPriceSerializer,
+                          PortSerializer, PriceSerializer,
+                          ProductRequestSerializer, RegisterSerializer,
+                          SyrianProvincePriceSerializer, UserSerializer)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -249,36 +226,6 @@ class ContactMessageView(generics.CreateAPIView):
     permission_classes = [AllowAny]  # Allow anyone to submit contact form
 
     def create(self, request, *args, **kwargs):
-        # Verify reCAPTCHA v3 token if provided (optional for contact form, but recommended)
-        recaptcha_token = request.data.get("recaptcha_token")
-
-        # Check if reCAPTCHA is configured (standard v3 only)
-        from django.conf import settings
-
-        has_recaptcha_config = getattr(settings, "RECAPTCHA_SECRET_KEY", None)
-
-        if has_recaptcha_config and recaptcha_token:
-            # Verify the token if provided
-            from .recaptcha_verify import verify_recaptcha_token
-
-            verification_result = verify_recaptcha_token(
-                token=recaptcha_token, action="contact_form"
-            )
-
-            if not verification_result.get("success"):
-                logger = logging.getLogger(__name__)
-                logger.warning(
-                    f"reCAPTCHA verification failed for contact form: {verification_result.get('error')}"
-                )
-                return Response(
-                    {
-                        "success": False,
-                        "error": "reCAPTCHA verification failed. Please try again.",
-                        "details": verification_result.get("error", "Unknown error"),
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         contact_message = serializer.save()
@@ -2042,8 +1989,7 @@ def stripe_webhook_view(request):
                                     from .sendcloud_service import (
                                         SendcloudAPIError,
                                         SendcloudValidationError,
-                                        create_parcel,
-                                    )
+                                        create_parcel)
 
                                     # Check if Sendcloud is needed (EU pickup with shipping method selected)
                                     if (
@@ -2613,11 +2559,9 @@ def calculate_eu_shipping_view(request):
     - Weight/dimension limits enforced
     - Secure logging (no personal data)
     """
-    from .sendcloud_service import (
-        SendcloudAPIError,
-        SendcloudValidationError,
-        get_shipping_methods,
-    )
+    from .sendcloud_service import (SendcloudAPIError,
+                                    SendcloudValidationError,
+                                    get_shipping_methods)
 
     logger = logging.getLogger(__name__)
 
@@ -2783,11 +2727,9 @@ def get_shipping_methods_simple_view(request):
         ]
     }
     """
-    from .sendcloud_service import (
-        SendcloudAPIError,
-        SendcloudValidationError,
-        get_shipping_methods_simple,
-    )
+    from .sendcloud_service import (SendcloudAPIError,
+                                    SendcloudValidationError,
+                                    get_shipping_methods_simple)
 
     logger = logging.getLogger(__name__)
 
@@ -2912,11 +2854,8 @@ def download_sendcloud_label_view(request, shipment_id):
     """
     from django.http import HttpResponse
 
-    from .sendcloud_service import (
-        SendcloudAPIError,
-        SendcloudValidationError,
-        download_label,
-    )
+    from .sendcloud_service import (SendcloudAPIError,
+                                    SendcloudValidationError, download_label)
 
     logger = logging.getLogger(__name__)
 
@@ -2986,11 +2925,8 @@ def approve_eu_shipping_view(request, shipment_id):
 
     Creates a parcel in Sendcloud using the form data from the shipment
     """
-    from .sendcloud_service import (
-        SendcloudAPIError,
-        SendcloudValidationError,
-        create_parcel,
-    )
+    from .sendcloud_service import (SendcloudAPIError,
+                                    SendcloudValidationError, create_parcel)
 
     logger = logging.getLogger(__name__)
 
@@ -3287,11 +3223,9 @@ def sendcloud_webhook_view(request):
     - Payload validation
     - Prevents fake webhook attacks
     """
-    from .sendcloud_service import (
-        SendcloudValidationError,
-        parse_webhook_data,
-        verify_webhook_signature,
-    )
+    from .sendcloud_service import (SendcloudValidationError,
+                                    parse_webhook_data,
+                                    verify_webhook_signature)
 
     logger = logging.getLogger(__name__)
 
@@ -3791,8 +3725,9 @@ class LCLShipmentView(generics.CreateAPIView):
         logger = logging.getLogger(__name__)
         import json
         import os
-        from django.core.files.storage import default_storage
+
         from django.core.files.base import ContentFile
+        from django.core.files.storage import default_storage
 
         # Log immediately to verify method is called
         logger.info("=" * 80)
@@ -3999,8 +3934,7 @@ class LCLShipmentView(generics.CreateAPIView):
 
             from .email_service import (
                 send_lcl_shipment_confirmation_email,
-                send_lcl_shipment_notification_to_admin,
-            )
+                send_lcl_shipment_notification_to_admin)
 
             def send_emails_async():
                 """Send emails in background thread"""
@@ -4350,15 +4284,12 @@ def update_lcl_shipment_status_view(request, pk):
             if shipment.payment_status == "paid" and not shipment.invoice_file:
                 try:
                     from .document_service import (
-                        generate_consolidated_export_invoice,
-                        generate_invoice,
-                        save_invoice_to_storage,
-                    )
+                        generate_consolidated_export_invoice, generate_invoice,
+                        save_invoice_to_storage)
                     from .email_service import (
                         send_consolidated_export_invoice_email_to_admin,
                         send_invoice_email_to_admin,
-                        send_invoice_email_to_user,
-                    )
+                        send_invoice_email_to_user)
 
                     # Generate regular invoice PDF
                     pdf_bytes = generate_invoice(shipment, language="ar")
@@ -4411,10 +4342,10 @@ def update_lcl_shipment_status_view(request, pk):
                 and shipment.payment_status == "paid"
             ):
                 try:
-                    from .document_service import generate_consolidated_export_invoice
-                    from .email_service import (
-                        send_consolidated_export_invoice_email_to_admin,
-                    )
+                    from .document_service import \
+                        generate_consolidated_export_invoice
+                    from .email_service import \
+                        send_consolidated_export_invoice_email_to_admin
 
                     consolidated_pdf = generate_consolidated_export_invoice(
                         shipment, language="en"
@@ -4449,14 +4380,10 @@ def update_lcl_shipment_status_view(request, pk):
 
             if should_generate_receipt:
                 try:
-                    from .document_service import (
-                        generate_receipt,
-                        save_receipt_to_storage,
-                    )
-                    from .email_service import (
-                        send_receipt_email_to_admin,
-                        send_receipt_email_to_user,
-                    )
+                    from .document_service import (generate_receipt,
+                                                   save_receipt_to_storage)
+                    from .email_service import (send_receipt_email_to_admin,
+                                                send_receipt_email_to_user)
 
                     # Generate receipt PDF
                     pdf_bytes = generate_receipt(shipment, language="ar")
@@ -4506,8 +4433,7 @@ def update_lcl_shipment_status_view(request, pk):
             try:
                 from .email_service import (
                     send_lcl_shipment_status_update_email,
-                    send_lcl_shipment_status_update_notification_to_admin,
-                )
+                    send_lcl_shipment_status_update_notification_to_admin)
 
                 # Send email to user
                 send_lcl_shipment_status_update_email(
@@ -4624,8 +4550,7 @@ def download_invoice_view(request, pk):
                         )
                         from .email_service import (
                             send_invoice_email_to_admin,
-                            send_invoice_email_to_user,
-                        )
+                            send_invoice_email_to_user)
 
                         user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
@@ -4699,10 +4624,8 @@ def download_invoice_view(request, pk):
         # Send emails if invoice was just generated (not already existed)
         if invoice_saved:
             try:
-                from .email_service import (
-                    send_invoice_email_to_admin,
-                    send_invoice_email_to_user,
-                )
+                from .email_service import (send_invoice_email_to_admin,
+                                            send_invoice_email_to_user)
 
                 user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                 admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
@@ -4833,7 +4756,8 @@ def download_consolidated_export_invoice_view(request, pk):
 
         # Send consolidated export invoice by email to admin
         try:
-            from .email_service import send_consolidated_export_invoice_email_to_admin
+            from .email_service import \
+                send_consolidated_export_invoice_email_to_admin
 
             admin_sent = send_consolidated_export_invoice_email_to_admin(
                 shipment, pdf_bytes
@@ -5054,8 +4978,7 @@ def download_receipt_view(request, pk):
                         )
                         from .email_service import (
                             send_receipt_email_to_admin,
-                            send_receipt_email_to_user,
-                        )
+                            send_receipt_email_to_user)
 
                         user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
@@ -5113,10 +5036,8 @@ def download_receipt_view(request, pk):
             logger.info(
                 f"📧 Attempting to send receipt emails for shipment {shipment.id}"
             )
-            from .email_service import (
-                send_receipt_email_to_admin,
-                send_receipt_email_to_user,
-            )
+            from .email_service import (send_receipt_email_to_admin,
+                                        send_receipt_email_to_user)
 
             user_result = send_receipt_email_to_user(shipment, pdf_bytes)
             admin_result = send_receipt_email_to_admin(shipment, pdf_bytes)
@@ -5228,10 +5149,8 @@ def download_shipping_labels_view(request, pk):
 
         # Send shipping labels by email
         try:
-            from .email_service import (
-                send_shipping_labels_email_to_admin,
-                send_shipping_labels_email_to_user,
-            )
+            from .email_service import (send_shipping_labels_email_to_admin,
+                                        send_shipping_labels_email_to_user)
 
             user_sent = send_shipping_labels_email_to_user(
                 shipment, pdf_bytes, num_labels=num_labels

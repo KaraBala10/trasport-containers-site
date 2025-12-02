@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 interface LanguageSwitcherProps {
   language: "ar" | "en";
@@ -8,173 +8,204 @@ interface LanguageSwitcherProps {
 }
 
 const languages = [
-  { code: "ar" as const, name: "العربية", nativeName: "عربي", flag: "🌐" },
-  { code: "en" as const, name: "English", nativeName: "English", flag: "🇬🇧" },
+  { code: "ar" as const, name: "العربية", nativeName: "AR", flag: "🇸🇦" },
+  { code: "en" as const, name: "English", nativeName: "EN", flag: "🇬🇧" },
 ];
 
 export default function LanguageSwitcher({
   language,
   setLanguage,
 }: LanguageSwitcherProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const isArabic = language === "ar";
 
-  const currentLanguage =
-    languages.find((lang) => lang.code === language) || languages[0];
-
-  const handleLanguageChange = (lang: "ar" | "en") => {
-    if (setLanguage) {
-      setLanguage(lang);
-    }
-    setIsOpen(false);
+  const handleToggle = () => {
+    setIsAnimating(true);
+    const newLang = language === "ar" ? "en" : "ar";
+    setTimeout(() => {
+      setLanguage(newLang);
+      setIsAnimating(false);
+    }, 150);
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
-
-  // Close dropdown on escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen]);
-
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Language Selector Button */}
+    <div
+      className="relative z-[110]"
+      style={{ overflow: "visible", position: "relative", zIndex: 110 }}
+      dir="ltr"
+    >
+      {/* Toggle Switch Container */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className={`
-          group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-          bg-white/80 backdrop-blur-sm
-          border transition-all duration-200
-          ${isOpen 
-            ? "border-primary-yellow/50 bg-white shadow-sm" 
-            : "border-gray-200/60 hover:border-primary-yellow/30 hover:bg-white"
-          }
-          focus:outline-none focus:ring-1 focus:ring-primary-yellow/30
+          group relative flex items-center justify-between
+          w-[110px] h-[44px] md:w-[130px] md:h-[48px]
+          rounded-full
+          bg-gradient-to-r from-gray-800/90 via-gray-700/90 to-gray-800/90
+          backdrop-blur-xl
+          border-2 border-white/10
+          shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]
+          transition-all duration-500 ease-out
+          hover:border-primary-yellow/30
+          hover:shadow-[0_12px_40px_rgba(255,210,0,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]
+          focus:outline-none focus:ring-4 focus:ring-primary-yellow/30 focus:ring-offset-2
+          overflow-hidden
+          ${isAnimating ? "scale-95" : "scale-100"}
         `}
-        aria-label="Select language"
-        aria-expanded={isOpen}
-        aria-haspopup="true"
+        aria-label={`Switch to ${isArabic ? "English" : "Arabic"}`}
+        aria-pressed={isArabic}
       >
-        {/* Current Language Flag */}
-        <span className="text-base leading-none">
-          {currentLanguage.flag}
-        </span>
+        {/* Animated Background Glow */}
+        <div
+          className={`
+            absolute inset-0 rounded-full
+            bg-gradient-to-r from-primary-yellow/20 via-primary-yellow/30 to-primary-yellow/20
+            transition-all duration-500 ease-out
+            ${
+              isArabic
+                ? "translate-x-0 opacity-100"
+                : "translate-x-full opacity-0"
+            }
+          `}
+        />
 
-        {/* Language Code */}
-        <span className="text-xs font-medium text-gray-700 hidden sm:inline">
-          {currentLanguage.code.toUpperCase()}
-        </span>
-
-        {/* Dropdown Arrow */}
-        <svg
-          className={`w-3 h-3 transition-all duration-200 text-gray-400 ${
-            isOpen ? "rotate-180 text-primary-yellow" : ""
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        {/* Sliding Indicator */}
+        <div
+          className={`
+            absolute top-1 left-1 bottom-1
+            w-[48px] md:w-[58px]
+            rounded-full
+            bg-gradient-to-br from-primary-yellow via-primary-yellow/95 to-primary-yellow/90
+            shadow-[0_4px_20px_rgba(255,210,0,0.5),inset_0_1px_0_rgba(255,255,255,0.3)]
+            transition-all duration-500 ease-out
+            ${
+              isArabic
+                ? "translate-x-0"
+                : "translate-x-[58px] md:translate-x-[68px]"
+            }
+            ${isAnimating ? "scale-95" : "scale-100"}
+          `}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
+          {/* Shimmer Effect */}
+          <div className="absolute inset-0 rounded-full overflow-hidden">
+            <div
+              className={`
+                absolute inset-0
+                bg-gradient-to-r from-transparent via-white/30 to-transparent
+                translate-x-[-100%]
+                group-hover:translate-x-[100%]
+                transition-transform duration-1000 ease-in-out
+              `}
+            />
+          </div>
+
+          {/* Glow Pulse */}
+          <div
+            className={`
+              absolute inset-0 rounded-full
+              bg-primary-yellow/50
+              animate-pulse
+              opacity-0 group-hover:opacity-100
+              transition-opacity duration-300
+            `}
           />
-        </svg>
+        </div>
+
+        {/* Language Options - AR/EN Text */}
+        <div className="relative z-10 flex items-center justify-between w-full px-4 md:px-5 gap-2">
+          {/* Arabic Option */}
+          <div
+            className={`
+              flex items-center justify-center flex-1
+              transition-all duration-500 ease-out
+              ${isArabic ? "scale-110 z-20" : "scale-100 opacity-50 z-10"}
+            `}
+          >
+            <span
+              className={`
+                text-sm md:text-base font-extrabold tracking-wider
+                transition-all duration-500 ease-out
+                pointer-events-none
+                ${
+                  isArabic
+                    ? "text-primary-dark drop-shadow-lg"
+                    : "text-gray-300"
+                }
+              `}
+            >
+              {languages[0].nativeName}
+            </span>
+          </div>
+
+          {/* English Option */}
+          <div
+            className={`
+              flex items-center justify-center flex-1
+              transition-all duration-500 ease-out
+              ${!isArabic ? "scale-110 z-20" : "scale-100 opacity-50 z-10"}
+            `}
+          >
+            <span
+              className={`
+                text-sm md:text-base font-extrabold tracking-wider
+                transition-all duration-500 ease-out
+                pointer-events-none
+                ${
+                  !isArabic
+                    ? "text-primary-dark drop-shadow-lg"
+                    : "text-gray-300"
+                }
+              `}
+            >
+              {languages[1].nativeName}
+            </span>
+          </div>
+        </div>
+
+        {/* Ripple Effect on Click */}
+        <div
+          className={`
+            absolute inset-0 rounded-full
+            bg-white/20
+            scale-0
+            ${isAnimating ? "scale-150 opacity-0 animate-ping" : ""}
+            transition-all duration-500
+          `}
+        />
+
+        {/* Border Glow Effect */}
+        <div
+          className={`
+            absolute inset-0 rounded-full
+            border-2 border-primary-yellow/0
+            transition-all duration-500
+            ${isAnimating ? "border-primary-yellow/60" : ""}
+          `}
+        />
       </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div
-          className="absolute top-full mt-1.5 bg-white/95 backdrop-blur-md rounded-lg shadow-lg border border-gray-100/80 py-1.5 min-w-[140px] z-[9999] transform transition-all duration-200 ease-out origin-top-right"
-          role="menu"
-          aria-orientation="vertical"
-          style={{
-            [language === 'ar' ? 'left' : 'right']: 0,
-          }}
-        >
-          {languages.map((lang) => (
-            <button
-              key={lang.code}
-              type="button"
-              onClick={() => handleLanguageChange(lang.code)}
-              className={`
-                w-full flex items-center gap-2 px-3 py-2 text-left
-                transition-all duration-150
-                ${
-                  language === lang.code
-                    ? "bg-primary-yellow/10 text-primary-dark"
-                    : "text-gray-700 hover:bg-gray-50/80"
-                }
-                focus:outline-none
-                first:rounded-t-lg last:rounded-b-lg
-              `}
-              role="menuitem"
-              aria-label={`Switch to ${lang.name}`}
-            >
-              {/* Flag */}
-              <span className="text-sm" role="img" aria-label={lang.name}>
-                {lang.flag}
-              </span>
-
-              {/* Language Name */}
-              <span className={`text-xs font-medium flex-1 ${
-                language === lang.code ? "text-primary-dark" : ""
-              }`}>
-                {lang.nativeName}
-              </span>
-
-              {/* Checkmark for selected language */}
-              {language === lang.code && (
-                <svg
-                  className="w-3.5 h-3.5 text-primary-yellow"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Floating Particles Effect (Optional decorative element) */}
+      <div className="absolute inset-0 pointer-events-none overflow-visible">
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            className={`
+              absolute w-1 h-1 rounded-full bg-primary-yellow/60
+              transition-all duration-1000 ease-out
+              ${isAnimating ? "opacity-100" : "opacity-0"}
+            `}
+            style={{
+              top: `${20 + i * 15}%`,
+              left: isArabic ? `${30 + i * 10}%` : `${70 - i * 10}%`,
+              transform: isAnimating
+                ? `translateY(-20px) scale(2)`
+                : `translateY(0) scale(1)`,
+              transitionDelay: `${i * 100}ms`,
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }

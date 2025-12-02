@@ -424,9 +424,12 @@ export default function Step8InternalTransport({
     const allFieldsFilled =
       euPickupName.trim().length > 0 &&
       euPickupAddress.trim().length > 0 &&
+      euPickupHouseNumber.trim().length > 0 &&
       euPickupCity.trim().length > 0 &&
       euPickupPostalCode.trim().length > 0 &&
       euPickupCountry.trim().length > 0 &&
+      euPickupEmail.trim().length > 0 &&
+      euPickupTelephone.trim().length > 0 &&
       euPickupWeight > 0 &&
       !postalCodeError; // Don't allow calculation if postal code is invalid
 
@@ -441,9 +444,12 @@ export default function Step8InternalTransport({
   }, [
     euPickupName,
     euPickupAddress,
+    euPickupHouseNumber,
     euPickupCity,
     euPickupPostalCode,
     euPickupCountry,
+    euPickupEmail,
+    euPickupTelephone,
     euPickupWeight,
     postalCodeError,
   ]);
@@ -1246,6 +1252,40 @@ export default function Step8InternalTransport({
             </div>
 
             <div className="space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.name} *
+                </label>
+                <input
+                  type="text"
+                  value={euPickupName}
+                  onChange={(e) => onEUPickupNameChange(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  placeholder={
+                    language === "ar" ? "مثال: John Doe" : "e.g., John Doe"
+                  }
+                />
+              </div>
+
+              {/* Company Name (Optional) */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.companyName} ({t.optional})
+                </label>
+                <input
+                  type="text"
+                  value={euPickupCompanyName}
+                  onChange={(e) => onEUPickupCompanyNameChange(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  placeholder={
+                    language === "ar"
+                      ? "مثال: Company Name"
+                      : "e.g., Company Name"
+                  }
+                />
+              </div>
+
               {/* Address */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1254,14 +1294,85 @@ export default function Step8InternalTransport({
                 <input
                   type="text"
                   value={euPickupAddress}
-                  onChange={(e) => onEUPickupAddressChange(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  onChange={(e) => {
+                    onEUPickupAddressChange(e.target.value);
+                    if (fieldErrors.address) {
+                      setFieldErrors({ ...fieldErrors, address: undefined });
+                    }
+                  }}
+                  onBlur={() => {
+                    const error = validateRequired(
+                      euPickupAddress,
+                      language === "ar" ? "عنوان التوصيل" : "Delivery Address",
+                      2,
+                      200
+                    );
+                    setFieldErrors({
+                      ...fieldErrors,
+                      address: error || undefined,
+                    });
+                  }}
+                  className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                    fieldErrors.address
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:border-primary-yellow"
+                  }`}
                   placeholder={
                     language === "ar"
-                      ? "مثال: Main Street 123"
-                      : "e.g., Main Street 123"
+                      ? "مثال: Main Street"
+                      : "e.g., Main Street"
                   }
                 />
+                {fieldErrors.address && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldErrors.address}
+                  </p>
+                )}
+              </div>
+
+              {/* House Number */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {t.houseNumber} *
+                </label>
+                <input
+                  type="text"
+                  value={euPickupHouseNumber}
+                  onChange={(e) => {
+                    const formatted = formatIntegerInput(e.target.value);
+                    onEUPickupHouseNumberChange(formatted);
+                    if (fieldErrors.houseNumber) {
+                      setFieldErrors({
+                        ...fieldErrors,
+                        houseNumber: undefined,
+                      });
+                    }
+                  }}
+                  onBlur={() => {
+                    const error = validateRequired(
+                      euPickupHouseNumber,
+                      t.houseNumber,
+                      1,
+                      50
+                    );
+                    setFieldErrors({
+                      ...fieldErrors,
+                      houseNumber: error || undefined,
+                    });
+                  }}
+                  onKeyDown={handleIntegerInput}
+                  className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                    fieldErrors.houseNumber
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:border-primary-yellow"
+                  }`}
+                  placeholder={language === "ar" ? "مثال: 123" : "e.g., 123"}
+                />
+                {fieldErrors.houseNumber && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldErrors.houseNumber}
+                  </p>
+                )}
               </div>
 
               {/* City */}
@@ -1272,12 +1383,38 @@ export default function Step8InternalTransport({
                 <input
                   type="text"
                   value={euPickupCity}
-                  onChange={(e) => onEUPickupCityChange(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow"
+                  onChange={(e) => {
+                    onEUPickupCityChange(e.target.value);
+                    if (fieldErrors.city) {
+                      setFieldErrors({ ...fieldErrors, city: undefined });
+                    }
+                  }}
+                  onBlur={() => {
+                    const error = validateRequired(
+                      euPickupCity,
+                      t.city,
+                      2,
+                      100
+                    );
+                    setFieldErrors({
+                      ...fieldErrors,
+                      city: error || undefined,
+                    });
+                  }}
+                  className={`w-full px-4 py-3 rounded-xl border-2 focus:ring-2 focus:ring-primary-yellow ${
+                    fieldErrors.city
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:border-primary-yellow"
+                  }`}
                   placeholder={
                     language === "ar" ? "مثال: Amsterdam" : "e.g., Amsterdam"
                   }
                 />
+                {fieldErrors.city && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldErrors.city}
+                  </p>
+                )}
               </div>
 
               {/* Postal Code */}
