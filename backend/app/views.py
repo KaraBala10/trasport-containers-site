@@ -6,9 +6,9 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.http import HttpResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
@@ -80,6 +80,57 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
+        # Verify reCAPTCHA v3 token if provided
+        recaptcha_token = request.data.get("recaptcha_token")
+
+        # Check if reCAPTCHA is configured (standard v3 only)
+        from django.conf import settings
+
+        has_recaptcha_config = getattr(settings, "RECAPTCHA_SECRET_KEY", None)
+
+        if has_recaptcha_config:
+            # reCAPTCHA is configured, so token is required
+            if not recaptcha_token:
+                return Response(
+                    {
+                        "error": "reCAPTCHA verification is required. Please complete the reCAPTCHA verification.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Verify the token
+            from .recaptcha_verify import verify_recaptcha_token
+
+            verification_result = verify_recaptcha_token(
+                token=recaptcha_token, action="register"
+            )
+
+            if not verification_result.get("success"):
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"reCAPTCHA verification failed: {verification_result.get('error')}"
+                )
+                return Response(
+                    {
+                        "error": "reCAPTCHA verification failed. Please try again.",
+                        "details": verification_result.get("error", "Unknown error"),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif recaptcha_token:
+            # Token provided but reCAPTCHA not configured - verify anyway (might be test key)
+            from .recaptcha_verify import verify_recaptcha_token
+
+            verification_result = verify_recaptcha_token(
+                token=recaptcha_token, action="register"
+            )
+            # Log warning but don't block registration if reCAPTCHA is not configured
+            if not verification_result.get("success"):
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"reCAPTCHA token provided but verification failed (reCAPTCHA may not be configured): {verification_result.get('error')}"
+                )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -198,6 +249,36 @@ class ContactMessageView(generics.CreateAPIView):
     permission_classes = [AllowAny]  # Allow anyone to submit contact form
 
     def create(self, request, *args, **kwargs):
+        # Verify reCAPTCHA v3 token if provided (optional for contact form, but recommended)
+        recaptcha_token = request.data.get("recaptcha_token")
+
+        # Check if reCAPTCHA is configured (standard v3 only)
+        from django.conf import settings
+
+        has_recaptcha_config = getattr(settings, "RECAPTCHA_SECRET_KEY", None)
+
+        if has_recaptcha_config and recaptcha_token:
+            # Verify the token if provided
+            from .recaptcha_verify import verify_recaptcha_token
+
+            verification_result = verify_recaptcha_token(
+                token=recaptcha_token, action="contact_form"
+            )
+
+            if not verification_result.get("success"):
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"reCAPTCHA verification failed for contact form: {verification_result.get('error')}"
+                )
+                return Response(
+                    {
+                        "success": False,
+                        "error": "reCAPTCHA verification failed. Please try again.",
+                        "details": verification_result.get("error", "Unknown error"),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         contact_message = serializer.save()
@@ -255,6 +336,57 @@ class FCLQuoteView(generics.CreateAPIView):
                 {"success": False, "error": "User not authenticated"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+
+        # Verify reCAPTCHA v3 token if provided
+        recaptcha_token = request.data.get("recaptcha_token")
+
+        # Check if reCAPTCHA is configured (standard v3 only)
+        from django.conf import settings
+
+        has_recaptcha_config = getattr(settings, "RECAPTCHA_SECRET_KEY", None)
+
+        if has_recaptcha_config:
+            # reCAPTCHA is configured, so token is required
+            if not recaptcha_token:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "reCAPTCHA verification is required. Please complete the reCAPTCHA verification.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Verify the token
+            from .recaptcha_verify import verify_recaptcha_token
+
+            verification_result = verify_recaptcha_token(
+                token=recaptcha_token, action="fcl_quote"
+            )
+
+            if not verification_result.get("success"):
+                logger.warning(
+                    f"reCAPTCHA verification failed for FCL quote: {verification_result.get('error')}"
+                )
+                return Response(
+                    {
+                        "success": False,
+                        "error": "reCAPTCHA verification failed. Please try again.",
+                        "details": verification_result.get("error", "Unknown error"),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif recaptcha_token:
+            # Token provided but reCAPTCHA not configured - verify anyway (might be test key)
+            from .recaptcha_verify import verify_recaptcha_token
+
+            verification_result = verify_recaptcha_token(
+                token=recaptcha_token, action="fcl_quote"
+            )
+            # Log warning but don't block submission if reCAPTCHA is not configured
+            if not verification_result.get("success"):
+                logger.warning(
+                    f"reCAPTCHA token provided but verification failed (reCAPTCHA may not be configured): {verification_result.get('error')}"
+                )
 
         # let DRF handle validation and object creation
         # perform_create will be called automatically and set the user
@@ -656,22 +788,22 @@ def calculate_pricing_view(request):
                     length = float(parcel_data.get("length", 0))
                     width = float(parcel_data.get("width", 0))
                     height = float(parcel_data.get("height", 0))
-                    
+
                     # Calculate volumetric weight: (L × W × H) / 6,000
                     volumetric_weight = (length * width * height) / 6000
-                    
+
                     # Chargeable weight = max(actual_weight, volumetric_weight)
                     chargeable_weight = max(weight, volumetric_weight)
-                    
+
                     # Account for repeat count
                     parcel_chargeable_weight = chargeable_weight * repeat_count
-                    
+
                     # Price = chargeable_weight × price_per_kg
                     parcel_price = parcel_chargeable_weight * float(price.price_per_kg)
-                    
+
                     total_price_by_weight += parcel_price
                     total_price_by_cbm += parcel_price  # Same value for compatibility
-                    
+
                     calculations.append(
                         {
                             "product_id": product_id,
@@ -683,7 +815,9 @@ def calculate_pricing_view(request):
                             "weight": weight,
                             "volumetric_weight": round(volumetric_weight, 3),
                             "chargeable_weight": round(chargeable_weight, 3),
-                            "parcel_chargeable_weight": round(parcel_chargeable_weight, 3),
+                            "parcel_chargeable_weight": round(
+                                parcel_chargeable_weight, 3
+                            ),
                             "price_per_kg": float(price.price_per_kg),
                             "price_by_weight": round(parcel_price, 2),
                             "price_by_cbm": round(parcel_price, 2),
@@ -771,7 +905,7 @@ def calculate_pricing_view(request):
 def update_fcl_quote_status_view(request, pk):
     """API endpoint for admin to update FCL quote status"""
     logger = logging.getLogger(__name__)
-    
+
     if not request.user.is_superuser:
         return Response(
             {"success": False, "error": "Only superusers can update quote status."},
@@ -903,40 +1037,65 @@ def update_fcl_quote_status_view(request, pk):
         if old_status == "PENDING_PAYMENT" and new_status != "PENDING_PAYMENT":
             if quote.payment_status == "paid" and not quote.invoice_file:
                 try:
-                    from .document_service import generate_fcl_invoice, save_fcl_invoice_to_storage
-                    from .email_service import send_fcl_invoice_email_to_user, send_fcl_invoice_email_to_admin
-                    
-                    logger.info(f"🔄 Starting invoice generation for FCL quote {quote.id}")
-                    
+                    from .document_service import (
+                        generate_fcl_invoice,
+                        save_fcl_invoice_to_storage,
+                    )
+                    from .email_service import (
+                        send_fcl_invoice_email_to_admin,
+                        send_fcl_invoice_email_to_user,
+                    )
+
+                    logger.info(
+                        f"🔄 Starting invoice generation for FCL quote {quote.id}"
+                    )
+
                     # Generate invoice
-                    invoice_pdf = generate_fcl_invoice(quote, language='en')
-                    logger.info(f"✅ Invoice PDF generated for FCL quote {quote.id}, size: {len(invoice_pdf)} bytes")
-                    
+                    invoice_pdf = generate_fcl_invoice(quote, language="en")
+                    logger.info(
+                        f"✅ Invoice PDF generated for FCL quote {quote.id}, size: {len(invoice_pdf)} bytes"
+                    )
+
                     # Save to storage
                     save_fcl_invoice_to_storage(quote, invoice_pdf)
                     logger.info(f"✅ Invoice saved to storage for FCL quote {quote.id}")
-                    
+
                     # Refresh quote from database to get updated invoice fields
                     quote.refresh_from_db()
-                    logger.info(f"✅ Quote refreshed, invoice_file: {quote.invoice_file}, invoice_generated_at: {quote.invoice_generated_at}")
-                    
+                    logger.info(
+                        f"✅ Quote refreshed, invoice_file: {quote.invoice_file}, invoice_generated_at: {quote.invoice_generated_at}"
+                    )
+
                     # Send emails
                     try:
                         user_sent = send_fcl_invoice_email_to_user(quote, invoice_pdf)
                         admin_sent = send_fcl_invoice_email_to_admin(quote, invoice_pdf)
                         if user_sent:
-                            logger.info(f"✅ Invoice email sent to user for FCL quote {quote.id}")
+                            logger.info(
+                                f"✅ Invoice email sent to user for FCL quote {quote.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Invoice email to user failed for FCL quote {quote.id}")
+                            logger.warning(
+                                f"⚠️ Invoice email to user failed for FCL quote {quote.id}"
+                            )
                         if admin_sent:
-                            logger.info(f"✅ Invoice email sent to admin for FCL quote {quote.id}")
+                            logger.info(
+                                f"✅ Invoice email sent to admin for FCL quote {quote.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Invoice email to admin failed for FCL quote {quote.id}")
+                            logger.warning(
+                                f"⚠️ Invoice email to admin failed for FCL quote {quote.id}"
+                            )
                     except Exception as email_error:
-                        logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                        logger.error(
+                            f"❌ Failed to send invoice emails: {str(email_error)}",
+                            exc_info=True,
+                        )
                         # Don't fail if email fails
-                    
-                    logger.info(f"✅ Invoice generated and saved for FCL quote {quote.id}")
+
+                    logger.info(
+                        f"✅ Invoice generated and saved for FCL quote {quote.id}"
+                    )
                 except Exception as invoice_error:
                     # Log invoice error but don't fail the request
                     logger.error(
@@ -969,19 +1128,21 @@ def update_fcl_quote_status_view(request, pk):
 
         # Refresh quote from database to ensure we have latest data (especially invoice fields)
         quote.refresh_from_db()
-        
+
         # Get status display name
         status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status, new_status)
-        
+
         # Prepare response data
         response_data = {
             "success": True,
             "message": f"FCL quote status updated to {status_display} successfully.",
             "data": FCLQuoteSerializer(quote).data,
         }
-        
+
         # Log invoice status for debugging
-        logger.info(f"📋 Quote {quote.id} final state - invoice_file: {quote.invoice_file}, invoice_generated_at: {quote.invoice_generated_at}")
+        logger.info(
+            f"📋 Quote {quote.id} final state - invoice_file: {quote.invoice_file}, invoice_generated_at: {quote.invoice_generated_at}"
+        )
 
         return Response(
             response_data,
@@ -3698,6 +3859,64 @@ class LCLShipmentView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
+    def create(self, request, *args, **kwargs):
+        """Override create to add reCAPTCHA verification"""
+        logger = logging.getLogger(__name__)
+
+        # Verify reCAPTCHA v3 token if provided
+        recaptcha_token = request.data.get("recaptcha_token")
+
+        # Check if reCAPTCHA is configured (standard v3 only)
+        from django.conf import settings
+
+        has_recaptcha_config = getattr(settings, "RECAPTCHA_SECRET_KEY", None)
+
+        if has_recaptcha_config:
+            # reCAPTCHA is configured, so token is required
+            if not recaptcha_token:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "reCAPTCHA verification is required. Please complete the reCAPTCHA verification.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Verify the token
+            from .recaptcha_verify import verify_recaptcha_token
+
+            verification_result = verify_recaptcha_token(
+                token=recaptcha_token, action="create_shipment"
+            )
+
+            if not verification_result.get("success"):
+                logger.warning(
+                    f"reCAPTCHA verification failed for LCL shipment: {verification_result.get('error')}"
+                )
+                return Response(
+                    {
+                        "success": False,
+                        "error": "reCAPTCHA verification failed. Please try again.",
+                        "details": verification_result.get("error", "Unknown error"),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif recaptcha_token:
+            # Token provided but reCAPTCHA not configured - verify anyway (might be test key)
+            from .recaptcha_verify import verify_recaptcha_token
+
+            verification_result = verify_recaptcha_token(
+                token=recaptcha_token, action="create_shipment"
+            )
+            # Log warning but don't block submission if reCAPTCHA is not configured
+            if not verification_result.get("success"):
+                logger.warning(
+                    f"reCAPTCHA token provided but verification failed (reCAPTCHA may not be configured): {verification_result.get('error')}"
+                )
+
+        # Call parent create method
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         """Set user to current authenticated user"""
         serializer.save(user=self.request.user)
@@ -3851,7 +4070,7 @@ class LCLShipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 def update_lcl_shipment_status_view(request, pk):
     """API endpoint for admin to update LCL shipment status and amount_paid"""
     logger = logging.getLogger(__name__)
-    
+
     if not request.user.is_superuser:
         return Response(
             {"success": False, "error": "Only superusers can update shipment status."},
@@ -3867,8 +4086,10 @@ def update_lcl_shipment_status_view(request, pk):
         # Store old status for email notification (before any updates)
         old_status = shipment.status
         old_payment_status = shipment.payment_status
-        
-        logger.info(f"📝 Updating shipment {shipment.id}: old_status={old_status}, new_status={new_status}, old_payment_status={old_payment_status}, amount_paid={amount_paid}, current_amount_paid={shipment.amount_paid}, total_price={shipment.total_price}")
+
+        logger.info(
+            f"📝 Updating shipment {shipment.id}: old_status={old_status}, new_status={new_status}, old_payment_status={old_payment_status}, amount_paid={amount_paid}, current_amount_paid={shipment.amount_paid}, total_price={shipment.total_price}"
+        )
 
         # Update status if provided
         if new_status:
@@ -3951,9 +4172,13 @@ def update_lcl_shipment_status_view(request, pk):
         # Auto-update payment_status to "paid" when status changes from PENDING_PAYMENT to any other status
         # This means admin confirmed the payment by changing the status
         payment_status_updated = False
-        
+
         # If status is changing from PENDING_PAYMENT to any other status, payment is confirmed
-        if new_status and old_status == "PENDING_PAYMENT" and new_status != "PENDING_PAYMENT":
+        if (
+            new_status
+            and old_status == "PENDING_PAYMENT"
+            and new_status != "PENDING_PAYMENT"
+        ):
             # If admin is changing status from PENDING_PAYMENT, it means payment is confirmed
             # Update payment_status to "paid" automatically
             if shipment.payment_status != "paid":
@@ -3961,14 +4186,23 @@ def update_lcl_shipment_status_view(request, pk):
                 payment_status_updated = True
                 if not shipment.paid_at:
                     from django.utils import timezone
+
                     shipment.paid_at = timezone.now()
-                logger.info(f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (admin confirmed payment by changing status from {old_status} to {new_status})")
+                logger.info(
+                    f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (admin confirmed payment by changing status from {old_status} to {new_status})"
+                )
             else:
-                logger.info(f"ℹ️ payment_status already 'paid' for shipment {shipment.id}")
-        
+                logger.info(
+                    f"ℹ️ payment_status already 'paid' for shipment {shipment.id}"
+                )
+
         # Also: if status is being changed to PENDING_PICKUP or any status after PENDING_PAYMENT,
         # and payment_status is still pending, update it to paid (admin confirmed payment)
-        if not payment_status_updated and new_status and new_status != "PENDING_PAYMENT":
+        if (
+            not payment_status_updated
+            and new_status
+            and new_status != "PENDING_PAYMENT"
+        ):
             # Statuses that come after PENDING_PAYMENT (payment must be confirmed)
             post_payment_statuses = [
                 "PENDING_PICKUP",
@@ -3983,51 +4217,82 @@ def update_lcl_shipment_status_view(request, pk):
                 "OUT_FOR_DELIVERY",
                 "DELIVERED",
             ]
-            if new_status in post_payment_statuses and shipment.payment_status == "pending":
+            if (
+                new_status in post_payment_statuses
+                and shipment.payment_status == "pending"
+            ):
                 shipment.payment_status = "paid"
                 payment_status_updated = True
                 if not shipment.paid_at:
                     from django.utils import timezone
+
                     shipment.paid_at = timezone.now()
-                logger.info(f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (status changed to {new_status}, which requires payment confirmation)")
-        
+                logger.info(
+                    f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (status changed to {new_status}, which requires payment confirmation)"
+                )
+
         # Also update payment_status if amount_paid is being set and equals total_price
-        if not payment_status_updated and amount_paid is not None and shipment.total_price and shipment.total_price > 0:
-            if float(amount_paid) >= float(shipment.total_price) and shipment.payment_status != "paid":
+        if (
+            not payment_status_updated
+            and amount_paid is not None
+            and shipment.total_price
+            and shipment.total_price > 0
+        ):
+            if (
+                float(amount_paid) >= float(shipment.total_price)
+                and shipment.payment_status != "paid"
+            ):
                 shipment.payment_status = "paid"
                 payment_status_updated = True
                 if not shipment.paid_at:
                     from django.utils import timezone
+
                     shipment.paid_at = timezone.now()
-                logger.info(f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (amount_paid {amount_paid} >= total_price {shipment.total_price})")
-        
+                logger.info(
+                    f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (amount_paid {amount_paid} >= total_price {shipment.total_price})"
+                )
+
         # Also check current amount_paid if status is being changed (even if not from PENDING_PAYMENT)
         if not payment_status_updated and new_status and old_status != new_status:
-            if shipment.amount_paid and shipment.total_price and shipment.total_price > 0:
-                if float(shipment.amount_paid) >= float(shipment.total_price) and shipment.payment_status != "paid":
+            if (
+                shipment.amount_paid
+                and shipment.total_price
+                and shipment.total_price > 0
+            ):
+                if (
+                    float(shipment.amount_paid) >= float(shipment.total_price)
+                    and shipment.payment_status != "paid"
+                ):
                     shipment.payment_status = "paid"
                     payment_status_updated = True
                     if not shipment.paid_at:
                         from django.utils import timezone
+
                         shipment.paid_at = timezone.now()
-                    logger.info(f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (current amount_paid {shipment.amount_paid} >= total_price {shipment.total_price})")
+                    logger.info(
+                        f"✅ Auto-updated payment_status to 'paid' for shipment {shipment.id} (current amount_paid {shipment.amount_paid} >= total_price {shipment.total_price})"
+                    )
 
         shipment.save()
 
         # Generate invoice automatically if status changed from PENDING_PAYMENT to any other status
         # and payment_status is 'paid'
-        if new_status and old_status == "PENDING_PAYMENT" and new_status != "PENDING_PAYMENT":
+        if (
+            new_status
+            and old_status == "PENDING_PAYMENT"
+            and new_status != "PENDING_PAYMENT"
+        ):
             if shipment.payment_status == "paid" and not shipment.invoice_file:
                 try:
                     from .document_service import (
+                        generate_consolidated_export_invoice,
                         generate_invoice,
                         save_invoice_to_storage,
-                        generate_consolidated_export_invoice,
                     )
                     from .email_service import (
-                        send_invoice_email_to_user,
-                        send_invoice_email_to_admin,
                         send_consolidated_export_invoice_email_to_admin,
+                        send_invoice_email_to_admin,
+                        send_invoice_email_to_user,
                     )
 
                     # Generate regular invoice PDF
@@ -4041,18 +4306,31 @@ def update_lcl_shipment_status_view(request, pk):
                         user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
                         if user_sent:
-                            logger.info(f"✅ Invoice email sent to user for shipment {shipment.id}")
+                            logger.info(
+                                f"✅ Invoice email sent to user for shipment {shipment.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)")
+                            logger.warning(
+                                f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)"
+                            )
                         if admin_sent:
-                            logger.info(f"✅ Invoice email sent to admin for shipment {shipment.id}")
+                            logger.info(
+                                f"✅ Invoice email sent to admin for shipment {shipment.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)")
+                            logger.warning(
+                                f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)"
+                            )
                     except Exception as email_error:
-                        logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                        logger.error(
+                            f"❌ Failed to send invoice emails: {str(email_error)}",
+                            exc_info=True,
+                        )
                         # Don't fail if email fails
 
-                    logger.info(f"✅ Invoice generated and saved for shipment {shipment.id}")
+                    logger.info(
+                        f"✅ Invoice generated and saved for shipment {shipment.id}"
+                    )
                 except Exception as invoice_error:
                     # Log error but don't fail the request
                     logger.error(
@@ -4062,7 +4340,11 @@ def update_lcl_shipment_status_view(request, pk):
 
             # Additionally, when moving from PENDING_PAYMENT to any other status (like PENDING_PICKUP),
             # generate Consolidated Export Invoice for admin only
-            if new_status and new_status != "PENDING_PAYMENT" and shipment.payment_status == "paid":
+            if (
+                new_status
+                and new_status != "PENDING_PAYMENT"
+                and shipment.payment_status == "paid"
+            ):
                 try:
                     from .document_service import generate_consolidated_export_invoice
                     from .email_service import (
@@ -4088,51 +4370,70 @@ def update_lcl_shipment_status_view(request, pk):
                         f"Failed to generate/send consolidated export invoice: {str(consolidated_error)}",
                         exc_info=True,
                     )
-        
+
         # Generate receipt automatically when shipment arrives at specific locations
         # For eu-sy: when status changes to ARRIVED_WATTWEG_5
         # For sy-eu: when status changes to ARRIVED_DESTINATION
         if new_status and not shipment.receipt_file:
             should_generate_receipt = False
-            
+
             if shipment.direction == "eu-sy" and new_status == "ARRIVED_WATTWEG_5":
                 should_generate_receipt = True
             elif shipment.direction == "sy-eu" and new_status == "ARRIVED_DESTINATION":
                 should_generate_receipt = True
-            
+
             if should_generate_receipt:
                 try:
-                    from .document_service import generate_receipt, save_receipt_to_storage
-                    from .email_service import send_receipt_email_to_user, send_receipt_email_to_admin
-                    
+                    from .document_service import (
+                        generate_receipt,
+                        save_receipt_to_storage,
+                    )
+                    from .email_service import (
+                        send_receipt_email_to_admin,
+                        send_receipt_email_to_user,
+                    )
+
                     # Generate receipt PDF
-                    pdf_bytes = generate_receipt(shipment, language='ar')
-                    
+                    pdf_bytes = generate_receipt(shipment, language="ar")
+
                     # Save to storage
                     save_receipt_to_storage(shipment, pdf_bytes)
-                    
+
                     # Send receipt by email
                     try:
                         user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
                         if user_sent:
-                            logger.info(f"✅ Receipt email sent to user for shipment {shipment.id}")
+                            logger.info(
+                                f"✅ Receipt email sent to user for shipment {shipment.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Receipt email to user failed for shipment {shipment.id} (check email config or user email)")
+                            logger.warning(
+                                f"⚠️ Receipt email to user failed for shipment {shipment.id} (check email config or user email)"
+                            )
                         if admin_sent:
-                            logger.info(f"✅ Receipt email sent to admin for shipment {shipment.id}")
+                            logger.info(
+                                f"✅ Receipt email sent to admin for shipment {shipment.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Receipt email to admin failed for shipment {shipment.id} (check email config)")
+                            logger.warning(
+                                f"⚠️ Receipt email to admin failed for shipment {shipment.id} (check email config)"
+                            )
                     except Exception as email_error:
-                        logger.error(f"❌ Failed to send receipt emails: {str(email_error)}", exc_info=True)
+                        logger.error(
+                            f"❌ Failed to send receipt emails: {str(email_error)}",
+                            exc_info=True,
+                        )
                         # Don't fail if email fails
-                    
-                    logger.info(f"✅ Receipt generated and saved for shipment {shipment.id}")
+
+                    logger.info(
+                        f"✅ Receipt generated and saved for shipment {shipment.id}"
+                    )
                 except Exception as receipt_error:
                     # Log error but don't fail the request
                     logger.error(
                         f"Failed to generate receipt automatically: {str(receipt_error)}",
-                        exc_info=True
+                        exc_info=True,
                     )
 
         # Send email notifications if status was updated
@@ -4197,75 +4498,105 @@ def download_invoice_view(request, pk):
     """
     Download invoice PDF for LCL shipment.
     GET /api/shipments/{id}/invoice/
-    
+
     Requirements:
     - Shipment status must not be PENDING_PAYMENT
     - Payment status must be 'paid'
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         shipment = LCLShipment.objects.get(pk=pk)
-        
+
         # Check permissions: user must own the shipment or be admin
         if shipment.user != request.user and not request.user.is_superuser:
             return Response(
-                {"success": False, "error": "You can only download invoices for your own shipments."},
+                {
+                    "success": False,
+                    "error": "You can only download invoices for your own shipments.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         # Validate shipment status
         if shipment.status == "PENDING_PAYMENT":
             return Response(
-                {"success": False, "error": "Invoice can only be generated after payment is confirmed."},
+                {
+                    "success": False,
+                    "error": "Invoice can only be generated after payment is confirmed.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Validate payment status
         if shipment.payment_status != "paid":
             return Response(
-                {"success": False, "error": "Payment must be confirmed before generating invoice."},
+                {
+                    "success": False,
+                    "error": "Payment must be confirmed before generating invoice.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Import document service
         from .document_service import generate_invoice, save_invoice_to_storage
-        
+
         # Get language from request (default: 'ar')
-        language = request.GET.get('language', 'ar')
-        if language not in ['ar', 'en']:
-            language = 'ar'
-        
+        language = request.GET.get("language", "ar")
+        if language not in ["ar", "en"]:
+            language = "ar"
+
         # If invoice file exists, read it and send email, then return
         if shipment.invoice_file:
             try:
-                with open(shipment.invoice_file.path, 'rb') as pdf_file:
+                with open(shipment.invoice_file.path, "rb") as pdf_file:
                     pdf_bytes = pdf_file.read()
-                    
+
                     # Send emails even if invoice already exists (same as shipping labels)
                     try:
-                        logger.info(f"📧 Invoice file exists, sending emails for shipment {shipment.id}")
-                        from .email_service import send_invoice_email_to_user, send_invoice_email_to_admin
+                        logger.info(
+                            f"📧 Invoice file exists, sending emails for shipment {shipment.id}"
+                        )
+                        from .email_service import (
+                            send_invoice_email_to_admin,
+                            send_invoice_email_to_user,
+                        )
+
                         user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
                         if user_sent:
-                            logger.info(f"✅ Invoice email sent to user for shipment {shipment.id}")
+                            logger.info(
+                                f"✅ Invoice email sent to user for shipment {shipment.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)")
+                            logger.warning(
+                                f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)"
+                            )
                         if admin_sent:
-                            logger.info(f"✅ Invoice email sent to admin for shipment {shipment.id}")
+                            logger.info(
+                                f"✅ Invoice email sent to admin for shipment {shipment.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)")
+                            logger.warning(
+                                f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)"
+                            )
                     except Exception as email_error:
-                        logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                        logger.error(
+                            f"❌ Failed to send invoice emails: {str(email_error)}",
+                            exc_info=True,
+                        )
                         # Don't fail if email fails
-                    
-                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
-                    response['Content-Disposition'] = f'inline; filename="Invoice-{shipment.shipment_number}.pdf"'
+
+                    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+                    response["Content-Disposition"] = (
+                        f'inline; filename="Invoice-{shipment.shipment_number}.pdf"'
+                    )
                     return response
             except Exception as file_error:
-                logger.warning(f"Error reading invoice file, will regenerate: {str(file_error)}")
-        
+                logger.warning(
+                    f"Error reading invoice file, will regenerate: {str(file_error)}"
+                )
+
         # Generate invoice PDF
         try:
             pdf_bytes = generate_invoice(shipment, language=language)
@@ -4275,12 +4606,17 @@ def download_invoice_view(request, pk):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as gen_error:
-            logger.error(f"Error generating invoice PDF: {str(gen_error)}", exc_info=True)
+            logger.error(
+                f"Error generating invoice PDF: {str(gen_error)}", exc_info=True
+            )
             return Response(
-                {"success": False, "error": f"Failed to generate invoice: {str(gen_error)}"},
+                {
+                    "success": False,
+                    "error": f"Failed to generate invoice: {str(gen_error)}",
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
         # Save to storage if not already saved (always try to save)
         invoice_saved = False
         if not shipment.invoice_file:
@@ -4289,32 +4625,52 @@ def download_invoice_view(request, pk):
                 logger.info(f"✅ Invoice saved to storage for shipment {shipment.id}")
                 invoice_saved = True
             except Exception as save_error:
-                logger.error(f"Failed to save invoice to storage: {str(save_error)}", exc_info=True)
+                logger.error(
+                    f"Failed to save invoice to storage: {str(save_error)}",
+                    exc_info=True,
+                )
                 # Continue anyway - we can still return the PDF
-        
+
         # Send emails if invoice was just generated (not already existed)
         if invoice_saved:
             try:
-                from .email_service import send_invoice_email_to_user, send_invoice_email_to_admin
+                from .email_service import (
+                    send_invoice_email_to_admin,
+                    send_invoice_email_to_user,
+                )
+
                 user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                 admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
                 if user_sent:
-                    logger.info(f"✅ Invoice email sent to user for shipment {shipment.id}")
+                    logger.info(
+                        f"✅ Invoice email sent to user for shipment {shipment.id}"
+                    )
                 else:
-                    logger.warning(f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)")
+                    logger.warning(
+                        f"⚠️ Invoice email to user failed for shipment {shipment.id} (check email config or user email)"
+                    )
                 if admin_sent:
-                    logger.info(f"✅ Invoice email sent to admin for shipment {shipment.id}")
+                    logger.info(
+                        f"✅ Invoice email sent to admin for shipment {shipment.id}"
+                    )
                 else:
-                    logger.warning(f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)")
+                    logger.warning(
+                        f"⚠️ Invoice email to admin failed for shipment {shipment.id} (check email config)"
+                    )
             except Exception as email_error:
-                logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                logger.error(
+                    f"❌ Failed to send invoice emails: {str(email_error)}",
+                    exc_info=True,
+                )
                 # Don't fail if email fails
-        
+
         # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="Invoice-{shipment.shipment_number}.pdf"'
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'inline; filename="Invoice-{shipment.shipment_number}.pdf"'
+        )
         return response
-        
+
     except LCLShipment.DoesNotExist:
         return Response(
             {"success": False, "error": "Shipment not found."},
@@ -4323,7 +4679,10 @@ def download_invoice_view(request, pk):
     except Exception as e:
         logger.error(f"Error generating invoice: {str(e)}", exc_info=True)
         return Response(
-            {"success": False, "error": f"An error occurred while generating invoice: {str(e)}"},
+            {
+                "success": False,
+                "error": f"An error occurred while generating invoice: {str(e)}",
+            },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -4334,7 +4693,7 @@ def download_consolidated_export_invoice_view(request, pk):
     """
     Download Consolidated Export Invoice PDF for LCL shipment.
     GET /api/shipments/{id}/consolidated-export-invoice/
-    
+
     Only available for admin users.
     Requirements:
     - User must be admin (is_superuser)
@@ -4342,80 +4701,114 @@ def download_consolidated_export_invoice_view(request, pk):
     - Status must not be PENDING_PAYMENT
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         shipment = LCLShipment.objects.get(pk=pk)
-        
+
         # Check permissions: only admin can download consolidated export invoice
         if not request.user.is_superuser:
             return Response(
-                {"success": False, "error": "Only admin users can download consolidated export invoice."},
+                {
+                    "success": False,
+                    "error": "Only admin users can download consolidated export invoice.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         # Validate shipment status
         if shipment.status == "PENDING_PAYMENT":
             return Response(
-                {"success": False, "error": "Consolidated export invoice can only be generated after payment is confirmed."},
+                {
+                    "success": False,
+                    "error": "Consolidated export invoice can only be generated after payment is confirmed.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Validate payment status
         if shipment.payment_status != "paid":
             return Response(
-                {"success": False, "error": "Payment must be confirmed before generating consolidated export invoice."},
+                {
+                    "success": False,
+                    "error": "Payment must be confirmed before generating consolidated export invoice.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Import document service
         from .document_service import generate_consolidated_export_invoice
-        
+
         # Get language from request (default: 'en' for export invoice)
-        language = request.GET.get('language', 'en')
-        if language not in ['ar', 'en']:
-            language = 'en'
-        
+        language = request.GET.get("language", "en")
+        if language not in ["ar", "en"]:
+            language = "en"
+
         # Generate consolidated export invoice PDF
         try:
-            pdf_bytes = generate_consolidated_export_invoice(shipment, language=language)
+            pdf_bytes = generate_consolidated_export_invoice(
+                shipment, language=language
+            )
         except ValueError as e:
             return Response(
                 {"success": False, "error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as gen_error:
-            logger.error(f"Error generating consolidated export invoice PDF: {str(gen_error)}", exc_info=True)
+            logger.error(
+                f"Error generating consolidated export invoice PDF: {str(gen_error)}",
+                exc_info=True,
+            )
             return Response(
-                {"success": False, "error": f"Failed to generate consolidated export invoice: {str(gen_error)}"},
+                {
+                    "success": False,
+                    "error": f"Failed to generate consolidated export invoice: {str(gen_error)}",
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
         # Send consolidated export invoice by email to admin
         try:
             from .email_service import send_consolidated_export_invoice_email_to_admin
-            admin_sent = send_consolidated_export_invoice_email_to_admin(shipment, pdf_bytes)
+
+            admin_sent = send_consolidated_export_invoice_email_to_admin(
+                shipment, pdf_bytes
+            )
             if admin_sent:
-                logger.info(f"✅ Consolidated export invoice email sent to admin for shipment {shipment.id}")
+                logger.info(
+                    f"✅ Consolidated export invoice email sent to admin for shipment {shipment.id}"
+                )
             else:
-                logger.warning(f"⚠️ Consolidated export invoice email to admin failed for shipment {shipment.id} (check email config)")
+                logger.warning(
+                    f"⚠️ Consolidated export invoice email to admin failed for shipment {shipment.id} (check email config)"
+                )
         except Exception as email_error:
-            logger.error(f"❌ Failed to send consolidated export invoice email: {str(email_error)}", exc_info=True)
+            logger.error(
+                f"❌ Failed to send consolidated export invoice email: {str(email_error)}",
+                exc_info=True,
+            )
             # Don't fail if email fails - still return the PDF
-        
+
         # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="Consolidated-Export-Invoice-{shipment.shipment_number}.pdf"'
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'inline; filename="Consolidated-Export-Invoice-{shipment.shipment_number}.pdf"'
+        )
         return response
-        
+
     except LCLShipment.DoesNotExist:
         return Response(
             {"success": False, "error": "Shipment not found."},
             status=status.HTTP_404_NOT_FOUND,
         )
     except Exception as e:
-        logger.error(f"Error generating consolidated export invoice: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error generating consolidated export invoice: {str(e)}", exc_info=True
+        )
         return Response(
-            {"success": False, "error": f"An error occurred while generating consolidated export invoice: {str(e)}"},
+            {
+                "success": False,
+                "error": f"An error occurred while generating consolidated export invoice: {str(e)}",
+            },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -4426,7 +4819,7 @@ def download_packing_list_view(request, pk):
     """
     Download Packing List PDF for LCL shipment.
     GET /api/shipments/{id}/packing-list/
-    
+
     Only available for admin users.
     Requirements:
     - User must be admin (is_superuser)
@@ -4434,39 +4827,48 @@ def download_packing_list_view(request, pk):
     - Status must not be PENDING_PAYMENT
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         shipment = LCLShipment.objects.get(pk=pk)
-        
+
         # Check permissions: only admin can download packing list
         if not request.user.is_superuser:
             return Response(
-                {"success": False, "error": "Only admin users can download packing list."},
+                {
+                    "success": False,
+                    "error": "Only admin users can download packing list.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         # Validate shipment status
         if shipment.status == "PENDING_PAYMENT":
             return Response(
-                {"success": False, "error": "Packing list can only be generated after payment is confirmed."},
+                {
+                    "success": False,
+                    "error": "Packing list can only be generated after payment is confirmed.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Validate payment status
         if shipment.payment_status != "paid":
             return Response(
-                {"success": False, "error": "Payment must be confirmed before generating packing list."},
+                {
+                    "success": False,
+                    "error": "Payment must be confirmed before generating packing list.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Import document service
         from .document_service import generate_packing_list
-        
+
         # Get language from request (default: 'en' for packing list)
-        language = request.GET.get('language', 'en')
-        if language not in ['ar', 'en']:
-            language = 'en'
-        
+        language = request.GET.get("language", "en")
+        if language not in ["ar", "en"]:
+            language = "en"
+
         # Generate packing list PDF
         try:
             pdf_bytes = generate_packing_list(shipment, language=language)
@@ -4476,26 +4878,36 @@ def download_packing_list_view(request, pk):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as gen_error:
-            logger.error(f"Error generating packing list PDF: {str(gen_error)}", exc_info=True)
+            logger.error(
+                f"Error generating packing list PDF: {str(gen_error)}", exc_info=True
+            )
             return Response(
-                {"success": False, "error": f"Failed to generate packing list: {str(gen_error)}"},
+                {
+                    "success": False,
+                    "error": f"Failed to generate packing list: {str(gen_error)}",
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
         # Send packing list by email to admin
         try:
             from .email_service import send_packing_list_email_to_admin
+
             send_packing_list_email_to_admin(shipment, pdf_bytes)
-            logger.info(f"✅ Packing list email sent to admin for shipment {shipment.id}")
+            logger.info(
+                f"✅ Packing list email sent to admin for shipment {shipment.id}"
+            )
         except Exception as email_error:
             logger.warning(f"Failed to send packing list email: {str(email_error)}")
             # Don't fail if email fails - still return the PDF
-        
+
         # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="Packing-List-{shipment.shipment_number}.pdf"'
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'inline; filename="Packing-List-{shipment.shipment_number}.pdf"'
+        )
         return response
-        
+
     except LCLShipment.DoesNotExist:
         return Response(
             {"success": False, "error": "Shipment not found."},
@@ -4504,7 +4916,10 @@ def download_packing_list_view(request, pk):
     except Exception as e:
         logger.error(f"Error generating packing list: {str(e)}", exc_info=True)
         return Response(
-            {"success": False, "error": f"An error occurred while generating packing list: {str(e)}"},
+            {
+                "success": False,
+                "error": f"An error occurred while generating packing list: {str(e)}",
+            },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -4515,110 +4930,159 @@ def download_receipt_view(request, pk):
     """
     Download receipt PDF for LCL shipment.
     GET /api/shipments/{id}/receipt/
-    
+
     Generates receipt if not already generated and conditions are met.
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         shipment = LCLShipment.objects.get(pk=pk)
-        
+
         # Check permissions: user must own the shipment or be admin
         if shipment.user != request.user and not request.user.is_superuser:
             return Response(
-                {"success": False, "error": "You can only download receipts for your own shipments."},
+                {
+                    "success": False,
+                    "error": "You can only download receipts for your own shipments.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         # Check if receipt should be available based on status and direction
         # Allow receipt generation if status matches the required conditions
         should_have_receipt = (
-            (shipment.direction == "eu-sy" and shipment.status == "ARRIVED_WATTWEG_5") or
-            (shipment.direction == "sy-eu" and shipment.status == "ARRIVED_DESTINATION")
+            shipment.direction == "eu-sy" and shipment.status == "ARRIVED_WATTWEG_5"
+        ) or (
+            shipment.direction == "sy-eu" and shipment.status == "ARRIVED_DESTINATION"
         )
-        
+
         # Log for debugging
-        logger.info(f"Receipt request for shipment {shipment.id}: direction={shipment.direction}, status={shipment.status}, should_have_receipt={should_have_receipt}")
-        
+        logger.info(
+            f"Receipt request for shipment {shipment.id}: direction={shipment.direction}, status={shipment.status}, should_have_receipt={should_have_receipt}"
+        )
+
         # Allow receipt generation even if status doesn't match (for manual generation)
         # But show a warning in the response if conditions aren't met
         if not should_have_receipt:
-            logger.warning(f"Receipt requested for shipment {shipment.id} but status/direction don't match requirements. Generating anyway.")
-        
+            logger.warning(
+                f"Receipt requested for shipment {shipment.id} but status/direction don't match requirements. Generating anyway."
+            )
+
         # Import document service
         from .document_service import generate_receipt, save_receipt_to_storage
-        
+
         # Get language from request (default: 'ar')
-        language = request.GET.get('language', 'ar')
-        if language not in ['ar', 'en']:
-            language = 'ar'
-        
+        language = request.GET.get("language", "ar")
+        if language not in ["ar", "en"]:
+            language = "ar"
+
         # If receipt file exists, read it and send email, then return
         if shipment.receipt_file:
             try:
-                with open(shipment.receipt_file.path, 'rb') as pdf_file:
+                with open(shipment.receipt_file.path, "rb") as pdf_file:
                     pdf_bytes = pdf_file.read()
-                    
+
                     # Send receipt by email even if file exists (same as shipping labels)
                     try:
-                        logger.info(f"📧 Receipt file exists, sending emails for shipment {shipment.id}")
-                        from .email_service import send_receipt_email_to_user, send_receipt_email_to_admin
+                        logger.info(
+                            f"📧 Receipt file exists, sending emails for shipment {shipment.id}"
+                        )
+                        from .email_service import (
+                            send_receipt_email_to_admin,
+                            send_receipt_email_to_user,
+                        )
+
                         user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
                         if user_sent:
-                            logger.info(f"✅ Receipt email sent to user for shipment {shipment.id}")
+                            logger.info(
+                                f"✅ Receipt email sent to user for shipment {shipment.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Receipt email to user failed for shipment {shipment.id} (check email config or user email)")
+                            logger.warning(
+                                f"⚠️ Receipt email to user failed for shipment {shipment.id} (check email config or user email)"
+                            )
                         if admin_sent:
-                            logger.info(f"✅ Receipt email sent to admin for shipment {shipment.id}")
+                            logger.info(
+                                f"✅ Receipt email sent to admin for shipment {shipment.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Receipt email to admin failed for shipment {shipment.id} (check email config)")
+                            logger.warning(
+                                f"⚠️ Receipt email to admin failed for shipment {shipment.id} (check email config)"
+                            )
                     except Exception as email_error:
-                        logger.error(f"❌ Failed to send receipt emails: {str(email_error)}", exc_info=True)
+                        logger.error(
+                            f"❌ Failed to send receipt emails: {str(email_error)}",
+                            exc_info=True,
+                        )
                         # Don't fail if email fails
-                    
-                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
-                    response['Content-Disposition'] = f'inline; filename="Receipt-{shipment.shipment_number}.pdf"'
+
+                    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+                    response["Content-Disposition"] = (
+                        f'inline; filename="Receipt-{shipment.shipment_number}.pdf"'
+                    )
                     return response
             except Exception as file_error:
-                logger.warning(f"Error reading receipt file, will regenerate: {str(file_error)}")
+                logger.warning(
+                    f"Error reading receipt file, will regenerate: {str(file_error)}"
+                )
                 # Continue to generate new receipt
-        
+
         # Generate receipt PDF
         try:
             pdf_bytes = generate_receipt(shipment, language=language)
         except Exception as gen_error:
-            logger.error(f"Error generating receipt PDF: {str(gen_error)}", exc_info=True)
+            logger.error(
+                f"Error generating receipt PDF: {str(gen_error)}", exc_info=True
+            )
             return Response(
-                {"success": False, "error": f"Failed to generate receipt: {str(gen_error)}"},
+                {
+                    "success": False,
+                    "error": f"Failed to generate receipt: {str(gen_error)}",
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
         # Send receipt by email (same logic as shipping labels - send BEFORE saving)
         try:
-            logger.info(f"📧 Attempting to send receipt emails for shipment {shipment.id}")
-            from .email_service import send_receipt_email_to_user, send_receipt_email_to_admin
+            logger.info(
+                f"📧 Attempting to send receipt emails for shipment {shipment.id}"
+            )
+            from .email_service import (
+                send_receipt_email_to_admin,
+                send_receipt_email_to_user,
+            )
+
             user_result = send_receipt_email_to_user(shipment, pdf_bytes)
             admin_result = send_receipt_email_to_admin(shipment, pdf_bytes)
-            logger.info(f"📧 Receipt email results - User: {user_result}, Admin: {admin_result}")
+            logger.info(
+                f"📧 Receipt email results - User: {user_result}, Admin: {admin_result}"
+            )
         except Exception as email_error:
-            logger.error(f"❌ Failed to send receipt emails: {str(email_error)}", exc_info=True)
+            logger.error(
+                f"❌ Failed to send receipt emails: {str(email_error)}", exc_info=True
+            )
             # Don't fail if email fails
-        
+
         # Save to storage if not already saved
         if not shipment.receipt_file:
             try:
                 save_receipt_to_storage(shipment, pdf_bytes)
                 logger.info(f"✅ Receipt saved to storage for shipment {shipment.id}")
             except Exception as save_error:
-                logger.error(f"Failed to save receipt to storage: {str(save_error)}", exc_info=True)
+                logger.error(
+                    f"Failed to save receipt to storage: {str(save_error)}",
+                    exc_info=True,
+                )
                 # Continue anyway - we can still return the PDF
-        
+
         # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="Receipt-{shipment.shipment_number}.pdf"'
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'inline; filename="Receipt-{shipment.shipment_number}.pdf"'
+        )
         return response
-        
+
     except LCLShipment.DoesNotExist:
         return Response(
             {"success": False, "error": "Shipment not found."},
@@ -4638,75 +5102,103 @@ def download_fcl_invoice_view(request, pk):
     """
     Download invoice PDF for FCL quote.
     GET /api/fcl/quotes/{id}/invoice/
-    
+
     Requirements:
     - Quote status must not be PENDING_PAYMENT
     - Payment status must be 'paid'
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         quote = FCLQuote.objects.get(pk=pk)
-        
+
         # Check permissions: user must own the quote or be admin
         if quote.user != request.user and not request.user.is_superuser:
             return Response(
-                {"success": False, "error": "You can only download invoices for your own quotes."},
+                {
+                    "success": False,
+                    "error": "You can only download invoices for your own quotes.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         # Validate quote status - invoice can be generated when status is not PENDING_PAYMENT
         if quote.status == "PENDING_PAYMENT":
             return Response(
-                {"success": False, "error": "Invoice can only be generated after payment is confirmed."},
+                {
+                    "success": False,
+                    "error": "Invoice can only be generated after payment is confirmed.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Note: We allow invoice generation even if payment_status is not "paid"
         # because the invoice can be generated on-demand for quotes that have moved past PENDING_PAYMENT
-        
+
         # Import document service
-        from .document_service import generate_fcl_invoice, save_fcl_invoice_to_storage
         from django.http import HttpResponse
-        
+
+        from .document_service import generate_fcl_invoice, save_fcl_invoice_to_storage
+
         # Get language from request (default: 'en')
-        language = request.GET.get('language', 'en')
-        if language not in ['ar', 'en']:
-            language = 'en'
-        
+        language = request.GET.get("language", "en")
+        if language not in ["ar", "en"]:
+            language = "en"
+
         # If invoice file exists, read it and send email, then return
         if quote.invoice_file:
             try:
-                with open(quote.invoice_file.path, 'rb') as pdf_file:
+                with open(quote.invoice_file.path, "rb") as pdf_file:
                     pdf_bytes = pdf_file.read()
-                    
+
                     # Send emails even if invoice already exists (same as shipping labels)
                     try:
-                        logger.info(f"📧 Invoice file exists, sending emails for FCL quote {quote.id}")
-                        from .email_service import send_fcl_invoice_email_to_user, send_fcl_invoice_email_to_admin
+                        logger.info(
+                            f"📧 Invoice file exists, sending emails for FCL quote {quote.id}"
+                        )
+                        from .email_service import (
+                            send_fcl_invoice_email_to_admin,
+                            send_fcl_invoice_email_to_user,
+                        )
+
                         user_sent = send_fcl_invoice_email_to_user(quote, pdf_bytes)
                         admin_sent = send_fcl_invoice_email_to_admin(quote, pdf_bytes)
                         if user_sent:
-                            logger.info(f"✅ Invoice email sent to user for FCL quote {quote.id}")
+                            logger.info(
+                                f"✅ Invoice email sent to user for FCL quote {quote.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Invoice email to user failed for FCL quote {quote.id} (check email config or user email)")
+                            logger.warning(
+                                f"⚠️ Invoice email to user failed for FCL quote {quote.id} (check email config or user email)"
+                            )
                         if admin_sent:
-                            logger.info(f"✅ Invoice email sent to admin for FCL quote {quote.id}")
+                            logger.info(
+                                f"✅ Invoice email sent to admin for FCL quote {quote.id}"
+                            )
                         else:
-                            logger.warning(f"⚠️ Invoice email to admin failed for FCL quote {quote.id} (check email config)")
+                            logger.warning(
+                                f"⚠️ Invoice email to admin failed for FCL quote {quote.id} (check email config)"
+                            )
                     except Exception as email_error:
-                        logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                        logger.error(
+                            f"❌ Failed to send invoice emails: {str(email_error)}",
+                            exc_info=True,
+                        )
                         # Don't fail if email fails
-                    
-                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
-                    response['Content-Disposition'] = f'inline; filename="FCL-Invoice-{quote.quote_number or quote.id}.pdf"'
+
+                    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+                    response["Content-Disposition"] = (
+                        f'inline; filename="FCL-Invoice-{quote.quote_number or quote.id}.pdf"'
+                    )
                     return response
             except Exception as file_error:
-                logger.warning(f"Error reading invoice file, will regenerate: {str(file_error)}")
-        
+                logger.warning(
+                    f"Error reading invoice file, will regenerate: {str(file_error)}"
+                )
+
         # Generate invoice
         pdf_bytes = generate_fcl_invoice(quote, language=language)
-        
+
         # Save to storage
         invoice_saved = False
         try:
@@ -4714,32 +5206,51 @@ def download_fcl_invoice_view(request, pk):
             logger.info(f"✅ Invoice saved to storage for FCL quote {quote.id}")
             invoice_saved = True
         except Exception as save_error:
-            logger.error(f"Failed to save invoice to storage: {str(save_error)}", exc_info=True)
+            logger.error(
+                f"Failed to save invoice to storage: {str(save_error)}", exc_info=True
+            )
             # Continue anyway - we can still return the PDF
-        
+
         # Send emails if invoice was just generated (not already existed)
         if invoice_saved:
             try:
-                from .email_service import send_fcl_invoice_email_to_user, send_fcl_invoice_email_to_admin
+                from .email_service import (
+                    send_fcl_invoice_email_to_admin,
+                    send_fcl_invoice_email_to_user,
+                )
+
                 user_sent = send_fcl_invoice_email_to_user(quote, pdf_bytes)
                 admin_sent = send_fcl_invoice_email_to_admin(quote, pdf_bytes)
                 if user_sent:
-                    logger.info(f"✅ Invoice email sent to user for FCL quote {quote.id}")
+                    logger.info(
+                        f"✅ Invoice email sent to user for FCL quote {quote.id}"
+                    )
                 else:
-                    logger.warning(f"⚠️ Invoice email to user failed for FCL quote {quote.id} (check email config)")
+                    logger.warning(
+                        f"⚠️ Invoice email to user failed for FCL quote {quote.id} (check email config)"
+                    )
                 if admin_sent:
-                    logger.info(f"✅ Invoice email sent to admin for FCL quote {quote.id}")
+                    logger.info(
+                        f"✅ Invoice email sent to admin for FCL quote {quote.id}"
+                    )
                 else:
-                    logger.warning(f"⚠️ Invoice email to admin failed for FCL quote {quote.id} (check email config)")
+                    logger.warning(
+                        f"⚠️ Invoice email to admin failed for FCL quote {quote.id} (check email config)"
+                    )
             except Exception as email_error:
-                logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                logger.error(
+                    f"❌ Failed to send invoice emails: {str(email_error)}",
+                    exc_info=True,
+                )
                 # Don't fail if email fails
-        
+
         # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="FCL-Invoice-{quote.quote_number or quote.id}.pdf"'
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'inline; filename="FCL-Invoice-{quote.quote_number or quote.id}.pdf"'
+        )
         return response
-        
+
     except FCLQuote.DoesNotExist:
         return Response(
             {"success": False, "error": "Quote not found."},
@@ -4748,7 +5259,10 @@ def download_fcl_invoice_view(request, pk):
     except Exception as e:
         logger.error(f"Error generating FCL invoice: {str(e)}", exc_info=True)
         return Response(
-            {"success": False, "error": f"An error occurred while generating invoice: {str(e)}"},
+            {
+                "success": False,
+                "error": f"An error occurred while generating invoice: {str(e)}",
+            },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -4759,31 +5273,34 @@ def download_shipping_labels_view(request, pk):
     """
     Download shipping labels PDF for LCL shipment.
     GET /api/shipments/{id}/shipping-labels/
-    
+
     Generates one label per parcel (including repeat_count for electronics).
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         shipment = LCLShipment.objects.get(pk=pk)
-        
+
         # Check permissions: user must own the shipment or be admin
         if shipment.user != request.user and not request.user.is_superuser:
             return Response(
-                {"success": False, "error": "You can only download shipping labels for your own shipments."},
+                {
+                    "success": False,
+                    "error": "You can only download shipping labels for your own shipments.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         # Import document service
         from .document_service import generate_shipping_labels
-        
+
         # Get language from request (default: 'ar')
-        language = request.GET.get('language', 'ar')
-        if language not in ['ar', 'en']:
-            language = 'ar'
-        
+        language = request.GET.get("language", "ar")
+        if language not in ["ar", "en"]:
+            language = "ar"
+
         # Get number of labels from request (optional)
-        num_labels = request.GET.get('num_labels')
+        num_labels = request.GET.get("num_labels")
         if num_labels:
             try:
                 num_labels = int(num_labels)
@@ -4793,44 +5310,72 @@ def download_shipping_labels_view(request, pk):
                 num_labels = None
         else:
             num_labels = None
-        
+
         # Generate shipping labels PDF
         try:
-            pdf_bytes = generate_shipping_labels(shipment, language=language, num_labels=num_labels)
+            pdf_bytes = generate_shipping_labels(
+                shipment, language=language, num_labels=num_labels
+            )
         except ValueError as e:
             return Response(
                 {"success": False, "error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as gen_error:
-            logger.error(f"Error generating shipping labels PDF: {str(gen_error)}", exc_info=True)
+            logger.error(
+                f"Error generating shipping labels PDF: {str(gen_error)}", exc_info=True
+            )
             return Response(
-                {"success": False, "error": f"Failed to generate shipping labels: {str(gen_error)}"},
+                {
+                    "success": False,
+                    "error": f"Failed to generate shipping labels: {str(gen_error)}",
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
         # Send shipping labels by email
         try:
-            from .email_service import send_shipping_labels_email_to_user, send_shipping_labels_email_to_admin
-            user_sent = send_shipping_labels_email_to_user(shipment, pdf_bytes, num_labels=num_labels)
-            admin_sent = send_shipping_labels_email_to_admin(shipment, pdf_bytes, num_labels=num_labels)
+            from .email_service import (
+                send_shipping_labels_email_to_admin,
+                send_shipping_labels_email_to_user,
+            )
+
+            user_sent = send_shipping_labels_email_to_user(
+                shipment, pdf_bytes, num_labels=num_labels
+            )
+            admin_sent = send_shipping_labels_email_to_admin(
+                shipment, pdf_bytes, num_labels=num_labels
+            )
             if user_sent:
-                logger.info(f"✅ Shipping labels email sent to user for shipment {shipment.id}")
+                logger.info(
+                    f"✅ Shipping labels email sent to user for shipment {shipment.id}"
+                )
             else:
-                logger.warning(f"⚠️ Shipping labels email to user failed for shipment {shipment.id} (check email config or user email)")
+                logger.warning(
+                    f"⚠️ Shipping labels email to user failed for shipment {shipment.id} (check email config or user email)"
+                )
             if admin_sent:
-                logger.info(f"✅ Shipping labels email sent to admin for shipment {shipment.id}")
+                logger.info(
+                    f"✅ Shipping labels email sent to admin for shipment {shipment.id}"
+                )
             else:
-                logger.warning(f"⚠️ Shipping labels email to admin failed for shipment {shipment.id} (check email config)")
+                logger.warning(
+                    f"⚠️ Shipping labels email to admin failed for shipment {shipment.id} (check email config)"
+                )
         except Exception as email_error:
-            logger.error(f"❌ Failed to send shipping labels emails: {str(email_error)}", exc_info=True)
+            logger.error(
+                f"❌ Failed to send shipping labels emails: {str(email_error)}",
+                exc_info=True,
+            )
             # Don't fail if email fails
-        
+
         # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="Shipping-Labels-{shipment.shipment_number}.pdf"'
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'inline; filename="Shipping-Labels-{shipment.shipment_number}.pdf"'
+        )
         return response
-        
+
     except LCLShipment.DoesNotExist:
         return Response(
             {"success": False, "error": "Shipment not found."},
@@ -4839,7 +5384,10 @@ def download_shipping_labels_view(request, pk):
     except Exception as e:
         logger.error(f"Error generating shipping labels: {str(e)}", exc_info=True)
         return Response(
-            {"success": False, "error": f"An error occurred while generating shipping labels: {str(e)}"},
+            {
+                "success": False,
+                "error": f"An error occurred while generating shipping labels: {str(e)}",
+            },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

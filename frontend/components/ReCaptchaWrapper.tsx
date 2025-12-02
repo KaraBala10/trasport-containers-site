@@ -1,15 +1,31 @@
-'use client';
+"use client";
 
-import { ReactNode, createContext, useContext } from 'react';
-import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { ReactNode, createContext, useContext } from "react";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
-// Context to safely access reCAPTCHA
+// Context for standard reCAPTCHA v3
 const ReCaptchaContext = createContext<{
   executeRecaptcha?: (action: string) => Promise<string>;
 }>({});
 
 export const useReCaptcha = () => {
   const context = useContext(ReCaptchaContext);
+
+  // Use standard v3 from react-google-recaptcha-v3
+  if (context.executeRecaptcha) {
+    return context;
+  }
+
+  // Fallback: try to get from GoogleReCaptchaProvider directly
+  try {
+    const recaptcha = useGoogleReCaptcha();
+    if (recaptcha?.executeRecaptcha) {
+      return { executeRecaptcha: recaptcha.executeRecaptcha };
+    }
+  } catch {
+    // Provider not available
+  }
+
   return context;
 };
 
@@ -17,16 +33,16 @@ interface ReCaptchaWrapperProps {
   children: ReactNode;
 }
 
-// This component must be inside GoogleRecaptchaProvider
+// Wrapper for standard reCAPTCHA v3 (react-google-recaptcha-v3)
 export default function ReCaptchaWrapper({ children }: ReCaptchaWrapperProps) {
-  // Use hook directly - this will work because we're inside GoogleRecaptchaProvider
+  // Get executeRecaptcha from GoogleReCaptchaProvider
   let executeRecaptcha: ((action: string) => Promise<string>) | undefined;
-  
+
   try {
     const recaptcha = useGoogleReCaptcha();
     executeRecaptcha = recaptcha?.executeRecaptcha;
-  } catch (error) {
-    // reCAPTCHA not available (no provider)
+  } catch {
+    // Provider not available
     executeRecaptcha = undefined;
   }
 
@@ -36,4 +52,3 @@ export default function ReCaptchaWrapper({ children }: ReCaptchaWrapperProps) {
     </ReCaptchaContext.Provider>
   );
 }
-

@@ -687,6 +687,7 @@ export default function CreateShipmentPage() {
         syria_weight: syriaWeight,
         payment_method: "stripe",
         total_price: Number(grandTotalWithTransport.toFixed(2)),
+        recaptcha_token: recaptchaToken || undefined,
       };
 
       const shipmentResponse = await apiService.createShipment(shipmentData);
@@ -1588,18 +1589,22 @@ export default function CreateShipmentPage() {
                       // eu-sy: sender needs city + country
                       const isSYtoEU = direction === "sy-eu";
                       const senderValid = isSYtoEU
-                        ? !!(sender?.fullName?.trim() &&
-                          sender?.email?.trim() &&
-                          sender?.phone?.trim() &&
-                          sender?.country?.trim() &&
-                          sender?.province?.trim() &&
-                          senderCountry)
-                        : !!(sender?.fullName?.trim() &&
-                          sender?.email?.trim() &&
-                          sender?.phone?.trim() &&
-                          sender?.city?.trim() &&
-                          sender?.country?.trim() &&
-                          senderCountry);
+                        ? !!(
+                            sender?.fullName?.trim() &&
+                            sender?.email?.trim() &&
+                            sender?.phone?.trim() &&
+                            sender?.country?.trim() &&
+                            sender?.province?.trim() &&
+                            senderCountry
+                          )
+                        : !!(
+                            sender?.fullName?.trim() &&
+                            sender?.email?.trim() &&
+                            sender?.phone?.trim() &&
+                            sender?.city?.trim() &&
+                            sender?.country?.trim() &&
+                            senderCountry
+                          );
 
                       if (!senderValid) {
                         // Debug: log what's missing
@@ -1614,15 +1619,15 @@ export default function CreateShipmentPage() {
                           city: sender?.city,
                           senderCountry,
                         });
-                        
+
                         showSuccess(
                           language === "ar"
                             ? isSYtoEU
                               ? "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، الدولة، المحافظة)"
                               : "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
                             : isSYtoEU
-                              ? "Please complete all required sender information (name, email, phone, country, province)"
-                              : "Please complete all required sender information (name, email, phone, city, country)"
+                            ? "Please complete all required sender information (name, email, phone, country, province)"
+                            : "Please complete all required sender information (name, email, phone, city, country)"
                         );
                         setIsCreatingShipment(false);
                         return;
@@ -1633,18 +1638,22 @@ export default function CreateShipmentPage() {
                       // sy-eu: receiver needs city + country
                       const isEUtoSY = direction === "eu-sy";
                       const receiverValid = isEUtoSY
-                        ? !!(receiver?.fullName?.trim() &&
-                          receiver?.email?.trim() &&
-                          receiver?.phone?.trim() &&
-                          receiver?.country?.trim() &&
-                          receiver?.province?.trim() &&
-                          receiverCountry)
-                        : !!(receiver?.fullName?.trim() &&
-                          receiver?.email?.trim() &&
-                          receiver?.phone?.trim() &&
-                          receiver?.city?.trim() &&
-                          receiver?.country?.trim() &&
-                          receiverCountry);
+                        ? !!(
+                            receiver?.fullName?.trim() &&
+                            receiver?.email?.trim() &&
+                            receiver?.phone?.trim() &&
+                            receiver?.country?.trim() &&
+                            receiver?.province?.trim() &&
+                            receiverCountry
+                          )
+                        : !!(
+                            receiver?.fullName?.trim() &&
+                            receiver?.email?.trim() &&
+                            receiver?.phone?.trim() &&
+                            receiver?.city?.trim() &&
+                            receiver?.country?.trim() &&
+                            receiverCountry
+                          );
 
                       if (!receiverValid) {
                         // Debug: log what's missing
@@ -1659,15 +1668,15 @@ export default function CreateShipmentPage() {
                           city: receiver?.city,
                           receiverCountry,
                         });
-                        
+
                         showSuccess(
                           language === "ar"
                             ? isEUtoSY
                               ? "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، الدولة، المحافظة)"
                               : "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
                             : isEUtoSY
-                              ? "Please complete all required receiver information (name, email, phone, country, province)"
-                              : "Please complete all required receiver information (name, email, phone, city, country)"
+                            ? "Please complete all required receiver information (name, email, phone, country, province)"
+                            : "Please complete all required receiver information (name, email, phone, city, country)"
                         );
                         setIsCreatingShipment(false);
                         return;
@@ -1745,9 +1754,10 @@ export default function CreateShipmentPage() {
                             : sender?.street || "",
                         // For sy-eu direction, sender doesn't have city (has country + province)
                         // For eu-sy direction, sender has city
-                        sender_city: direction === "sy-eu" 
-                          ? (sender?.country || sender?.province || "") 
-                          : (sender?.city || ""),
+                        sender_city:
+                          direction === "sy-eu"
+                            ? sender?.country || sender?.province || ""
+                            : sender?.city || "",
                         sender_postal_code: sender?.postalCode || "",
                         sender_country: senderCountry,
                         receiver_name: receiver?.fullName || "",
@@ -1759,9 +1769,10 @@ export default function CreateShipmentPage() {
                             : receiver?.street || "",
                         // For eu-sy direction, receiver doesn't have city (has country + province)
                         // For sy-eu direction, receiver has city
-                        receiver_city: direction === "eu-sy"
-                          ? (receiver?.country || receiver?.province || "")
-                          : (receiver?.city || ""),
+                        receiver_city:
+                          direction === "eu-sy"
+                            ? receiver?.country || receiver?.province || ""
+                            : receiver?.city || "",
                         receiver_postal_code: receiver?.postalCode || "",
                         receiver_country: receiverCountry,
                         parcels: parcels,
@@ -1783,6 +1794,7 @@ export default function CreateShipmentPage() {
                         transfer_sender_name: transferSenderName,
                         transfer_reference: transferReference,
                         total_price: Number(grandTotalWithTransport.toFixed(2)),
+                        recaptcha_token: recaptchaToken || undefined,
                       };
 
                       // Create shipment via API
@@ -1983,7 +1995,7 @@ export default function CreateShipmentPage() {
                 {t.step8Title}
               </h2>
               <Step11Confirmation
-                shipmentId={shipmentId || ''}
+                shipmentId={shipmentId || ""}
                 direction={direction}
                 pricing={pricing}
                 language={language}

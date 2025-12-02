@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ShippingDirection } from "@/types/shipment";
+import { useReCaptcha } from "@/components/ReCaptchaWrapper";
 
 interface Step9PaymentProps {
   direction: ShippingDirection;
@@ -41,6 +42,53 @@ export default function Step9Payment({
   isRecaptchaValid = true,
   hasInternalTransport = false,
 }: Step9PaymentProps) {
+  const { executeRecaptcha } = useReCaptcha();
+  const [recaptchaError, setRecaptchaError] = useState<string>("");
+
+  // Check if reCAPTCHA is available
+  const recaptchaSiteKey =
+    typeof window !== "undefined"
+      ? process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+      : "";
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const isRecaptchaRequired = !!recaptchaSiteKey && !isDevelopment;
+  const isRecaptchaReady = !isRecaptchaRequired || !!executeRecaptcha;
+
+  const handleStripePaymentClick = async () => {
+    if (!onStripePayment) return;
+
+    // Clear previous errors
+    setRecaptchaError("");
+
+    // Execute reCAPTCHA before payment
+    if (isRecaptchaRequired && executeRecaptcha) {
+      try {
+        await executeRecaptcha("stripe_payment");
+        // reCAPTCHA successful, proceed with payment
+        await onStripePayment();
+      } catch (error) {
+        console.error("reCAPTCHA verification failed:", error);
+        setRecaptchaError(
+          language === "ar"
+            ? "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى."
+            : "reCAPTCHA verification failed. Please try again."
+        );
+        return;
+      }
+    } else if (isRecaptchaRequired && !executeRecaptcha) {
+      // reCAPTCHA is required but not available
+      setRecaptchaError(
+        language === "ar"
+          ? "التحقق من reCAPTCHA مطلوب. يرجى الانتظار..."
+          : "reCAPTCHA verification is required. Please wait..."
+      );
+      return;
+    } else {
+      // reCAPTCHA not required, proceed directly
+      await onStripePayment();
+    }
+  };
+
   const translations = {
     ar: {
       title: "طريقة الدفع",
@@ -185,33 +233,54 @@ export default function Step9Payment({
                   </div>
                 )}
                 {onStripePayment && (
-                  <motion.button
-                    onClick={onStripePayment}
-                    disabled={isProcessingPayment || grandTotal <= 0 || !isRecaptchaValid}
-                    className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
-                      isProcessingPayment || grandTotal <= 0 || !isRecaptchaValid
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
-                    }`}
-                    whileHover={
-                      !isProcessingPayment && grandTotal > 0 && isRecaptchaValid
-                        ? { scale: 1.02 }
-                        : {}
-                    }
-                    whileTap={
-                      !isProcessingPayment && grandTotal > 0 && isRecaptchaValid
-                        ? { scale: 0.98 }
-                        : {}
-                    }
-                  >
-                    {isProcessingPayment
-                      ? language === "ar"
-                        ? "جاري التوجيه..."
-                        : "Redirecting..."
-                      : language === "ar"
-                      ? "الدفع الآن عبر Stripe"
-                      : "Pay Now via Stripe"}
-                  </motion.button>
+                  <>
+                    {recaptchaError && (
+                      <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg mb-4">
+                        <p className="text-sm font-medium">{recaptchaError}</p>
+                      </div>
+                    )}
+                    <motion.button
+                      onClick={handleStripePaymentClick}
+                      disabled={
+                        isProcessingPayment ||
+                        grandTotal <= 0 ||
+                        !isRecaptchaValid ||
+                        !isRecaptchaReady
+                      }
+                      className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
+                        isProcessingPayment ||
+                        grandTotal <= 0 ||
+                        !isRecaptchaValid ||
+                        !isRecaptchaReady
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
+                      }`}
+                      whileHover={
+                        !isProcessingPayment &&
+                        grandTotal > 0 &&
+                        isRecaptchaValid &&
+                        isRecaptchaReady
+                          ? { scale: 1.02 }
+                          : {}
+                      }
+                      whileTap={
+                        !isProcessingPayment &&
+                        grandTotal > 0 &&
+                        isRecaptchaValid &&
+                        isRecaptchaReady
+                          ? { scale: 0.98 }
+                          : {}
+                      }
+                    >
+                      {isProcessingPayment
+                        ? language === "ar"
+                          ? "جاري التوجيه..."
+                          : "Redirecting..."
+                        : language === "ar"
+                        ? "الدفع الآن عبر Stripe"
+                        : "Pay Now via Stripe"}
+                    </motion.button>
+                  </>
                 )}
                 <p className="text-xs text-blue-700">
                   {language === "ar"
@@ -234,7 +303,9 @@ export default function Step9Payment({
         >
           <div className="mb-4">
             <h3 className="text-xl font-bold text-primary-dark mb-2">
-              {language === "ar" ? "الدفع في الشرق الأوسط" : "Payment in the Middle East"}
+              {language === "ar"
+                ? "الدفع في الشرق الأوسط"
+                : "Payment in the Middle East"}
             </h3>
             <p className="text-sm text-gray-600 mb-2">
               {language === "ar"
@@ -420,7 +491,9 @@ export default function Step9Payment({
         >
           <div className="mb-4">
             <h3 className="text-xl font-bold text-primary-dark mb-2">
-              {language === "ar" ? "الدفع في الشرق الأوسط" : "Payment in the Middle East"}
+              {language === "ar"
+                ? "الدفع في الشرق الأوسط"
+                : "Payment in the Middle East"}
             </h3>
             <p className="text-sm text-gray-600 mb-2">
               {language === "ar"
@@ -684,33 +757,54 @@ export default function Step9Payment({
                   </div>
                 )}
                 {onStripePayment && (
-                  <motion.button
-                    onClick={onStripePayment}
-                    disabled={isProcessingPayment || grandTotal <= 0 || !isRecaptchaValid}
-                    className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
-                      isProcessingPayment || grandTotal <= 0 || !isRecaptchaValid
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
-                    }`}
-                    whileHover={
-                      !isProcessingPayment && grandTotal > 0 && isRecaptchaValid
-                        ? { scale: 1.02 }
-                        : {}
-                    }
-                    whileTap={
-                      !isProcessingPayment && grandTotal > 0 && isRecaptchaValid
-                        ? { scale: 0.98 }
-                        : {}
-                    }
-                  >
-                    {isProcessingPayment
-                      ? language === "ar"
-                        ? "جاري التوجيه..."
-                        : "Redirecting..."
-                      : language === "ar"
-                      ? "الدفع الآن عبر Stripe"
-                      : "Pay Now via Stripe"}
-                  </motion.button>
+                  <>
+                    {recaptchaError && (
+                      <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg mb-4">
+                        <p className="text-sm font-medium">{recaptchaError}</p>
+                      </div>
+                    )}
+                    <motion.button
+                      onClick={handleStripePaymentClick}
+                      disabled={
+                        isProcessingPayment ||
+                        grandTotal <= 0 ||
+                        !isRecaptchaValid ||
+                        !isRecaptchaReady
+                      }
+                      className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
+                        isProcessingPayment ||
+                        grandTotal <= 0 ||
+                        !isRecaptchaValid ||
+                        !isRecaptchaReady
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
+                      }`}
+                      whileHover={
+                        !isProcessingPayment &&
+                        grandTotal > 0 &&
+                        isRecaptchaValid &&
+                        isRecaptchaReady
+                          ? { scale: 1.02 }
+                          : {}
+                      }
+                      whileTap={
+                        !isProcessingPayment &&
+                        grandTotal > 0 &&
+                        isRecaptchaValid &&
+                        isRecaptchaReady
+                          ? { scale: 0.98 }
+                          : {}
+                      }
+                    >
+                      {isProcessingPayment
+                        ? language === "ar"
+                          ? "جاري التوجيه..."
+                          : "Redirecting..."
+                        : language === "ar"
+                        ? "الدفع الآن عبر Stripe"
+                        : "Pay Now via Stripe"}
+                    </motion.button>
+                  </>
                 )}
               </motion.div>
             )}

@@ -280,3 +280,20 @@ RECAPTCHA_ENTERPRISE_PROJECT_ID = config(
     "RECAPTCHA_ENTERPRISE_PROJECT_ID", default="centering-vine-476709-t9"
 ).strip()
 SENDCLOUD_WEBHOOK_URL = config("SENDCLOUD_WEBHOOK_URL", default="")
+
+# reCAPTCHA Configuration
+# Site key (public key - used in frontend)
+RECAPTCHA_SITE_KEY = config("NEXT_PUBLIC_RECAPTCHA_SITE_KEY", default="").strip()
+
+# Standard reCAPTCHA v3 Secret Key (for standard v3 verification)
+RECAPTCHA_SECRET_KEY = config("RECAPTCHA_SECRET_KEY", default="").strip()
+
+# reCAPTCHA Enterprise Configuration (optional - for Enterprise version)
+RECAPTCHA_ENTERPRISE_API_KEY = config(
+    "RECAPTCHA_ENTERPRISE_API_KEY", default=""
+).strip()
+RECAPTCHA_ENTERPRISE_PROJECT_ID = config(
+    "RECAPTCHA_ENTERPRISE_PROJECT_ID", default="medosite-1764668210784"
+).strip()
+
+SENDCLOUD_WEBHOOK_URL = config("SENDCLOUD_WEBHOOK_URL", default="")

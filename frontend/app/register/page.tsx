@@ -3,16 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Script from "next/script";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useReCaptcha } from "@/components/ReCaptchaWrapper";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import {
-  validateRequired,
-  validateEmail,
-} from "@/utils/validation";
+import { validateRequired, validateEmail } from "@/utils/validation";
 
 // grecaptcha types are defined in types/grecaptcha.d.ts
 
@@ -36,6 +32,18 @@ export default function RegisterPage() {
       ? "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Google's test key (works with localhost)
       : process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
+  // Debug: Log reCAPTCHA status (only in browser console)
+  useEffect(() => {
+    if (typeof window !== "undefined" && recaptchaSiteKey) {
+      console.log("reCAPTCHA v3 Status:", {
+        isDevelopment,
+        recaptchaSiteKey: recaptchaSiteKey.substring(0, 10) + "...",
+        hasExecuteRecaptcha: !!executeRecaptcha,
+        grecaptchaExists: typeof window.grecaptcha !== "undefined",
+      });
+    }
+  }, [recaptchaSiteKey, isDevelopment, executeRecaptcha]);
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -46,8 +54,6 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState<string>("");
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     username?: string;
     email?: string;
@@ -106,104 +112,34 @@ export default function RegisterPage() {
     }
   }, [mounted, isAuthenticated, router]);
 
-  // Initialize reCAPTCHA widget after component mounts and script loads
-  useEffect(() => {
-    if (!mounted || !isDevelopment || !recaptchaSiteKey) return;
-
-    // Wait for script to load and widget element to exist
-    const initRecaptcha = () => {
-      const widgetElement = document.getElementById("recaptcha-widget");
-      if (!widgetElement) {
-        setTimeout(initRecaptcha, 200);
-        return;
-      }
-
-      if (!window.grecaptcha) {
-        setTimeout(initRecaptcha, 200);
-        return;
-      }
-
-      // Check if already rendered
-      if (widgetElement.hasChildNodes()) {
-        setRecaptchaLoaded(true);
-        return;
-      }
-
-      window.grecaptcha.ready(() => {
-        try {
-          const widgetId = window.grecaptcha!.render("recaptcha-widget", {
-            sitekey: recaptchaSiteKey,
-            size: "normal",
-            theme: "light",
-            callback: (token: string) => {
-              console.log(
-                "reCAPTCHA verified:",
-                token.substring(0, 20) + "..."
-              );
-              setRecaptchaToken(token);
-            },
-            "expired-callback": () => {
-              console.log("reCAPTCHA expired");
-              setRecaptchaToken("");
-            },
-            "error-callback": () => {
-              console.error("reCAPTCHA error");
-              setRecaptchaToken("");
-            },
-          });
-          console.log("reCAPTCHA widget rendered, widgetId:", widgetId);
-          setRecaptchaLoaded(true);
-        } catch (error) {
-          console.error("Error rendering reCAPTCHA:", error);
-          setRecaptchaLoaded(false);
-        }
-      });
-    };
-
-    // Start initialization after a delay to ensure script is loaded
-    const timer = setTimeout(initRecaptcha, 1000);
-    return () => clearTimeout(timer);
-  }, [mounted, isDevelopment, recaptchaSiteKey]);
-
   // Check if reCAPTCHA is required and completed
   const isRecaptchaValid = useMemo(() => {
-    // If no reCAPTCHA key is configured, it's not required
-    if (!recaptchaSiteKey) {
-      return true;
-    }
-
-    // In development mode with v2 widget (visible checkbox)
-    // Button should be disabled if widget is loaded but not checked
-    if (isDevelopment && recaptchaLoaded) {
-      return !!recaptchaToken; // Must have token if widget is loaded
-    }
-
-    // In production with v3 (invisible, executed on submit)
-    // Allow button to be enabled (v3 executes on submit)
-    if (!isDevelopment) {
-      return true;
-    }
-
-    // If widget hasn't loaded yet, allow button (will be disabled once loaded)
-    if (!recaptchaLoaded) {
-      return true;
-    }
-
-    // Default: require token
-    return !!recaptchaToken;
-  }, [recaptchaSiteKey, isDevelopment, recaptchaLoaded, recaptchaToken]);
+    if (!recaptchaSiteKey) return true;
+    return !!executeRecaptcha;
+  }, [recaptchaSiteKey, executeRecaptcha]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     // Validate all fields
-    const usernameError = validateRequired(formData.username, t.username, 3, 150);
+    const usernameError = validateRequired(
+      formData.username,
+      t.username,
+      3,
+      150
+    );
     const emailError = validateEmail(formData.email);
-    const passwordError = validateRequired(formData.password, t.password, 8, 128);
-    const password2Error = formData.password !== formData.password2 
-      ? t.passwordsDoNotMatch 
-      : validateRequired(formData.password2, t.confirmPassword, 8, 128);
+    const passwordError = validateRequired(
+      formData.password,
+      t.password,
+      8,
+      128
+    );
+    const password2Error =
+      formData.password !== formData.password2
+        ? t.passwordsDoNotMatch
+        : validateRequired(formData.password2, t.confirmPassword, 8, 128);
 
     if (usernameError || emailError || passwordError || password2Error) {
       setFieldErrors({
@@ -230,42 +166,25 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Verify reCAPTCHA before registration
+      // Get reCAPTCHA v3 token
       let finalRecaptchaToken = "";
 
-      // In development, use v2 token if available, otherwise use v3
-      if (isDevelopment && recaptchaToken) {
-        finalRecaptchaToken = recaptchaToken;
-      } else if (executeRecaptcha) {
-        try {
-          finalRecaptchaToken = await executeRecaptcha("register");
-        } catch (recaptchaError) {
-          if (isDevelopment) {
-            console.warn("reCAPTCHA verification failed:", recaptchaError);
-          }
-          // If reCAPTCHA key is configured, require it in production
-          if (recaptchaSiteKey && !isDevelopment) {
+      if (recaptchaSiteKey) {
+        if (executeRecaptcha) {
+          try {
+            finalRecaptchaToken = await executeRecaptcha("register");
+            console.log("reCAPTCHA v3 token obtained");
+          } catch (recaptchaError) {
+            console.error("reCAPTCHA execution failed:", recaptchaError);
             setError(t.recaptchaRequired);
             setLoading(false);
             return;
           }
+        } else {
+          setError(t.recaptchaRequired);
+          setLoading(false);
+          return;
         }
-      } else if (recaptchaSiteKey && !isDevelopment) {
-        // reCAPTCHA is required but not available
-        setError(t.recaptchaRequired);
-        setLoading(false);
-        return;
-      }
-
-      // In development, require v2 token if widget is shown
-      if (isDevelopment && recaptchaLoaded && !finalRecaptchaToken) {
-        setError(
-          language === "ar"
-            ? "يرجى التحقق من reCAPTCHA"
-            : "Please complete the reCAPTCHA verification"
-        );
-        setLoading(false);
-        return;
       }
 
       const result = await register({
@@ -306,21 +225,6 @@ export default function RegisterPage() {
       dir={isRTL ? "rtl" : "ltr"}
       className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50"
     >
-      {/* Load reCAPTCHA v2 script */}
-      {isDevelopment && recaptchaSiteKey && mounted && (
-        <Script
-          src={`https://www.google.com/recaptcha/api.js?render=explicit&hl=${language}`}
-          strategy="afterInteractive"
-          onLoad={() => {
-            console.log("reCAPTCHA v2 script loaded successfully");
-          }}
-          onError={(error) => {
-            console.error("Failed to load reCAPTCHA script:", error);
-            setRecaptchaLoaded(false);
-          }}
-        />
-      )}
-
       <Header />
 
       {/* Spacer for fixed header */}
@@ -421,16 +325,29 @@ export default function RegisterPage() {
                       onChange={(e) => {
                         setFormData({ ...formData, username: e.target.value });
                         if (fieldErrors.username) {
-                          setFieldErrors({ ...fieldErrors, username: undefined });
+                          setFieldErrors({
+                            ...fieldErrors,
+                            username: undefined,
+                          });
                         }
                       }}
                       onBlur={() => {
-                        const error = validateRequired(formData.username, t.username, 3, 150);
-                        setFieldErrors({ ...fieldErrors, username: error || undefined });
+                        const error = validateRequired(
+                          formData.username,
+                          t.username,
+                          3,
+                          150
+                        );
+                        setFieldErrors({
+                          ...fieldErrors,
+                          username: error || undefined,
+                        });
                       }}
                     />
                     {fieldErrors.username && (
-                      <p className="mt-1 text-sm text-red-600">{fieldErrors.username}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors.username}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -480,11 +397,16 @@ export default function RegisterPage() {
                       }}
                       onBlur={() => {
                         const error = validateEmail(formData.email);
-                        setFieldErrors({ ...fieldErrors, email: error || undefined });
+                        setFieldErrors({
+                          ...fieldErrors,
+                          email: error || undefined,
+                        });
                       }}
                     />
                     {fieldErrors.email && (
-                      <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors.email}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -615,20 +537,39 @@ export default function RegisterPage() {
                       onChange={(e) => {
                         setFormData({ ...formData, password: e.target.value });
                         if (fieldErrors.password) {
-                          setFieldErrors({ ...fieldErrors, password: undefined });
-                      }
+                          setFieldErrors({
+                            ...fieldErrors,
+                            password: undefined,
+                          });
+                        }
                         // Also clear password2 error if passwords match
-                        if (fieldErrors.password2 && e.target.value === formData.password2) {
-                          setFieldErrors({ ...fieldErrors, password2: undefined });
+                        if (
+                          fieldErrors.password2 &&
+                          e.target.value === formData.password2
+                        ) {
+                          setFieldErrors({
+                            ...fieldErrors,
+                            password2: undefined,
+                          });
                         }
                       }}
                       onBlur={() => {
-                        const error = validateRequired(formData.password, t.password, 8, 128);
-                        setFieldErrors({ ...fieldErrors, password: error || undefined });
+                        const error = validateRequired(
+                          formData.password,
+                          t.password,
+                          8,
+                          128
+                        );
+                        setFieldErrors({
+                          ...fieldErrors,
+                          password: error || undefined,
+                        });
                       }}
                     />
                     {fieldErrors.password && (
-                      <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {fieldErrors.password}
+                      </p>
                     )}
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
@@ -681,65 +622,8 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* reCAPTCHA Widget (Development Only) */}
-                {isDevelopment && recaptchaSiteKey && (
-                  <div className="flex flex-col items-center justify-center py-4">
-                    <div
-                      id="recaptcha-widget"
-                      className="flex justify-center items-center min-h-[78px] w-full"
-                      style={{ minWidth: "304px" }}
-                    ></div>
-                    {recaptchaSiteKey ===
-                      "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" && (
-                      <p className="mt-2 text-xs text-yellow-600 text-center">
-                        {language === "ar"
-                          ? "⚠️ استخدام مفتاح اختبار Google (localhost غير مدعوم)"
-                          : "⚠️ Using Google test key (localhost not supported)"}
-                      </p>
-                    )}
-                    {recaptchaLoaded && (
-                      <p className="mt-2 text-xs text-gray-500 text-center">
-                        {language === "ar"
-                          ? "reCAPTCHA v2 (وضع التطوير)"
-                          : "reCAPTCHA v2 (Development Mode)"}
-                      </p>
-                    )}
-                    {!recaptchaLoaded && (
-                      <p className="mt-2 text-xs text-gray-400 text-center animate-pulse">
-                        {language === "ar"
-                          ? "جاري تحميل reCAPTCHA..."
-                          : "Loading reCAPTCHA..."}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* reCAPTCHA Required Message */}
-                {isDevelopment &&
-                  recaptchaSiteKey &&
-                  recaptchaLoaded &&
-                  !recaptchaToken && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded-r-lg flex items-start gap-3">
-                      <svg
-                        className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                        />
-                      </svg>
-                      <span className="text-sm font-medium">
-                        {language === "ar"
-                          ? "يرجى التحقق من reCAPTCHA للمتابعة"
-                          : "Please complete the reCAPTCHA verification to continue"}
-                      </span>
-                    </div>
-                  )}
+                {/* reCAPTCHA v3 is invisible - no checkbox needed */}
+                {/* It works automatically in the background */}
 
                 {/* Submit Button */}
                 <div className="pt-2">

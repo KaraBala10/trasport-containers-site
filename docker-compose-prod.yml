@@ -35,6 +35,10 @@ services:
       - SECURE_SSL_REDIRECT=${SECURE_SSL_REDIRECT:-true}
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
       - CSRF_COOKIE_SECURE=${CSRF_COOKIE_SECURE:-true}
+      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY:-}
+      - RECAPTCHA_ENTERPRISE_API_KEY=${RECAPTCHA_ENTERPRISE_API_KEY:-}
+      - RECAPTCHA_ENTERPRISE_PROJECT_ID=${RECAPTCHA_ENTERPRISE_PROJECT_ID:-centering-vine-476709-t9}
+      - NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${NEXT_PUBLIC_RECAPTCHA_SITE_KEY:-}
     command: sh -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile -"
     depends_on:
       db:
@@ -55,6 +59,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: https://medo-freight.eu/api
+        NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${NEXT_PUBLIC_RECAPTCHA_SITE_KEY:-}
     container_name: nextjs_frontend
     expose:
       - "3000"
