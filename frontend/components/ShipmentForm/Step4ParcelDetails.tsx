@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Parcel } from "@/types/shipment";
 import { apiService } from "@/lib/api";
@@ -88,6 +88,9 @@ export default function Step4ParcelDetails({
   const [productRequested, setProductRequested] = useState<{
     [key: string]: boolean;
   }>({});
+  
+  // Debounce timer for CBM calculation
+  const cbmCalculationTimerRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
   // Fetch prices from API
   useEffect(() => {
@@ -498,8 +501,9 @@ export default function Step4ParcelDetails({
     }
   };
 
-  const updateParcel = async (id: string, field: keyof Parcel, value: any) => {
-    // Format numeric fields - keep as string during typing, convert to number only when needed
+  // Fast update function - updates value immediately without API calls
+  const updateParcelField = (id: string, field: keyof Parcel, value: any) => {
+    // Format numeric fields - keep as string during typing
     let formattedValue = value;
     if (
       (field === "length" ||
@@ -508,82 +512,96 @@ export default function Step4ParcelDetails({
         field === "weight") &&
       typeof value === "string"
     ) {
-      // Keep the formatted string value for display, but store as number for calculations
-      // Only convert to number if it's a valid number (not empty and not just a decimal point)
       const cleaned = formatNumericInput(value);
-      if (cleaned === "" || cleaned === ".") {
-        formattedValue = ""; // Keep empty string during typing
-      } else {
-        const numValue = parseFloat(cleaned);
-        formattedValue = isNaN(numValue) ? "" : numValue;
-      }
+      formattedValue = cleaned; // Keep as string for immediate display
     }
 
+    // Update parcels immediately (synchronous)
+    const updatedParcels = parcels.map((parcel) => {
+      if (parcel.id === id) {
+        return { ...parcel, [field]: formattedValue };
+      }
+      return parcel;
+    });
+    onParcelsChange(updatedParcels);
+
+    // Clear field error when user starts typing
+    if (
+      (field === "length" ||
+        field === "width" ||
+        field === "height" ||
+        field === "weight") &&
+      fieldErrors[id]?.[field]
+    ) {
+      setFieldErrors({
+        ...fieldErrors,
+        [id]: {
+          ...fieldErrors[id],
+          [field]: undefined,
+        },
+      });
+    }
+
+    // Debounced CBM calculation for dimensions
+    if (field === "length" || field === "width" || field === "height") {
+      // Clear existing timer
+      if (cbmCalculationTimerRef.current[id]) {
+        clearTimeout(cbmCalculationTimerRef.current[id]);
+      }
+
+      // Set new timer for CBM calculation (500ms delay)
+      cbmCalculationTimerRef.current[id] = setTimeout(async () => {
+        // Get the parcel that was just updated (from closure)
+        const parcelToCalculate = updatedParcels.find((p) => p.id === id);
+        if (!parcelToCalculate) return;
+
+        // Convert to numbers for calculation
+        const length = typeof parcelToCalculate.length === "number" 
+          ? parcelToCalculate.length 
+          : parseFloat(String(parcelToCalculate.length || "")) || 0;
+        const width = typeof parcelToCalculate.width === "number"
+          ? parcelToCalculate.width
+          : parseFloat(String(parcelToCalculate.width || "")) || 0;
+        const height = typeof parcelToCalculate.height === "number"
+          ? parcelToCalculate.height
+          : parseFloat(String(parcelToCalculate.height || "")) || 0;
+
+        // Only calculate CBM if all dimensions are valid (greater than 0)
+        if (length > 0 && width > 0 && height > 0) {
+          try {
+            const response = await apiService.calculateCBM(length, width, height);
+            if (response.data.success) {
+              // Update CBM - create new array with updated CBM
+              const latestParcels = updatedParcels.map((p) => {
+                if (p.id === id) {
+                  return { ...p, cbm: response.data.cbm };
+                }
+                return p;
+              });
+              onParcelsChange(latestParcels);
+            }
+          } catch (error) {
+            console.error("Error calculating CBM:", error);
+          }
+        }
+      }, 500); // 500ms debounce
+    }
+  };
+
+  // Legacy async function for other fields that need async operations
+  const updateParcel = async (id: string, field: keyof Parcel, value: any) => {
+    // For dimensions and weight, use fast update
+    if (field === "length" || field === "width" || field === "height" || field === "weight") {
+      updateParcelField(id, field, value);
+      return;
+    }
+
+    // For other fields, use async update
+    let formattedValue = value;
     const updatedParcels = await Promise.all(
       parcels.map(async (parcel) => {
         if (parcel.id === id) {
           const updatedParcel = { ...parcel, [field]: formattedValue };
-
-          // Clear field error when user starts typing
-          if (
-            (field === "length" ||
-              field === "width" ||
-              field === "height" ||
-              field === "weight") &&
-            fieldErrors[id]?.[field]
-          ) {
-            setFieldErrors({
-              ...fieldErrors,
-              [id]: {
-                ...fieldErrors[id],
-                [field]: undefined,
-              },
-            });
-          }
-
-          // Automatically calculate CBM when any dimension changes
-          if (field === "length" || field === "width" || field === "height") {
-            // Convert to numbers for calculation, use 0 if empty or invalid
-            const length = field === "length" 
-              ? (typeof value === "string" ? parseFloat(value) || 0 : value || 0)
-              : (typeof parcel.length === "number" ? parcel.length : parseFloat(String(parcel.length || "")) || 0);
-            const width = field === "width"
-              ? (typeof value === "string" ? parseFloat(value) || 0 : value || 0)
-              : (typeof parcel.width === "number" ? parcel.width : parseFloat(String(parcel.width || "")) || 0);
-            const height = field === "height"
-              ? (typeof value === "string" ? parseFloat(value) || 0 : value || 0)
-              : (typeof parcel.height === "number" ? parcel.height : parseFloat(String(parcel.height || "")) || 0);
-
-            // Only calculate CBM if all dimensions are valid (greater than 0)
-            if (length > 0 && width > 0 && height > 0) {
-              // Calculate CBM using Backend API only
-              try {
-                const response = await apiService.calculateCBM(
-                  length,
-                  width,
-                  height
-                );
-                if (response.data.success) {
-                  updatedParcel.cbm = response.data.cbm;
-                  console.log(
-                    "✅ CBM calculated from Backend API:",
-                    response.data.cbm
-                  );
-                } else {
-                  console.error(
-                    "❌ Backend API returned error for CBM calculation"
-                  );
-                  updatedParcel.cbm = 0;
-                }
-              } catch (error) {
-                console.error(
-                  "❌ Backend API failed for CBM calculation:",
-                  error
-                );
-                updatedParcel.cbm = 0;
-              }
-            }
-          }
 
           // Force enable insurance for MOBILE_PHONE and LAPTOP
           // Also auto-fill HS Code when product is selected
@@ -804,8 +822,7 @@ export default function Step4ParcelDetails({
                       inputMode="decimal"
                       value={parcel.width || ""}
                       onChange={(e) => {
-                        const formatted = formatNumericInput(e.target.value);
-                        updateParcel(parcel.id, "width", formatted);
+                        updateParcelField(parcel.id, "width", e.target.value);
                       }}
                       onBlur={() => {
                         const error = validateParcelField(
@@ -848,8 +865,7 @@ export default function Step4ParcelDetails({
                       inputMode="decimal"
                       value={parcel.height || ""}
                       onChange={(e) => {
-                        const formatted = formatNumericInput(e.target.value);
-                        updateParcel(parcel.id, "height", formatted);
+                        updateParcelField(parcel.id, "height", e.target.value);
                       }}
                       onBlur={() => {
                         const error = validateParcelField(
@@ -892,8 +908,7 @@ export default function Step4ParcelDetails({
                       inputMode="decimal"
                       value={parcel.weight || ""}
                       onChange={(e) => {
-                        const formatted = formatNumericInput(e.target.value);
-                        updateParcel(parcel.id, "weight", formatted);
+                        updateParcelField(parcel.id, "weight", e.target.value);
                       }}
                       onBlur={() => {
                         const error = validateParcelField(
