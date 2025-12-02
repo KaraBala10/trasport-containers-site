@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import Countdown from "@/components/Countdown";
 import PartnerLogos from "@/components/PartnerLogos";
 import InteractiveMap from "@/components/InteractiveMap";
 import Image from "next/image";
@@ -14,9 +13,6 @@ import { useLanguage } from "@/hooks/useLanguage";
 export default function Home() {
   const { language, isRTL, mounted } = useLanguage();
   const { isAuthenticated, loading: authLoading } = useAuth();
-
-  // Target date: December 1, 2025
-  const targetDate = useMemo(() => new Date("2025-12-01T00:00:00"), []);
 
   const translations = useMemo(
     () => ({
@@ -139,7 +135,7 @@ export default function Home() {
       <div className="h-20" aria-hidden="true" />
 
       <main id="main-content" className="flex-grow" role="main">
-        {/* Hero Banner with Countdown */}
+        {/* Hero Banner */}
         <section
           className="relative overflow-hidden min-h-[600px] flex items-center"
           aria-labelledby="hero-heading"
@@ -173,22 +169,23 @@ export default function Home() {
             </p>
             <p className="text-xl mb-8 font-medium">{t.heroDescription}</p>
 
-            {/* Countdown */}
+            {/* Launch Announcement */}
             <div
               className="mb-12"
               role="region"
               aria-label={
                 language === "ar"
-                  ? "العد التنازلي لإطلاق الخدمة"
-                  : "Service launch countdown"
+                  ? "إعلان الإطلاق الرسمي"
+                  : "Official launch announcement"
               }
             >
-              <p className="text-xl mb-6 font-semibold">
-                {language === "ar"
-                  ? "العد التنازلي حتى 1 ديسمبر 2025"
-                  : "Countdown to December 1, 2025"}
-              </p>
-              <Countdown language={language} targetDate={targetDate} />
+              <div className="bg-primary-yellow/20 backdrop-blur-sm rounded-lg px-8 py-6 border-2 border-primary-yellow/50 inline-block">
+                <p className="text-3xl md:text-4xl font-bold text-white">
+                  {language === "ar"
+                    ? "🎉 انطلقنا رسمياً 🎉"
+                    : "🎉 We're Officially Launched 🎉"}
+                </p>
+              </div>
             </div>
 
             {/* CTA Buttons */}
