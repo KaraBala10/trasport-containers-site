@@ -394,6 +394,21 @@ class FCLQuote(models.Model):
         help_text="Status of the edit request conversation",
     )
 
+    # Invoice
+    invoice_file = models.FileField(
+        upload_to="fcl_invoices/",
+        blank=True,
+        null=True,
+        help_text="Generated invoice PDF file",
+        verbose_name="Invoice File",
+    )
+    invoice_generated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when invoice was generated",
+        verbose_name="Invoice Generated At",
+    )
+
     class Meta:
         verbose_name = "FCL Quote"
         verbose_name_plural = "FCL Quotes"

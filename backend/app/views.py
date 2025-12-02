@@ -770,6 +770,8 @@ def calculate_pricing_view(request):
 @permission_classes([IsAuthenticated])
 def update_fcl_quote_status_view(request, pk):
     """API endpoint for admin to update FCL quote status"""
+    logger = logging.getLogger(__name__)
+    
     if not request.user.is_superuser:
         return Response(
             {"success": False, "error": "Only superusers can update quote status."},
@@ -896,6 +898,52 @@ def update_fcl_quote_status_view(request, pk):
 
         quote.save()
 
+        # Generate invoice automatically if status changed from PENDING_PAYMENT to any other status
+        # and payment_status is 'paid' (same logic as LCL)
+        if old_status == "PENDING_PAYMENT" and new_status != "PENDING_PAYMENT":
+            if quote.payment_status == "paid" and not quote.invoice_file:
+                try:
+                    from .document_service import generate_fcl_invoice, save_fcl_invoice_to_storage
+                    from .email_service import send_fcl_invoice_email_to_user, send_fcl_invoice_email_to_admin
+                    
+                    logger.info(f"🔄 Starting invoice generation for FCL quote {quote.id}")
+                    
+                    # Generate invoice
+                    invoice_pdf = generate_fcl_invoice(quote, language='en')
+                    logger.info(f"✅ Invoice PDF generated for FCL quote {quote.id}, size: {len(invoice_pdf)} bytes")
+                    
+                    # Save to storage
+                    save_fcl_invoice_to_storage(quote, invoice_pdf)
+                    logger.info(f"✅ Invoice saved to storage for FCL quote {quote.id}")
+                    
+                    # Refresh quote from database to get updated invoice fields
+                    quote.refresh_from_db()
+                    logger.info(f"✅ Quote refreshed, invoice_file: {quote.invoice_file}, invoice_generated_at: {quote.invoice_generated_at}")
+                    
+                    # Send emails
+                    try:
+                        user_sent = send_fcl_invoice_email_to_user(quote, invoice_pdf)
+                        admin_sent = send_fcl_invoice_email_to_admin(quote, invoice_pdf)
+                        if user_sent:
+                            logger.info(f"✅ Invoice email sent to user for FCL quote {quote.id}")
+                        else:
+                            logger.warning(f"⚠️ Invoice email to user failed for FCL quote {quote.id}")
+                        if admin_sent:
+                            logger.info(f"✅ Invoice email sent to admin for FCL quote {quote.id}")
+                        else:
+                            logger.warning(f"⚠️ Invoice email to admin failed for FCL quote {quote.id}")
+                    except Exception as email_error:
+                        logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                        # Don't fail if email fails
+                    
+                    logger.info(f"✅ Invoice generated and saved for FCL quote {quote.id}")
+                except Exception as invoice_error:
+                    # Log invoice error but don't fail the request
+                    logger.error(
+                        f"Failed to generate invoice automatically: {str(invoice_error)}",
+                        exc_info=True,
+                    )
+
         # Send email notifications
         try:
             # Send email to user
@@ -919,15 +967,24 @@ def update_fcl_quote_status_view(request, pk):
                 f"Failed to send status update email notifications: {str(email_error)}"
             )
 
+        # Refresh quote from database to ensure we have latest data (especially invoice fields)
+        quote.refresh_from_db()
+        
         # Get status display name
         status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status, new_status)
+        
+        # Prepare response data
+        response_data = {
+            "success": True,
+            "message": f"FCL quote status updated to {status_display} successfully.",
+            "data": FCLQuoteSerializer(quote).data,
+        }
+        
+        # Log invoice status for debugging
+        logger.info(f"📋 Quote {quote.id} final state - invoice_file: {quote.invoice_file}, invoice_generated_at: {quote.invoice_generated_at}")
 
         return Response(
-            {
-                "success": True,
-                "message": f"FCL quote status updated to {status_display} successfully.",
-                "data": FCLQuoteSerializer(quote).data,
-            },
+            response_data,
             status=status.HTTP_200_OK,
         )
     except FCLQuote.DoesNotExist:
@@ -4489,6 +4546,108 @@ def download_receipt_view(request, pk):
         logger.error(f"Error downloading receipt: {str(e)}", exc_info=True)
         return Response(
             {"success": False, "error": f"An error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def download_fcl_invoice_view(request, pk):
+    """
+    Download invoice PDF for FCL quote.
+    GET /api/fcl/quotes/{id}/invoice/
+    
+    Requirements:
+    - Quote status must not be PENDING_PAYMENT
+    - Payment status must be 'paid'
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        quote = FCLQuote.objects.get(pk=pk)
+        
+        # Check permissions: user must own the quote or be admin
+        if quote.user != request.user and not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "You can only download invoices for your own quotes."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
+        # Validate quote status - invoice can be generated when status is not PENDING_PAYMENT
+        if quote.status == "PENDING_PAYMENT":
+            return Response(
+                {"success": False, "error": "Invoice can only be generated after payment is confirmed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Note: We allow invoice generation even if payment_status is not "paid"
+        # because the invoice can be generated on-demand for quotes that have moved past PENDING_PAYMENT
+        
+        # Import document service
+        from .document_service import generate_fcl_invoice, save_fcl_invoice_to_storage
+        from django.http import HttpResponse
+        
+        # Get language from request (default: 'en')
+        language = request.GET.get('language', 'en')
+        if language not in ['ar', 'en']:
+            language = 'en'
+        
+        # If invoice file exists, read it and return
+        if quote.invoice_file:
+            try:
+                with open(quote.invoice_file.path, 'rb') as pdf_file:
+                    pdf_bytes = pdf_file.read()
+                    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+                    response['Content-Disposition'] = f'inline; filename="FCL-Invoice-{quote.quote_number or quote.id}.pdf"'
+                    return response
+            except Exception as file_error:
+                logger.warning(f"Error reading invoice file, will regenerate: {str(file_error)}")
+        
+        # Generate invoice
+        pdf_bytes = generate_fcl_invoice(quote, language=language)
+        
+        # Save to storage
+        invoice_saved = False
+        try:
+            save_fcl_invoice_to_storage(quote, pdf_bytes)
+            logger.info(f"✅ Invoice saved to storage for FCL quote {quote.id}")
+            invoice_saved = True
+        except Exception as save_error:
+            logger.error(f"Failed to save invoice to storage: {str(save_error)}", exc_info=True)
+            # Continue anyway - we can still return the PDF
+        
+        # Send emails if invoice was just generated (not already existed)
+        if invoice_saved:
+            try:
+                from .email_service import send_fcl_invoice_email_to_user, send_fcl_invoice_email_to_admin
+                user_sent = send_fcl_invoice_email_to_user(quote, pdf_bytes)
+                admin_sent = send_fcl_invoice_email_to_admin(quote, pdf_bytes)
+                if user_sent:
+                    logger.info(f"✅ Invoice email sent to user for FCL quote {quote.id}")
+                else:
+                    logger.warning(f"⚠️ Invoice email to user failed for FCL quote {quote.id} (check email config)")
+                if admin_sent:
+                    logger.info(f"✅ Invoice email sent to admin for FCL quote {quote.id}")
+                else:
+                    logger.warning(f"⚠️ Invoice email to admin failed for FCL quote {quote.id} (check email config)")
+            except Exception as email_error:
+                logger.error(f"❌ Failed to send invoice emails: {str(email_error)}", exc_info=True)
+                # Don't fail if email fails
+        
+        # Return PDF as response
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="FCL-Invoice-{quote.quote_number or quote.id}.pdf"'
+        return response
+        
+    except FCLQuote.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Quote not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(f"Error generating FCL invoice: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": f"An error occurred while generating invoice: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

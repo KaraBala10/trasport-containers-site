@@ -18,7 +18,7 @@ import os
 import base64
 import qrcode
 
-from .models import LCLShipment, Price, PackagingPrice, SyrianProvincePrice
+from .models import LCLShipment, FCLQuote, Price, PackagingPrice, SyrianProvincePrice
 
 logger = logging.getLogger(__name__)
 
@@ -839,5 +839,123 @@ def save_receipt_to_storage(shipment: LCLShipment, pdf_bytes: bytes) -> str:
         
     except Exception as e:
         logger.error(f"Error saving receipt to storage: {str(e)}", exc_info=True)
+        raise
+
+
+def generate_fcl_invoice(quote: FCLQuote, language: str = 'en') -> bytes:
+    """
+    Generate invoice PDF for FCL quote.
+    
+    Args:
+        quote: FCLQuote instance
+        language: 'ar' or 'en' (default: 'en')
+    
+    Returns:
+        PDF bytes
+    """
+    try:
+        # Validate quote status - invoice can be generated when status is not PENDING_PAYMENT
+        if quote.status == "PENDING_PAYMENT":
+            raise ValueError("Invoice can only be generated after payment is confirmed.")
+        
+        # Note: We allow invoice generation even if payment_status is not "paid"
+        # because the invoice can be generated on-demand for quotes that have moved past PENDING_PAYMENT
+        
+        # Get company info
+        company_info = get_company_info()
+        
+        # Generate QR Code for tracking
+        tracking_url = f"{company_info['site_url']}/tracking?quote_id={quote.id}"
+        qr_code_base64 = None
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(tracking_url)
+            qr.make(fit=True)
+            
+            # Create QR code image
+            img = qr.make_image(fill_color="black", back_color="white")
+            
+            # Convert to base64
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+            qr_code_base64 = base64.b64encode(img_buffer.read()).decode('utf-8')
+        except Exception as e:
+            logger.warning(f"Could not generate QR code: {str(e)}")
+        
+        # Calculate remaining amount
+        remaining_amount = 0
+        if quote.total_price and quote.amount_paid:
+            remaining_amount = float(quote.total_price) - float(quote.amount_paid)
+        
+        # Prepare context for template
+        context = {
+            'quote': quote,
+            'company': company_info,
+            'language': language,
+            'invoice_date': timezone.now(),
+            'invoice_number': quote.quote_number or f"FCL-{quote.id}",
+            'tracking_url': tracking_url,
+            'qr_code_base64': qr_code_base64,
+            'remaining_amount': round(remaining_amount, 2),
+        }
+        
+        # Render HTML template
+        html_string = render_to_string('documents/fcl_invoice.html', context)
+        
+        # Generate PDF using WeasyPrint
+        font_config = FontConfiguration()
+        html = HTML(string=html_string, base_url=settings.BASE_DIR)
+        
+        # Generate PDF
+        pdf_bytes = html.write_pdf(font_config=font_config)
+        
+        logger.info(f"Successfully generated invoice PDF for FCL quote {quote.id}")
+        return pdf_bytes
+        
+    except Exception as e:
+        logger.error(f"Error generating FCL invoice: {str(e)}", exc_info=True)
+        raise
+
+
+def save_fcl_invoice_to_storage(quote: FCLQuote, pdf_bytes: bytes) -> str:
+    """
+    Save FCL invoice PDF to storage and update quote record.
+    
+    Args:
+        quote: FCLQuote instance
+        pdf_bytes: PDF file bytes
+    
+    Returns:
+        File path
+    """
+    try:
+        from django.core.files.base import ContentFile
+        
+        # Generate filename
+        filename = f"FCL-Invoice-{quote.quote_number or quote.id}.pdf"
+        
+        # Save to FileField
+        quote.invoice_file.save(
+            filename,
+            ContentFile(pdf_bytes),
+            save=False  # Don't save yet, we'll save both fields together
+        )
+        quote.invoice_generated_at = timezone.now()
+        quote.save()  # Save both invoice_file and invoice_generated_at together
+        
+        file_path = quote.invoice_file.path if quote.invoice_file else None
+        logger.info(f"✅ Saved FCL invoice to {quote.invoice_file.name if quote.invoice_file else 'None'} for quote {quote.id}")
+        logger.info(f"✅ Invoice file exists: {bool(quote.invoice_file)}, path: {file_path}")
+        logger.info(f"✅ Invoice generated at: {quote.invoice_generated_at}")
+        return file_path
+        
+    except Exception as e:
+        logger.error(f"Error saving FCL invoice to storage: {str(e)}", exc_info=True)
         raise
 
