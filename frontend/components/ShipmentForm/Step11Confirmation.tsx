@@ -6,7 +6,6 @@ import { ShippingDirection } from '@/types/shipment';
 import { PricingResult } from '@/types/pricing';
 import Link from 'next/link';
 import { apiService } from '@/lib/api';
-import { useToast } from '@/contexts/ToastContext';
 
 interface Step11ConfirmationProps {
   shipmentId: string;
@@ -34,19 +33,13 @@ export default function Step11Confirmation({
   onStripePayment,
   isProcessingPayment = false,
 }: Step11ConfirmationProps) {
-  const { showSuccess, showError } = useToast();
   const translations = {
     ar: {
       title: 'تم إنشاء الشحنة بنجاح',
       shipmentId: 'رقم الشحنة',
       successMessage: 'تم إنشاء شحنتك بنجاح!',
       emailSent: 'تم إرسال بريد تأكيد إلى بريدك الإلكتروني',
-      documents: 'المستندات',
-      packingList: 'Packing List',
-      commercialInvoice: 'Commercial Invoice',
-      downloadPackingList: 'تحميل Packing List',
-      downloadInvoice: 'تحميل الفاتورة',
-      documentsNote: 'المستندات متاحة للتحميل (EU→SY فقط)',
+      documentsNote: 'ستجد الوثائق في ملفك الشخصي ضمن تفاصيل شحنتك',
       nextSteps: 'الخطوات التالية',
       nextStepsDesc: 'سيتم التواصل معك قريباً لتأكيد تفاصيل الشحنة',
       backToHome: 'العودة إلى الصفحة الرئيسية',
@@ -60,12 +53,7 @@ export default function Step11Confirmation({
       shipmentId: 'Shipment ID',
       successMessage: 'Your shipment has been created successfully!',
       emailSent: 'Confirmation email has been sent to your email',
-      documents: 'Documents',
-      packingList: 'Packing List',
-      commercialInvoice: 'Commercial Invoice',
-      downloadPackingList: 'Download Packing List',
-      downloadInvoice: 'Download Invoice',
-      documentsNote: 'Documents available for download (EU→SY only)',
+      documentsNote: 'You will find the documents in your profile within your shipment details',
       nextSteps: 'Next Steps',
       nextStepsDesc: 'We will contact you soon to confirm shipment details',
       backToHome: 'Back to Home',
@@ -78,8 +66,6 @@ export default function Step11Confirmation({
 
   const t = translations[language];
   const isEUtoSY = direction === 'eu-sy';
-  const [downloadingPackingList, setDownloadingPackingList] = useState(false);
-  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [shipmentData, setShipmentData] = useState<ShipmentData | null>(null);
   const [loadingShipment, setLoadingShipment] = useState(false);
 
@@ -144,55 +130,6 @@ export default function Step11Confirmation({
     return () => clearInterval(pollInterval);
   }, [shipmentId]);
 
-  const handleDownloadPackingList = async () => {
-    try {
-      setDownloadingPackingList(true);
-      const response = await apiService.downloadPackingList(shipmentId);
-      
-      // Create blob and download
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Packing-List-${shipmentId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading Packing List:', error);
-      showError(language === 'ar' 
-        ? 'حدث خطأ أثناء تحميل Packing List. يرجى المحاولة لاحقاً.' 
-        : 'Error downloading Packing List. Please try again later.');
-    } finally {
-      setDownloadingPackingList(false);
-    }
-  };
-
-  const handleDownloadCommercialInvoice = async () => {
-    try {
-      setDownloadingInvoice(true);
-      const response = await apiService.downloadCommercialInvoice(shipmentId);
-      
-      // Create blob and download
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Commercial-Invoice-${shipmentId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading Commercial Invoice:', error);
-      showError(language === 'ar' 
-        ? 'حدث خطأ أثناء تحميل الفاتورة التجارية. يرجى المحاولة لاحقاً.' 
-        : 'Error downloading Commercial Invoice. Please try again later.');
-    } finally {
-      setDownloadingInvoice(false);
-    }
-  };
 
   return (
     <motion.div
@@ -328,42 +265,30 @@ export default function Step11Confirmation({
         </motion.div>
       )}
 
-      {/* Documents (EU→SY only) */}
-      {isEUtoSY && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-          className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
-        >
-          <h3 className="text-xl font-bold text-primary-dark mb-4">{t.documents}</h3>
-          <p className="text-sm text-gray-600 mb-4">{t.documentsNote}</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.button
-              className="px-6 py-3 bg-primary-dark text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              whileHover={!downloadingPackingList ? { scale: 1.05 } : {}}
-              whileTap={!downloadingPackingList ? { scale: 0.95 } : {}}
-              onClick={handleDownloadPackingList}
-              disabled={downloadingPackingList}
-            >
-              {downloadingPackingList 
-                ? (language === 'ar' ? 'جاري التحميل...' : 'Downloading...')
-                : t.downloadPackingList}
-            </motion.button>
-            <motion.button
-              className="px-6 py-3 bg-primary-dark text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              whileHover={!downloadingInvoice ? { scale: 1.05 } : {}}
-              whileTap={!downloadingInvoice ? { scale: 0.95 } : {}}
-              onClick={handleDownloadCommercialInvoice}
-              disabled={downloadingInvoice}
-            >
-              {downloadingInvoice 
-                ? (language === 'ar' ? 'جاري التحميل...' : 'Downloading...')
-                : t.downloadInvoice}
-            </motion.button>
-          </div>
-        </motion.div>
-      )}
+      {/* Documents Note (All directions) */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9 }}
+        className="bg-blue-50 rounded-2xl p-6 shadow-lg border-2 border-blue-200"
+      >
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <svg
+            className="w-6 h-6 text-blue-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <p className="text-base font-semibold text-blue-900">{t.documentsNote}</p>
+        </div>
+      </motion.div>
 
       {/* Stripe Payment - Only show if Internal Transport is selected */}
       {hasInternalTransport && isEUtoSY && onStripePayment && (
