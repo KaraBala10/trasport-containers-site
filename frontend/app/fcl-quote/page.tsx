@@ -33,7 +33,6 @@ export default function FCLQuotePage() {
   >("idle");
   const [quoteId, setQuoteId] = useState<number | null>(null);
   const [quoteNumber, setQuoteNumber] = useState<string | null>(null);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showContainerImages, setShowContainerImages] = useState(false);
 
   // Location data states
@@ -1763,44 +1762,6 @@ export default function FCLQuotePage() {
     }
   };
 
-  // Handle Stripe payment for FCL quote
-  const handleStripePayment = async () => {
-    if (!quoteId) {
-      console.error("Quote ID is missing");
-      return;
-    }
-
-    try {
-      setIsProcessingPayment(true);
-      const response = await apiService.initiatePayment(quoteId);
-
-      if (response.data && response.data.checkout_url) {
-        // Redirect to Stripe checkout
-        window.location.href = response.data.checkout_url;
-      } else {
-        console.error("No checkout URL in response:", response.data);
-        setErrors((prev) => ({
-          ...prev,
-          payment:
-            language === "ar"
-              ? "فشل إنشاء جلسة الدفع. يرجى المحاولة مرة أخرى."
-              : "Failed to create payment session. Please try again.",
-        }));
-      }
-    } catch (error: any) {
-      console.error("Error initiating Stripe payment:", error);
-      setErrors((prev) => ({
-        ...prev,
-        payment:
-          error.response?.data?.error ||
-          (language === "ar"
-            ? "حدث خطأ أثناء بدء عملية الدفع. يرجى المحاولة مرة أخرى."
-            : "An error occurred while initiating payment. Please try again."),
-      }));
-    } finally {
-      setIsProcessingPayment(false);
-    }
-  };
 
   // Common ports list (you can expand this)
   const commonPorts = [
@@ -3601,76 +3562,6 @@ export default function FCLQuotePage() {
                           </svg>
                           <p className="font-semibold">{t.success}</p>
                         </motion.div>
-
-                        {/* Stripe Payment Button */}
-                        {quoteId && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="bg-white rounded-2xl p-6 shadow-lg border-2 border-blue-200"
-                          >
-                            <h3 className="text-xl font-bold text-primary-dark mb-2">
-                              {language === "ar"
-                                ? "الدفع عبر Stripe"
-                                : "Pay via Stripe"}
-                            </h3>
-                            <p className="text-sm text-gray-600 mb-4">
-                              {language === "ar"
-                                ? "يمكنك الدفع الآن عبر Stripe لاستكمال عملية الطلب"
-                                : "You can pay now via Stripe to complete your request"}
-                            </p>
-                            {quoteNumber && (
-                              <p className="text-sm text-gray-700 mb-4">
-                                <span className="font-semibold">
-                                  {language === "ar"
-                                    ? "رقم الطلب:"
-                                    : "Quote Number:"}
-                                </span>{" "}
-                                {quoteNumber}
-                              </p>
-                            )}
-                            {errors.payment && (
-                              <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="mb-4 bg-red-50 rounded-lg p-3 border border-red-200"
-                              >
-                                <p className="text-sm text-red-700">
-                                  {errors.payment}
-                                </p>
-                              </motion.div>
-                            )}
-                            <motion.button
-                              onClick={handleStripePayment}
-                              disabled={isProcessingPayment}
-                              className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
-                                isProcessingPayment
-                                  ? "bg-gray-400 cursor-not-allowed"
-                                  : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
-                              }`}
-                              whileHover={
-                                !isProcessingPayment ? { scale: 1.02 } : {}
-                              }
-                              whileTap={
-                                !isProcessingPayment ? { scale: 0.98 } : {}
-                              }
-                            >
-                              {isProcessingPayment
-                                ? language === "ar"
-                                  ? "جاري التوجيه..."
-                                  : "Redirecting..."
-                                : language === "ar"
-                                ? "الدفع الآن عبر Stripe"
-                                : "Pay Now via Stripe"}
-                            </motion.button>
-                            <p className="text-xs text-blue-700 mt-3">
-                              {language === "ar"
-                                ? "سيتم توجيهك إلى صفحة الدفع الآمنة من Stripe"
-                                : "You will be redirected to Stripe secure payment page"}
-                            </p>
-                          </motion.div>
-                        )}
                       </motion.div>
                     )}
                     {submitStatus === "error" && (
