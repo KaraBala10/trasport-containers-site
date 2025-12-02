@@ -54,14 +54,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: https://medo-freight.eu
+        NEXT_PUBLIC_API_URL: https://medo-freight.eu/api
     container_name: nextjs_frontend
     expose:
       - "3000"
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
-      - NEXT_PUBLIC_API_URL=https://medo-freight.eu
+      - NEXT_PUBLIC_API_URL=https://medo-freight.eu/api
       - NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${NEXT_PUBLIC_RECAPTCHA_SITE_KEY:-}
     depends_on:
       - backend
