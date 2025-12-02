@@ -1,6 +1,17 @@
 from django.contrib import admin
 
-from .models import ContactMessage, FCLQuote, PackagingPrice, Price, ProductRequest, SyrianProvincePrice, ShippingSettings
+from .models import (
+    ContactMessage,
+    FCLQuote,
+    PackagingPrice,
+    Price,
+    ProductRequest,
+    SyrianProvincePrice,
+    ShippingSettings,
+    Country,
+    City,
+    Port,
+)
 
 
 @admin.register(ContactMessage)
@@ -326,3 +337,82 @@ class ShippingSettingsAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Don't allow deletion of settings"""
         return False
+
+
+# ============================================================================
+# Location Admin (Countries, Cities, Ports) for FCL Form
+# ============================================================================
+
+@admin.register(Country)
+class CountryAdmin(admin.ModelAdmin):
+    list_display = ("code", "name_en", "name_ar", "cities_count", "ports_count")
+    list_filter = ("code",)
+    search_fields = ("code", "name_en", "name_ar")
+    ordering = ("name_en",)
+    
+    fieldsets = (
+        (
+            "Country Information",
+            {
+                "fields": ("code", "name_en", "name_ar"),
+                "description": "Country code should be ISO 3166-1 format (e.g., SY, DE, FR)",
+            },
+        ),
+    )
+    
+    def cities_count(self, obj):
+        """Display count of cities for this country"""
+        return obj.cities.count()
+    cities_count.short_description = "Cities"
+    
+    def ports_count(self, obj):
+        """Display count of ports for this country"""
+        return obj.ports.count()
+    ports_count.short_description = "Ports"
+
+
+@admin.register(City)
+class CityAdmin(admin.ModelAdmin):
+    list_display = ("name_en", "name_ar", "country", "country_code")
+    list_filter = ("country",)
+    search_fields = ("name_en", "name_ar", "country__name_en", "country__code")
+    ordering = ("country__name_en", "name_en")
+    
+    fieldsets = (
+        (
+            "City Information",
+            {
+                "fields": ("country", "name_en", "name_ar"),
+            },
+        ),
+    )
+    
+    def country_code(self, obj):
+        """Display country code"""
+        return obj.country.code
+    country_code.short_description = "Country Code"
+    country_code.admin_order_field = "country__code"
+
+
+@admin.register(Port)
+class PortAdmin(admin.ModelAdmin):
+    list_display = ("name_en", "name_ar", "code", "country", "country_code")
+    list_filter = ("country",)
+    search_fields = ("name_en", "name_ar", "code", "country__name_en", "country__code")
+    ordering = ("country__name_en", "name_en")
+    
+    fieldsets = (
+        (
+            "Port Information",
+            {
+                "fields": ("country", "name_en", "name_ar", "code"),
+                "description": "Port code should be UN/LOCODE format (e.g., SYLAT for Latakia, DEHAM for Hamburg)",
+            },
+        ),
+    )
+    
+    def country_code(self, obj):
+        """Display country code"""
+        return obj.country.code
+    country_code.short_description = "Country Code"
+    country_code.admin_order_field = "country__code"
