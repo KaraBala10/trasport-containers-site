@@ -5057,7 +5057,10 @@ def download_receipt_view(request, pk):
     Download receipt PDF for LCL shipment.
     GET /api/shipments/{id}/receipt/
 
-    Generates receipt if not already generated and conditions are met.
+    Requirements:
+    - Shipment status must not be PENDING_PAYMENT
+    - Payment status must be 'paid'
+    - Or status must be ARRIVED_WATTWEG_5 (for receipt generation)
     """
     logger = logging.getLogger(__name__)
 
@@ -5074,33 +5077,31 @@ def download_receipt_view(request, pk):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Check if receipt should be available based on status and direction
-        # Allow receipt generation if status matches the required conditions
-        should_have_receipt = (
-            shipment.direction == "eu-sy" and shipment.status == "ARRIVED_WATTWEG_5"
+        # Validate shipment status - receipt can be generated when:
+        # 1. Payment is confirmed (paid) and status is not PENDING_PAYMENT
+        # 2. Or shipment has arrived at warehouse (ARRIVED_WATTWEG_5)
+        can_generate_receipt = (
+            shipment.payment_status == "paid" and shipment.status != "PENDING_PAYMENT"
         ) or (
-            shipment.direction == "sy-eu" and shipment.status == "ARRIVED_WATTWEG_5"
+            shipment.status == "ARRIVED_WATTWEG_5"
         )
 
-        # Log for debugging
-        logger.info(
-            f"Receipt request for shipment {shipment.id}: direction={shipment.direction}, status={shipment.status}, should_have_receipt={should_have_receipt}"
-        )
-
-        # Allow receipt generation even if status doesn't match (for manual generation)
-        # But show a warning in the response if conditions aren't met
-        if not should_have_receipt:
-            logger.warning(
-                f"Receipt requested for shipment {shipment.id} but status/direction don't match requirements. Generating anyway."
+        if not can_generate_receipt:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Receipt can only be generated after payment is confirmed or when shipment arrives at warehouse.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Import document service
         from .document_service import generate_receipt, save_receipt_to_storage
 
-        # Get language from request (default: 'ar')
-        language = request.GET.get("language", "ar")
+        # Get language from request (default: 'en' for receipt)
+        language = request.GET.get("language", "en")
         if language not in ["ar", "en"]:
-            language = "ar"
+            language = "en"
 
         # If receipt file exists, read it and send email, then return
         if shipment.receipt_file:
@@ -5108,7 +5109,7 @@ def download_receipt_view(request, pk):
                 with open(shipment.receipt_file.path, "rb") as pdf_file:
                     pdf_bytes = pdf_file.read()
 
-                    # Send receipt by email even if file exists (same as shipping labels)
+                    # Send emails even if receipt already exists (same as invoice)
                     try:
                         logger.info(
                             f"📧 Receipt file exists, sending emails for shipment {shipment.id}"
@@ -5157,11 +5158,15 @@ def download_receipt_view(request, pk):
         # Generate receipt PDF
         try:
             pdf_bytes = generate_receipt(shipment, language=language)
+        except ValueError as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except Exception as gen_error:
             logger.error(
                 f"Error generating receipt PDF: {str(gen_error)}", exc_info=True
             )
-            # Return error as JSON response (not PDF) so frontend can handle it
             return Response(
                 {
                     "success": False,
@@ -5170,38 +5175,52 @@ def download_receipt_view(request, pk):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        # Send receipt by email (same logic as shipping labels - send BEFORE saving)
-        try:
-            logger.info(
-                f"📧 Attempting to send receipt emails for shipment {shipment.id}"
-            )
-            from .email_service import (
-                send_receipt_email_to_admin,
-                send_receipt_email_to_user,
-            )
-
-            user_result = send_receipt_email_to_user(shipment, pdf_bytes)
-            admin_result = send_receipt_email_to_admin(shipment, pdf_bytes)
-            logger.info(
-                f"📧 Receipt email results - User: {user_result}, Admin: {admin_result}"
-            )
-        except Exception as email_error:
-            logger.error(
-                f"❌ Failed to send receipt emails: {str(email_error)}", exc_info=True
-            )
-            # Don't fail if email fails
-
-        # Save to storage if not already saved
+        # Save to storage if not already saved (always try to save)
+        receipt_saved = False
         if not shipment.receipt_file:
             try:
                 save_receipt_to_storage(shipment, pdf_bytes)
                 logger.info(f"✅ Receipt saved to storage for shipment {shipment.id}")
+                receipt_saved = True
             except Exception as save_error:
                 logger.error(
                     f"Failed to save receipt to storage: {str(save_error)}",
                     exc_info=True,
                 )
                 # Continue anyway - we can still return the PDF
+
+        # Send emails if receipt was just generated (not already existed)
+        if receipt_saved:
+            try:
+                from .email_service import (
+                    send_receipt_email_to_admin,
+                    send_receipt_email_to_user,
+                )
+
+                user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
+                admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
+                if user_sent:
+                    logger.info(
+                        f"✅ Receipt email sent to user for shipment {shipment.id}"
+                    )
+                else:
+                    logger.warning(
+                        f"⚠️ Receipt email to user failed for shipment {shipment.id} (check email config or user email)"
+                    )
+                if admin_sent:
+                    logger.info(
+                        f"✅ Receipt email sent to admin for shipment {shipment.id}"
+                    )
+                else:
+                    logger.warning(
+                        f"⚠️ Receipt email to admin failed for shipment {shipment.id} (check email config)"
+                    )
+            except Exception as email_error:
+                logger.error(
+                    f"❌ Failed to send receipt emails: {str(email_error)}",
+                    exc_info=True,
+                )
+                # Don't fail if email fails
 
         # Return PDF as response
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
@@ -5218,7 +5237,10 @@ def download_receipt_view(request, pk):
     except Exception as e:
         logger.error(f"Error downloading receipt: {str(e)}", exc_info=True)
         return Response(
-            {"success": False, "error": f"An error occurred: {str(e)}"},
+            {
+                "success": False,
+                "error": f"An error occurred while generating receipt: {str(e)}",
+            },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

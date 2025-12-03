@@ -16,6 +16,7 @@ from weasyprint.text.fonts import FontConfiguration
 import io
 import os
 import base64
+import re
 import qrcode
 
 from .models import LCLShipment, FCLQuote, Price, PackagingPrice, SyrianProvincePrice
@@ -605,11 +606,18 @@ def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_la
         PDF bytes containing all shipping labels
     """
     try:
+        # Validate shipment
+        if not shipment:
+            raise ValueError("Shipment is required")
+        
         # Get company info
         company_info = get_company_info()
+        if not company_info or not isinstance(company_info, dict):
+            raise ValueError("Company info is not available")
         
         # Generate QR Code for tracking
-        tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
+        site_url = company_info.get('site_url', 'https://medo-freight.eu')
+        tracking_url = f"{site_url}/tracking?shipment_id={shipment.id}"
         qr_code_base64 = None
         try:
             qr = qrcode.QRCode(
@@ -629,7 +637,15 @@ def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_la
             logger.warning(f"Could not generate QR code: {str(e)}")
         
         # Generate barcode for shipment number
-        barcode_base64 = generate_barcode(shipment.shipment_number or str(shipment.id))
+        barcode_base64 = None
+        try:
+            shipment_number = shipment.shipment_number or str(shipment.id) if shipment else "000000"
+            barcode_base64 = generate_barcode(shipment_number)
+            if not barcode_base64:
+                logger.warning(f"Barcode generation returned None for shipment {shipment.id if shipment else 'unknown'}")
+        except Exception as barcode_error:
+            logger.warning(f"Could not generate barcode: {str(barcode_error)}")
+            barcode_base64 = None
         
         # Calculate total number of labels needed
         parcels_data = shipment.parcels if shipment.parcels else []
@@ -638,7 +654,12 @@ def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_la
         if num_labels is not None and num_labels > 0:
             total_labels = num_labels
             # Use first parcel data for all labels
-            base_parcel = parcels_data[0] if parcels_data else {}
+            base_parcel = {}
+            if parcels_data:
+                first_parcel = parcels_data[0]
+                if first_parcel and isinstance(first_parcel, dict):
+                    base_parcel = first_parcel.copy()
+            
             label_parcels = []
             for i in range(total_labels):
                 label_parcels.append({
@@ -652,7 +673,12 @@ def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_la
             label_parcels = []  # List of parcels with their repeat counts
             
             for parcel_data in parcels_data:
-                repeat_count = int(parcel_data.get("repeatCount", 1))
+                # Skip None or invalid parcel data
+                if not parcel_data or not isinstance(parcel_data, dict):
+                    logger.warning(f"Skipping invalid parcel data: {parcel_data}")
+                    continue
+                
+                repeat_count = int(parcel_data.get("repeatCount", 1) or 1)
                 total_labels += repeat_count
                 # Add this parcel repeat_count times
                 for i in range(repeat_count):
@@ -669,41 +695,157 @@ def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_la
         all_labels_html = []
         
         for idx, parcel in enumerate(label_parcels, 1):
+            # Ensure parcel is always a dict
+            if not parcel or not isinstance(parcel, dict):
+                parcel = {}
+            
+            # Ensure all context values are safe
             context = {
                 'shipment': shipment,
-                'company': company_info,
-                'parcel': parcel,
+                'company': company_info if company_info else {},
+                'parcel': parcel if parcel else {},
                 'parcel_index': idx,
                 'total_labels': total_labels,
-                'language': language,
-                'qr_code_base64': qr_code_base64,
-                'barcode_base64': barcode_base64,
+                'language': language or 'en',
+                'qr_code_base64': qr_code_base64 or '',
+                'barcode_base64': barcode_base64 or '',
             }
             
             # Render label template
-            label_html = render_to_string('documents/shipping_label.html', context)
-            all_labels_html.append(label_html)
+            try:
+                label_html = render_to_string('documents/shipping_label.html', context)
+                if label_html and len(label_html.strip()) > 0:
+                    all_labels_html.append(label_html)
+                else:
+                    logger.warning(f"Empty HTML generated for label {idx}, skipping")
+            except Exception as render_error:
+                logger.error(f"Error rendering label {idx}: {str(render_error)}", exc_info=True)
+                # Continue with next label
+                continue
         
-        # Combine all labels into one HTML document with page breaks
-        combined_html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page { size: 6in 4in; margin: 0.15in; } .page-break { page-break-after: always; }</style></head><body>'
-        for i, label_html in enumerate(all_labels_html):
-            combined_html += label_html
-            if i < len(all_labels_html) - 1:
-                combined_html += '<div class="page-break"></div>'
-        combined_html += '</body></html>'
+        # Combine all labels into one HTML document
+        # Extract CSS from first label (remove @page to avoid issues)
+        css_content = ""
+        if all_labels_html and len(all_labels_html) > 0:
+            try:
+                style_match = re.search(r'<style[^>]*>(.*?)</style>', all_labels_html[0], re.DOTALL | re.IGNORECASE)
+                if style_match and style_match.group(1):
+                    css_content = style_match.group(1)
+                    # Remove @page rules completely - we'll add it via stylesheets
+                    css_content = re.sub(r'@page\s*\{[^}]*\}', '', css_content, flags=re.DOTALL | re.IGNORECASE)
+            except Exception as e:
+                logger.warning(f"Could not extract CSS from label HTML: {str(e)}")
+                css_content = ""
         
-        # Generate PDF using WeasyPrint
-        font_config = FontConfiguration()
-        html = HTML(string=combined_html, base_url=settings.BASE_DIR)
+        # Build combined HTML - each label on separate page
+        # Build HTML string carefully to avoid CSS curly brace issues
+        combined_html = '<!DOCTYPE html>\n'
+        combined_html += '<html>\n'
+        combined_html += '<head>\n'
+        combined_html += '    <meta charset="UTF-8">\n'
+        combined_html += '    <style>\n'
+        combined_html += css_content + '\n'
+        combined_html += '    </style>\n'
+        combined_html += '</head>\n'
+        combined_html += '<body>\n'
         
-        # Custom page size: 6x4 inches (width x height)
-        pdf_bytes = html.write_pdf(
-            font_config=font_config,
-            stylesheets=[CSS(string='@page { size: 6in 4in; margin: 0.15in; }')]
-        )
+        # Add each label's body content
+        for idx, label_html in enumerate(all_labels_html, 1):
+            try:
+                # Extract body content
+                body_match = re.search(r'<body[^>]*>(.*?)</body>', label_html, re.DOTALL | re.IGNORECASE)
+                if body_match and body_match.group(1):
+                    body_content = body_match.group(1).strip()
+                    # Add page break except for last label
+                    if idx < len(all_labels_html):
+                        combined_html += f'<div style="page-break-after: always;">{body_content}</div>'
+                    else:
+                        combined_html += f'<div>{body_content}</div>'
+                else:
+                    # Fallback: extract label-container
+                    container_match = re.search(r'<div[^>]*class=["\']label-container["\'][^>]*>(.*?)</div>', label_html, re.DOTALL | re.IGNORECASE)
+                    if container_match and container_match.group(1):
+                        if idx < len(all_labels_html):
+                            combined_html += f'<div style="page-break-after: always;"><div class="label-container">{container_match.group(1).strip()}</div></div>'
+                        else:
+                            combined_html += f'<div><div class="label-container">{container_match.group(1).strip()}</div></div>'
+                    else:
+                        # Last resort: use the entire HTML
+                        if idx < len(all_labels_html):
+                            combined_html += f'<div style="page-break-after: always;">{label_html}</div>'
+                        else:
+                            combined_html += f'<div>{label_html}</div>'
+            except Exception as e:
+                logger.error(f"Error processing label {idx}: {str(e)}", exc_info=True)
+                # Skip this label and continue
+                continue
         
-        logger.info(f"Successfully generated {total_labels} shipping labels for shipment {shipment.id}")
-        return pdf_bytes
+        combined_html += '</body>\n'
+        combined_html += '</html>'
+        
+        # Validate combined HTML
+        if not combined_html or len(combined_html.strip()) < 100:
+            raise ValueError("Generated HTML is empty or too short")
+        
+        # Validate that we have labels
+        if not all_labels_html or len(all_labels_html) == 0:
+            raise ValueError("No labels were generated")
+        
+        # Generate PDF using WeasyPrint with 6x4 inch page size
+        # Use CSS stylesheet to set page size (avoids extra_skip_height bug)
+        try:
+            font_config = FontConfiguration()
+            
+            # Ensure base_url is valid
+            base_url = settings.BASE_DIR if hasattr(settings, 'BASE_DIR') else None
+            if not base_url:
+                base_url = os.path.dirname(os.path.abspath(__file__))
+            
+            # Ensure base_url is a string path
+            if isinstance(base_url, str):
+                base_url = base_url
+            else:
+                base_url = str(base_url) if base_url else os.path.dirname(os.path.abspath(__file__))
+            
+            html = HTML(string=combined_html, base_url=base_url)
+            
+            # Create CSS for 6x4 inch page size
+            page_css = None
+            try:
+                page_css = CSS(string='@page { size: 6in 4in; margin: 0; }')
+            except Exception as css_error:
+                logger.warning(f"Could not create CSS stylesheet: {str(css_error)}")
+                # Continue without custom CSS - WeasyPrint will use default
+            
+            # Generate PDF with custom page size via stylesheet
+            try:
+                if page_css:
+                    pdf_bytes = html.write_pdf(font_config=font_config, stylesheets=[page_css])
+                else:
+                    pdf_bytes = html.write_pdf(font_config=font_config)
+            except Exception as write_error:
+                logger.error(f"Error in html.write_pdf: {str(write_error)}", exc_info=True)
+                # Try without stylesheet as fallback
+                try:
+                    pdf_bytes = html.write_pdf(font_config=font_config)
+                except Exception as fallback_error:
+                    logger.error(f"Error in fallback html.write_pdf: {str(fallback_error)}", exc_info=True)
+                    raise ValueError(f"Failed to generate PDF: {str(fallback_error)}")
+            
+            if not pdf_bytes or len(pdf_bytes) == 0:
+                raise ValueError("Generated PDF is empty")
+            
+            logger.info(f"Successfully generated {total_labels} shipping labels for shipment {shipment.id} ({len(pdf_bytes)} bytes)")
+            return pdf_bytes
+        except ValueError:
+            # Re-raise ValueError as-is
+            raise
+        except Exception as pdf_error:
+            logger.error(f"Error generating PDF: {str(pdf_error)}", exc_info=True)
+            # Log the full traceback for debugging
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            raise ValueError(f"Failed to generate PDF: {str(pdf_error)}")
         
     except Exception as e:
         logger.error(f"Error generating shipping labels: {str(e)}", exc_info=True)
