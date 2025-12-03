@@ -274,6 +274,11 @@ export default function CreateShipmentPage() {
     // Payment method is required
     if (!paymentMethod) return false;
 
+    // For eu-sy direction, only Stripe is allowed
+    if (direction === "eu-sy" && paymentMethod !== "stripe") {
+      return false;
+    }
+
     // If internal-transfer is selected, validate required fields
     if (paymentMethod === "internal-transfer") {
       return (
@@ -285,7 +290,14 @@ export default function CreateShipmentPage() {
 
     // For stripe and cash, just having payment method is enough
     return true;
-  }, [paymentMethod, transferSenderName, transferReference, transferSlip]);
+  }, [paymentMethod, direction, transferSenderName, transferReference, transferSlip]);
+
+  // Auto-select Stripe payment for eu-sy direction
+  useEffect(() => {
+    if (direction === "eu-sy" && currentStep >= 7 && !paymentMethod) {
+      setPaymentMethod("stripe");
+    }
+  }, [direction, currentStep, paymentMethod]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -669,7 +681,10 @@ export default function CreateShipmentPage() {
         receiver_email: receiver.email,
         receiver_phone: receiver.phone,
         receiver_address: `${receiver.street} ${receiver.streetNumber}`.trim(),
-        receiver_city: receiver.city,
+        receiver_city:
+          direction === "eu-sy"
+            ? receiver?.province || receiver?.country || ""
+            : receiver?.city || "",
         receiver_postal_code: receiver.postalCode || "",
         receiver_country: receiverCountry,
         parcels: parcels,
@@ -1508,7 +1523,14 @@ export default function CreateShipmentPage() {
               <Step9Payment
                 direction={direction}
                 paymentMethod={paymentMethod}
-                onPaymentMethodChange={setPaymentMethod}
+                onPaymentMethodChange={(method) => {
+                  // For eu-sy direction, only allow Stripe
+                  if (direction === "eu-sy" && method !== "stripe" && method !== null) {
+                    setPaymentMethod("stripe");
+                  } else {
+                    setPaymentMethod(method);
+                  }
+                }}
                 transferSenderName={transferSenderName}
                 transferReference={transferReference}
                 transferSlip={transferSlip}

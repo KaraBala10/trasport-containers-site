@@ -529,7 +529,11 @@ export default function Step3SenderReceiver({
                   {language === "ar" ? "اختر..." : "Select..."}
                 </option>
                 {middleEastCountries.map((country) => (
-                  <option key={country.code} value={country.code}>
+                  <option
+                    key={country.code}
+                    value={country.code}
+                    disabled={country.code !== "SY"}
+                  >
                     {language === "ar" ? country.nameAr : country.name}
                   </option>
                 ))}
@@ -602,11 +606,23 @@ export default function Step3SenderReceiver({
                 <option value="">
                   {language === "ar" ? "اختر..." : "Select..."}
                 </option>
-                {syrianProvinces.map((province) => (
-                  <option key={province.code} value={province.code}>
-                    {language === "ar" ? province.nameAr : province.name}
-                  </option>
-                ))}
+                {syrianProvinces.map((province) => {
+                  const disabledProvinces = [
+                    "HASAKA",
+                    "DER_EZZOR",
+                    "RAQQA",
+                    "SUWEIDA",
+                  ];
+                  return (
+                    <option
+                      key={province.code}
+                      value={province.code}
+                      disabled={disabledProvinces.includes(province.code)}
+                    >
+                      {language === "ar" ? province.nameAr : province.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           )}
@@ -813,7 +829,11 @@ export default function Step3SenderReceiver({
                   {language === "ar" ? "اختر..." : "Select..."}
                 </option>
                 {middleEastCountries.map((country) => (
-                  <option key={country.code} value={country.code}>
+                  <option
+                    key={country.code}
+                    value={country.code}
+                    disabled={country.code !== "SY"}
+                  >
                     {language === "ar" ? country.nameAr : country.name}
                   </option>
                 ))}
@@ -912,11 +932,23 @@ export default function Step3SenderReceiver({
                 <option value="">
                   {language === "ar" ? "اختر..." : "Select..."}
                 </option>
-                {syrianProvinces.map((province) => (
-                  <option key={province.code} value={province.code}>
-                    {language === "ar" ? province.nameAr : province.name}
-                  </option>
-                ))}
+                {syrianProvinces.map((province) => {
+                  const disabledProvinces = [
+                    "HASAKA",
+                    "DER_EZZOR",
+                    "RAQQA",
+                    "SUWEIDA",
+                  ];
+                  return (
+                    <option
+                      key={province.code}
+                      value={province.code}
+                      disabled={disabledProvinces.includes(province.code)}
+                    >
+                      {language === "ar" ? province.nameAr : province.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           )}
