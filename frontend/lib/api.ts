@@ -445,6 +445,9 @@ export const apiService = {
   updateProductRequest: (requestId: number, data: { status?: string; admin_notes?: string }) => {
     return apiClient.patch(`/admin/product-requests/${requestId}/`, data);
   },
+  deleteProductRequest: (requestId: number) => {
+    return apiClient.delete(`/admin/product-requests/${requestId}/delete/`);
+  },
 
   // CBM Calculation API
   calculateCBM: (length: number, width: number, height: number) => {

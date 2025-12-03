@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { apiService } from "@/lib/api";
@@ -208,6 +209,16 @@ export default function DashboardPage() {
   const [productRequestStatus, setProductRequestStatus] = useState<string>("");
   const [productRequestNotes, setProductRequestNotes] = useState<string>("");
   const [updatingProductRequest, setUpdatingProductRequest] = useState(false);
+  const [deletingProductRequest, setDeletingProductRequest] = useState<number | null>(null);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    requestId: number | null;
+    productName: string;
+  }>({
+    isOpen: false,
+    requestId: null,
+    productName: "",
+  });
 
   // Dialog state
   const [dialogConfig, setDialogConfig] = useState<{
@@ -1065,6 +1076,49 @@ export default function DashboardPage() {
       );
     } finally {
       setUpdatingProductRequest(false);
+    }
+  };
+
+  // Handle delete product request (admin only) - open confirmation modal
+  const handleDeleteProductRequest = (request: ProductRequest) => {
+    setDeleteConfirmModal({
+      isOpen: true,
+      requestId: request.id,
+      productName: request.product_name,
+    });
+  };
+
+  // Confirm delete product request
+  const confirmDeleteProductRequest = async () => {
+    if (!deleteConfirmModal.requestId) return;
+
+    try {
+      setDeletingProductRequest(deleteConfirmModal.requestId);
+      setDeleteConfirmModal({ isOpen: false, requestId: null, productName: "" });
+      
+      await apiService.deleteProductRequest(deleteConfirmModal.requestId);
+
+      // Refresh product requests
+      const response = user?.is_superuser
+        ? await apiService.getAllProductRequests()
+        : await apiService.getUserProductRequests();
+      
+      if (response.data?.success && Array.isArray(response.data.data)) {
+        setProductRequests(response.data.data);
+      }
+
+      showSuccess(
+        language === "ar" 
+          ? "تم حذف الطلب بنجاح" 
+          : "Product request deleted successfully"
+      );
+    } catch (error: any) {
+      console.error("Error deleting product request:", error);
+      showError(
+        t.error + ": " + (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setDeletingProductRequest(null);
     }
   };
 
@@ -7542,27 +7596,57 @@ export default function DashboardPage() {
                           </td>
                           {user?.is_superuser && (
                             <td className="py-4 px-4">
-                              <button
-                                onClick={() =>
-                                  handleEditProductRequest(request)
-                                }
-                                className="text-primary-yellow hover:text-primary-yellow/80 font-medium text-sm flex items-center gap-1"
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() =>
+                                    handleEditProductRequest(request)
+                                  }
+                                  className="text-primary-yellow hover:text-primary-yellow/80 font-medium text-sm flex items-center gap-1"
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                  />
-                                </svg>
-                                {t.edit}
-                              </button>
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    />
+                                  </svg>
+                                  {t.edit}
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDeleteProductRequest(request)
+                                  }
+                                  disabled={deletingProductRequest === request.id}
+                                  className="text-red-600 hover:text-red-700 font-medium text-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                  {deletingProductRequest === request.id
+                                    ? language === "ar"
+                                      ? "جاري الحذف..."
+                                      : "Deleting..."
+                                    : language === "ar"
+                                    ? "حذف"
+                                    : "Delete"}
+                                </button>
+                              </div>
                             </td>
                           )}
                         </tr>
@@ -7827,6 +7911,129 @@ export default function DashboardPage() {
         cancelText={dialogConfig.cancelText}
         showCancel={dialogConfig.showCancel}
       />
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmModal.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() =>
+                setDeleteConfirmModal({
+                  isOpen: false,
+                  requestId: null,
+                  productName: "",
+                })
+              }
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`relative w-full max-w-md bg-white rounded-2xl shadow-2xl border-2 border-gray-200 overflow-hidden ${
+                language === "ar" ? "text-right" : "text-left"
+              }`}
+            >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">
+                    {language === "ar" ? "تأكيد الحذف" : "Confirm Delete"}
+                  </h3>
+                  <p className="text-sm text-red-100 mt-1">
+                    {language === "ar"
+                      ? "هذا الإجراء لا يمكن التراجع عنه"
+                      : "This action cannot be undone"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <p className="text-gray-700 text-base mb-4">
+                {language === "ar" ? (
+                  <>
+                    هل أنت متأكد من حذف طلب المنتج{" "}
+                    <span className="font-semibold text-gray-900">
+                      "{deleteConfirmModal.productName}"
+                    </span>
+                    ؟
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to delete the product request{" "}
+                    <span className="font-semibold text-gray-900">
+                      "{deleteConfirmModal.productName}"
+                    </span>
+                    ?
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div
+              className={`px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3 ${
+                language === "ar" ? "flex-row-reverse" : "flex-row"
+              }`}
+            >
+              <button
+                onClick={() =>
+                  setDeleteConfirmModal({
+                    isOpen: false,
+                    requestId: null,
+                    productName: "",
+                  })
+                }
+                className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+              >
+                {language === "ar" ? "إلغاء" : "Cancel"}
+              </button>
+              <button
+                onClick={confirmDeleteProductRequest}
+                disabled={deletingProductRequest !== null}
+                className={`px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+                  language === "ar" ? "mr-auto" : "ml-auto"
+                }`}
+              >
+                {deletingProductRequest !== null
+                  ? language === "ar"
+                    ? "جاري الحذف..."
+                    : "Deleting..."
+                  : language === "ar"
+                  ? "حذف"
+                  : "Delete"}
+              </button>
+            </div>
+          </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

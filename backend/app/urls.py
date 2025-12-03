@@ -60,6 +60,7 @@ from .views import (
     update_fcl_quote_status_view,
     update_lcl_shipment_status_view,
     update_product_request_view,
+    delete_product_request_view,
     user_product_requests_view,
 )
 
@@ -206,6 +207,11 @@ urlpatterns = [
         "admin/product-requests/<int:pk>/",
         update_product_request_view,
         name="update_product_request",
+    ),
+    path(
+        "admin/product-requests/<int:pk>/delete/",
+        delete_product_request_view,
+        name="delete_product_request",
     ),
     # Admin CRUD endpoints for Price
     path(

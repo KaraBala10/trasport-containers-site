@@ -2509,6 +2509,43 @@ def update_product_request_view(request, pk):
         )
 
 
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_product_request_view(request, pk):
+    """Delete product request (Admin only)"""
+    if not request.user.is_superuser:
+        return Response(
+            {"success": False, "error": "Only admins can delete product requests"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        product_request = ProductRequest.objects.get(pk=pk)
+        product_name = product_request.product_name
+        product_request.delete()
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Product request '{product_name}' deleted successfully",
+            },
+            status=status.HTTP_200_OK,
+        )
+    except ProductRequest.DoesNotExist:
+        return Response(
+            {"success": False, "error": "Product request not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in delete_product_request_view: {str(e)}")
+        logger.error(traceback.format_exc())
+        return Response(
+            {"success": False, "error": "Failed to delete product request"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 # ============================================================================
 # SENDCLOUD API ENDPOINTS
 # ============================================================================
