@@ -11,8 +11,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import (ListCreateAPIView,
-                                     RetrieveUpdateDestroyAPIView)
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -33,22 +32,46 @@ except ImportError:
     stripe = None
 
 from .email_service import (
-    send_contact_form_notification, send_edit_request_confirmation_to_user,
-    send_fcl_quote_confirmation_email, send_fcl_quote_notification,
+    send_contact_form_notification,
+    send_edit_request_confirmation_to_user,
+    send_fcl_quote_confirmation_email,
+    send_fcl_quote_notification,
     send_lcl_shipment_payment_reminder_email,
     send_lcl_shipment_payment_reminder_notification_to_admin,
-    send_payment_reminder_email, send_payment_reminder_notification_to_admin,
-    send_status_update_email, send_status_update_notification_to_admin)
-from .models import (City, ContactMessage, Country, EditRequestMessage,
-                     FCLQuote, LCLShipment, PackagingPrice, Port, Price,
-                     ProductRequest, SyrianProvincePrice)
-from .serializers import (ChangePasswordSerializer, CitySerializer,
-                          ContactMessageSerializer, CountrySerializer,
-                          EditRequestMessageSerializer, FCLQuoteSerializer,
-                          LCLShipmentSerializer, PackagingPriceSerializer,
-                          PortSerializer, PriceSerializer,
-                          ProductRequestSerializer, RegisterSerializer,
-                          SyrianProvincePriceSerializer, UserSerializer)
+    send_payment_reminder_email,
+    send_payment_reminder_notification_to_admin,
+    send_status_update_email,
+    send_status_update_notification_to_admin,
+)
+from .models import (
+    City,
+    ContactMessage,
+    Country,
+    EditRequestMessage,
+    FCLQuote,
+    LCLShipment,
+    PackagingPrice,
+    Port,
+    Price,
+    ProductRequest,
+    SyrianProvincePrice,
+)
+from .serializers import (
+    ChangePasswordSerializer,
+    CitySerializer,
+    ContactMessageSerializer,
+    CountrySerializer,
+    EditRequestMessageSerializer,
+    FCLQuoteSerializer,
+    LCLShipmentSerializer,
+    PackagingPriceSerializer,
+    PortSerializer,
+    PriceSerializer,
+    ProductRequestSerializer,
+    RegisterSerializer,
+    SyrianProvincePriceSerializer,
+    UserSerializer,
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -920,7 +943,11 @@ def update_fcl_quote_status_view(request, pk):
             )
 
         # Allow setting/updating total_price and amount_paid for OFFER_SENT and PENDING_PAYMENT
-        if new_status == "OFFER_SENT" or new_status == "PENDING_PAYMENT" or quote.status == "PENDING_PAYMENT":
+        if (
+            new_status == "OFFER_SENT"
+            or new_status == "PENDING_PAYMENT"
+            or quote.status == "PENDING_PAYMENT"
+        ):
             # Allow setting/updating total_price
             total_price = request.data.get("total_price")
             if total_price is not None:
@@ -1989,7 +2016,8 @@ def stripe_webhook_view(request):
                                     from .sendcloud_service import (
                                         SendcloudAPIError,
                                         SendcloudValidationError,
-                                        create_parcel)
+                                        create_parcel,
+                                    )
 
                                     # Check if Sendcloud is needed (EU pickup with shipping method selected)
                                     if (
@@ -2596,9 +2624,11 @@ def calculate_eu_shipping_view(request):
     - Weight/dimension limits enforced
     - Secure logging (no personal data)
     """
-    from .sendcloud_service import (SendcloudAPIError,
-                                    SendcloudValidationError,
-                                    get_shipping_methods)
+    from .sendcloud_service import (
+        SendcloudAPIError,
+        SendcloudValidationError,
+        get_shipping_methods,
+    )
 
     logger = logging.getLogger(__name__)
 
@@ -2764,9 +2794,11 @@ def get_shipping_methods_simple_view(request):
         ]
     }
     """
-    from .sendcloud_service import (SendcloudAPIError,
-                                    SendcloudValidationError,
-                                    get_shipping_methods_simple)
+    from .sendcloud_service import (
+        SendcloudAPIError,
+        SendcloudValidationError,
+        get_shipping_methods_simple,
+    )
 
     logger = logging.getLogger(__name__)
 
@@ -2891,8 +2923,11 @@ def download_sendcloud_label_view(request, shipment_id):
     """
     from django.http import HttpResponse
 
-    from .sendcloud_service import (SendcloudAPIError,
-                                    SendcloudValidationError, download_label)
+    from .sendcloud_service import (
+        SendcloudAPIError,
+        SendcloudValidationError,
+        download_label,
+    )
 
     logger = logging.getLogger(__name__)
 
@@ -2962,8 +2997,11 @@ def approve_eu_shipping_view(request, shipment_id):
 
     Creates a parcel in Sendcloud using the form data from the shipment
     """
-    from .sendcloud_service import (SendcloudAPIError,
-                                    SendcloudValidationError, create_parcel)
+    from .sendcloud_service import (
+        SendcloudAPIError,
+        SendcloudValidationError,
+        create_parcel,
+    )
 
     logger = logging.getLogger(__name__)
 
@@ -3260,9 +3298,11 @@ def sendcloud_webhook_view(request):
     - Payload validation
     - Prevents fake webhook attacks
     """
-    from .sendcloud_service import (SendcloudValidationError,
-                                    parse_webhook_data,
-                                    verify_webhook_signature)
+    from .sendcloud_service import (
+        SendcloudValidationError,
+        parse_webhook_data,
+        verify_webhook_signature,
+    )
 
     logger = logging.getLogger(__name__)
 
@@ -3772,17 +3812,19 @@ class LCLShipmentView(generics.CreateAPIView):
         logger.info(f"Request method: {request.method}")
         logger.info(f"Content-Type: {request.content_type}")
         logger.info(f"request.data type: {type(request.data)}")
-        logger.info(f"request.data keys: {list(request.data.keys()) if hasattr(request.data, 'keys') else 'N/A'}")
+        logger.info(
+            f"request.data keys: {list(request.data.keys()) if hasattr(request.data, 'keys') else 'N/A'}"
+        )
         logger.info(f"request.FILES keys: {list(request.FILES.keys())}")
         logger.info(f"request.FILES count: {len(request.FILES)}")
-        
+
         # Check if request contains FormData with shipment_data
         shipment_data_json = request.data.get("shipment_data")
         logger.info(f"shipment_data_json exists: {shipment_data_json is not None}")
         logger.info(f"shipment_data_json type: {type(shipment_data_json)}")
         if shipment_data_json:
             logger.info(f"shipment_data_json length: {len(str(shipment_data_json))}")
-        
+
         if shipment_data_json:
             # Parse JSON data
             try:
@@ -3796,30 +3838,36 @@ class LCLShipmentView(generics.CreateAPIView):
                     {"success": False, "error": "Invalid shipment data format"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             # Extract parcels from shipment_data
             parcels = shipment_data.get("parcels", [])
             logger.info(f"Processing {len(parcels)} parcels with images")
             logger.info(f"Available FILES keys: {list(request.FILES.keys())}")
-            
+
             # Process images and add URLs to parcels
             for parcel_index, parcel in enumerate(parcels):
-                logger.info(f"Processing parcel {parcel_index}: isElectronics={parcel.get('isElectronicsShipment')}")
+                logger.info(
+                    f"Processing parcel {parcel_index}: isElectronics={parcel.get('isElectronicsShipment')}"
+                )
                 # Initialize image arrays
                 parcel["photo_urls"] = []
                 parcel["device_photo_url"] = None
                 parcel["electronics_picture_url"] = None
-                
+
                 # Process parcel photos (for non-electronics)
                 photo_index = 0
                 while True:
                     photo_key = f"parcel_{parcel_index}_photo_{photo_index}"
                     if photo_key in request.FILES:
                         photo_file = request.FILES[photo_key]
-                        logger.info(f"Found photo: {photo_key}, size: {photo_file.size}")
+                        logger.info(
+                            f"Found photo: {photo_key}, size: {photo_file.size}"
+                        )
                         # Save photo
                         file_path = f"parcel_photos/shipment_{parcel_index}/photo_{photo_index}_{photo_file.name}"
-                        saved_path = default_storage.save(file_path, ContentFile(photo_file.read()))
+                        saved_path = default_storage.save(
+                            file_path, ContentFile(photo_file.read())
+                        )
                         # Get URL
                         photo_url = default_storage.url(saved_path)
                         parcel["photo_urls"].append(photo_url)
@@ -3827,47 +3875,77 @@ class LCLShipmentView(generics.CreateAPIView):
                         photo_index += 1
                     else:
                         break
-                logger.info(f"Parcel {parcel_index} has {len(parcel['photo_urls'])} photos")
-                
+                logger.info(
+                    f"Parcel {parcel_index} has {len(parcel['photo_urls'])} photos"
+                )
+
                 # Process electronics photos
-                if parcel.get("isElectronicsShipment") or parcel.get("is_electronics_shipment"):
+                if parcel.get("isElectronicsShipment") or parcel.get(
+                    "is_electronics_shipment"
+                ):
                     # Device photo
                     device_photo_key = f"parcel_{parcel_index}_device_photo"
                     if device_photo_key in request.FILES:
                         device_photo_file = request.FILES[device_photo_key]
                         file_path = f"electronics_photos/shipment_{parcel_index}/device_{device_photo_file.name}"
-                        saved_path = default_storage.save(file_path, ContentFile(device_photo_file.read()))
+                        saved_path = default_storage.save(
+                            file_path, ContentFile(device_photo_file.read())
+                        )
                         parcel["device_photo_url"] = default_storage.url(saved_path)
-                    
+
                     # Electronics picture
-                    electronics_picture_key = f"parcel_{parcel_index}_electronics_picture"
+                    electronics_picture_key = (
+                        f"parcel_{parcel_index}_electronics_picture"
+                    )
                     if electronics_picture_key in request.FILES:
-                        electronics_picture_file = request.FILES[electronics_picture_key]
+                        electronics_picture_file = request.FILES[
+                            electronics_picture_key
+                        ]
                         file_path = f"electronics_photos/shipment_{parcel_index}/electronics_{electronics_picture_file.name}"
-                        saved_path = default_storage.save(file_path, ContentFile(electronics_picture_file.read()))
-                        parcel["electronics_picture_url"] = default_storage.url(saved_path)
-            
+                        saved_path = default_storage.save(
+                            file_path, ContentFile(electronics_picture_file.read())
+                        )
+                        parcel["electronics_picture_url"] = default_storage.url(
+                            saved_path
+                        )
+
             # Clean up parcels: remove any File objects that might have been included
             for parcel in parcels:
                 # Remove any File objects or empty objects that might have been serialized
                 if "photos" in parcel and isinstance(parcel["photos"], list):
                     # Remove empty objects from photos array (these are File objects that were serialized)
-                    parcel["photos"] = [p for p in parcel["photos"] if p and not (isinstance(p, dict) and len(p) == 0)]
+                    parcel["photos"] = [
+                        p
+                        for p in parcel["photos"]
+                        if p and not (isinstance(p, dict) and len(p) == 0)
+                    ]
                     # If photos array is now empty or only contains empty objects, remove it
                     if not parcel["photos"]:
                         del parcel["photos"]
-                
+
                 # Remove devicePhoto and electronicsPicture if they're empty objects
-                if "devicePhoto" in parcel and isinstance(parcel["devicePhoto"], dict) and len(parcel["devicePhoto"]) == 0:
+                if (
+                    "devicePhoto" in parcel
+                    and isinstance(parcel["devicePhoto"], dict)
+                    and len(parcel["devicePhoto"]) == 0
+                ):
                     del parcel["devicePhoto"]
-                if "electronicsPicture" in parcel and isinstance(parcel["electronicsPicture"], dict) and len(parcel["electronicsPicture"]) == 0:
+                if (
+                    "electronicsPicture" in parcel
+                    and isinstance(parcel["electronicsPicture"], dict)
+                    and len(parcel["electronicsPicture"]) == 0
+                ):
                     del parcel["electronicsPicture"]
-            
+
             # Update shipment_data with processed parcels
             shipment_data["parcels"] = parcels
-            logger.info(f"Updated parcels with photo URLs. Parcel 0 has {parcels[0].get('photo_urls', []) if parcels else []} photos")
-            logger.info(f"Final parcels data: {json.dumps(parcels, indent=2, default=str)[:500]}")
-            
+            logger.info(
+                f"Updated parcels with photo URLs. Parcel 0 has {parcels[0].get('photo_urls', []) if parcels else []} photos"
+            )
+            logger.info(
+                f"Final parcels data: {json.dumps(parcels, indent=2, default=str)[:500]}"
+            )
+
             # Replace request.data with processed data for serializer
             request._full_data = shipment_data
         else:
@@ -3875,7 +3953,10 @@ class LCLShipmentView(generics.CreateAPIView):
             shipment_data = dict(request.data)
 
         # Verify reCAPTCHA v3 token if provided
-        recaptcha_token = shipment_data.get("recaptcha_token")
+        # Extract token the same way as registration - try request.data first, then shipment_data
+        recaptcha_token = request.data.get("recaptcha_token") or shipment_data.get(
+            "recaptcha_token"
+        )
 
         # Check if reCAPTCHA is configured (standard v3 only)
         from django.conf import settings
@@ -3933,24 +4014,32 @@ class LCLShipmentView(generics.CreateAPIView):
                     shipment_data["parcels"] = json.loads(shipment_data["parcels"])
                 except (json.JSONDecodeError, TypeError):
                     logger.error("Failed to parse parcels JSON string")
-            
-            logger.info(f"Final shipment_data parcels type: {type(shipment_data.get('parcels'))}")
+
+            logger.info(
+                f"Final shipment_data parcels type: {type(shipment_data.get('parcels'))}"
+            )
             if shipment_data.get("parcels"):
-                logger.info(f"Final shipment_data first parcel: {json.dumps(shipment_data['parcels'][0] if len(shipment_data['parcels']) > 0 else {}, indent=2, default=str)[:500]}")
-            
+                logger.info(
+                    f"Final shipment_data first parcel: {json.dumps(shipment_data['parcels'][0] if len(shipment_data['parcels']) > 0 else {}, indent=2, default=str)[:500]}"
+                )
+
             serializer = self.get_serializer(data=shipment_data)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
-            
+
             # Refresh shipment from DB to get saved parcels
             shipment = serializer.instance
             shipment.refresh_from_db()
             if shipment.parcels and len(shipment.parcels) > 0:
-                logger.info(f"After save, first parcel: {json.dumps(shipment.parcels[0], indent=2, default=str)[:500]}")
-            
+                logger.info(
+                    f"After save, first parcel: {json.dumps(shipment.parcels[0], indent=2, default=str)[:500]}"
+                )
+
             headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED, headers=headers
+            )
+
         # Call parent create method for regular JSON requests
         return super().create(request, *args, **kwargs)
 
@@ -3971,7 +4060,8 @@ class LCLShipmentView(generics.CreateAPIView):
 
             from .email_service import (
                 send_lcl_shipment_confirmation_email,
-                send_lcl_shipment_notification_to_admin)
+                send_lcl_shipment_notification_to_admin,
+            )
 
             def send_emails_async():
                 """Send emails in background thread"""
@@ -4321,12 +4411,15 @@ def update_lcl_shipment_status_view(request, pk):
             if shipment.payment_status == "paid" and not shipment.invoice_file:
                 try:
                     from .document_service import (
-                        generate_consolidated_export_invoice, generate_invoice,
-                        save_invoice_to_storage)
+                        generate_consolidated_export_invoice,
+                        generate_invoice,
+                        save_invoice_to_storage,
+                    )
                     from .email_service import (
                         send_consolidated_export_invoice_email_to_admin,
                         send_invoice_email_to_admin,
-                        send_invoice_email_to_user)
+                        send_invoice_email_to_user,
+                    )
 
                     # Generate regular invoice PDF
                     pdf_bytes = generate_invoice(shipment, language="ar")
@@ -4379,10 +4472,10 @@ def update_lcl_shipment_status_view(request, pk):
                 and shipment.payment_status == "paid"
             ):
                 try:
-                    from .document_service import \
-                        generate_consolidated_export_invoice
-                    from .email_service import \
-                        send_consolidated_export_invoice_email_to_admin
+                    from .document_service import generate_consolidated_export_invoice
+                    from .email_service import (
+                        send_consolidated_export_invoice_email_to_admin,
+                    )
 
                     consolidated_pdf = generate_consolidated_export_invoice(
                         shipment, language="en"
@@ -4417,10 +4510,14 @@ def update_lcl_shipment_status_view(request, pk):
 
             if should_generate_receipt:
                 try:
-                    from .document_service import (generate_receipt,
-                                                   save_receipt_to_storage)
-                    from .email_service import (send_receipt_email_to_admin,
-                                                send_receipt_email_to_user)
+                    from .document_service import (
+                        generate_receipt,
+                        save_receipt_to_storage,
+                    )
+                    from .email_service import (
+                        send_receipt_email_to_admin,
+                        send_receipt_email_to_user,
+                    )
 
                     # Generate receipt PDF
                     pdf_bytes = generate_receipt(shipment, language="ar")
@@ -4470,7 +4567,8 @@ def update_lcl_shipment_status_view(request, pk):
             try:
                 from .email_service import (
                     send_lcl_shipment_status_update_email,
-                    send_lcl_shipment_status_update_notification_to_admin)
+                    send_lcl_shipment_status_update_notification_to_admin,
+                )
 
                 # Send email to user
                 send_lcl_shipment_status_update_email(
@@ -4587,7 +4685,8 @@ def download_invoice_view(request, pk):
                         )
                         from .email_service import (
                             send_invoice_email_to_admin,
-                            send_invoice_email_to_user)
+                            send_invoice_email_to_user,
+                        )
 
                         user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
@@ -4661,8 +4760,10 @@ def download_invoice_view(request, pk):
         # Send emails if invoice was just generated (not already existed)
         if invoice_saved:
             try:
-                from .email_service import (send_invoice_email_to_admin,
-                                            send_invoice_email_to_user)
+                from .email_service import (
+                    send_invoice_email_to_admin,
+                    send_invoice_email_to_user,
+                )
 
                 user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                 admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
@@ -4793,8 +4894,7 @@ def download_consolidated_export_invoice_view(request, pk):
 
         # Send consolidated export invoice by email to admin
         try:
-            from .email_service import \
-                send_consolidated_export_invoice_email_to_admin
+            from .email_service import send_consolidated_export_invoice_email_to_admin
 
             admin_sent = send_consolidated_export_invoice_email_to_admin(
                 shipment, pdf_bytes
@@ -5015,7 +5115,8 @@ def download_receipt_view(request, pk):
                         )
                         from .email_service import (
                             send_receipt_email_to_admin,
-                            send_receipt_email_to_user)
+                            send_receipt_email_to_user,
+                        )
 
                         user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
@@ -5073,8 +5174,10 @@ def download_receipt_view(request, pk):
             logger.info(
                 f"📧 Attempting to send receipt emails for shipment {shipment.id}"
             )
-            from .email_service import (send_receipt_email_to_admin,
-                                        send_receipt_email_to_user)
+            from .email_service import (
+                send_receipt_email_to_admin,
+                send_receipt_email_to_user,
+            )
 
             user_result = send_receipt_email_to_user(shipment, pdf_bytes)
             admin_result = send_receipt_email_to_admin(shipment, pdf_bytes)
@@ -5117,6 +5220,7 @@ def download_receipt_view(request, pk):
             {"success": False, "error": f"An error occurred: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -5186,8 +5290,10 @@ def download_shipping_labels_view(request, pk):
 
         # Send shipping labels by email
         try:
-            from .email_service import (send_shipping_labels_email_to_admin,
-                                        send_shipping_labels_email_to_user)
+            from .email_service import (
+                send_shipping_labels_email_to_admin,
+                send_shipping_labels_email_to_user,
+            )
 
             user_sent = send_shipping_labels_email_to_user(
                 shipment, pdf_bytes, num_labels=num_labels

@@ -615,38 +615,34 @@ export default function CreateShipmentPage() {
 
     setIsProcessingPayment(true);
     try {
-      // Verify reCAPTCHA before creating shipment
+      // Get reCAPTCHA v3 token (same pattern as register page)
       let recaptchaToken = "";
       const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-      const isDevelopment = process.env.NODE_ENV === "development";
 
-      if (executeRecaptcha) {
-        try {
-          recaptchaToken = await executeRecaptcha("create_shipment");
-        } catch (recaptchaError) {
-          if (isDevelopment) {
-            console.warn("reCAPTCHA verification failed:", recaptchaError);
-          }
-          // If reCAPTCHA key is configured, require it in production
-          if (recaptchaSiteKey && !isDevelopment) {
+      if (recaptchaSiteKey) {
+        if (executeRecaptcha) {
+          try {
+            recaptchaToken = await executeRecaptcha("create_shipment");
+            console.log("reCAPTCHA v3 token obtained");
+          } catch (recaptchaError) {
+            console.error("reCAPTCHA execution failed:", recaptchaError);
             showError(
               language === "ar"
-                ? "يرجى التحقق من reCAPTCHA"
-                : "Please complete the reCAPTCHA verification"
+                ? "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى."
+                : "reCAPTCHA verification failed. Please try again."
             );
             setIsProcessingPayment(false);
             return;
           }
+        } else {
+          showError(
+            language === "ar"
+              ? "التحقق من reCAPTCHA مطلوب. يرجى المحاولة مرة أخرى."
+              : "reCAPTCHA verification is required. Please try again."
+          );
+          setIsProcessingPayment(false);
+          return;
         }
-      } else if (recaptchaSiteKey && !isDevelopment) {
-        // reCAPTCHA is required but not available
-        showError(
-          language === "ar"
-            ? "يرجى التحقق من reCAPTCHA"
-            : "Please complete the reCAPTCHA verification"
-        );
-        setIsProcessingPayment(false);
-        return;
       }
 
       // First, create the shipment
@@ -1703,45 +1699,40 @@ export default function CreateShipmentPage() {
                         return;
                       }
 
-                      // Verify reCAPTCHA before creating shipment
+                      // Get reCAPTCHA v3 token (same pattern as register page)
                       let recaptchaToken = "";
                       const recaptchaSiteKey =
                         process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-                      const isDevelopment =
-                        process.env.NODE_ENV === "development";
 
-                      if (executeRecaptcha) {
-                        try {
-                          recaptchaToken = await executeRecaptcha(
-                            "create_shipment"
-                          );
-                        } catch (recaptchaError) {
-                          if (isDevelopment) {
-                            console.warn(
-                              "reCAPTCHA verification failed:",
+                      if (recaptchaSiteKey) {
+                        if (executeRecaptcha) {
+                          try {
+                            recaptchaToken = await executeRecaptcha(
+                              "create_shipment"
+                            );
+                            console.log("reCAPTCHA v3 token obtained");
+                          } catch (recaptchaError) {
+                            console.error(
+                              "reCAPTCHA execution failed:",
                               recaptchaError
                             );
-                          }
-                          // If reCAPTCHA key is configured, require it in production
-                          if (recaptchaSiteKey && !isDevelopment) {
                             showError(
                               language === "ar"
-                                ? "يرجى التحقق من reCAPTCHA"
-                                : "Please complete the reCAPTCHA verification"
+                                ? "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى."
+                                : "reCAPTCHA verification failed. Please try again."
                             );
                             setIsCreatingShipment(false);
                             return;
                           }
+                        } else {
+                          showError(
+                            language === "ar"
+                              ? "التحقق من reCAPTCHA مطلوب. يرجى المحاولة مرة أخرى."
+                              : "reCAPTCHA verification is required. Please try again."
+                          );
+                          setIsCreatingShipment(false);
+                          return;
                         }
-                      } else if (recaptchaSiteKey && !isDevelopment) {
-                        // reCAPTCHA is required but not available
-                        showError(
-                          language === "ar"
-                            ? "يرجى التحقق من reCAPTCHA"
-                            : "Please complete the reCAPTCHA verification"
-                        );
-                        setIsCreatingShipment(false);
-                        return;
                       }
 
                       // Prepare parcels data without File objects (for JSON)
