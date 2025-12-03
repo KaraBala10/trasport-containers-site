@@ -52,14 +52,15 @@
             letter-spacing: 0.08em;
         }
 
-        .qr-container {
+        .barcode-container {
             text-align: right;
             font-size: 11px;
         }
 
-        .qr-container img {
-            width: 80px;
-            height: 80px;
+        .barcode-container img {
+            max-width: 150px;
+            height: auto;
+            max-height: 40px;
         }
 
         .section-title {
@@ -249,9 +250,9 @@
                 </div>
             </div>
 
-            <div class="qr-container">
-                {% if qr_code_base64 %}
-                    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="Tracking QR" />
+            <div class="barcode-container">
+                {% if barcode_base64 %}
+                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Shipment Barcode" />
                     <div>Shipment: {{ shipment.shipment_number }}</div>
                 {% endif %}
             </div>

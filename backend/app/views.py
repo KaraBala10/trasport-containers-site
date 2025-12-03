@@ -4499,13 +4499,13 @@ def update_lcl_shipment_status_view(request, pk):
 
         # Generate receipt automatically when shipment arrives at specific locations
         # For eu-sy: when status changes to ARRIVED_WATTWEG_5
-        # For sy-eu: when status changes to ARRIVED_DESTINATION
+        # For sy-eu: when status changes to ARRIVED_WATTWEG_5 (Arrived at Aleppo)
         if new_status and not shipment.receipt_file:
             should_generate_receipt = False
 
             if shipment.direction == "eu-sy" and new_status == "ARRIVED_WATTWEG_5":
                 should_generate_receipt = True
-            elif shipment.direction == "sy-eu" and new_status == "ARRIVED_DESTINATION":
+            elif shipment.direction == "sy-eu" and new_status == "ARRIVED_WATTWEG_5":
                 should_generate_receipt = True
 
             if should_generate_receipt:
@@ -5079,7 +5079,7 @@ def download_receipt_view(request, pk):
         should_have_receipt = (
             shipment.direction == "eu-sy" and shipment.status == "ARRIVED_WATTWEG_5"
         ) or (
-            shipment.direction == "sy-eu" and shipment.status == "ARRIVED_DESTINATION"
+            shipment.direction == "sy-eu" and shipment.status == "ARRIVED_WATTWEG_5"
         )
 
         # Log for debugging

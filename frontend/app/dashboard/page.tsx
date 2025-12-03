@@ -6735,7 +6735,7 @@ export default function DashboardPage() {
                                         "ARRIVED_WATTWEG_5") ||
                                     (shipment.direction === "sy-eu" &&
                                       shipment.status ===
-                                        "ARRIVED_DESTINATION");
+                                        "ARRIVED_WATTWEG_5");
 
                                   if (hasReceipt) {
                                     return (

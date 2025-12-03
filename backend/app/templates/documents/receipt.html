@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ language }}" dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt / إيصال - {{ receipt_number }}</title>
+    <title>Receipt - {{ receipt_number }}</title>
     <style>
         @page {
             size: A4;
@@ -17,11 +17,11 @@
         }
         
         body {
-            font-family: {% if language == 'ar' %}'Cairo', 'Arial', sans-serif{% else %}'Inter', 'Arial', sans-serif{% endif %};
+            font-family: 'Inter', 'Arial', sans-serif;
             font-size: 12px;
             line-height: 1.6;
             color: #1a365d;
-            direction: {% if language == 'ar' %}rtl{% else %}ltr{% endif %};
+            direction: ltr;
         }
         
         .header {
@@ -68,7 +68,7 @@
         }
         
         .receipt-info {
-            text-align: {% if language == 'ar' %}left{% else %}right{% endif %};
+            text-align: right;
         }
         
         .receipt-title {
@@ -104,6 +104,25 @@
             padding: 5px;
         }
         
+        .barcode-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .barcode-container img {
+            max-width: 200px;
+            height: auto;
+            border: 1px solid #1a365d;
+            padding: 4px;
+            background: white;
+        }
+        
+        .barcode-label {
+            font-size: 9px;
+            color: #4a5568;
+            margin-top: 5px;
+        }
+        
         .content {
             margin: 30px 0;
             min-height: 200px;
@@ -127,11 +146,11 @@
         }
         
         .bilingual-text .ar {
-            display: {% if language == 'ar' %}block{% else %}none{% endif %};
+            display: none;
         }
         
         .bilingual-text .en {
-            display: {% if language == 'en' %}block{% else %}none{% endif %};
+            display: block;
         }
         
         .info-row {
@@ -151,7 +170,7 @@
         .info-value {
             color: #2d3748;
             flex: 1;
-            text-align: {% if language == 'ar' %}right{% else %}left{% endif %};
+            text-align: left;
         }
         
         .status-badge {
@@ -258,44 +277,22 @@
             <div class="company-name">Medo-Freight EU</div>
             <div class="company-tagline">Ship · Route · Deliver</div>
             <div class="company-details">
-                <span class="bilingual-text">
-                    <span class="ar">هولندا - بيرغن أوب زووم</span>
-                    <span class="en">Netherlands - Bergen op Zoom</span>
-                </span><br>
-                <span class="bilingual-text">
-                    <span class="ar">البريد الإلكتروني: contact@medo-freight.eu</span>
-                    <span class="en">Email: contact@medo-freight.eu</span>
-                </span><br>
-                <span class="bilingual-text">
-                    <span class="ar">الهاتف: 0031683083916</span>
-                    <span class="en">Phone: 0031683083916</span>
-                </span>
+                Netherlands - Bergen op Zoom<br>
+                Email: contact@medo-freight.eu<br>
+                Phone: 0031683083916
             </div>
         </div>
         <div class="receipt-info">
             <div class="receipt-title">
-                <span class="bilingual-text">
-                    <span class="ar">إيصال استلام</span>
-                    <span class="en">Receipt</span>
-                </span>
+                Receipt
             </div>
             <div class="receipt-details">
                 <p>
-                    <span class="receipt-label">
-                        <span class="bilingual-text">
-                            <span class="ar">رقم الإيصال:</span>
-                            <span class="en">Receipt Number:</span>
-                        </span>
-                    </span>
+                    <span class="receipt-label">Receipt Number:</span>
                     {{ receipt_number }}
                 </p>
                 <p>
-                    <span class="receipt-label">
-                        <span class="bilingual-text">
-                            <span class="ar">التاريخ:</span>
-                            <span class="en">Date:</span>
-                        </span>
-                    </span>
+                    <span class="receipt-label">Date:</span>
                     {{ receipt_date|date:"Y-m-d H:i" }}
                 </p>
             </div>
@@ -303,10 +300,15 @@
             <div class="qr-code-container">
                 <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
                 <div style="margin-top: 5px; font-size: 9px; color: #4a5568;">
-                    <span class="bilingual-text">
-                        <span class="ar">تتبع الشحنة</span>
-                        <span class="en">Track Shipment</span>
-                    </span>
+                    Track Shipment
+                </div>
+            </div>
+            {% endif %}
+            {% if barcode_base64 %}
+            <div class="barcode-container">
+                <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Receipt Barcode">
+                <div class="barcode-label">
+                    Receipt Number
                 </div>
             </div>
             {% endif %}
@@ -316,49 +318,25 @@
     <div class="content">
         <div class="section">
             <div class="section-title">
-                <span class="bilingual-text">
-                    <span class="ar">معلومات الشحنة</span>
-                    <span class="en">Shipment Information</span>
-                </span>
+                Shipment Information
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">رقم الشحنة:</span>
-                        <span class="en">Shipment Number:</span>
-                    </span>
-                </span>
+                <span class="info-label">Shipment Number:</span>
                 <span class="info-value">{{ shipment.shipment_number }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">الحالة:</span>
-                        <span class="en">Status:</span>
-                    </span>
-                </span>
+                <span class="info-label">Status:</span>
                 <span class="info-value">
                     <span class="status-badge">{{ status_display_text }}</span>
                 </span>
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">الاتجاه:</span>
-                        <span class="en">Direction:</span>
-                    </span>
-                </span>
+                <span class="info-label">Direction:</span>
                 <span class="info-value">
                     {% if shipment.direction == 'eu-sy' %}
-                        <span class="bilingual-text">
-                            <span class="ar">أوروبا إلى سوريا</span>
-                            <span class="en">Europe to Syria</span>
-                        </span>
+                        Europe to Syria
                     {% else %}
-                        <span class="bilingual-text">
-                            <span class="ar">سوريا إلى أوروبا</span>
-                            <span class="en">Syria to Europe</span>
-                        </span>
+                        Syria to Europe
                     {% endif %}
                 </span>
             </div>
@@ -366,90 +344,44 @@
         
         <div class="section">
             <div class="section-title">
-                <span class="bilingual-text">
-                    <span class="ar">معلومات المرسل</span>
-                    <span class="en">Sender Information</span>
-                </span>
+                Sender Information
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">الاسم:</span>
-                        <span class="en">Name:</span>
-                    </span>
-                </span>
+                <span class="info-label">Name:</span>
                 <span class="info-value">{{ shipment.sender_name }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">الهاتف:</span>
-                        <span class="en">Phone:</span>
-                    </span>
-                </span>
+                <span class="info-label">Phone:</span>
                 <span class="info-value">{{ shipment.sender_phone }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">المدينة:</span>
-                        <span class="en">City:</span>
-                    </span>
-                </span>
+                <span class="info-label">City:</span>
                 <span class="info-value">{{ shipment.sender_city }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">العنوان:</span>
-                        <span class="en">Address:</span>
-                    </span>
-                </span>
+                <span class="info-label">Address:</span>
                 <span class="info-value">{{ shipment.sender_address }}</span>
             </div>
         </div>
         
         <div class="section">
             <div class="section-title">
-                <span class="bilingual-text">
-                    <span class="ar">معلومات المستلم</span>
-                    <span class="en">Receiver Information</span>
-                </span>
+                Receiver Information
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">الاسم:</span>
-                        <span class="en">Name:</span>
-                    </span>
-                </span>
+                <span class="info-label">Name:</span>
                 <span class="info-value">{{ shipment.receiver_name }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">الهاتف:</span>
-                        <span class="en">Phone:</span>
-                    </span>
-                </span>
+                <span class="info-label">Phone:</span>
                 <span class="info-value">{{ shipment.receiver_phone }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">المدينة:</span>
-                        <span class="en">City:</span>
-                    </span>
-                </span>
+                <span class="info-label">City:</span>
                 <span class="info-value">{{ shipment.receiver_city }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">العنوان:</span>
-                        <span class="en">Address:</span>
-                    </span>
-                </span>
+                <span class="info-label">Address:</span>
                 <span class="info-value">{{ shipment.receiver_address }}</span>
             </div>
         </div>
@@ -457,24 +389,15 @@
         {% if shipment.parcels %}
         <div class="section">
             <div class="section-title">
-                <span class="bilingual-text">
-                    <span class="ar">الطرود</span>
-                    <span class="en">Parcels</span>
-                </span>
+                Parcels
             </div>
             {% for parcel in shipment.parcels %}
             <div class="info-row">
                 <span class="info-label">
-                    <span class="bilingual-text">
-                        <span class="ar">طرد {{ forloop.counter }}:</span>
-                        <span class="en">Parcel {{ forloop.counter }}:</span>
-                    </span>
+                    Parcel {{ forloop.counter }}:
                 </span>
                 <span class="info-value">
-                    <span class="bilingual-text">
-                        <span class="ar">الوزن: {{ parcel.weight }} كغ | الحجم: {{ parcel.volume }} م³</span>
-                        <span class="en">Weight: {{ parcel.weight }} kg | Volume: {{ parcel.volume }} m³</span>
-                    </span>
+                    Weight: {{ parcel.weight|default:0 }} kg | Volume: {{ parcel.cbm|default:parcel.volume|default:0 }} m³
                 </span>
             </div>
             {% endfor %}
@@ -487,19 +410,13 @@
         <div class="signature-container">
             <div class="signature-box">
                 <div class="signature-label">
-                    <span class="bilingual-text">
-                        <span class="ar">توقيع الشركة</span>
-                        <span class="en">Company Signature</span>
-                    </span>
+                    Company Signature
                 </div>
                 {% if signature_base64 %}
                 <img src="data:image/png;base64,{{ signature_base64 }}" alt="Company Signature" class="signature-image">
                 {% else %}
                 <div class="signature-placeholder">
-                    <span class="bilingual-text">
-                        <span class="ar">توقيع إلكتروني</span>
-                        <span class="en">Electronic Signature</span>
-                    </span>
+                    Electronic Signature
                 </div>
                 {% endif %}
                 <div class="signature-line"></div>
@@ -509,16 +426,10 @@
             </div>
             <div class="signature-box">
                 <div class="signature-label">
-                    <span class="bilingual-text">
-                        <span class="ar">توقيع المستلم</span>
-                        <span class="en">Receiver Signature</span>
-                    </span>
+                    Receiver Signature
                 </div>
                 <div class="signature-placeholder">
-                    <span class="bilingual-text">
-                        <span class="ar">توقيع المستلم</span>
-                        <span class="en">Receiver Signature</span>
-                    </span>
+                    Receiver Signature
                 </div>
                 <div class="signature-line"></div>
                 <div class="signature-label" style="margin-top: 5px; font-size: 9px;">
@@ -530,16 +441,10 @@
     
     <div class="footer">
         <p>
-            <span class="bilingual-text">
-                <span class="ar">شكراً لتعاملكم مع Medo-Freight EU</span>
-                <span class="en">Thank you for choosing Medo-Freight EU</span>
-            </span>
+            Thank you for choosing Medo-Freight EU
         </p>
         <p style="margin-top: 5px;">
-            <span class="bilingual-text">
-                <span class="ar">للتتبع: {{ tracking_url }}</span>
-                <span class="en">Track at: {{ tracking_url }}</span>
-            </span>
+            Track at: {{ tracking_url }}
         </p>
     </div>
 </body>

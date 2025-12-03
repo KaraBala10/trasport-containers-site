@@ -104,6 +104,30 @@
           letter-spacing: 0.4px;
       }
   
+      .barcode-section {
+          text-align: center;
+          padding: 2px;
+          border: 1px solid #000;
+          border-radius: 2px;
+          background: #fff;
+          margin-top: 2px;
+      }
+  
+      .barcode-section img {
+          max-width: 80px;
+          height: auto;
+          max-height: 20px;
+          display: block;
+          margin: 0 auto 1px;
+      }
+  
+      .barcode-label {
+          font-size: 7px;
+          font-weight: bold;
+          color: #000;
+          letter-spacing: 0.4px;
+      }
+  
       .label-title {
           font-size: 14px;
           font-weight: bold;
@@ -306,6 +330,12 @@
             <div class="qr-section">
                 <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
                 <div class="qr-label">TRACK</div>
+            </div>
+            {% endif %}
+            {% if barcode_base64 %}
+            <div class="barcode-section">
+                <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
+                <div class="barcode-label">TRACKING</div>
             </div>
             {% endif %}
         </div>

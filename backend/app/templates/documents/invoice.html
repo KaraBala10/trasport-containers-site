@@ -95,6 +95,28 @@
             font-weight: 500;
         }
         
+        .shipper-block {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .shipper-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1a365d;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        
+        .shipper-details {
+            font-size: 10px;
+            color: #2d3748;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+        
         .invoice-info {
             text-align: {% if language == 'ar' %}left{% else %}right{% endif %};
             min-width: 220px;
@@ -153,6 +175,31 @@
             font-size: 9px;
             color: #1a365d;
             margin-top: 6px;
+            font-weight: 600;
+        }
+        
+        .barcode-container {
+            margin-top: 10px;
+            text-align: center;
+            padding: 8px;
+            background: #ffffff;
+            border-radius: 4px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .barcode-container img {
+            max-width: 200px;
+            height: auto;
+            border: 1px solid #1a365d;
+            padding: 4px;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .barcode-label {
+            font-size: 9px;
+            color: #1a365d;
+            margin-top: 4px;
             font-weight: 600;
         }
         
@@ -470,6 +517,22 @@
                 Email: contact@medo-freight.eu<br>
                 Website: www.medo-freight.eu
             </div>
+            <div class="shipper-block">
+                <div class="shipper-title">
+                    <span class="bilingual-text">
+                        <span class="ar">عنوان الشاحن</span>
+                        <span class="en">SHIPPER ADDRESS</span>
+                    </span>
+                </div>
+                <div class="shipper-details">
+                    Titanlaan 1, 4624 AX Bergen op Zoom, The Netherlands<br>
+                    Kvk nr: 75251663<br>
+                    TAX nr: NL002518102B41<br>
+                    EORI number: NL1320963189<br>
+                    Tel: +31 6 39 788 989 &nbsp;&nbsp; E-mail: contact@medo-freight.eu<br>
+                    Website: http://medo-freight.eu
+                </div>
+            </div>
         </div>
         <div class="invoice-info">
             <div class="invoice-title">
@@ -525,6 +588,17 @@
                 </div>
             </div>
             {% endif %}
+            {% if barcode_base64 %}
+            <div class="barcode-container">
+                <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Shipment Barcode">
+                <div class="barcode-label">
+                    <span class="bilingual-text">
+                        <span class="ar">رقم الشحنة</span>
+                        <span class="en">Shipment Number</span>
+                    </span>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -559,21 +633,6 @@
                     {{ shipment.sender_phone }}<br>
                     {{ shipment.sender_email }}
                 </div>
-            </div>
-        </div>
-        <div class="address-box" style="margin-top: 10px;">
-            <div class="address-label">
-                <span class="bilingual-text">
-                    <span class="ar">فاتورة إلى:</span>
-                    <span class="en">BILL TO:</span>
-                </span>
-            </div>
-            <div class="address-content">
-                <strong>{{ shipment.receiver_name }}</strong><br>
-                {{ shipment.receiver_address }}<br>
-                {{ shipment.receiver_city }}, {{ shipment.receiver_country }}<br>
-                {{ shipment.receiver_phone }}<br>
-                {{ shipment.receiver_email }}
             </div>
         </div>
     </div>

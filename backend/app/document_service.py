@@ -22,6 +22,57 @@ from .models import LCLShipment, FCLQuote, Price, PackagingPrice, SyrianProvince
 
 logger = logging.getLogger(__name__)
 
+# Try to import barcode library, but handle if not available
+try:
+    from barcode import Code128
+    from barcode.writer import ImageWriter
+    BARCODE_AVAILABLE = True
+except ImportError:
+    BARCODE_AVAILABLE = False
+    logger.warning("python-barcode library not available. Barcode generation will be disabled.")
+
+
+def generate_barcode(shipment_number: str) -> Optional[str]:
+    """
+    Generate Code128 barcode for shipment number.
+    
+    Args:
+        shipment_number: Shipment number to encode
+        
+    Returns:
+        Base64 encoded barcode image string, or None if generation fails
+    """
+    if not BARCODE_AVAILABLE:
+        logger.warning("Barcode library not available, skipping barcode generation")
+        return None
+    
+    if not shipment_number:
+        return None
+        
+    try:
+        # Create Code128 barcode
+        code128 = Code128(str(shipment_number), writer=ImageWriter())
+        
+        # Generate barcode image
+        img_buffer = io.BytesIO()
+        code128.write(img_buffer, {
+            'module_width': 0.3,
+            'module_height': 15.0,
+            'quiet_zone': 2.0,
+            'font_size': 10,
+            'text_distance': 3.0,
+            'background': 'white',
+            'foreground': 'black',
+        })
+        img_buffer.seek(0)
+        
+        # Convert to base64
+        barcode_base64 = base64.b64encode(img_buffer.read()).decode('utf-8')
+        return barcode_base64
+    except Exception as e:
+        logger.warning(f"Could not generate barcode: {str(e)}", exc_info=True)
+        return None
+
 
 def calculate_invoice_totals(shipment: LCLShipment) -> Dict:
     """
@@ -326,6 +377,9 @@ def generate_invoice(shipment: LCLShipment, language: str = 'ar') -> bytes:
             except Exception as e:
                 logger.warning(f"Could not read signature file: {str(e)}")
         
+        # Generate barcode for shipment number
+        barcode_base64 = generate_barcode(shipment.shipment_number or str(shipment.id))
+        
         # Prepare context for template
         context = {
             'shipment': shipment,
@@ -338,6 +392,7 @@ def generate_invoice(shipment: LCLShipment, language: str = 'ar') -> bytes:
             'remaining_amount': round(remaining_amount, 2),
             'tracking_url': tracking_url,
             'qr_code_base64': qr_code_base64,
+            'barcode_base64': barcode_base64,
             'signature_base64': signature_base64,
         }
         
@@ -378,26 +433,11 @@ def generate_consolidated_export_invoice(shipment: LCLShipment, language: str = 
         # Company info (for logo and site URL)
         company_info = get_company_info()
 
-        # Generate QR Code for tracking (same logic as regular invoice)
+        # Generate tracking URL
         tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
-        qr_code_base64 = None
-        try:
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(tracking_url)
-            qr.make(fit=True)
 
-            img = qr.make_image(fill_color="black", back_color="white")
-            img_buffer = io.BytesIO()
-            img.save(img_buffer, format="PNG")
-            img_buffer.seek(0)
-            qr_code_base64 = base64.b64encode(img_buffer.read()).decode("utf-8")
-        except Exception as e:
-            logger.warning(f"Could not generate QR code for consolidated export invoice: {str(e)}")
+        # Generate barcode for shipment number (replacing QR code)
+        barcode_base64 = generate_barcode(shipment.shipment_number or str(shipment.id))
 
         # Aggregate totals for CBM, packages, and weight
         total_cbm = 0.0
@@ -442,7 +482,7 @@ def generate_consolidated_export_invoice(shipment: LCLShipment, language: str = 
             "invoice_date": shipment.paid_at or shipment.created_at,
             "invoice_number": shipment.shipment_number,
             "tracking_url": tracking_url,
-            "qr_code_base64": qr_code_base64,
+            "barcode_base64": barcode_base64,
             "total_cbm": total_cbm,
             "total_packages": total_packages,
             "total_weight": total_weight,
@@ -484,26 +524,11 @@ def generate_packing_list(shipment: LCLShipment, language: str = 'en') -> bytes:
         # Company info (for logo and site URL)
         company_info = get_company_info()
 
-        # Generate QR Code for tracking (same logic as regular invoice)
+        # Generate tracking URL
         tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
-        qr_code_base64 = None
-        try:
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(tracking_url)
-            qr.make(fit=True)
 
-            img = qr.make_image(fill_color="black", back_color="white")
-            img_buffer = io.BytesIO()
-            img.save(img_buffer, format="PNG")
-            img_buffer.seek(0)
-            qr_code_base64 = base64.b64encode(img_buffer.read()).decode("utf-8")
-        except Exception as e:
-            logger.warning(f"Could not generate QR code for packing list: {str(e)}")
+        # Generate barcode for shipment number (replacing QR code)
+        barcode_base64 = generate_barcode(shipment.shipment_number or str(shipment.id))
 
         # Aggregate totals for CBM, packages, and weight
         total_cbm = 0.0
@@ -546,7 +571,7 @@ def generate_packing_list(shipment: LCLShipment, language: str = 'en') -> bytes:
             "invoice_date": shipment.paid_at or shipment.created_at,
             "invoice_number": shipment.shipment_number,
             "tracking_url": tracking_url,
-            "qr_code_base64": qr_code_base64,
+            "barcode_base64": barcode_base64,
             "total_cbm": total_cbm,
             "total_packages": total_packages,
             "total_weight": total_weight,
@@ -603,6 +628,9 @@ def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_la
         except Exception as e:
             logger.warning(f"Could not generate QR code: {str(e)}")
         
+        # Generate barcode for shipment number
+        barcode_base64 = generate_barcode(shipment.shipment_number or str(shipment.id))
+        
         # Calculate total number of labels needed
         parcels_data = shipment.parcels if shipment.parcels else []
         
@@ -649,6 +677,7 @@ def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_la
                 'total_labels': total_labels,
                 'language': language,
                 'qr_code_base64': qr_code_base64,
+                'barcode_base64': barcode_base64,
             }
             
             # Render label template
@@ -715,7 +744,7 @@ def save_invoice_to_storage(shipment: LCLShipment, pdf_bytes: bytes) -> str:
         raise
 
 
-def generate_receipt(shipment: LCLShipment, language: str = 'ar') -> bytes:
+def generate_receipt(shipment: LCLShipment, language: str = 'en') -> bytes:
     """
     Generate receipt PDF for LCL shipment.
     
@@ -773,6 +802,10 @@ def generate_receipt(shipment: LCLShipment, language: str = 'ar') -> bytes:
             except Exception as e:
                 logger.warning(f"Could not read signature file: {str(e)}")
         
+        # Generate barcode for receipt number
+        receipt_number = shipment.shipment_number or str(shipment.id)
+        barcode_base64 = generate_barcode(receipt_number)
+        
         # Prepare context for template
         context = {
             'shipment': shipment,
@@ -784,6 +817,8 @@ def generate_receipt(shipment: LCLShipment, language: str = 'ar') -> bytes:
                 'ar': status_display_ar,
                 'en': status_display_en,
             },
+            'qr_code_base64': qr_code_base64,
+            'barcode_base64': barcode_base64,
             'status_display_text': status_display_ar if language == 'ar' else status_display_en,
             'tracking_url': tracking_url,
             'qr_code_base64': qr_code_base64,
