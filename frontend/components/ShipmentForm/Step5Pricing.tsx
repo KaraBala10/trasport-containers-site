@@ -106,20 +106,29 @@ export default function Step5Pricing({
 
   // Show transport cards based on data availability (ignore direction)
   // Use selectedEUShippingTotalPrice (with profit) to determine if EU transport exists
-  const isEUTransport = selectedEUShippingTotalPrice && selectedEUShippingTotalPrice > 0;
+  const isEUTransport =
+    selectedEUShippingTotalPrice && selectedEUShippingTotalPrice > 0;
   const isSyriaTransport =
     syriaTransportDetails?.calculated_price !== null &&
     syriaTransportDetails?.calculated_price !== undefined &&
     syriaTransportDetails?.calculated_price > 0;
 
   // Get prices from backend (NO calculations here!)
-  const sendcloudPrice = isEUTransport ? (selectedEUShippingPrice || 0) : 0;
-  const profitAmount = isEUTransport ? (selectedEUShippingProfitAmount || 0) : 0;
-  const euTransportPrice = isEUTransport ? (selectedEUShippingTotalPrice || 0) : 0; // Backend calculated total
-  const syriaTransportCost = isSyriaTransport
-    ? (syriaTransportDetails.calculated_price || 0)
+  // Ensure all values are numbers to avoid string concatenation issues
+  const sendcloudPrice = isEUTransport
+    ? Number(selectedEUShippingPrice) || 0
     : 0;
-  const totalTransportPrice = euTransportPrice + syriaTransportCost;
+  const profitAmount = isEUTransport
+    ? Number(selectedEUShippingProfitAmount) || 0
+    : 0;
+  const euTransportPrice = isEUTransport
+    ? Number(selectedEUShippingTotalPrice) || 0
+    : 0; // Backend calculated total
+  const syriaTransportCost = isSyriaTransport
+    ? Number(syriaTransportDetails?.calculated_price) || 0
+    : 0;
+  const totalTransportPrice =
+    Number(euTransportPrice) + Number(syriaTransportCost);
 
   console.log("🔍 Step5Pricing - Calculated Transport:", {
     direction,
@@ -156,7 +165,7 @@ export default function Step5Pricing({
             <div className="flex justify-between items-center">
               <span className="text-gray-700">{t.priceByWeight}</span>
               <span className="font-semibold text-blue-900">
-                {pricing.basePrice.priceByWeight.toFixed(2)} €
+                {Number(pricing.basePrice.priceByWeight || 0).toFixed(2)} €
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -166,7 +175,7 @@ export default function Step5Pricing({
             <div className="pt-3 border-t border-blue-300 flex justify-between items-center">
               <span className="font-bold text-blue-900">{t.basePrice}</span>
               <span className="text-xl font-bold text-blue-900">
-                {pricing.basePrice.final.toFixed(2)} €
+                {Number(pricing.basePrice.final || 0).toFixed(2)} €
               </span>
             </div>
           </div>
@@ -201,13 +210,19 @@ export default function Step5Pricing({
             <div className="flex justify-between items-center">
               <span className="text-gray-700">{t.piecePrice}</span>
               <span className="font-semibold text-purple-900">
-                {pricing.electronicsPrice.breakdown.piecePrice.toFixed(2)} €
+                {Number(
+                  pricing.electronicsPrice.breakdown.piecePrice || 0
+                ).toFixed(2)}{" "}
+                €
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-700">{t.insurance}</span>
               <span className="font-semibold text-purple-900">
-                {pricing.electronicsPrice.breakdown.insurance.toFixed(2)} €
+                {Number(
+                  pricing.electronicsPrice.breakdown.insurance || 0
+                ).toFixed(2)}{" "}
+                €
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -217,7 +232,10 @@ export default function Step5Pricing({
                   : "Base Packaging (Mandatory)"}
               </span>
               <span className="font-semibold text-purple-900">
-                {pricing.electronicsPrice.breakdown.packaging.toFixed(2)} €
+                {Number(
+                  pricing.electronicsPrice.breakdown.packaging || 0
+                ).toFixed(2)}{" "}
+                €
               </span>
             </div>
             <div className="pt-3 border-t border-purple-300 flex justify-between items-center">
@@ -225,7 +243,7 @@ export default function Step5Pricing({
                 {t.electronicsPrice}
               </span>
               <span className="text-xl font-bold text-purple-900">
-                {pricing.electronicsPrice.total.toFixed(2)} €
+                {Number(pricing.electronicsPrice.total || 0).toFixed(2)} €
               </span>
             </div>
           </div>
@@ -245,7 +263,7 @@ export default function Step5Pricing({
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">{t.initialPackaging}</span>
                 <span className="font-semibold text-gray-800">
-                  {pricing.packaging.initial.toFixed(2)} €
+                  {Number(pricing.packaging.initial || 0).toFixed(2)} €
                 </span>
               </div>
             )}
@@ -253,7 +271,7 @@ export default function Step5Pricing({
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">{t.finalPackaging}</span>
                 <span className="font-semibold text-gray-800">
-                  {pricing.packaging.final.toFixed(2)} €
+                  {Number(pricing.packaging.final || 0).toFixed(2)} €
                 </span>
               </div>
             )}
@@ -261,14 +279,15 @@ export default function Step5Pricing({
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">{t.parcelPackaging}</span>
                 <span className="font-semibold text-gray-800">
-                  {((pricing as any).parcelPackagingCost || 0).toFixed(2)} €
+                  {Number((pricing as any).parcelPackagingCost || 0).toFixed(2)}{" "}
+                  €
                 </span>
               </div>
             )}
             <div className="pt-3 border-t border-gray-300 flex justify-between items-center">
               <span className="font-bold text-gray-800">{t.packaging}</span>
               <span className="text-xl font-bold text-gray-800">
-                {pricing.packaging.total.toFixed(2)} €
+                {Number(pricing.packaging.total || 0).toFixed(2)} €
               </span>
             </div>
           </div>
@@ -287,7 +306,10 @@ export default function Step5Pricing({
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">{t.insuranceOptional}</span>
                 <span className="font-semibold text-gray-800">
-                  {((pricing as any).insuranceCostFromAPI || 0).toFixed(2)} €
+                  {Number((pricing as any).insuranceCostFromAPI || 0).toFixed(
+                    2
+                  )}{" "}
+                  €
                 </span>
               </div>
             )}
@@ -296,7 +318,7 @@ export default function Step5Pricing({
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">{t.insuranceOptional}</span>
                   <span className="font-semibold text-gray-800">
-                    {pricing.insurance.optional.toFixed(2)} €
+                    {Number(pricing.insurance.optional || 0).toFixed(2)} €
                   </span>
                 </div>
               )}
@@ -304,7 +326,7 @@ export default function Step5Pricing({
               <div className="flex justify-between items-center">
                 <span className="text-gray-700">{t.insurance} (إلزامي)</span>
                 <span className="font-semibold text-gray-800">
-                  {pricing.insurance.mandatory.toFixed(2)} €
+                  {Number(pricing.insurance.mandatory || 0).toFixed(2)} €
                 </span>
               </div>
             )}
@@ -313,10 +335,10 @@ export default function Step5Pricing({
                 {t.insuranceOptional}
               </span>
               <span className="text-xl font-bold text-gray-800">
-                {(
+                {Number(
                   (pricing as any).insuranceCostFromAPI ||
-                  pricing.insurance.total ||
-                  0
+                    pricing.insurance.total ||
+                    0
                 ).toFixed(2)}{" "}
                 €
               </span>
@@ -358,7 +380,7 @@ export default function Step5Pricing({
                 {selectedEUShippingName}
               </span>
             </div>
-            
+
             {/* تفاصيل التسعير من Backend */}
             {sendcloudPrice > 0 && profitAmount !== undefined && (
               <div className="bg-white rounded-lg p-4 space-y-2 border border-blue-200">
@@ -367,43 +389,44 @@ export default function Step5Pricing({
                     {language === "ar" ? "سعر Sendcloud:" : "Sendcloud Price:"}
                   </span>
                   <span className="font-semibold text-gray-800">
-                    €{sendcloudPrice.toFixed(2)}
+                    €{Number(sendcloudPrice || 0).toFixed(2)}
                   </span>
                 </div>
-                
+
                 {profitAmount > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-green-600">
-                      {language === "ar" 
+                      {language === "ar"
                         ? `+ الربح (${selectedEUShippingProfitMarginPercent}%):`
                         : `+ Profit (${selectedEUShippingProfitMarginPercent}%):`}
                     </span>
                     <span className="font-semibold text-green-600">
-                      €{profitAmount.toFixed(2)}
+                      €{Number(profitAmount || 0).toFixed(2)}
                     </span>
                   </div>
                 )}
-                
+
                 <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
                   <span className="font-bold text-gray-800">
                     {language === "ar" ? "المجموع:" : "Total:"}
                   </span>
                   <span className="text-lg font-bold text-blue-600">
-                    €{euTransportPrice.toFixed(2)}
+                    €{Number(euTransportPrice || 0).toFixed(2)}
                   </span>
                 </div>
               </div>
             )}
-            
+
             {/* إذا ما في تفاصيل، عرض السعر النهائي بس */}
-            {(sendcloudPrice === 0 || profitAmount === undefined) && euTransportPrice > 0 && (
-              <div className="pt-3 border-t border-blue-300 flex justify-between items-center">
-                <span className="font-bold text-blue-900">{t.transport}</span>
-                <span className="text-xl font-bold text-blue-900">
-                  €{euTransportPrice.toFixed(2)}
-                </span>
-              </div>
-            )}
+            {(sendcloudPrice === 0 || profitAmount === undefined) &&
+              euTransportPrice > 0 && (
+                <div className="pt-3 border-t border-blue-300 flex justify-between items-center">
+                  <span className="font-bold text-blue-900">{t.transport}</span>
+                  <span className="text-xl font-bold text-blue-900">
+                    €{euTransportPrice.toFixed(2)}
+                  </span>
+                </div>
+              )}
           </div>
         </motion.div>
       )}
@@ -437,25 +460,29 @@ export default function Step5Pricing({
               <span className="text-gray-700">{t.weightCost}</span>
               <span className="font-semibold text-green-900">
                 €
-                {syriaTransportDetails.breakdown?.weight_cost?.toFixed(2) ||
-                  "0.00"}
+                {Number(
+                  syriaTransportDetails?.breakdown?.weight_cost || 0
+                ).toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-700">{t.minimumPrice}</span>
               <span className="font-semibold text-green-900">
-                €{syriaTransportDetails.min_price?.toFixed(2) || "0.00"}
+                €{Number(syriaTransportDetails?.min_price || 0).toFixed(2)}
               </span>
             </div>
             <div className="pt-3 border-t-2 border-green-300 flex justify-between items-center">
               <span className="font-bold text-green-900">{t.finalPrice}</span>
               <span className="text-xl font-bold text-green-600">
-                €{syriaTransportDetails.calculated_price?.toFixed(2) || "0.00"}
+                €
+                {Number(syriaTransportDetails?.calculated_price || 0).toFixed(
+                  2
+                )}
               </span>
             </div>
             <p className="text-xs text-gray-600 mt-2 text-center">
               ({syriaTransportDetails.weight} kg × €
-              {syriaTransportDetails.rate_per_kg?.toFixed(2)}/kg)
+              {Number(syriaTransportDetails?.rate_per_kg || 0).toFixed(2)}/kg)
             </p>
           </div>
         </motion.div>
@@ -474,7 +501,7 @@ export default function Step5Pricing({
           </span>
           <span className="text-4xl font-black text-primary-dark">
             {(() => {
-              const baseTotal = pricing.grandTotal || 0;
+              const baseTotal = Number(pricing.grandTotal) || 0;
               const finalTotal = baseTotal + totalTransportPrice;
               console.log("💰 Step5Pricing Grand Total:", {
                 baseTotal,
@@ -483,7 +510,7 @@ export default function Step5Pricing({
                 totalTransportPrice,
                 finalTotal,
               });
-              return finalTotal.toFixed(2);
+              return Number(finalTotal).toFixed(2);
             })()}{" "}
             €
           </span>

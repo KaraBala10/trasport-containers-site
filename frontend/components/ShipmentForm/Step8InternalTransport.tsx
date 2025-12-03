@@ -906,7 +906,8 @@ export default function Step8InternalTransport({
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-primary-dark">
-                            {method.price.toFixed(2)} {method.currency}
+                            {Number(method.price || 0).toFixed(2)}{" "}
+                            {method.currency}
                           </p>
                         </div>
                       </div>
@@ -929,7 +930,7 @@ export default function Step8InternalTransport({
                                       {item.label}:
                                     </span>
                                     <span className="font-semibold text-gray-800">
-                                      €{item.value.toFixed(2)}
+                                      €{Number(item.value || 0).toFixed(2)}
                                     </span>
                                   </div>
                                 )
@@ -1038,9 +1039,9 @@ export default function Step8InternalTransport({
                           </span>
                           <span className="text-sm font-semibold text-gray-900">
                             €
-                            {syriaTransportPrice.breakdown.weight_cost.toFixed(
-                              2
-                            )}
+                            {Number(
+                              syriaTransportPrice?.breakdown?.weight_cost || 0
+                            ).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -1048,7 +1049,10 @@ export default function Step8InternalTransport({
                             {language === "ar" ? "الحد الأدنى:" : "Minimum:"}
                           </span>
                           <span className="text-sm font-semibold text-gray-900">
-                            €{syriaTransportPrice.min_price.toFixed(2)}
+                            €
+                            {Number(
+                              syriaTransportPrice?.min_price || 0
+                            ).toFixed(2)}
                           </span>
                         </div>
                         <div className="pt-2 border-t-2 border-blue-300 flex justify-between items-center">
@@ -1058,17 +1062,20 @@ export default function Step8InternalTransport({
                               : "Final Price:"}
                           </span>
                           <span className="text-xl font-bold text-blue-600">
-                            €{syriaTransportPrice.calculated_price.toFixed(2)}
+                            €
+                            {Number(
+                              syriaTransportPrice?.calculated_price || 0
+                            ).toFixed(2)}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-2 text-center">
                           {language === "ar"
-                            ? `(${syriaWeight} كغ × €${syriaTransportPrice.rate_per_kg.toFixed(
-                                2
-                              )}/كغ)`
-                            : `(${syriaWeight} kg × €${syriaTransportPrice.rate_per_kg.toFixed(
-                                2
-                              )}/kg)`}
+                            ? `(${syriaWeight} كغ × €${Number(
+                                syriaTransportPrice?.rate_per_kg || 0
+                              ).toFixed(2)}/كغ)`
+                            : `(${syriaWeight} kg × €${Number(
+                                syriaTransportPrice?.rate_per_kg || 0
+                              ).toFixed(2)}/kg)`}
                         </p>
                       </div>
                     ) : (
@@ -1183,9 +1190,9 @@ export default function Step8InternalTransport({
                             </span>
                             <span className="text-sm font-semibold text-gray-900">
                               €
-                              {syriaTransportPrice.breakdown.weight_cost.toFixed(
-                                2
-                              )}
+                              {Number(
+                                syriaTransportPrice?.breakdown?.weight_cost || 0
+                              ).toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center">
@@ -1193,7 +1200,10 @@ export default function Step8InternalTransport({
                               {language === "ar" ? "الحد الأدنى:" : "Minimum:"}
                             </span>
                             <span className="text-sm font-semibold text-gray-900">
-                              €{syriaTransportPrice.min_price.toFixed(2)}
+                              €
+                              {Number(
+                                syriaTransportPrice?.min_price || 0
+                              ).toFixed(2)}
                             </span>
                           </div>
                           <div className="pt-2 border-t-2 border-blue-300 flex justify-between items-center">
@@ -1203,17 +1213,20 @@ export default function Step8InternalTransport({
                                 : "Final Price:"}
                             </span>
                             <span className="text-xl font-bold text-blue-600">
-                              €{syriaTransportPrice.calculated_price.toFixed(2)}
+                              €
+                              {Number(
+                                syriaTransportPrice?.calculated_price || 0
+                              ).toFixed(2)}
                             </span>
                           </div>
                           <p className="text-xs text-gray-500 mt-2 text-center">
                             {language === "ar"
-                              ? `(${syriaWeight} كغ × €${syriaTransportPrice.rate_per_kg.toFixed(
-                                  2
-                                )}/كغ)`
-                              : `(${syriaWeight} kg × €${syriaTransportPrice.rate_per_kg.toFixed(
-                                  2
-                                )}/kg)`}
+                              ? `(${syriaWeight} كغ × €${Number(
+                                  syriaTransportPrice?.rate_per_kg || 0
+                                ).toFixed(2)}/كغ)`
+                              : `(${syriaWeight} kg × €${Number(
+                                  syriaTransportPrice?.rate_per_kg || 0
+                                ).toFixed(2)}/kg)`}
                           </p>
                         </div>
                       ) : (
@@ -1632,7 +1645,8 @@ export default function Step8InternalTransport({
                           </div>
                           <div className="text-right">
                             <p className="text-2xl font-bold text-primary-dark">
-                              {method.price.toFixed(2)} {method.currency}
+                              {Number(method.price || 0).toFixed(2)}{" "}
+                              {method.currency}
                             </p>
                           </div>
                         </div>
@@ -1655,7 +1669,7 @@ export default function Step8InternalTransport({
                                         {item.label}:
                                       </span>
                                       <span className="font-semibold text-gray-800">
-                                        €{item.value.toFixed(2)}
+                                        €{Number(item.value || 0).toFixed(2)}
                                       </span>
                                     </div>
                                   )

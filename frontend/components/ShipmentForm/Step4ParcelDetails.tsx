@@ -88,7 +88,7 @@ export default function Step4ParcelDetails({
   const [productRequested, setProductRequested] = useState<{
     [key: string]: boolean;
   }>({});
-  
+
   // Debounce timer for CBM calculation
   const cbmCalculationTimerRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
@@ -556,20 +556,27 @@ export default function Step4ParcelDetails({
         if (!parcelToCalculate) return;
 
         // Convert to numbers for calculation
-        const length = typeof parcelToCalculate.length === "number" 
-          ? parcelToCalculate.length 
-          : parseFloat(String(parcelToCalculate.length || "")) || 0;
-        const width = typeof parcelToCalculate.width === "number"
-          ? parcelToCalculate.width
-          : parseFloat(String(parcelToCalculate.width || "")) || 0;
-        const height = typeof parcelToCalculate.height === "number"
-          ? parcelToCalculate.height
-          : parseFloat(String(parcelToCalculate.height || "")) || 0;
+        const length =
+          typeof parcelToCalculate.length === "number"
+            ? parcelToCalculate.length
+            : parseFloat(String(parcelToCalculate.length || "")) || 0;
+        const width =
+          typeof parcelToCalculate.width === "number"
+            ? parcelToCalculate.width
+            : parseFloat(String(parcelToCalculate.width || "")) || 0;
+        const height =
+          typeof parcelToCalculate.height === "number"
+            ? parcelToCalculate.height
+            : parseFloat(String(parcelToCalculate.height || "")) || 0;
 
         // Only calculate CBM if all dimensions are valid (greater than 0)
         if (length > 0 && width > 0 && height > 0) {
           try {
-            const response = await apiService.calculateCBM(length, width, height);
+            const response = await apiService.calculateCBM(
+              length,
+              width,
+              height
+            );
             if (response.data.success) {
               // Update CBM - create new array with updated CBM
               const latestParcels = updatedParcels.map((p) => {
@@ -591,7 +598,12 @@ export default function Step4ParcelDetails({
   // Legacy async function for other fields that need async operations
   const updateParcel = async (id: string, field: keyof Parcel, value: any) => {
     // For dimensions and weight, use fast update
-    if (field === "length" || field === "width" || field === "height" || field === "weight") {
+    if (
+      field === "length" ||
+      field === "width" ||
+      field === "height" ||
+      field === "weight"
+    ) {
       updateParcelField(id, field, value);
       return;
     }
@@ -949,7 +961,7 @@ export default function Step4ParcelDetails({
                     </label>
                     <div className="px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-600 flex items-center">
                       {parcel.cbm > 0
-                        ? `${parcel.cbm.toFixed(6)} m³`
+                        ? `${Number(parcel.cbm || 0).toFixed(6)} m³`
                         : language === "ar"
                         ? "0.000000 m³"
                         : "0.000000 m³"}

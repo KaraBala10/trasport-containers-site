@@ -228,7 +228,7 @@ export default function Step9Payment({
                       {language === "ar" ? "المبلغ الإجمالي:" : "Total Amount:"}
                     </p>
                     <p className="text-xl font-bold text-blue-900">
-                      €{grandTotal.toFixed(2)}
+                      €{Number(grandTotal || 0).toFixed(2)}
                     </p>
                   </div>
                 )}
@@ -752,7 +752,7 @@ export default function Step9Payment({
                       {language === "ar" ? "المبلغ الإجمالي:" : "Total Amount:"}
                     </p>
                     <p className="text-xl font-bold text-blue-900">
-                      €{grandTotal.toFixed(2)}
+                      €{Number(grandTotal || 0).toFixed(2)}
                     </p>
                   </div>
                 )}

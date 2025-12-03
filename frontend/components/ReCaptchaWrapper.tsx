@@ -10,22 +10,23 @@ const ReCaptchaContext = createContext<{
 
 export const useReCaptcha = () => {
   const context = useContext(ReCaptchaContext);
+  
+  // Always call useGoogleReCaptcha hook unconditionally (Rules of Hooks)
+  // This hook must be called in the same order on every render
+  // The hook will return undefined/null if provider is not available, which is fine
+  const recaptchaHookResult = useGoogleReCaptcha();
 
-  // Use standard v3 from react-google-recaptcha-v3
+  // Priority 1: Use context value if available
   if (context.executeRecaptcha) {
     return context;
   }
 
-  // Fallback: try to get from GoogleReCaptchaProvider directly
-  try {
-    const recaptcha = useGoogleReCaptcha();
-    if (recaptcha?.executeRecaptcha) {
-      return { executeRecaptcha: recaptcha.executeRecaptcha };
-    }
-  } catch {
-    // Provider not available
+  // Priority 2: Use hook result if available
+  if (recaptchaHookResult?.executeRecaptcha) {
+    return { executeRecaptcha: recaptchaHookResult.executeRecaptcha };
   }
 
+  // Fallback: return empty context
   return context;
 };
 

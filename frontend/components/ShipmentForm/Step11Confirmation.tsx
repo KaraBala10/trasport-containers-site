@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ShippingDirection } from '@/types/shipment';
-import { PricingResult } from '@/types/pricing';
-import Link from 'next/link';
-import { apiService } from '@/lib/api';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { ShippingDirection } from "@/types/shipment";
+import { PricingResult } from "@/types/pricing";
+import Link from "next/link";
+import { apiService } from "@/lib/api";
 
 interface Step11ConfirmationProps {
   shipmentId: string;
   direction: ShippingDirection;
   pricing: PricingResult | null;
-  language: 'ar' | 'en';
+  language: "ar" | "en";
   grandTotalWithTransport?: number;
   hasInternalTransport?: boolean; // If Internal Transport in Europe is selected
   onStripePayment?: () => Promise<void>; // Stripe payment handler
@@ -35,37 +35,38 @@ export default function Step11Confirmation({
 }: Step11ConfirmationProps) {
   const translations = {
     ar: {
-      title: 'تم إنشاء الشحنة بنجاح',
-      shipmentId: 'رقم الشحنة',
-      successMessage: 'تم إنشاء شحنتك بنجاح!',
-      emailSent: 'تم إرسال بريد تأكيد إلى بريدك الإلكتروني',
-      documentsNote: 'ستجد الوثائق في ملفك الشخصي ضمن تفاصيل شحنتك',
-      nextSteps: 'الخطوات التالية',
-      nextStepsDesc: 'سيتم التواصل معك قريباً لتأكيد تفاصيل الشحنة',
-      backToHome: 'العودة إلى الصفحة الرئيسية',
-      totalPrice: 'السعر الإجمالي',
-      downloadLabel: 'تحميل Label',
-      shippingLabel: 'Label الشحن',
-      labelAvailable: 'Label الشحن متاح للتحميل',
+      title: "تم إنشاء الشحنة بنجاح",
+      shipmentId: "رقم الشحنة",
+      successMessage: "تم إنشاء شحنتك بنجاح!",
+      emailSent: "تم إرسال بريد تأكيد إلى بريدك الإلكتروني",
+      documentsNote: "ستجد الوثائق في ملفك الشخصي ضمن تفاصيل شحنتك",
+      nextSteps: "الخطوات التالية",
+      nextStepsDesc: "سيتم التواصل معك قريباً لتأكيد تفاصيل الشحنة",
+      backToHome: "العودة إلى الصفحة الرئيسية",
+      totalPrice: "السعر الإجمالي",
+      downloadLabel: "تحميل Label",
+      shippingLabel: "Label الشحن",
+      labelAvailable: "Label الشحن متاح للتحميل",
     },
     en: {
-      title: 'Shipment Created Successfully',
-      shipmentId: 'Shipment ID',
-      successMessage: 'Your shipment has been created successfully!',
-      emailSent: 'Confirmation email has been sent to your email',
-      documentsNote: 'You will find the documents in your profile within your shipment details',
-      nextSteps: 'Next Steps',
-      nextStepsDesc: 'We will contact you soon to confirm shipment details',
-      backToHome: 'Back to Home',
-      totalPrice: 'Total Price',
-      downloadLabel: 'Download Label',
-      shippingLabel: 'Shipping Label',
-      labelAvailable: 'Shipping label is available for download',
+      title: "Shipment Created Successfully",
+      shipmentId: "Shipment ID",
+      successMessage: "Your shipment has been created successfully!",
+      emailSent: "Confirmation email has been sent to your email",
+      documentsNote:
+        "You will find the documents in your profile within your shipment details",
+      nextSteps: "Next Steps",
+      nextStepsDesc: "We will contact you soon to confirm shipment details",
+      backToHome: "Back to Home",
+      totalPrice: "Total Price",
+      downloadLabel: "Download Label",
+      shippingLabel: "Shipping Label",
+      labelAvailable: "Shipping label is available for download",
     },
   };
 
   const t = translations[language];
-  const isEUtoSY = direction === 'eu-sy';
+  const isEUtoSY = direction === "eu-sy";
   const [shipmentData, setShipmentData] = useState<ShipmentData | null>(null);
   const [loadingShipment, setLoadingShipment] = useState(false);
 
@@ -73,16 +74,16 @@ export default function Step11Confirmation({
   useEffect(() => {
     const fetchShipmentData = async () => {
       if (!shipmentId) return;
-      
+
       try {
         setLoadingShipment(true);
         // Try to parse shipmentId as number
         const id = parseInt(shipmentId);
         if (isNaN(id)) {
-          console.error('Invalid shipment ID:', shipmentId);
+          console.error("Invalid shipment ID:", shipmentId);
           return;
         }
-        
+
         const response = await apiService.getShipment(id);
         if (response.data) {
           setShipmentData({
@@ -91,7 +92,7 @@ export default function Step11Confirmation({
           });
         }
       } catch (error) {
-        console.error('Error fetching shipment data:', error);
+        console.error("Error fetching shipment data:", error);
         // Don't show error to user, just silently fail
       } finally {
         setLoadingShipment(false);
@@ -99,7 +100,7 @@ export default function Step11Confirmation({
     };
 
     fetchShipmentData();
-    
+
     // Poll for label if not available yet (check every 3 seconds, max 10 times)
     let pollCount = 0;
     const maxPolls = 10;
@@ -108,12 +109,12 @@ export default function Step11Confirmation({
         clearInterval(pollInterval);
         return;
       }
-      
+
       pollCount++;
       try {
         const id = parseInt(shipmentId);
         if (isNaN(id)) return;
-        
+
         const response = await apiService.getShipment(id);
         if (response.data?.sendcloud_label_url) {
           setShipmentData({
@@ -130,7 +131,6 @@ export default function Step11Confirmation({
     return () => clearInterval(pollInterval);
   }, [shipmentId]);
 
-
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -141,7 +141,7 @@ export default function Step11Confirmation({
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
         className="flex justify-center"
       >
         <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
@@ -191,7 +191,9 @@ export default function Step11Confirmation({
         transition={{ delay: 0.6 }}
         className="bg-gradient-to-r from-primary-yellow to-primary-yellow/90 rounded-2xl p-8 shadow-2xl border-4 border-primary-dark"
       >
-        <p className="text-sm font-semibold text-primary-dark mb-2">{t.shipmentId}</p>
+        <p className="text-sm font-semibold text-primary-dark mb-2">
+          {t.shipmentId}
+        </p>
         <p className="text-4xl font-black text-primary-dark">{shipmentId}</p>
       </motion.div>
 
@@ -203,9 +205,14 @@ export default function Step11Confirmation({
           transition={{ delay: 0.7 }}
           className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100"
         >
-          <p className="text-sm font-semibold text-gray-700 mb-2">{t.totalPrice}</p>
+          <p className="text-sm font-semibold text-gray-700 mb-2">
+            {t.totalPrice}
+          </p>
           <p className="text-3xl font-bold text-primary-dark">
-            {(grandTotalWithTransport || pricing?.grandTotal || 0).toFixed(2)} €
+            {Number(
+              grandTotalWithTransport || pricing?.grandTotal || 0
+            ).toFixed(2)}{" "}
+            €
           </p>
         </motion.div>
       )}
@@ -228,13 +235,15 @@ export default function Step11Confirmation({
           transition={{ delay: 0.85 }}
           className="bg-white rounded-2xl p-6 shadow-lg border-2 border-blue-200"
         >
-          <h3 className="text-xl font-bold text-primary-dark mb-2">{t.shippingLabel}</h3>
+          <h3 className="text-xl font-bold text-primary-dark mb-2">
+            {t.shippingLabel}
+          </h3>
           <p className="text-sm text-gray-600 mb-4">{t.labelAvailable}</p>
           {shipmentData.tracking_number && (
             <p className="text-sm text-gray-700 mb-4">
               <span className="font-semibold">
-                {language === 'ar' ? 'رقم التتبع:' : 'Tracking Number:'}
-              </span>{' '}
+                {language === "ar" ? "رقم التتبع:" : "Tracking Number:"}
+              </span>{" "}
               {shipmentData.tracking_number}
             </p>
           )}
@@ -286,7 +295,9 @@ export default function Step11Confirmation({
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <p className="text-base font-semibold text-blue-900">{t.documentsNote}</p>
+          <p className="text-base font-semibold text-blue-900">
+            {t.documentsNote}
+          </p>
         </div>
       </motion.div>
 
@@ -299,54 +310,64 @@ export default function Step11Confirmation({
           className="bg-white rounded-2xl p-6 shadow-lg border-2 border-blue-200"
         >
           <h3 className="text-xl font-bold text-primary-dark mb-2">
-            {language === 'ar' ? 'الدفع عبر Stripe' : 'Pay via Stripe'}
+            {language === "ar" ? "الدفع عبر Stripe" : "Pay via Stripe"}
           </h3>
           <p className="text-sm text-gray-600 mb-4">
-            {language === 'ar'
-              ? 'يمكنك الدفع الآن عبر Stripe لاستكمال عملية الشحن'
-              : 'You can pay now via Stripe to complete the shipping process'}
+            {language === "ar"
+              ? "يمكنك الدفع الآن عبر Stripe لاستكمال عملية الشحن"
+              : "You can pay now via Stripe to complete the shipping process"}
           </p>
           {grandTotalWithTransport && grandTotalWithTransport > 0 && (
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-300 mb-4">
               <p className="text-sm font-semibold text-blue-900 mb-1">
-                {language === 'ar' ? 'المبلغ الإجمالي:' : 'Total Amount:'}
+                {language === "ar" ? "المبلغ الإجمالي:" : "Total Amount:"}
               </p>
               <p className="text-2xl font-bold text-blue-900">
-                €{grandTotalWithTransport.toFixed(2)}
+                €{Number(grandTotalWithTransport || 0).toFixed(2)}
               </p>
             </div>
           )}
           <motion.button
             onClick={onStripePayment}
-            disabled={isProcessingPayment || !grandTotalWithTransport || grandTotalWithTransport <= 0}
+            disabled={
+              isProcessingPayment ||
+              !grandTotalWithTransport ||
+              grandTotalWithTransport <= 0
+            }
             className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all ${
-              isProcessingPayment || !grandTotalWithTransport || grandTotalWithTransport <= 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl'
+              isProcessingPayment ||
+              !grandTotalWithTransport ||
+              grandTotalWithTransport <= 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl"
             }`}
             whileHover={
-              !isProcessingPayment && grandTotalWithTransport && grandTotalWithTransport > 0
+              !isProcessingPayment &&
+              grandTotalWithTransport &&
+              grandTotalWithTransport > 0
                 ? { scale: 1.02 }
                 : {}
             }
             whileTap={
-              !isProcessingPayment && grandTotalWithTransport && grandTotalWithTransport > 0
+              !isProcessingPayment &&
+              grandTotalWithTransport &&
+              grandTotalWithTransport > 0
                 ? { scale: 0.98 }
                 : {}
             }
           >
             {isProcessingPayment
-              ? language === 'ar'
-                ? 'جاري التوجيه...'
-                : 'Redirecting...'
-              : language === 'ar'
-              ? 'الدفع الآن عبر Stripe'
-              : 'Pay Now via Stripe'}
+              ? language === "ar"
+                ? "جاري التوجيه..."
+                : "Redirecting..."
+              : language === "ar"
+              ? "الدفع الآن عبر Stripe"
+              : "Pay Now via Stripe"}
           </motion.button>
           <p className="text-xs text-blue-700 mt-3">
-            {language === 'ar'
-              ? 'سيتم توجيهك إلى صفحة الدفع الآمنة من Stripe'
-              : 'You will be redirected to Stripe secure payment page'}
+            {language === "ar"
+              ? "سيتم توجيهك إلى صفحة الدفع الآمنة من Stripe"
+              : "You will be redirected to Stripe secure payment page"}
           </p>
         </motion.div>
       )}
@@ -381,4 +402,3 @@ export default function Step11Confirmation({
     </motion.div>
   );
 }
-

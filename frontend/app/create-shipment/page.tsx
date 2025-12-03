@@ -235,7 +235,7 @@ export default function CreateShipmentPage() {
         euPickupPostalCode?.trim() &&
         euPickupCountry?.trim() &&
         euPickupWeight > 0;
-        // Note: selectedEUShippingMethod is optional - users can proceed without selecting
+      // Note: selectedEUShippingMethod is optional - users can proceed without selecting
 
       if (!euTransportValid) return false;
     }
@@ -584,10 +584,13 @@ export default function CreateShipmentPage() {
   // Calculate Grand Total with Transport
   const grandTotalWithTransport = useMemo(() => {
     if (!pricing) return 0;
-    const euTransportPrice = selectedEUShippingTotalPrice || 0;
-    const syriaTransportCost = syriaTransportDetails?.calculated_price || 0;
+    // Ensure all values are numbers to avoid string concatenation
+    const baseTotal = Number(pricing.grandTotal) || 0;
+    const euTransportPrice = Number(selectedEUShippingTotalPrice) || 0;
+    const syriaTransportCost =
+      Number(syriaTransportDetails?.calculated_price) || 0;
     const totalTransportPrice = euTransportPrice + syriaTransportCost;
-    return pricing.grandTotal + totalTransportPrice;
+    return baseTotal + totalTransportPrice;
   }, [pricing, selectedEUShippingTotalPrice, syriaTransportDetails]);
 
   // Handle Stripe Payment
@@ -685,7 +688,7 @@ export default function CreateShipmentPage() {
         syria_province: syriaProvince,
         syria_weight: syriaWeight,
         payment_method: "stripe",
-        total_price: Number(grandTotalWithTransport.toFixed(2)),
+        total_price: Number(Number(grandTotalWithTransport || 0).toFixed(2)),
         recaptcha_token: recaptchaToken || undefined,
       };
 
@@ -1757,122 +1760,161 @@ export default function CreateShipmentPage() {
                           repeatCount: parcel.repeatCount,
                           shipmentType: parcel.shipmentType,
                         };
-                        
+
                         // Add optional fields
-                        if (parcel.isCustomProduct) parcelData.isCustomProduct = parcel.isCustomProduct;
-                        if (parcel.customProductName) parcelData.customProductName = parcel.customProductName;
-                        if (parcel.packagingType) parcelData.packagingType = parcel.packagingType;
+                        if (parcel.isCustomProduct)
+                          parcelData.isCustomProduct = parcel.isCustomProduct;
+                        if (parcel.customProductName)
+                          parcelData.customProductName =
+                            parcel.customProductName;
+                        if (parcel.packagingType)
+                          parcelData.packagingType = parcel.packagingType;
                         if (parcel.hs_code) parcelData.hs_code = parcel.hs_code;
-                        if (parcel.wantsInsurance) parcelData.wantsInsurance = parcel.wantsInsurance;
-                        if (parcel.declaredShipmentValue) parcelData.declaredShipmentValue = parcel.declaredShipmentValue;
-                        
+                        if (parcel.wantsInsurance)
+                          parcelData.wantsInsurance = parcel.wantsInsurance;
+                        if (parcel.declaredShipmentValue)
+                          parcelData.declaredShipmentValue =
+                            parcel.declaredShipmentValue;
+
                         // Electronics fields (but NOT devicePhoto or electronicsPicture - those are files)
                         if (parcel.isElectronicsShipment) {
-                          parcelData.isElectronicsShipment = parcel.isElectronicsShipment;
-                          if (parcel.deviceType) parcelData.deviceType = parcel.deviceType;
-                          if (parcel.deviceModel) parcelData.deviceModel = parcel.deviceModel;
-                          if (parcel.declaredValue) parcelData.declaredValue = parcel.declaredValue;
-                          if (parcel.hasInvoice) parcelData.hasInvoice = parcel.hasInvoice;
-                          if (parcel.electronicsName) parcelData.electronicsName = parcel.electronicsName;
+                          parcelData.isElectronicsShipment =
+                            parcel.isElectronicsShipment;
+                          if (parcel.deviceType)
+                            parcelData.deviceType = parcel.deviceType;
+                          if (parcel.deviceModel)
+                            parcelData.deviceModel = parcel.deviceModel;
+                          if (parcel.declaredValue)
+                            parcelData.declaredValue = parcel.declaredValue;
+                          if (parcel.hasInvoice)
+                            parcelData.hasInvoice = parcel.hasInvoice;
+                          if (parcel.electronicsName)
+                            parcelData.electronicsName = parcel.electronicsName;
                         }
-                        
+
                         // Explicitly exclude File objects (photos, devicePhoto, electronicsPicture)
                         // These will be sent separately in FormData
                         // Make sure these fields are NOT in parcelData
                         delete parcelData.photos;
                         delete parcelData.devicePhoto;
                         delete parcelData.electronicsPicture;
-                        
+
                         return parcelData;
                       });
 
                       // Create FormData for file uploads
                       const formData = new FormData();
-                      
+
                       // Add all shipment data as JSON string
-                      formData.append('shipment_data', JSON.stringify({
-                        direction: direction,
-                        sender_name: sender?.fullName || "",
-                        sender_email: sender?.email || "",
-                        sender_phone: sender?.phone || "",
-                        sender_address:
-                          sender?.street && sender?.streetNumber
-                            ? `${sender.street} ${sender.streetNumber}`.trim()
-                            : sender?.street || "",
-                        sender_city:
-                          direction === "sy-eu"
-                            ? sender?.country || sender?.province || ""
-                            : sender?.city || "",
-                        sender_postal_code: sender?.postalCode || "",
-                        sender_country: senderCountry,
-                        receiver_name: receiver?.fullName || "",
-                        receiver_email: receiver?.email || "",
-                        receiver_phone: receiver?.phone || "",
-                        receiver_address:
-                          receiver?.street && receiver?.streetNumber
-                            ? `${receiver.street} ${receiver.streetNumber}`.trim()
-                            : receiver?.street || "",
-                        receiver_city:
-                          direction === "eu-sy"
-                            ? receiver?.country || receiver?.province || ""
-                            : receiver?.city || "",
-                        receiver_postal_code: receiver?.postalCode || "",
-                        receiver_country: receiverCountry,
-                        parcels: parcelsData,
-                        eu_pickup_name: euPickupName,
-                        eu_pickup_company_name: euPickupCompanyName,
-                        eu_pickup_address: euPickupAddress,
-                        eu_pickup_house_number: euPickupHouseNumber,
-                        eu_pickup_city: euPickupCity,
-                        eu_pickup_postal_code: euPickupPostalCode,
-                        eu_pickup_country: euPickupCountry,
-                        eu_pickup_email: euPickupEmail,
-                        eu_pickup_telephone: euPickupTelephone,
-                        eu_pickup_weight: euPickupWeight,
-                        selected_eu_shipping_method: selectedEUShippingMethod,
-                        selected_eu_shipping_name: selectedEUShippingName,
-                        syria_province: syriaProvince,
-                        syria_weight: syriaWeight,
-                        payment_method: paymentMethod,
-                        transfer_sender_name: transferSenderName,
-                        transfer_reference: transferReference,
-                        total_price: Number(grandTotalWithTransport.toFixed(2)),
-                        recaptcha_token: recaptchaToken || undefined,
-                      }));
+                      formData.append(
+                        "shipment_data",
+                        JSON.stringify({
+                          direction: direction,
+                          sender_name: sender?.fullName || "",
+                          sender_email: sender?.email || "",
+                          sender_phone: sender?.phone || "",
+                          sender_address:
+                            sender?.street && sender?.streetNumber
+                              ? `${sender.street} ${sender.streetNumber}`.trim()
+                              : sender?.street || "",
+                          sender_city:
+                            direction === "sy-eu"
+                              ? sender?.country || sender?.province || ""
+                              : sender?.city || "",
+                          sender_postal_code: sender?.postalCode || "",
+                          sender_country: senderCountry,
+                          receiver_name: receiver?.fullName || "",
+                          receiver_email: receiver?.email || "",
+                          receiver_phone: receiver?.phone || "",
+                          receiver_address:
+                            receiver?.street && receiver?.streetNumber
+                              ? `${receiver.street} ${receiver.streetNumber}`.trim()
+                              : receiver?.street || "",
+                          receiver_city:
+                            direction === "eu-sy"
+                              ? receiver?.country || receiver?.province || ""
+                              : receiver?.city || "",
+                          receiver_postal_code: receiver?.postalCode || "",
+                          receiver_country: receiverCountry,
+                          parcels: parcelsData,
+                          eu_pickup_name: euPickupName,
+                          eu_pickup_company_name: euPickupCompanyName,
+                          eu_pickup_address: euPickupAddress,
+                          eu_pickup_house_number: euPickupHouseNumber,
+                          eu_pickup_city: euPickupCity,
+                          eu_pickup_postal_code: euPickupPostalCode,
+                          eu_pickup_country: euPickupCountry,
+                          eu_pickup_email: euPickupEmail,
+                          eu_pickup_telephone: euPickupTelephone,
+                          eu_pickup_weight: euPickupWeight,
+                          selected_eu_shipping_method: selectedEUShippingMethod,
+                          selected_eu_shipping_name: selectedEUShippingName,
+                          syria_province: syriaProvince,
+                          syria_weight: syriaWeight,
+                          payment_method: paymentMethod,
+                          transfer_sender_name: transferSenderName,
+                          transfer_reference: transferReference,
+                          total_price: Number(
+                            Number(grandTotalWithTransport || 0).toFixed(2)
+                          ),
+                          recaptcha_token: recaptchaToken || undefined,
+                        })
+                      );
 
                       // Add parcel photos
                       parcels.forEach((parcel, parcelIndex) => {
                         // Parcel photos (for non-electronics)
                         if (parcel.photos && parcel.photos.length > 0) {
-                          console.log(`Adding ${parcel.photos.length} photos for parcel ${parcelIndex}`);
+                          console.log(
+                            `Adding ${parcel.photos.length} photos for parcel ${parcelIndex}`
+                          );
                           parcel.photos.forEach((photo, photoIndex) => {
                             const key = `parcel_${parcelIndex}_photo_${photoIndex}`;
                             formData.append(key, photo);
-                            console.log(`Added photo: ${key}, size: ${photo.size}`);
+                            console.log(
+                              `Added photo: ${key}, size: ${photo.size}`
+                            );
                           });
                         } else {
                           console.log(`Parcel ${parcelIndex} has no photos`);
                         }
-                        
+
                         // Electronics photos
                         if (parcel.isElectronicsShipment) {
-                          console.log(`Parcel ${parcelIndex} is electronics shipment`);
+                          console.log(
+                            `Parcel ${parcelIndex} is electronics shipment`
+                          );
                           if (parcel.devicePhoto) {
-                            formData.append(`parcel_${parcelIndex}_device_photo`, parcel.devicePhoto);
-                            console.log(`Added device photo for parcel ${parcelIndex}`);
+                            formData.append(
+                              `parcel_${parcelIndex}_device_photo`,
+                              parcel.devicePhoto
+                            );
+                            console.log(
+                              `Added device photo for parcel ${parcelIndex}`
+                            );
                           }
                           if (parcel.electronicsPicture) {
-                            formData.append(`parcel_${parcelIndex}_electronics_picture`, parcel.electronicsPicture);
-                            console.log(`Added electronics picture for parcel ${parcelIndex}`);
+                            formData.append(
+                              `parcel_${parcelIndex}_electronics_picture`,
+                              parcel.electronicsPicture
+                            );
+                            console.log(
+                              `Added electronics picture for parcel ${parcelIndex}`
+                            );
                           }
                         }
                       });
-                      
+
                       // Log FormData contents
-                      console.log("FormData keys:", Array.from(formData.keys()));
+                      console.log(
+                        "FormData keys:",
+                        Array.from(formData.keys())
+                      );
 
                       // Create shipment via API
-                      const response = await apiService.createShipment(formData);
+                      const response = await apiService.createShipment(
+                        formData
+                      );
 
                       if (response.data?.id || response.data?.shipment_number) {
                         setShipmentId(

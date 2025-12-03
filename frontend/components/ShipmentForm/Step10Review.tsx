@@ -155,13 +155,15 @@ export default function Step10Review({
     syriaTransportDetails.calculated_price > 0;
 
   // Calculate transport prices (use total_price from backend, NOT selectedEUShippingPrice)
+  // Ensure all values are numbers to avoid string concatenation issues
   const euTransportPrice = isEUTransport
-    ? selectedEUShippingTotalPrice || 0
+    ? Number(selectedEUShippingTotalPrice) || 0
     : 0;
   const syriaTransportCost = isSyriaTransport
-    ? syriaTransportDetails.calculated_price
+    ? Number(syriaTransportDetails?.calculated_price) || 0
     : 0;
-  const totalTransportCost = euTransportPrice + syriaTransportCost;
+  const totalTransportCost =
+    Number(euTransportPrice) + Number(syriaTransportCost);
 
   console.log("🔍 Step10Review - Transport Props:", {
     direction,
@@ -204,13 +206,13 @@ export default function Step10Review({
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-700">{t.totalWeight}:</span>
             <span className="text-sm font-semibold text-gray-900">
-              {totalWeight.toFixed(2)} kg
+              {Number(totalWeight || 0).toFixed(2)} kg
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-700">{t.totalCBM}:</span>
             <span className="text-sm font-semibold text-gray-900">
-              {totalCBM.toFixed(4)} m³
+              {Number(totalCBM || 0).toFixed(4)} m³
             </span>
           </div>
 
@@ -253,7 +255,7 @@ export default function Step10Review({
                       {t.baseLCLPrice}:
                     </span>
                     <span className="text-sm font-semibold text-gray-900">
-                      €{pricing.basePrice.final.toFixed(2)}
+                      €{Number(pricing.basePrice.final || 0).toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -266,7 +268,8 @@ export default function Step10Review({
                         {t.electronicsPrice}:
                       </span>
                       <span className="text-sm font-semibold text-gray-900">
-                        €{pricing.electronicsPrice.total.toFixed(2)}
+                        €
+                        {Number(pricing.electronicsPrice.total || 0).toFixed(2)}
                       </span>
                     </div>
                   )}
@@ -278,7 +281,7 @@ export default function Step10Review({
                       {t.packaging}:
                     </span>
                     <span className="text-sm font-semibold text-gray-900">
-                      €{pricing.packaging.total.toFixed(2)}
+                      €{Number(pricing.packaging.total || 0).toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -290,7 +293,7 @@ export default function Step10Review({
                       {t.insurance}:
                     </span>
                     <span className="text-sm font-semibold text-gray-900">
-                      €{pricing.insurance.total.toFixed(2)}
+                      €{Number(pricing.insurance.total || 0).toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -302,7 +305,7 @@ export default function Step10Review({
                       {t.euTransport} ({selectedEUShippingName}):
                     </span>
                     <span className="text-sm font-semibold text-gray-900">
-                      €{euTransportPrice.toFixed(2)}
+                      €{Number(euTransportPrice || 0).toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -319,13 +322,16 @@ export default function Step10Review({
                     <div className="flex justify-between items-center pl-4">
                       <span className="text-xs text-gray-600">
                         {t.weightCost} ({syriaTransportDetails.weight} kg × €
-                        {syriaTransportDetails.rate_per_kg?.toFixed(2)}/kg):
+                        {Number(
+                          syriaTransportDetails?.rate_per_kg || 0
+                        ).toFixed(2)}
+                        /kg):
                       </span>
                       <span className="text-xs font-semibold text-gray-800">
                         €
-                        {syriaTransportDetails.breakdown?.weight_cost?.toFixed(
-                          2
-                        ) || "0.00"}
+                        {Number(
+                          syriaTransportDetails?.breakdown?.weight_cost || 0
+                        ).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center pl-4">
@@ -333,7 +339,10 @@ export default function Step10Review({
                         {t.minimumPrice}:
                       </span>
                       <span className="text-xs font-semibold text-gray-800">
-                        €{syriaTransportDetails.min_price?.toFixed(2) || "0.00"}
+                        €
+                        {Number(syriaTransportDetails?.min_price || 0).toFixed(
+                          2
+                        )}
                       </span>
                     </div>
                     <div className="flex justify-between items-center pl-4">
@@ -342,8 +351,9 @@ export default function Step10Review({
                       </span>
                       <span className="text-sm font-bold text-gray-900">
                         €
-                        {syriaTransportDetails.calculated_price?.toFixed(2) ||
-                          "0.00"}
+                        {Number(
+                          syriaTransportDetails?.calculated_price || 0
+                        ).toFixed(2)}
                       </span>
                     </div>
                   </>
@@ -356,7 +366,7 @@ export default function Step10Review({
                       {t.totalBeforeTransport}:
                     </span>
                     <span className="text-base font-bold text-gray-900">
-                      €{pricing.grandTotal.toFixed(2)}
+                      €{Number(pricing.grandTotal || 0).toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -371,7 +381,7 @@ export default function Step10Review({
                   <span className="text-2xl font-bold text-gray-900">
                     €
                     {(() => {
-                      const baseTotal = pricing.grandTotal || 0;
+                      const baseTotal = Number(pricing.grandTotal) || 0;
                       const finalTotal = baseTotal + totalTransportCost;
 
                       console.log("💰 Step10Review Grand Total:", {
@@ -384,7 +394,7 @@ export default function Step10Review({
                         isSyriaTransport,
                         finalTotal,
                       });
-                      return finalTotal.toFixed(2);
+                      return Number(finalTotal).toFixed(2);
                     })()}
                   </span>
                 </div>
