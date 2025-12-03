@@ -1289,20 +1289,195 @@ export default function FCLQuotePage() {
 
   const t = translations[language];
 
-  // Load countries on component mount
+  // Default countries list (50 major countries)
+  const defaultCountries = [
+    { id: 1, name_en: "Netherlands", name_ar: "هولندا", code: "NL" },
+    { id: 2, name_en: "Germany", name_ar: "ألمانيا", code: "DE" },
+    { id: 3, name_en: "Belgium", name_ar: "بلجيكا", code: "BE" },
+    { id: 4, name_en: "France", name_ar: "فرنسا", code: "FR" },
+    { id: 5, name_en: "United Kingdom", name_ar: "المملكة المتحدة", code: "GB" },
+    { id: 6, name_en: "Italy", name_ar: "إيطاليا", code: "IT" },
+    { id: 7, name_en: "Spain", name_ar: "إسبانيا", code: "ES" },
+    { id: 8, name_en: "Poland", name_ar: "بولندا", code: "PL" },
+    { id: 9, name_en: "Sweden", name_ar: "السويد", code: "SE" },
+    { id: 10, name_en: "Denmark", name_ar: "الدنمارك", code: "DK" },
+    { id: 11, name_en: "Norway", name_ar: "النرويج", code: "NO" },
+    { id: 12, name_en: "Finland", name_ar: "فنلندا", code: "FI" },
+    { id: 13, name_en: "Switzerland", name_ar: "سويسرا", code: "CH" },
+    { id: 14, name_en: "Austria", name_ar: "النمسا", code: "AT" },
+    { id: 15, name_en: "Portugal", name_ar: "البرتغال", code: "PT" },
+    { id: 16, name_en: "Greece", name_ar: "اليونان", code: "GR" },
+    { id: 17, name_en: "Czech Republic", name_ar: "جمهورية التشيك", code: "CZ" },
+    { id: 18, name_en: "Romania", name_ar: "رومانيا", code: "RO" },
+    { id: 19, name_en: "Hungary", name_ar: "هنغاريا", code: "HU" },
+    { id: 20, name_en: "Ireland", name_ar: "أيرلندا", code: "IE" },
+    { id: 21, name_en: "Syria", name_ar: "سوريا", code: "SY" },
+    { id: 22, name_en: "United Arab Emirates", name_ar: "الإمارات العربية المتحدة", code: "AE" },
+    { id: 23, name_en: "Saudi Arabia", name_ar: "المملكة العربية السعودية", code: "SA" },
+    { id: 24, name_en: "Qatar", name_ar: "قطر", code: "QA" },
+    { id: 25, name_en: "Kuwait", name_ar: "الكويت", code: "KW" },
+    { id: 26, name_en: "Bahrain", name_ar: "البحرين", code: "BH" },
+    { id: 27, name_en: "Oman", name_ar: "عمان", code: "OM" },
+    { id: 28, name_en: "Jordan", name_ar: "الأردن", code: "JO" },
+    { id: 29, name_en: "Lebanon", name_ar: "لبنان", code: "LB" },
+    { id: 30, name_en: "Iraq", name_ar: "العراق", code: "IQ" },
+    { id: 31, name_en: "Egypt", name_ar: "مصر", code: "EG" },
+    { id: 32, name_en: "Turkey", name_ar: "تركيا", code: "TR" },
+    { id: 33, name_en: "China", name_ar: "الصين", code: "CN" },
+    { id: 34, name_en: "Japan", name_ar: "اليابان", code: "JP" },
+    { id: 35, name_en: "South Korea", name_ar: "كوريا الجنوبية", code: "KR" },
+    { id: 36, name_en: "India", name_ar: "الهند", code: "IN" },
+    { id: 37, name_en: "Singapore", name_ar: "سنغافورة", code: "SG" },
+    { id: 38, name_en: "Malaysia", name_ar: "ماليزيا", code: "MY" },
+    { id: 39, name_en: "Thailand", name_ar: "تايلاند", code: "TH" },
+    { id: 40, name_en: "Vietnam", name_ar: "فيتنام", code: "VN" },
+    { id: 41, name_en: "Indonesia", name_ar: "إندونيسيا", code: "ID" },
+    { id: 42, name_en: "Philippines", name_ar: "الفلبين", code: "PH" },
+    { id: 43, name_en: "United States", name_ar: "الولايات المتحدة", code: "US" },
+    { id: 44, name_en: "Canada", name_ar: "كندا", code: "CA" },
+    { id: 45, name_en: "Mexico", name_ar: "المكسيك", code: "MX" },
+    { id: 46, name_en: "Brazil", name_ar: "البرازيل", code: "BR" },
+    { id: 47, name_en: "Argentina", name_ar: "الأرجنتين", code: "AR" },
+    { id: 48, name_en: "Chile", name_ar: "تشيلي", code: "CL" },
+    { id: 49, name_en: "South Africa", name_ar: "جنوب أفريقيا", code: "ZA" },
+    { id: 50, name_en: "Australia", name_ar: "أستراليا", code: "AU" },
+  ];
+
+  // Default ports list (50 major ports)
+  const defaultPorts = [
+    { id: 1, name_en: "Rotterdam", name_ar: "روتردام", country_code: "NL" },
+    { id: 2, name_en: "Amsterdam", name_ar: "أمستردام", country_code: "NL" },
+    { id: 3, name_en: "Hamburg", name_ar: "هامبورغ", country_code: "DE" },
+    { id: 4, name_en: "Bremen", name_ar: "بريمن", country_code: "DE" },
+    { id: 5, name_en: "Antwerp", name_ar: "أنتويرب", country_code: "BE" },
+    { id: 6, name_en: "Zeebrugge", name_ar: "زيبروج", country_code: "BE" },
+    { id: 7, name_en: "Le Havre", name_ar: "لو هافر", country_code: "FR" },
+    { id: 8, name_en: "Marseille", name_ar: "مرسيليا", country_code: "FR" },
+    { id: 9, name_en: "Felixstowe", name_ar: "فليكسستو", country_code: "GB" },
+    { id: 10, name_en: "London", name_ar: "لندن", country_code: "GB" },
+    { id: 11, name_en: "Genoa", name_ar: "جنوة", country_code: "IT" },
+    { id: 12, name_en: "La Spezia", name_ar: "لا سبيتسيا", country_code: "IT" },
+    { id: 13, name_en: "Barcelona", name_ar: "برشلونة", country_code: "ES" },
+    { id: 14, name_en: "Valencia", name_ar: "بلنسية", country_code: "ES" },
+    { id: 15, name_en: "Gdansk", name_ar: "غدانسك", country_code: "PL" },
+    { id: 16, name_en: "Gothenburg", name_ar: "غوتنبرغ", country_code: "SE" },
+    { id: 17, name_en: "Copenhagen", name_ar: "كوبنهاغن", country_code: "DK" },
+    { id: 18, name_en: "Oslo", name_ar: "أوسلو", country_code: "NO" },
+    { id: 19, name_en: "Helsinki", name_ar: "هلسنكي", country_code: "FI" },
+    { id: 20, name_en: "Latakia", name_ar: "اللاذقية", country_code: "SY" },
+    { id: 21, name_en: "Tartous", name_ar: "طرطوس", country_code: "SY" },
+    { id: 22, name_en: "Dubai", name_ar: "دبي", country_code: "AE" },
+    { id: 23, name_en: "Jebel Ali", name_ar: "جبل علي", country_code: "AE" },
+    { id: 24, name_en: "Jeddah", name_ar: "جدة", country_code: "SA" },
+    { id: 25, name_en: "Dammam", name_ar: "الدمام", country_code: "SA" },
+    { id: 26, name_en: "Doha", name_ar: "الدوحة", country_code: "QA" },
+    { id: 27, name_en: "Kuwait", name_ar: "الكويت", country_code: "KW" },
+    { id: 28, name_en: "Manama", name_ar: "المنامة", country_code: "BH" },
+    { id: 29, name_en: "Muscat", name_ar: "مسقط", country_code: "OM" },
+    { id: 30, name_en: "Aqaba", name_ar: "العقبة", country_code: "JO" },
+    { id: 31, name_en: "Beirut", name_ar: "بيروت", country_code: "LB" },
+    { id: 32, name_en: "Basra", name_ar: "البصرة", country_code: "IQ" },
+    { id: 33, name_en: "Alexandria", name_ar: "الإسكندرية", country_code: "EG" },
+    { id: 34, name_en: "Istanbul", name_ar: "إسطنبول", country_code: "TR" },
+    { id: 35, name_en: "Mersin", name_ar: "مرسين", country_code: "TR" },
+    { id: 36, name_en: "Shanghai", name_ar: "شنغهاي", country_code: "CN" },
+    { id: 37, name_en: "Ningbo", name_ar: "نينغبو", country_code: "CN" },
+    { id: 38, name_en: "Shenzhen", name_ar: "شنتشن", country_code: "CN" },
+    { id: 39, name_en: "Tokyo", name_ar: "طوكيو", country_code: "JP" },
+    { id: 40, name_en: "Yokohama", name_ar: "يوكوهاما", country_code: "JP" },
+    { id: 41, name_en: "Busan", name_ar: "بوسان", country_code: "KR" },
+    { id: 42, name_en: "Mumbai", name_ar: "مومباي", country_code: "IN" },
+    { id: 43, name_en: "Singapore", name_ar: "سنغافورة", country_code: "SG" },
+    { id: 44, name_en: "Port Klang", name_ar: "كلانغ", country_code: "MY" },
+    { id: 45, name_en: "Bangkok", name_ar: "بانكوك", country_code: "TH" },
+    { id: 46, name_en: "Ho Chi Minh", name_ar: "هو تشي منه", country_code: "VN" },
+    { id: 47, name_en: "Jakarta", name_ar: "جاكرتا", country_code: "ID" },
+    { id: 48, name_en: "Manila", name_ar: "مانيلا", country_code: "PH" },
+    { id: 49, name_en: "Los Angeles", name_ar: "لوس أنجلوس", country_code: "US" },
+    { id: 50, name_en: "New York", name_ar: "نيويورك", country_code: "US" },
+  ];
+
+  // Default cities list (50 major cities)
+  const defaultCities = [
+    { id: 1, name_en: "Amsterdam", name_ar: "أمستردام", country_code: "NL" },
+    { id: 2, name_en: "Rotterdam", name_ar: "روتردام", country_code: "NL" },
+    { id: 3, name_en: "Berlin", name_ar: "برلين", country_code: "DE" },
+    { id: 4, name_en: "Hamburg", name_ar: "هامبورغ", country_code: "DE" },
+    { id: 5, name_en: "Brussels", name_ar: "بروكسل", country_code: "BE" },
+    { id: 6, name_en: "Antwerp", name_ar: "أنتويرب", country_code: "BE" },
+    { id: 7, name_en: "Paris", name_ar: "باريس", country_code: "FR" },
+    { id: 8, name_en: "Marseille", name_ar: "مرسيليا", country_code: "FR" },
+    { id: 9, name_en: "London", name_ar: "لندن", country_code: "GB" },
+    { id: 10, name_en: "Manchester", name_ar: "مانشستر", country_code: "GB" },
+    { id: 11, name_en: "Rome", name_ar: "روما", country_code: "IT" },
+    { id: 12, name_en: "Milan", name_ar: "ميلانو", country_code: "IT" },
+    { id: 13, name_en: "Madrid", name_ar: "مدريد", country_code: "ES" },
+    { id: 14, name_en: "Barcelona", name_ar: "برشلونة", country_code: "ES" },
+    { id: 15, name_en: "Warsaw", name_ar: "وارسو", country_code: "PL" },
+    { id: 16, name_en: "Stockholm", name_ar: "ستوكهولم", country_code: "SE" },
+    { id: 17, name_en: "Copenhagen", name_ar: "كوبنهاغن", country_code: "DK" },
+    { id: 18, name_en: "Oslo", name_ar: "أوسلو", country_code: "NO" },
+    { id: 19, name_en: "Helsinki", name_ar: "هلسنكي", country_code: "FI" },
+    { id: 20, name_en: "Damascus", name_ar: "دمشق", country_code: "SY" },
+    { id: 21, name_en: "Aleppo", name_ar: "حلب", country_code: "SY" },
+    { id: 22, name_en: "Latakia", name_ar: "اللاذقية", country_code: "SY" },
+    { id: 23, name_en: "Dubai", name_ar: "دبي", country_code: "AE" },
+    { id: 24, name_en: "Abu Dhabi", name_ar: "أبو ظبي", country_code: "AE" },
+    { id: 25, name_en: "Riyadh", name_ar: "الرياض", country_code: "SA" },
+    { id: 26, name_en: "Jeddah", name_ar: "جدة", country_code: "SA" },
+    { id: 27, name_en: "Doha", name_ar: "الدوحة", country_code: "QA" },
+    { id: 28, name_en: "Kuwait City", name_ar: "مدينة الكويت", country_code: "KW" },
+    { id: 29, name_en: "Manama", name_ar: "المنامة", country_code: "BH" },
+    { id: 30, name_en: "Muscat", name_ar: "مسقط", country_code: "OM" },
+    { id: 31, name_en: "Amman", name_ar: "عمان", country_code: "JO" },
+    { id: 32, name_en: "Beirut", name_ar: "بيروت", country_code: "LB" },
+    { id: 33, name_en: "Baghdad", name_ar: "بغداد", country_code: "IQ" },
+    { id: 34, name_en: "Cairo", name_ar: "القاهرة", country_code: "EG" },
+    { id: 35, name_en: "Istanbul", name_ar: "إسطنبول", country_code: "TR" },
+    { id: 36, name_en: "Ankara", name_ar: "أنقرة", country_code: "TR" },
+    { id: 37, name_en: "Beijing", name_ar: "بكين", country_code: "CN" },
+    { id: 38, name_en: "Shanghai", name_ar: "شنغهاي", country_code: "CN" },
+    { id: 39, name_en: "Tokyo", name_ar: "طوكيو", country_code: "JP" },
+    { id: 40, name_en: "Osaka", name_ar: "أوساكا", country_code: "JP" },
+    { id: 41, name_en: "Seoul", name_ar: "سيول", country_code: "KR" },
+    { id: 42, name_en: "Mumbai", name_ar: "مومباي", country_code: "IN" },
+    { id: 43, name_en: "Singapore", name_ar: "سنغافورة", country_code: "SG" },
+    { id: 44, name_en: "Kuala Lumpur", name_ar: "كوالالمبور", country_code: "MY" },
+    { id: 45, name_en: "Bangkok", name_ar: "بانكوك", country_code: "TH" },
+    { id: 46, name_en: "Ho Chi Minh", name_ar: "هو تشي منه", country_code: "VN" },
+    { id: 47, name_en: "Jakarta", name_ar: "جاكرتا", country_code: "ID" },
+    { id: 48, name_en: "Manila", name_ar: "مانيلا", country_code: "PH" },
+    { id: 49, name_en: "New York", name_ar: "نيويورك", country_code: "US" },
+    { id: 50, name_en: "Los Angeles", name_ar: "لوس أنجلوس", country_code: "US" },
+  ];
+
+  // Load countries on component mount - merge with defaults
   useEffect(() => {
     const loadCountries = async () => {
       try {
         const response = await apiService.getCountries();
-        setCountries(response.data);
+        // Merge API countries with defaults, avoiding duplicates
+        const apiCountries = response.data || [];
+        const mergedCountries = [
+          ...defaultCountries,
+          ...apiCountries.filter(
+            (apiCountry: any) =>
+              !defaultCountries.some(
+                (def) => def.code === apiCountry.code || def.name_en === apiCountry.name_en
+              )
+          ),
+        ];
+        setCountries(mergedCountries);
       } catch (error) {
         console.error("Error loading countries:", error);
+        // If API fails, use defaults
+        setCountries(defaultCountries);
       }
     };
     loadCountries();
   }, []);
 
-  // Load cities and ports when origin country changes
+  // Load cities and ports when origin country changes - merge with defaults
   useEffect(() => {
     if (formData.origin_country) {
       const loadOriginLocations = async () => {
@@ -1311,10 +1486,56 @@ export default function FCLQuotePage() {
             apiService.getCities(formData.origin_country),
             apiService.getPorts(formData.origin_country),
           ]);
-          setOriginCities(citiesRes.data);
-          setOriginPorts(portsRes.data);
+          
+          // Get country code from selected country
+          const selectedCountry = countries.find(
+            (c: any) => c.id === parseInt(formData.origin_country) || c.name_en === formData.origin_country || c.code === formData.origin_country
+          );
+          const countryCode = selectedCountry?.code || formData.origin_country;
+          
+          // Filter defaults by country code
+          const defaultCitiesForCountry = defaultCities.filter(
+            (c) => c.country_code === countryCode
+          );
+          const defaultPortsForCountry = defaultPorts.filter(
+            (p) => p.country_code === countryCode
+          );
+          
+          // Merge API data with defaults
+          const apiCities = citiesRes.data || [];
+          const apiPorts = portsRes.data || [];
+          
+          const mergedCities = [
+            ...defaultCitiesForCountry,
+            ...apiCities.filter(
+              (apiCity: any) =>
+                !defaultCitiesForCountry.some(
+                  (def) => def.name_en === apiCity.name_en || def.name_ar === apiCity.name_ar
+                )
+            ),
+          ];
+          
+          const mergedPorts = [
+            ...defaultPortsForCountry,
+            ...apiPorts.filter(
+              (apiPort: any) =>
+                !defaultPortsForCountry.some(
+                  (def) => def.name_en === apiPort.name_en || def.name_ar === apiPort.name_ar
+                )
+            ),
+          ];
+          
+          setOriginCities(mergedCities);
+          setOriginPorts(mergedPorts);
         } catch (error) {
           console.error("Error loading origin locations:", error);
+          // If API fails, use defaults for selected country
+          const selectedCountry = countries.find(
+            (c: any) => c.id === parseInt(formData.origin_country) || c.name_en === formData.origin_country || c.code === formData.origin_country
+          );
+          const countryCode = selectedCountry?.code || formData.origin_country;
+          setOriginCities(defaultCities.filter((c) => c.country_code === countryCode));
+          setOriginPorts(defaultPorts.filter((p) => p.country_code === countryCode));
         }
       };
       loadOriginLocations();
@@ -1322,9 +1543,9 @@ export default function FCLQuotePage() {
       setOriginCities([]);
       setOriginPorts([]);
     }
-  }, [formData.origin_country]);
+  }, [formData.origin_country, countries]);
 
-  // Load cities and ports when destination country changes
+  // Load cities and ports when destination country changes - merge with defaults
   useEffect(() => {
     if (formData.destination_country) {
       const loadDestinationLocations = async () => {
@@ -1333,10 +1554,56 @@ export default function FCLQuotePage() {
             apiService.getCities(formData.destination_country),
             apiService.getPorts(formData.destination_country),
           ]);
-          setDestinationCities(citiesRes.data);
-          setDestinationPorts(portsRes.data);
+          
+          // Get country code from selected country
+          const selectedCountry = countries.find(
+            (c: any) => c.id === parseInt(formData.destination_country) || c.name_en === formData.destination_country || c.code === formData.destination_country
+          );
+          const countryCode = selectedCountry?.code || formData.destination_country;
+          
+          // Filter defaults by country code
+          const defaultCitiesForCountry = defaultCities.filter(
+            (c) => c.country_code === countryCode
+          );
+          const defaultPortsForCountry = defaultPorts.filter(
+            (p) => p.country_code === countryCode
+          );
+          
+          // Merge API data with defaults
+          const apiCities = citiesRes.data || [];
+          const apiPorts = portsRes.data || [];
+          
+          const mergedCities = [
+            ...defaultCitiesForCountry,
+            ...apiCities.filter(
+              (apiCity: any) =>
+                !defaultCitiesForCountry.some(
+                  (def) => def.name_en === apiCity.name_en || def.name_ar === apiCity.name_ar
+                )
+            ),
+          ];
+          
+          const mergedPorts = [
+            ...defaultPortsForCountry,
+            ...apiPorts.filter(
+              (apiPort: any) =>
+                !defaultPortsForCountry.some(
+                  (def) => def.name_en === apiPort.name_en || def.name_ar === apiPort.name_ar
+                )
+            ),
+          ];
+          
+          setDestinationCities(mergedCities);
+          setDestinationPorts(mergedPorts);
         } catch (error) {
           console.error("Error loading destination locations:", error);
+          // If API fails, use defaults for selected country
+          const selectedCountry = countries.find(
+            (c: any) => c.id === parseInt(formData.destination_country) || c.name_en === formData.destination_country || c.code === formData.destination_country
+          );
+          const countryCode = selectedCountry?.code || formData.destination_country;
+          setDestinationCities(defaultCities.filter((c) => c.country_code === countryCode));
+          setDestinationPorts(defaultPorts.filter((p) => p.country_code === countryCode));
         }
       };
       loadDestinationLocations();
@@ -1344,7 +1611,7 @@ export default function FCLQuotePage() {
       setDestinationCities([]);
       setDestinationPorts([]);
     }
-  }, [formData.destination_country]);
+  }, [formData.destination_country, countries]);
 
   const handleChange = (
     e: React.ChangeEvent<

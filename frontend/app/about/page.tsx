@@ -143,7 +143,7 @@ export default function AboutPage() {
   // Testimonials Data
   const testimonials = [
     {
-      name: language === "ar" ? "أحمد محمد" : "Ahmad Mohammad",
+      name: language === "ar" ? "العميل الأول" : "Client One",
       company: language === "ar" ? "شركة النور للتجارة" : "Al Nour Trading",
       text:
         language === "ar"
@@ -152,7 +152,7 @@ export default function AboutPage() {
       rating: 5,
     },
     {
-      name: language === "ar" ? "فاطمة علي" : "Fatima Ali",
+      name: language === "ar" ? "العميل الثاني" : "Client Two",
       company: language === "ar" ? "متجر الإلكترونيات" : "Electronics Store",
       text:
         language === "ar"
@@ -161,7 +161,7 @@ export default function AboutPage() {
       rating: 5,
     },
     {
-      name: language === "ar" ? "محمود حسن" : "Mahmoud Hassan",
+      name: language === "ar" ? "العميل الثالث" : "Client Three",
       company: language === "ar" ? "مكتب الأثاث" : "Furniture Office",
       text:
         language === "ar"
@@ -218,22 +218,22 @@ export default function AboutPage() {
   // Team Data
   const team = [
     {
-      name: language === "ar" ? "محمد العلي" : "Mohammad Al Ali",
+      name: language === "ar" ? "الموظف الأول" : "Employee One",
       role: language === "ar" ? "المدير التنفيذي" : "CEO",
       image: "/team/ceo.jpg",
     },
     {
-      name: language === "ar" ? "سارة أحمد" : "Sara Ahmad",
+      name: language === "ar" ? "الموظف الثاني" : "Employee Two",
       role: language === "ar" ? "مديرة العمليات" : "Operations Manager",
       image: "/team/operations.jpg",
     },
     {
-      name: language === "ar" ? "خالد حسن" : "Khaled Hassan",
+      name: language === "ar" ? "الموظف الثالث" : "Employee Three",
       role: language === "ar" ? "مدير اللوجستيات" : "Logistics Manager",
       image: "/team/logistics.jpg",
     },
     {
-      name: language === "ar" ? "نور الدين" : "Nour Aldeen",
+      name: language === "ar" ? "الموظف الرابع" : "Employee Four",
       role: language === "ar" ? "خدمة العملاء" : "Customer Service",
       image: "/team/customer.jpg",
     },
@@ -241,10 +241,6 @@ export default function AboutPage() {
 
   // Achievement Badges
   const achievements = [
-    {
-      icon: "🏆",
-      label: language === "ar" ? "ISO 9001" : "ISO 9001 Certified",
-    },
     {
       icon: "✅",
       label: language === "ar" ? "مصرّح أوروبياً" : "EU Authorized",

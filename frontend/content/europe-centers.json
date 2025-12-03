@@ -18,7 +18,15 @@
         "countryCode": "NL",
         "city": "Bergen op Zoom",
         "address": "Wattweg 5, 4622RA Bergen op Zoom, Nederland",
-        "services": ["LCL", "FCL"]
+        "services": ["LCL"]
+      },
+      {
+        "country": "هولندا",
+        "countryCode": "NL",
+        "city": "Axel, Zeeland",
+        "address": "Medo-b2b / Medo-Freight-EU\nShip • Route • Deliver\nMeekrapweg 2, 4571 RX, Axel, Zeeland, NL\nStorage Point: A2",
+        "services": ["LCL"],
+        "description": "للطرود الكبيرة التي تزن 50–100 كغ وأكثر، لكل طرد أو باليت"
       }
     ],
     
@@ -54,7 +62,15 @@
         "countryCode": "NL",
         "city": "Bergen op Zoom",
         "address": "Wattweg 5, 4622RA Bergen op Zoom, Nederland",
-        "services": ["LCL", "FCL"]
+        "services": ["LCL"]
+      },
+      {
+        "country": "Netherlands",
+        "countryCode": "NL",
+        "city": "Axel, Zeeland",
+        "address": "Medo-b2b / Medo-Freight-EU\nShip • Route • Deliver\nMeekrapweg 2, 4571 RX, Axel, Zeeland, NL\nStorage Point: A2",
+        "services": ["LCL"],
+        "description": "For large parcels weighing 50–100 kg and above, per parcel or pallet"
       }
     ],
     

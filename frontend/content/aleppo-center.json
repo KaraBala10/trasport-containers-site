@@ -19,14 +19,14 @@
         "countryCode": "SY",
         "city": "الشرق الأوسط - الرامسة",
         "address": "بجانب كراج البولمان",
-        "services": ["توزيع LCL", "توزيع FCL"]
+        "services": ["توزيع LCL"]
       },
       {
         "country": "الشرق الأوسط",
         "countryCode": "SY",
         "city": "الشرق الأوسط - الشيخ نجار",
         "address": "منطقة مكاتب الشحن الدولي",
-        "services": ["FCL"]
+        "services": ["توزيع LCL"]
       }
     ],
     
@@ -34,7 +34,7 @@
       "title": "أنواع الخدمات",
       "distribution": {
         "title": "خدمة التوزيع",
-        "description": "نوفر خدمة التوزيع المحلي لشحنات LCL و FCL من المراكز إلى عنوانكم في الشرق الأوسط والمناطق المحيطة"
+        "description": "نوفر خدمة التوزيع المحلي لشحنات LCL من المراكز إلى عنوانكم في الشرق الأوسط والمناطق المحيطة"
       },
       "storage": {
         "title": "التخزين المؤقت",
@@ -70,14 +70,14 @@
         "countryCode": "SY",
         "city": "Middle East - Al-Ramsa",
         "address": "Next to Pullman Garage",
-        "services": ["LCL Distribution", "FCL Distribution"]
+        "services": ["LCL Distribution"]
       },
       {
         "country": "Middle East",
         "countryCode": "SY",
         "city": "Middle East - Sheikh Najjar",
         "address": "International Freight Offices Area",
-        "services": ["FCL"]
+        "services": ["LCL Distribution"]
       }
     ],
     
@@ -85,7 +85,7 @@
       "title": "Service Types",
       "distribution": {
         "title": "Distribution Service",
-        "description": "We provide local distribution service for LCL and FCL shipments from centers to your address in the Middle East and surrounding areas"
+        "description": "We provide local distribution service for LCL shipments from centers to your address in the Middle East and surrounding areas"
       },
       "storage": {
         "title": "Temporary Storage",

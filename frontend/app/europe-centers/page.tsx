@@ -74,7 +74,12 @@ export default function EuropeCentersPage() {
                         {location.city}
                       </td>
                       <td className="px-6 py-4 text-gray-700">
-                        {location.address}
+                        <div className="whitespace-pre-line">{location.address}</div>
+                        {location.description && (
+                          <div className="mt-2 text-sm text-gray-600 italic">
+                            {location.description}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
@@ -125,7 +130,12 @@ export default function EuropeCentersPage() {
                     <div className="text-sm text-gray-500 mb-1">
                       {content.tableHeaders.address}
                     </div>
-                    <div className="text-gray-700">{location.address}</div>
+                    <div className="text-gray-700 whitespace-pre-line">{location.address}</div>
+                    {location.description && (
+                      <div className="mt-2 text-sm text-gray-600 italic">
+                        {location.description}
+                      </div>
+                    )}
                   </div>
 
                   <div>
