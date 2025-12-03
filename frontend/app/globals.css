@@ -20,18 +20,45 @@ body {
   overflow-x: hidden;
   font-family: var(--font-sans);
   position: relative;
+  width: 100%;
 }
 
 /* Ensure header doesn't cause overflow */
 header {
   max-width: 100vw;
   overflow-x: hidden;
+  width: 100%;
 }
 
 /* Prevent images and media from causing overflow */
-img, video, iframe, embed, object {
+img, video, iframe, embed, object, svg {
   max-width: 100%;
   height: auto;
+  display: block;
+}
+
+/* Prevent all containers from overflowing */
+.container, .container-fluid {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent flex items from causing overflow */
+.flex, .flex-col, .flex-row {
+  min-width: 0;
+}
+
+/* Ensure main content doesn't overflow */
+main {
+  max-width: 100vw;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Prevent text overflow */
+h1, h2, h3, h4, h5, h6, p, span, div {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 body {

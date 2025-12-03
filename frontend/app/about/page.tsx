@@ -263,7 +263,7 @@ export default function AboutPage() {
   return (
     <div
       key={language}
-      className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-100 relative"
+      className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-100 relative overflow-x-hidden w-full max-w-full"
       dir={isRTL ? "rtl" : "ltr"}
     >
       {/* Scroll Progress Bar */}
@@ -275,18 +275,18 @@ export default function AboutPage() {
       <Header />
       <div className="h-20" aria-hidden="true" />
 
-      <main className="flex-grow relative" role="main">
+      <main className="flex-grow relative overflow-x-hidden w-full max-w-full" role="main">
         {/* Hero Section with Particles */}
         <motion.div
           style={{ y: heroY, opacity: heroOpacity }}
-          className="relative bg-gradient-to-br from-primary-dark via-primary-dark/95 to-primary-dark/90 text-white py-32 md:py-40 overflow-hidden"
+          className="relative bg-gradient-to-br from-primary-dark via-primary-dark/95 to-primary-dark/90 text-white py-32 md:py-40 overflow-hidden w-full max-w-full"
         >
           <FloatingParticles />
 
-          {/* Animated Background Shapes */}
-          <div className="absolute inset-0 opacity-10">
+          {/* Animated Background Shapes - Fixed for mobile */}
+          <div className="absolute inset-0 opacity-10 overflow-hidden">
             <motion.div
-              className="absolute top-20 left-10 w-64 h-64 bg-primary-yellow rounded-full blur-3xl"
+              className="absolute top-20 left-0 sm:left-10 w-32 h-32 sm:w-48 md:w-64 md:h-64 bg-primary-yellow rounded-full blur-3xl"
               animate={{
                 scale: [1, 1.2, 1],
                 rotate: [0, 90, 0],
@@ -297,7 +297,7 @@ export default function AboutPage() {
               }}
             />
             <motion.div
-              className="absolute bottom-20 right-10 w-96 h-96 bg-primary-yellow rounded-full blur-3xl"
+              className="absolute bottom-20 right-0 sm:right-10 w-48 h-48 sm:w-64 md:w-96 md:h-96 bg-primary-yellow rounded-full blur-3xl"
               animate={{
                 scale: [1.2, 1, 1.2],
                 rotate: [0, -90, 0],
@@ -309,12 +309,12 @@ export default function AboutPage() {
             />
           </div>
 
-          <div className="container mx-auto px-4 text-center relative z-10">
+          <div className="container mx-auto px-4 text-center relative z-10 w-full max-w-full overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-6 md:mb-8"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl mb-6 md:mb-8"
             >
               🚢
             </motion.div>
@@ -323,7 +323,7 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 md:mb-6 px-2"
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bold mb-4 md:mb-6 px-2 break-words"
             >
               {content.mainTitle}
             </motion.h1>
@@ -334,14 +334,14 @@ export default function AboutPage() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="flex justify-center mb-8"
             >
-              <div className="w-32 h-1.5 bg-primary-yellow rounded-full" />
+              <div className="w-24 sm:w-32 h-1 sm:h-1.5 bg-primary-yellow rounded-full" />
             </motion.div>
 
             <motion.p
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-4xl mx-auto leading-relaxed px-4"
+              className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl max-w-4xl mx-auto leading-relaxed px-2 sm:px-4 break-words"
             >
               {content.intro}
             </motion.p>
@@ -351,16 +351,16 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
-              className="flex justify-center gap-3 sm:gap-4 md:gap-6 mt-8 md:mt-12 flex-wrap px-4"
+              className="flex justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 mt-8 md:mt-12 flex-wrap px-2 sm:px-4 overflow-x-hidden"
             >
               {achievements.map((achievement, index) => (
                 <motion.div
                   key={index}
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  className="bg-white/10 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 rounded-full border border-white/20"
+                  className="bg-white/10 backdrop-blur-sm px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 lg:px-6 lg:py-3 rounded-full border border-white/20 flex-shrink-0"
                 >
-                  <span className="text-lg sm:text-xl md:text-2xl mr-1 sm:mr-2">{achievement.icon}</span>
-                  <span className="text-xs sm:text-sm font-semibold">
+                  <span className="text-base sm:text-lg md:text-xl lg:text-2xl mr-1 sm:mr-2">{achievement.icon}</span>
+                  <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
                     {achievement.label}
                   </span>
                 </motion.div>
@@ -370,7 +370,7 @@ export default function AboutPage() {
         </motion.div>
 
         {/* Description Section with 3D Effect */}
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-4 py-20 w-full max-w-full overflow-x-hidden">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -380,11 +380,11 @@ export default function AboutPage() {
           >
             <motion.div
               whileHover={{ scale: 1.02, rotateX: 2 }}
-              className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-4 border-primary-yellow relative overflow-hidden"
+              className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 md:p-12 border-t-4 border-primary-yellow relative overflow-hidden"
             >
               {/* Decorative Corner */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary-yellow/10 rounded-bl-full" />
-              <p className="text-lg md:text-xl text-gray-700 leading-relaxed text-center relative z-10">
+              <p className="text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed text-center relative z-10 break-words">
                 {content.description}
               </p>
             </motion.div>
@@ -392,7 +392,7 @@ export default function AboutPage() {
         </div>
 
         {/* Stats Section with Enhanced Animations */}
-        <div className="bg-gradient-to-r from-primary-dark via-primary-dark/95 to-primary-dark py-24 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-primary-dark via-primary-dark/95 to-primary-dark py-24 relative overflow-hidden w-full max-w-full">
           <div className="absolute inset-0 opacity-5">
             <div
               className="absolute inset-0"
@@ -402,7 +402,7 @@ export default function AboutPage() {
             />
           </div>
 
-          <div className="container mx-auto px-4 relative z-10">
+          <div className="container mx-auto px-4 relative z-10 w-full max-w-full overflow-x-hidden">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               {content.stats.map((stat, index) => (
                 <motion.div
@@ -427,7 +427,7 @@ export default function AboutPage() {
         </div>
 
         {/* Vision & Mission with 3D Flip Cards */}
-        <div className="container mx-auto px-4 py-12 sm:py-16 md:py-20 lg:py-24">
+        <div className="container mx-auto px-4 py-12 sm:py-16 md:py-20 lg:py-24 w-full max-w-full overflow-x-hidden">
           <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
@@ -482,8 +482,8 @@ export default function AboutPage() {
         </div>
 
         {/* Interactive Timeline */}
-        <div className="bg-gradient-to-br from-gray-100 to-gray-50 py-24">
-          <div className="container mx-auto px-4">
+        <div className="bg-gradient-to-br from-gray-100 to-gray-50 py-24 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 w-full max-w-full overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -544,8 +544,8 @@ export default function AboutPage() {
         </div>
 
         {/* Services Section with Enhanced Cards */}
-        <div className="py-24">
-          <div className="container mx-auto px-4">
+        <div className="py-24 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 w-full max-w-full overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -599,8 +599,8 @@ export default function AboutPage() {
         </div>
 
         {/* Why Us Section */}
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 py-24">
-          <div className="container mx-auto px-4">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 py-24 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 w-full max-w-full overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -662,8 +662,8 @@ export default function AboutPage() {
         </div>
 
         {/* Team Section */}
-        <div className="py-24">
-          <div className="container mx-auto px-4">
+        <div className="py-24 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 w-full max-w-full overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -712,8 +712,8 @@ export default function AboutPage() {
         </div>
 
         {/* Testimonials Carousel */}
-        <div className="bg-gradient-to-br from-primary-dark to-primary-dark/95 py-24">
-          <div className="container mx-auto px-4">
+        <div className="bg-gradient-to-br from-primary-dark to-primary-dark/95 py-24 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 w-full max-w-full overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -778,8 +778,8 @@ export default function AboutPage() {
         </div>
 
         {/* Collection Centers Section */}
-        <div className="py-24 bg-gradient-to-br from-gray-50 to-gray-100">
-          <div className="container mx-auto px-4">
+        <div className="py-24 bg-gradient-to-br from-gray-50 to-gray-100 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 w-full max-w-full overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -942,8 +942,8 @@ export default function AboutPage() {
         </div>
 
         {/* Offices Section */}
-        <div className="py-24">
-          <div className="container mx-auto px-4">
+        <div className="py-24 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 w-full max-w-full overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -1241,12 +1241,12 @@ export default function AboutPage() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="container mx-auto px-4 py-24"
+          className="container mx-auto px-4 py-24 w-full max-w-full overflow-x-hidden"
         >
-          <div className="max-w-5xl mx-auto bg-gradient-to-br from-primary-dark via-primary-dark/95 to-primary-dark/90 rounded-2xl md:rounded-3xl p-8 sm:p-12 md:p-16 lg:p-20 text-white text-center shadow-2xl relative overflow-hidden">
+          <div className="max-w-5xl mx-auto bg-gradient-to-br from-primary-dark via-primary-dark/95 to-primary-dark/90 rounded-2xl md:rounded-3xl p-6 sm:p-8 md:p-12 lg:p-16 xl:p-20 text-white text-center shadow-2xl relative overflow-hidden w-full">
             {/* Animated Background Elements */}
             <motion.div
-              className="absolute top-0 right-0 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 bg-primary-yellow/10 rounded-full blur-3xl"
+              className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 bg-primary-yellow/10 rounded-full blur-3xl"
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.1, 0.2, 0.1],
@@ -1257,7 +1257,7 @@ export default function AboutPage() {
               }}
             />
             <motion.div
-              className="absolute bottom-0 left-0 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 bg-primary-yellow/10 rounded-full blur-3xl"
+              className="absolute bottom-0 left-0 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 bg-primary-yellow/10 rounded-full blur-3xl"
               animate={{
                 scale: [1.2, 1, 1.2],
                 opacity: [0.2, 0.1, 0.2],
@@ -1278,7 +1278,7 @@ export default function AboutPage() {
                   duration: 3,
                   repeat: Infinity,
                 }}
-                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-4 sm:mb-6 md:mb-8"
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl mb-4 sm:mb-6 md:mb-8"
               >
                 🎉
               </motion.div>
@@ -1288,7 +1288,7 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6 md:mb-8 px-4"
+                className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold mb-4 sm:mb-6 md:mb-8 px-2 sm:px-4 break-words"
               >
                 {content.cta.title}
               </motion.h2>
@@ -1298,7 +1298,7 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-base sm:text-lg md:text-xl lg:text-2xl mb-8 sm:mb-10 md:mb-12 text-white/90 leading-relaxed px-4"
+                className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-8 sm:mb-10 md:mb-12 text-white/90 leading-relaxed px-2 sm:px-4 break-words"
               >
                 {content.cta.subtitle}
               </motion.p>
@@ -1313,9 +1313,9 @@ export default function AboutPage() {
                   <motion.div
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className="bg-primary-yellow text-primary-dark px-6 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 rounded-lg md:rounded-xl font-bold text-base sm:text-lg md:text-xl shadow-2xl hover:shadow-3xl transition-all relative overflow-hidden group"
+                    className="bg-primary-yellow text-primary-dark px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-4 lg:px-10 lg:py-5 xl:px-12 xl:py-6 rounded-lg md:rounded-xl font-bold text-sm sm:text-base md:text-lg lg:text-xl shadow-2xl hover:shadow-3xl transition-all relative overflow-hidden group"
                   >
-                    <span className="relative z-10">{content.cta.button}</span>
+                    <span className="relative z-10 whitespace-nowrap">{content.cta.button}</span>
                     <motion.div
                       className="absolute inset-0 bg-white/20"
                       initial={{ x: "-100%" }}
