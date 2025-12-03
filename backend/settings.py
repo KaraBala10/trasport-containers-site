@@ -295,4 +295,9 @@ RECAPTCHA_ENTERPRISE_PROJECT_ID = config(
     "RECAPTCHA_ENTERPRISE_PROJECT_ID", default="medosite-1764668210784"
 ).strip()
 
+# reCAPTCHA Score Threshold (0.0 to 1.0, default 0.3)
+# Lower values are more lenient but less secure
+# Recommended: 0.3-0.5 for better user experience, 0.7+ for stricter security
+RECAPTCHA_SCORE_THRESHOLD = config("RECAPTCHA_SCORE_THRESHOLD", default=0.3, cast=float)
+
 SENDCLOUD_WEBHOOK_URL = config("SENDCLOUD_WEBHOOK_URL", default="")

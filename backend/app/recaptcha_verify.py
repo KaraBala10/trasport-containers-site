@@ -50,16 +50,47 @@ def verify_recaptcha_v3_token(token: str, action: str = None) -> dict:
             if action:
                 action_match = action_returned == action
 
-            # Consider valid if success, action matches, and score > 0.5
-            is_valid = success and action_match and score > 0.5
+            # Get score threshold from settings (default 0.3 for better user experience)
+            score_threshold = getattr(settings, "RECAPTCHA_SCORE_THRESHOLD", 0.3)
 
-            return {
+            # Consider valid if success, action matches, and score meets threshold (>= for inclusive)
+            is_valid = success and action_match and score >= score_threshold
+
+            # Build error message if validation failed
+            error_message = None
+            if not is_valid:
+                error_parts = []
+                if not success:
+                    error_codes = result.get("error-codes", [])
+                    if error_codes:
+                        error_parts.append(
+                            f"Google API errors: {', '.join(error_codes)}"
+                        )
+                    else:
+                        error_parts.append("Google API returned success=false")
+                if not action_match:
+                    error_parts.append(
+                        f"Action mismatch: expected '{action}', got '{action_returned}'"
+                    )
+                if score < score_threshold:
+                    error_parts.append(
+                        f"Score too low: {score} (minimum {score_threshold} required)"
+                    )
+                error_message = (
+                    "; ".join(error_parts) if error_parts else "Verification failed"
+                )
+
+            result_dict = {
                 "success": is_valid,
                 "score": score,
                 "action": action_returned,
                 "action_match": action_match,
                 "error_codes": result.get("error-codes", []),
             }
+            if error_message:
+                result_dict["error"] = error_message
+
+            return result_dict
         else:
             logger.error(
                 f"reCAPTCHA v3 API error: {response.status_code} - {response.text}"
@@ -135,8 +166,11 @@ def verify_recaptcha_enterprise_token(token: str, action: str = None) -> dict:
             risk_analysis = data.get("riskAnalysis", {})
             score = risk_analysis.get("score", 0.0)
 
-            # Consider valid if token is valid, action matches, and score > 0.5
-            success = is_valid and action_match and score > 0.5
+            # Get score threshold from settings (default 0.3 for better user experience)
+            score_threshold = getattr(settings, "RECAPTCHA_SCORE_THRESHOLD", 0.3)
+
+            # Consider valid if token is valid, action matches, and score meets threshold (>= for inclusive)
+            success = is_valid and action_match and score >= score_threshold
 
             return {
                 "success": success,
