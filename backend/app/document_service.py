@@ -750,23 +750,39 @@ def generate_receipt(shipment: LCLShipment, language: str = 'en') -> bytes:
     
     Args:
         shipment: LCLShipment instance
-        language: 'ar' or 'en' (default: 'ar')
+        language: 'ar' or 'en' (default: 'en')
     
     Returns:
         PDF bytes
     """
     try:
+        # Validate shipment
+        if not shipment:
+            raise ValueError("Shipment is required")
+        
         # Get company info
         company_info = get_company_info()
         
         # Get status display name for both languages
         from .email_service import get_status_display_name
-        status_display_ar = get_status_display_name(shipment.status, shipment.direction)
+        try:
+            status_display_ar = get_status_display_name(shipment.status, shipment.direction)
+        except Exception as e:
+            logger.warning(f"Error getting status display name: {str(e)}")
+            status_display_ar = shipment.status or "Unknown"
         # For English, we'll use the same text for now (can be improved later)
         status_display_en = status_display_ar
         
         # Generate QR Code for tracking
-        tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
+        try:
+            site_url = company_info.get('site_url', 'https://medo-freight.eu')
+            if not site_url.startswith('http'):
+                site_url = f'https://{site_url}'
+            tracking_url = f"{site_url}/tracking?shipment_id={shipment.id}"
+        except Exception as e:
+            logger.warning(f"Error generating tracking URL: {str(e)}")
+            tracking_url = f"https://medo-freight.eu/tracking?shipment_id={shipment.id}"
+        
         qr_code_base64 = None
         try:
             qr = qrcode.QRCode(
@@ -788,6 +804,7 @@ def generate_receipt(shipment: LCLShipment, language: str = 'en') -> bytes:
             qr_code_base64 = base64.b64encode(img_buffer.read()).decode('utf-8')
         except Exception as e:
             logger.warning(f"Could not generate QR code: {str(e)}")
+            qr_code_base64 = None
         
         # Get signature if exists (use invoice_signature for company signature)
         signature_base64 = None
@@ -806,13 +823,16 @@ def generate_receipt(shipment: LCLShipment, language: str = 'en') -> bytes:
         receipt_number = shipment.shipment_number or str(shipment.id)
         barcode_base64 = generate_barcode(receipt_number)
         
+        # Ensure receipt_number is never None
+        display_receipt_number = shipment.shipment_number or f"LCL-{shipment.id:06d}"
+        
         # Prepare context for template
         context = {
             'shipment': shipment,
             'company': company_info,
             'language': language,
             'receipt_date': timezone.now(),
-            'receipt_number': shipment.shipment_number,
+            'receipt_number': display_receipt_number,
             'status_display': {
                 'ar': status_display_ar,
                 'en': status_display_en,
@@ -821,7 +841,6 @@ def generate_receipt(shipment: LCLShipment, language: str = 'en') -> bytes:
             'barcode_base64': barcode_base64,
             'status_display_text': status_display_ar if language == 'ar' else status_display_en,
             'tracking_url': tracking_url,
-            'qr_code_base64': qr_code_base64,
             'signature_base64': signature_base64,
         }
         

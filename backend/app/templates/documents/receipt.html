@@ -397,7 +397,7 @@
                     Parcel {{ forloop.counter }}:
                 </span>
                 <span class="info-value">
-                    Weight: {{ parcel.weight|default:0 }} kg | Volume: {{ parcel.cbm|default:parcel.volume|default:0 }} m³
+                    Weight: {{ parcel.weight|default:0 }} kg | Volume: {% if parcel.cbm %}{{ parcel.cbm }}{% elif parcel.volume %}{{ parcel.volume }}{% else %}0{% endif %} m³
                 </span>
             </div>
             {% endfor %}

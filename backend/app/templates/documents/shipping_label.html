@@ -46,10 +46,41 @@
       .header-section {
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: flex-start;
           margin-bottom: 4px;
           padding-bottom: 4px;
           border-bottom: 1px solid #000;
+          gap: 4px;
+      }
+      
+      .header-right {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 2px;
+      }
+      
+      .from-section-header {
+          padding: 2px 4px;
+          border: 1px solid #000;
+          border-radius: 2px;
+          background: #fff;
+          min-width: 80px;
+          font-size: 8px;
+      }
+      
+      .from-title {
+          font-size: 8px;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-bottom: 2px;
+          border-bottom: 1px solid #000;
+          padding-bottom: 1px;
+      }
+      
+      .from-content {
+          font-size: 7px;
+          line-height: 1.3;
       }
   
       .logo-section {
@@ -200,7 +231,7 @@
   
       .main-content {
           display: grid;
-          grid-template-columns: 1.7fr 1.3fr;
+          grid-template-columns: 1fr;
           gap: 4px;
           flex: 1;
           min-height: 0;
@@ -326,18 +357,29 @@
                     <div class="company-tagline">Ship · Route · Deliver</div>
                 </div>
             </div>
-            {% if qr_code_base64 %}
-            <div class="qr-section">
-                <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
-                <div class="qr-label">TRACK</div>
+            <div class="header-right">
+                {% if qr_code_base64 %}
+                <div class="qr-section">
+                    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
+                    <div class="qr-label">TRACK</div>
+                </div>
+                {% endif %}
+                {% if barcode_base64 %}
+                <div class="barcode-section">
+                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
+                    <div class="barcode-label">TRACKING</div>
+                </div>
+                {% endif %}
+                <!-- FROM Section in Header -->
+                <div class="from-section-header">
+                    <div class="from-title">FROM:</div>
+                    <div class="from-content">
+                        <strong>{{ shipment.sender_name }}</strong><br>
+                        {{ shipment.sender_city }}<br>
+                        {{ shipment.sender_phone }}
+                    </div>
+                </div>
             </div>
-            {% endif %}
-            {% if barcode_base64 %}
-            <div class="barcode-section">
-                <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
-                <div class="barcode-label">TRACKING</div>
-            </div>
-            {% endif %}
         </div>
         
         <!-- Title -->
@@ -381,23 +423,6 @@
                     <div class="shipping-method">LCL</div>
                 </div>
                 
-                <!-- FROM Section -->
-                <div class="section">
-                    <div class="section-title">FROM:</div>
-                    <div class="field-row">
-                        <span class="field-label">Name:</span>
-                        <span class="field-value">{{ shipment.sender_name }}</span>
-                    </div>
-                    <div class="field-row">
-                        <span class="field-label">Phone:</span>
-                        <span class="field-value">{{ shipment.sender_phone }}</span>
-                    </div>
-                    <div class="field-row">
-                        <span class="field-label">City:</span>
-                        <span class="field-value">{{ shipment.sender_city }}</span>
-                    </div>
-                </div>
-                
                 <!-- Parcel Info -->
                 <div class="section">
                     <div class="section-title">PARCEL:</div>
@@ -421,31 +446,31 @@
                 </div>
             </div>
             
-            <!-- Right Section - Collection Center -->
-            <div class="collection-center">
-                <div class="center-title">COLLECTION CENTER</div>
-                <div class="center-info">
-                    <strong>Medo-b2b / Medo-Freight-EU</strong><br>
-                    Ship, Route, Deliver
-                </div>
-                <div style="margin-top: 2px;">
-                    <strong>Small (&lt; 20 kg):</strong><br>
-                    Eurobox Self Storage<br>
-                    Bergen op Zoom<br>
-                    Wattweg 5, 4622 RA<br>
-                    Storage: 0220-0221
-                </div>
-                <div style="margin-top: 2px;">
-                    <strong>Large (50+ kg):</strong><br>
-                    Meekrapweg 2<br>
-                    4571 RX, Zeeland<br>
-                    Axel, NL<br>
-                    Storage: A2
-                </div>
-                <div style="margin-top: 2px;">
-                    <strong>CONTACT:</strong><br>
-                    📞 0031683083916<br>
-                    ✉️ contact@medo-freight.eu
+            <!-- Collection Center - Full Width -->
+            <div class="section">
+                <div class="section-title">COLLECTION CENTER</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 8px; line-height: 1.4;">
+                    <div>
+                        <strong>Medo-b2b / Medo-Freight-EU</strong><br>
+                        Ship, Route, Deliver<br><br>
+                        <strong>CONTACT:</strong><br>
+                        📞 0031683083916<br>
+                        ✉️ contact@medo-freight.eu
+                    </div>
+                    <div>
+                        <strong>Small (&lt; 20 kg):</strong><br>
+                        Eurobox Self Storage<br>
+                        Bergen op Zoom<br>
+                        Wattweg 5, 4622 RA<br>
+                        Storage: 0220-0221
+                    </div>
+                    <div>
+                        <strong>Large (50+ kg):</strong><br>
+                        Meekrapweg 2<br>
+                        4571 RX, Zeeland<br>
+                        Axel, NL<br>
+                        Storage: A2
+                    </div>
                 </div>
             </div>
         </div>

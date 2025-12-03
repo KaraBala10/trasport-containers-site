@@ -5161,6 +5161,7 @@ def download_receipt_view(request, pk):
             logger.error(
                 f"Error generating receipt PDF: {str(gen_error)}", exc_info=True
             )
+            # Return error as JSON response (not PDF) so frontend can handle it
             return Response(
                 {
                     "success": False,

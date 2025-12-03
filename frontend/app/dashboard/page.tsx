@@ -6835,10 +6835,27 @@ export default function DashboardPage() {
                                                   "Error downloading receipt:",
                                                   error
                                                 );
-                                                const errorMessage =
-                                                  error.response?.data?.error ||
-                                                  error.message ||
-                                                  "Unknown error";
+                                                let errorMessage = "Unknown error";
+                                                
+                                                // Handle blob response errors (when backend returns JSON error but responseType is blob)
+                                                if (error.response?.data instanceof Blob) {
+                                                  try {
+                                                    const text = await error.response.data.text();
+                                                    const json = JSON.parse(text);
+                                                    errorMessage = json.error || json.message || "Failed to generate receipt";
+                                                  } catch (parseError) {
+                                                    errorMessage = error.response?.status === 500 
+                                                      ? "Server error occurred" 
+                                                      : "Failed to download receipt";
+                                                  }
+                                                } else {
+                                                  errorMessage =
+                                                    error.response?.data?.error ||
+                                                    error.response?.data?.message ||
+                                                    error.message ||
+                                                    "Unknown error";
+                                                }
+                                                
                                                 showError(
                                                   language === "ar"
                                                     ? `حدث خطأ أثناء تحميل الإيصال: ${errorMessage}`
@@ -6936,10 +6953,27 @@ export default function DashboardPage() {
                                                 "Error downloading receipt:",
                                                 error
                                               );
-                                              const errorMessage =
-                                                error.response?.data?.error ||
-                                                error.message ||
-                                                "Unknown error";
+                                              let errorMessage = "Unknown error";
+                                              
+                                              // Handle blob response errors (when backend returns JSON error but responseType is blob)
+                                              if (error.response?.data instanceof Blob) {
+                                                try {
+                                                  const text = await error.response.data.text();
+                                                  const json = JSON.parse(text);
+                                                  errorMessage = json.error || json.message || "Failed to generate receipt";
+                                                } catch (parseError) {
+                                                  errorMessage = error.response?.status === 500 
+                                                    ? "Server error occurred" 
+                                                    : "Failed to download receipt";
+                                                }
+                                              } else {
+                                                errorMessage =
+                                                  error.response?.data?.error ||
+                                                  error.response?.data?.message ||
+                                                  error.message ||
+                                                  "Unknown error";
+                                              }
+                                              
                                               showError(
                                                 language === "ar"
                                                   ? `حدث خطأ: ${errorMessage}`
