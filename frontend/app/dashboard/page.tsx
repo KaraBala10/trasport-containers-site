@@ -1157,9 +1157,10 @@ export default function DashboardPage() {
       const amountPaidResult = await showDialog(
         language === "ar" ? "تحديث المبلغ المدفوع" : "Update Amount Paid",
         {
-          message: language === "ar"
-            ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR)`
-            : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR)`,
+          message:
+            language === "ar"
+              ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR)`
+              : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR)`,
           type: "number",
           placeholder: language === "ar" ? "مثال: 1000" : "e.g., 1000",
           defaultValue: String(currentAmountPaid),
@@ -1168,12 +1169,12 @@ export default function DashboardPage() {
           cancelText: language === "ar" ? "إلغاء" : "Cancel",
         }
       );
-      
+
       if (amountPaidResult === null) {
         // User cancelled
         return;
       }
-      
+
       const amountPaidInput = amountPaidResult;
       const parsedAmount = parseFloat(amountPaidInput || "0");
       if (isNaN(parsedAmount) || parsedAmount < 0) {
@@ -1276,9 +1277,10 @@ export default function DashboardPage() {
       const amountPaidResult = await showDialog(
         language === "ar" ? "تحديث المبلغ المدفوع" : "Update Amount Paid",
         {
-          message: language === "ar"
-            ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR)`
-            : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR)`,
+          message:
+            language === "ar"
+              ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR)`
+              : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR)`,
           type: "number",
           placeholder: language === "ar" ? "مثال: 1000" : "e.g., 1000",
           defaultValue: String(currentAmountPaid),
@@ -1287,12 +1289,12 @@ export default function DashboardPage() {
           cancelText: language === "ar" ? "إلغاء" : "Cancel",
         }
       );
-      
+
       if (amountPaidResult === null) {
         // User cancelled
         return;
       }
-      
+
       const amountPaidInput = amountPaidResult;
       const parsedAmount = parseFloat(amountPaidInput || "0");
       if (isNaN(parsedAmount) || parsedAmount < 0) {
@@ -1404,48 +1406,56 @@ export default function DashboardPage() {
         const messageResult = await showDialog(
           language === "ar" ? "رسالة العرض" : "Offer Message",
           {
-            message: language === "ar" 
-              ? "أدخل رسالة العرض للمستخدم:" 
-              : "Enter offer message for the user:",
+            message:
+              language === "ar"
+                ? "أدخل رسالة العرض للمستخدم:"
+                : "Enter offer message for the user:",
             type: "textarea",
-            placeholder: language === "ar" 
-              ? "اكتب رسالة العرض هنا..." 
-              : "Type your offer message here...",
+            placeholder:
+              language === "ar"
+                ? "اكتب رسالة العرض هنا..."
+                : "Type your offer message here...",
             required: true,
             confirmText: language === "ar" ? "إرسال" : "Send",
             cancelText: language === "ar" ? "إلغاء" : "Cancel",
           }
         );
-        
+
         if (messageResult === null || messageResult.trim() === "") {
           // User cancelled or empty message, don't update status
           return;
         }
-        
+
         offerMessage = messageResult;
-        
+
         // Optionally prompt for total price when sending offer
         const quote = fclQuotes.find((q) => q.id === quoteId);
         const currentTotalPrice = quote?.total_price || 0;
         const totalPriceResult = await showDialog(
           language === "ar" ? "السعر الإجمالي" : "Total Price",
           {
-            message: language === "ar"
-              ? `أدخل السعر الإجمالي (EUR) (اختياري)${
-                  currentTotalPrice > 0 ? ` (الحالي: ${currentTotalPrice})` : ""
-                }`
-              : `Enter total price (EUR) (optional)${
-                  currentTotalPrice > 0 ? ` (Current: ${currentTotalPrice})` : ""
-                }`,
+            message:
+              language === "ar"
+                ? `أدخل السعر الإجمالي (EUR) (اختياري)${
+                    currentTotalPrice > 0
+                      ? ` (الحالي: ${currentTotalPrice})`
+                      : ""
+                  }`
+                : `Enter total price (EUR) (optional)${
+                    currentTotalPrice > 0
+                      ? ` (Current: ${currentTotalPrice})`
+                      : ""
+                  }`,
             type: "number",
             placeholder: language === "ar" ? "مثال: 5000" : "e.g., 5000",
-            defaultValue: currentTotalPrice > 0 ? String(currentTotalPrice) : "",
+            defaultValue:
+              currentTotalPrice > 0 ? String(currentTotalPrice) : "",
             required: false,
             confirmText: language === "ar" ? "تأكيد" : "Confirm",
             cancelText: language === "ar" ? "تخطي" : "Skip",
           }
         );
-        
+
         if (totalPriceResult !== null && totalPriceResult.trim() !== "") {
           const parsedTotalPrice = parseFloat(totalPriceResult || "0");
           if (!isNaN(parsedTotalPrice) && parsedTotalPrice > 0) {
@@ -1463,27 +1473,33 @@ export default function DashboardPage() {
         const totalPriceResult = await showDialog(
           language === "ar" ? "السعر الإجمالي" : "Total Price",
           {
-            message: language === "ar"
-              ? `أدخل السعر الإجمالي (EUR)${
-                  currentTotalPrice > 0 ? ` (الحالي: ${currentTotalPrice})` : ""
-                }`
-              : `Enter total price (EUR)${
-                  currentTotalPrice > 0 ? ` (Current: ${currentTotalPrice})` : ""
-                }`,
+            message:
+              language === "ar"
+                ? `أدخل السعر الإجمالي (EUR)${
+                    currentTotalPrice > 0
+                      ? ` (الحالي: ${currentTotalPrice})`
+                      : ""
+                  }`
+                : `Enter total price (EUR)${
+                    currentTotalPrice > 0
+                      ? ` (Current: ${currentTotalPrice})`
+                      : ""
+                  }`,
             type: "number",
             placeholder: language === "ar" ? "مثال: 5000" : "e.g., 5000",
-            defaultValue: currentTotalPrice > 0 ? String(currentTotalPrice) : "",
+            defaultValue:
+              currentTotalPrice > 0 ? String(currentTotalPrice) : "",
             required: true,
             confirmText: language === "ar" ? "تأكيد" : "Confirm",
             cancelText: language === "ar" ? "إلغاء" : "Cancel",
           }
         );
-        
+
         if (totalPriceResult === null) {
           // User cancelled, don't update status
           return;
         }
-        
+
         const parsedTotalPrice = parseFloat(totalPriceResult || "0");
         if (isNaN(parsedTotalPrice) || parsedTotalPrice <= 0) {
           showSuccess(
@@ -1500,27 +1516,33 @@ export default function DashboardPage() {
         const amountPaidResult = await showDialog(
           language === "ar" ? "المبلغ المدفوع" : "Amount Paid",
           {
-            message: language === "ar"
-              ? `أدخل المبلغ المدفوع (السعر الإجمالي: ${totalPrice} EUR)${
-                  currentAmountPaid > 0 ? ` (الحالي: ${currentAmountPaid})` : ""
-                }`
-              : `Enter amount paid (Total Price: ${totalPrice} EUR)${
-                  currentAmountPaid > 0 ? ` (Current: ${currentAmountPaid})` : ""
-                }`,
+            message:
+              language === "ar"
+                ? `أدخل المبلغ المدفوع (السعر الإجمالي: ${totalPrice} EUR)${
+                    currentAmountPaid > 0
+                      ? ` (الحالي: ${currentAmountPaid})`
+                      : ""
+                  }`
+                : `Enter amount paid (Total Price: ${totalPrice} EUR)${
+                    currentAmountPaid > 0
+                      ? ` (Current: ${currentAmountPaid})`
+                      : ""
+                  }`,
             type: "number",
             placeholder: language === "ar" ? "مثال: 0" : "e.g., 0",
-            defaultValue: currentAmountPaid > 0 ? String(currentAmountPaid) : "0",
+            defaultValue:
+              currentAmountPaid > 0 ? String(currentAmountPaid) : "0",
             required: true,
             confirmText: language === "ar" ? "تأكيد" : "Confirm",
             cancelText: language === "ar" ? "إلغاء" : "Cancel",
           }
         );
-        
+
         if (amountPaidResult === null) {
           // User cancelled, don't update status
           return;
         }
-        
+
         const parsedAmount = parseFloat(amountPaidResult || "0");
         if (isNaN(parsedAmount) || parsedAmount < 0) {
           showSuccess(
@@ -2557,68 +2579,76 @@ export default function DashboardPage() {
                                 // Show payment progress if:
                                 // 1. Status is not CREATED and total_price exists
                                 // 2. OR Admin viewing OFFER_SENT with ACCEPTED response
-                                const hasTotalPrice = quote.total_price && Number(quote.total_price) > 0;
-                                const isAfterCreated = quote.status !== "CREATED";
-                                const isAdminViewingAcceptedOffer = isAdmin && 
-                                                                   quote.status === "OFFER_SENT" && 
-                                                                   quote.user_response === "ACCEPTED";
-                                
+                                const hasTotalPrice =
+                                  quote.total_price &&
+                                  Number(quote.total_price) > 0;
+                                const isAfterCreated =
+                                  quote.status !== "CREATED";
+                                const isAdminViewingAcceptedOffer =
+                                  isAdmin &&
+                                  quote.status === "OFFER_SENT" &&
+                                  quote.user_response === "ACCEPTED";
+
                                 // For admin viewing accepted offer, show even if total_price is 0 or null
                                 if (isAdminViewingAcceptedOffer) {
                                   return true;
                                 }
-                                
+
                                 // Otherwise, show only if status is after CREATED and total_price exists
                                 return isAfterCreated && hasTotalPrice;
                               })() && (
-                                  <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                      {t.paymentProgress}
-                                    </p>
-                                    <div className="space-y-2">
-                                      <div className="flex justify-between items-center text-xs">
-                                        <span className="text-gray-600 font-medium">
-                                          {t.amountPaid}
-                                        </span>
-                                        <span className="font-bold text-primary-dark">
-                                          €{quote.amount_paid || 0}
-                                        </span>
-                                      </div>
-                                      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                        <div
-                                          className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
-                                          style={{
-                                            width: `${quote.total_price && quote.total_price > 0
+                                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    {t.paymentProgress}
+                                  </p>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between items-center text-xs">
+                                      <span className="text-gray-600 font-medium">
+                                        {t.amountPaid}
+                                      </span>
+                                      <span className="font-bold text-primary-dark">
+                                        €{quote.amount_paid || 0}
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                      <div
+                                        className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500 shadow-sm"
+                                        style={{
+                                          width: `${
+                                            quote.total_price &&
+                                            quote.total_price > 0
                                               ? Math.min(
                                                   100,
                                                   ((quote.amount_paid || 0) /
                                                     quote.total_price) *
                                                     100
                                                 )
-                                              : 0}%`,
-                                          }}
-                                        ></div>
-                                      </div>
-                                      <div className="flex justify-between items-center">
-                                        <p className="text-xs font-bold text-gray-700">
-                                          {quote.total_price && quote.total_price > 0
-                                            ? Math.round(
-                                                ((quote.amount_paid || 0) /
-                                                  quote.total_price) *
-                                                  100
-                                              )
-                                            : 0}
-                                          %
-                                        </p>
-                                        <p className="text-xs text-gray-600">
-                                          {t.totalPrice}: €
-                                          {quote.total_price || 0}
-                                        </p>
-                                      </div>
-                                      {/* Warning message if payment is not 100% */}
-                                      {quote.total_price && 
-                                       quote.total_price > 0 &&
-                                       ((quote.amount_paid || 0) /
+                                              : 0
+                                          }%`,
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <p className="text-xs font-bold text-gray-700">
+                                        {quote.total_price &&
+                                        quote.total_price > 0
+                                          ? Math.round(
+                                              ((quote.amount_paid || 0) /
+                                                quote.total_price) *
+                                                100
+                                            )
+                                          : 0}
+                                        %
+                                      </p>
+                                      <p className="text-xs text-gray-600">
+                                        {t.totalPrice}: €
+                                        {quote.total_price || 0}
+                                      </p>
+                                    </div>
+                                    {/* Warning message if payment is not 100% */}
+                                    {quote.total_price &&
+                                      quote.total_price > 0 &&
+                                      ((quote.amount_paid || 0) /
                                         quote.total_price) *
                                         100 <
                                         100 && (
@@ -2641,78 +2671,81 @@ export default function DashboardPage() {
                                           </p>
                                         </div>
                                       )}
-                                      {/* Payment button for users when status is PENDING_PAYMENT */}
-                                      {!isAdmin &&
-                                        quote.status === "PENDING_PAYMENT" &&
-                                        ((quote.amount_paid || 0) /
-                                          quote.total_price) *
-                                          100 <
-                                          100 && (
-                                          <button
-                                            onClick={() =>
-                                              handleInitiatePayment(quote.id)
-                                            }
-                                            disabled={
-                                              processingPayment === quote.id
-                                            }
-                                            className="mt-3 w-full px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
-                                          >
-                                            {processingPayment === quote.id ? (
-                                              <>
-                                                <svg
-                                                  className="animate-spin h-4 w-4 text-white"
-                                                  xmlns="http://www.w3.org/2000/svg"
-                                                  fill="none"
-                                                  viewBox="0 0 24 24"
-                                                >
-                                                  <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                  ></circle>
-                                                  <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                  ></path>
-                                                </svg>
-                                                <span>
-                                                  {language === "ar"
-                                                    ? "جاري التوجيه..."
-                                                    : "Redirecting..."}
-                                                </span>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <svg
-                                                  className="w-5 h-5"
-                                                  fill="none"
+                                    {/* Payment button for users when status is PENDING_PAYMENT */}
+                                    {!isAdmin &&
+                                      quote.status === "PENDING_PAYMENT" &&
+                                      quote.total_price &&
+                                      ((quote.amount_paid || 0) /
+                                        quote.total_price) *
+                                        100 <
+                                        100 && (
+                                        <button
+                                          onClick={() =>
+                                            handleInitiatePayment(quote.id)
+                                          }
+                                          disabled={
+                                            processingPayment === quote.id
+                                          }
+                                          className="mt-3 w-full px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                                        >
+                                          {processingPayment === quote.id ? (
+                                            <>
+                                              <svg
+                                                className="animate-spin h-4 w-4 text-white"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <circle
+                                                  className="opacity-25"
+                                                  cx="12"
+                                                  cy="12"
+                                                  r="10"
                                                   stroke="currentColor"
-                                                  viewBox="0 0 24 24"
-                                                >
-                                                  <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                                                  />
-                                                </svg>
-                                                <span>
-                                                  {language === "ar"
-                                                    ? "دفع إلكتروني"
-                                                    : "Pay Online"}
-                                                </span>
-                                              </>
-                                            )}
-                                          </button>
-                                        )}
-                                    </div>
-                                    {isAdmin && 
-                                      (quote.status === "PENDING_PAYMENT" || 
-                                       (quote.status === "OFFER_SENT" && quote.user_response === "ACCEPTED")) && (
+                                                  strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                  className="opacity-75"
+                                                  fill="currentColor"
+                                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                ></path>
+                                              </svg>
+                                              <span>
+                                                {language === "ar"
+                                                  ? "جاري التوجيه..."
+                                                  : "Redirecting..."}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <svg
+                                                className="w-5 h-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                                                />
+                                              </svg>
+                                              <span>
+                                                {language === "ar"
+                                                  ? "دفع إلكتروني"
+                                                  : "Pay Online"}
+                                              </span>
+                                            </>
+                                          )}
+                                        </button>
+                                      )}
+                                  </div>
+                                  {isAdmin &&
+                                    (quote.status === "PENDING_PAYMENT" ||
+                                      (quote.status === "OFFER_SENT" &&
+                                        quote.user_response ===
+                                          "ACCEPTED")) && (
                                       <div className="mt-2 space-y-2">
                                         <button
                                           onClick={() =>
@@ -2722,109 +2755,110 @@ export default function DashboardPage() {
                                         >
                                           {t.updatePaidAmount}
                                         </button>
-                                        {quote.total_price && 
-                                         ((quote.amount_paid || 0) /
-                                          quote.total_price) *
-                                          100 <
-                                          100 && (
-                                          <button
-                                            onClick={() =>
-                                              handleSendPaymentReminder(
-                                                quote.id
-                                              )
-                                            }
-                                            className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                                          >
-                                            <svg
-                                              className="w-4 h-4"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              viewBox="0 0 24 24"
+                                        {quote.total_price &&
+                                          ((quote.amount_paid || 0) /
+                                            quote.total_price) *
+                                            100 <
+                                            100 && (
+                                            <button
+                                              onClick={() =>
+                                                handleSendPaymentReminder(
+                                                  quote.id
+                                                )
+                                              }
+                                              className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                                             >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                              />
-                                            </svg>
-                                            <span>
-                                              {language === "ar"
-                                                ? "إرسال تذكير الدفع"
-                                                : "Send Payment Reminder"}
-                                            </span>
-                                          </button>
-                                        )}
+                                              <svg
+                                                className="w-4 h-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                                />
+                                              </svg>
+                                              <span>
+                                                {language === "ar"
+                                                  ? "إرسال تذكير الدفع"
+                                                  : "Send Payment Reminder"}
+                                              </span>
+                                            </button>
+                                          )}
                                         {/* Stripe Payment Button for Admin when user accepted offer */}
-                                        {quote.status === "OFFER_SENT" && 
-                                         quote.user_response === "ACCEPTED" && 
-                                         quote.total_price && 
-                                         quote.total_price > 0 && (
-                                          <button
-                                            onClick={() =>
-                                              handleInitiatePayment(quote.id)
-                                            }
-                                            disabled={
-                                              processingPayment === quote.id
-                                            }
-                                            className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
-                                          >
-                                            {processingPayment === quote.id ? (
-                                              <>
-                                                <svg
-                                                  className="animate-spin h-4 w-4 text-white"
-                                                  xmlns="http://www.w3.org/2000/svg"
-                                                  fill="none"
-                                                  viewBox="0 0 24 24"
-                                                >
-                                                  <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
+                                        {quote.status === "OFFER_SENT" &&
+                                          quote.user_response === "ACCEPTED" &&
+                                          quote.total_price &&
+                                          quote.total_price > 0 && (
+                                            <button
+                                              onClick={() =>
+                                                handleInitiatePayment(quote.id)
+                                              }
+                                              disabled={
+                                                processingPayment === quote.id
+                                              }
+                                              className="w-full px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                                            >
+                                              {processingPayment ===
+                                              quote.id ? (
+                                                <>
+                                                  <svg
+                                                    className="animate-spin h-4 w-4 text-white"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                  >
+                                                    <circle
+                                                      className="opacity-25"
+                                                      cx="12"
+                                                      cy="12"
+                                                      r="10"
+                                                      stroke="currentColor"
+                                                      strokeWidth="4"
+                                                    ></circle>
+                                                    <path
+                                                      className="opacity-75"
+                                                      fill="currentColor"
+                                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    ></path>
+                                                  </svg>
+                                                  <span>
+                                                    {language === "ar"
+                                                      ? "جاري التوجيه..."
+                                                      : "Redirecting..."}
+                                                  </span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <svg
+                                                    className="w-4 h-4"
+                                                    fill="none"
                                                     stroke="currentColor"
-                                                    strokeWidth="4"
-                                                  ></circle>
-                                                  <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                  ></path>
-                                                </svg>
-                                                <span>
-                                                  {language === "ar"
-                                                    ? "جاري التوجيه..."
-                                                    : "Redirecting..."}
-                                                </span>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <svg
-                                                  className="w-4 h-4"
-                                                  fill="none"
-                                                  stroke="currentColor"
-                                                  viewBox="0 0 24 24"
-                                                >
-                                                  <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                                                  />
-                                                </svg>
-                                                <span>
-                                                  {language === "ar"
-                                                    ? "دفع عبر Stripe"
-                                                    : "Pay via Stripe"}
-                                                </span>
-                                              </>
-                                            )}
-                                          </button>
-                                        )}
+                                                    viewBox="0 0 24 24"
+                                                  >
+                                                    <path
+                                                      strokeLinecap="round"
+                                                      strokeLinejoin="round"
+                                                      strokeWidth={2}
+                                                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                                                    />
+                                                  </svg>
+                                                  <span>
+                                                    {language === "ar"
+                                                      ? "دفع عبر Stripe"
+                                                      : "Pay via Stripe"}
+                                                  </span>
+                                                </>
+                                              )}
+                                            </button>
+                                          )}
                                       </div>
                                     )}
-                                  </div>
-                                )}
+                                </div>
+                              )}
 
                               {/* User Response */}
                               {quote.user_response &&
@@ -3080,21 +3114,36 @@ export default function DashboardPage() {
                                                   <div className="flex gap-2">
                                                     <button
                                                       onClick={async () => {
-                                                        const message = await showDialog(
-                                                          language === "ar" ? "رسالة الموافقة" : "Approval Message",
-                                                          {
-                                                            message: language === "ar"
-                                                              ? "رسالة اختيارية للموافقة:"
-                                                              : "Optional message for approval:",
-                                                            type: "textarea",
-                                                            placeholder: language === "ar"
-                                                              ? "اكتب رسالتك هنا (اختياري)..."
-                                                              : "Type your message here (optional)...",
-                                                            required: false,
-                                                            confirmText: language === "ar" ? "موافقة" : "Approve",
-                                                            cancelText: language === "ar" ? "إلغاء" : "Cancel",
-                                                          }
-                                                        );
+                                                        const message =
+                                                          await showDialog(
+                                                            language === "ar"
+                                                              ? "رسالة الموافقة"
+                                                              : "Approval Message",
+                                                            {
+                                                              message:
+                                                                language ===
+                                                                "ar"
+                                                                  ? "رسالة اختيارية للموافقة:"
+                                                                  : "Optional message for approval:",
+                                                              type: "textarea",
+                                                              placeholder:
+                                                                language ===
+                                                                "ar"
+                                                                  ? "اكتب رسالتك هنا (اختياري)..."
+                                                                  : "Type your message here (optional)...",
+                                                              required: false,
+                                                              confirmText:
+                                                                language ===
+                                                                "ar"
+                                                                  ? "موافقة"
+                                                                  : "Approve",
+                                                              cancelText:
+                                                                language ===
+                                                                "ar"
+                                                                  ? "إلغاء"
+                                                                  : "Cancel",
+                                                            }
+                                                          );
                                                         if (message !== null) {
                                                           handleApproveDeclineEditRequest(
                                                             quote.id,
@@ -3120,21 +3169,36 @@ export default function DashboardPage() {
                                                     </button>
                                                     <button
                                                       onClick={async () => {
-                                                        const message = await showDialog(
-                                                          language === "ar" ? "رسالة الرفض" : "Decline Message",
-                                                          {
-                                                            message: language === "ar"
-                                                              ? "رسالة اختيارية للرفض:"
-                                                              : "Optional message for decline:",
-                                                            type: "textarea",
-                                                            placeholder: language === "ar"
-                                                              ? "اكتب رسالتك هنا (اختياري)..."
-                                                              : "Type your message here (optional)...",
-                                                            required: false,
-                                                            confirmText: language === "ar" ? "رفض" : "Decline",
-                                                            cancelText: language === "ar" ? "إلغاء" : "Cancel",
-                                                          }
-                                                        );
+                                                        const message =
+                                                          await showDialog(
+                                                            language === "ar"
+                                                              ? "رسالة الرفض"
+                                                              : "Decline Message",
+                                                            {
+                                                              message:
+                                                                language ===
+                                                                "ar"
+                                                                  ? "رسالة اختيارية للرفض:"
+                                                                  : "Optional message for decline:",
+                                                              type: "textarea",
+                                                              placeholder:
+                                                                language ===
+                                                                "ar"
+                                                                  ? "اكتب رسالتك هنا (اختياري)..."
+                                                                  : "Type your message here (optional)...",
+                                                              required: false,
+                                                              confirmText:
+                                                                language ===
+                                                                "ar"
+                                                                  ? "رفض"
+                                                                  : "Decline",
+                                                              cancelText:
+                                                                language ===
+                                                                "ar"
+                                                                  ? "إلغاء"
+                                                                  : "Cancel",
+                                                            }
+                                                          );
                                                         if (message !== null) {
                                                           handleApproveDeclineEditRequest(
                                                             quote.id,
@@ -4158,7 +4222,6 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                             )}
-
                           </div>
                         )}
                       </div>
@@ -5419,64 +5482,109 @@ export default function DashboardPage() {
                                                 </p>
                                               )}
                                             </div>
-                                            
+
                                             {/* Debug: Show parcel data in UI for testing */}
-                                            {(parcel.photo_urls || parcel.device_photo_url || parcel.electronics_picture_url) && (
+                                            {(parcel.photo_urls ||
+                                              parcel.device_photo_url ||
+                                              parcel.electronics_picture_url) && (
                                               <div className="mt-2 text-xs text-gray-400 bg-gray-100 p-2 rounded">
                                                 <p>Debug Info:</p>
-                                                <p>photo_urls: {parcel.photo_urls ? `${parcel.photo_urls.length} photos` : 'none'}</p>
-                                                <p>device_photo_url: {parcel.device_photo_url ? 'exists' : 'none'}</p>
-                                                <p>electronics_picture_url: {parcel.electronics_picture_url ? 'exists' : 'none'}</p>
-                                              </div>
-                                            )}
-                                            
-                                            {/* Parcel Photos */}
-                                            {parcel.photo_urls && Array.isArray(parcel.photo_urls) && parcel.photo_urls.length > 0 && (
-                                              <div className="mt-3 pt-3 border-t border-gray-200">
-                                                <p className="text-xs font-semibold text-gray-700 mb-2">
-                                                  {language === "ar" ? "صور الطرد" : "Parcel Photos"}
+                                                <p>
+                                                  photo_urls:{" "}
+                                                  {parcel.photo_urls
+                                                    ? `${parcel.photo_urls.length} photos`
+                                                    : "none"}
                                                 </p>
-                                                <div className="grid grid-cols-3 gap-2">
-                                                  {parcel.photo_urls.map((photoUrl: string, photoIdx: number) => (
-                                                    <a
-                                                      key={photoIdx}
-                                                      href={photoUrl}
-                                                      target="_blank"
-                                                      rel="noopener noreferrer"
-                                                      className="block aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary-yellow transition-all"
-                                                    >
-                                                      <img
-                                                        src={photoUrl}
-                                                        alt={`${language === "ar" ? "صورة الطرد" : "Parcel photo"} ${photoIdx + 1}`}
-                                                        className="w-full h-full object-cover"
-                                                      />
-                                                    </a>
-                                                  ))}
-                                                </div>
+                                                <p>
+                                                  device_photo_url:{" "}
+                                                  {parcel.device_photo_url
+                                                    ? "exists"
+                                                    : "none"}
+                                                </p>
+                                                <p>
+                                                  electronics_picture_url:{" "}
+                                                  {parcel.electronics_picture_url
+                                                    ? "exists"
+                                                    : "none"}
+                                                </p>
                                               </div>
                                             )}
-                                            
+
+                                            {/* Parcel Photos */}
+                                            {parcel.photo_urls &&
+                                              Array.isArray(
+                                                parcel.photo_urls
+                                              ) &&
+                                              parcel.photo_urls.length > 0 && (
+                                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                                  <p className="text-xs font-semibold text-gray-700 mb-2">
+                                                    {language === "ar"
+                                                      ? "صور الطرد"
+                                                      : "Parcel Photos"}
+                                                  </p>
+                                                  <div className="grid grid-cols-3 gap-2">
+                                                    {parcel.photo_urls.map(
+                                                      (
+                                                        photoUrl: string,
+                                                        photoIdx: number
+                                                      ) => (
+                                                        <a
+                                                          key={photoIdx}
+                                                          href={photoUrl}
+                                                          target="_blank"
+                                                          rel="noopener noreferrer"
+                                                          className="block aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary-yellow transition-all"
+                                                        >
+                                                          <img
+                                                            src={photoUrl}
+                                                            alt={`${
+                                                              language === "ar"
+                                                                ? "صورة الطرد"
+                                                                : "Parcel photo"
+                                                            } ${photoIdx + 1}`}
+                                                            className="w-full h-full object-cover"
+                                                          />
+                                                        </a>
+                                                      )
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              )}
+
                                             {/* Electronics Photos */}
-                                            {(parcel.device_photo_url || parcel.electronics_picture_url) && (
+                                            {(parcel.device_photo_url ||
+                                              parcel.electronics_picture_url) && (
                                               <div className="mt-3 pt-3 border-t border-gray-200">
                                                 <p className="text-xs font-semibold text-gray-700 mb-2">
-                                                  {language === "ar" ? "صور الإلكترونيات" : "Electronics Photos"}
+                                                  {language === "ar"
+                                                    ? "صور الإلكترونيات"
+                                                    : "Electronics Photos"}
                                                 </p>
                                                 <div className="space-y-2">
                                                   {parcel.device_photo_url && (
                                                     <div>
                                                       <p className="text-xs text-gray-600 mb-1">
-                                                        {language === "ar" ? "صورة الجهاز" : "Device Photo"}
+                                                        {language === "ar"
+                                                          ? "صورة الجهاز"
+                                                          : "Device Photo"}
                                                       </p>
                                                       <a
-                                                        href={parcel.device_photo_url}
+                                                        href={
+                                                          parcel.device_photo_url
+                                                        }
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="block rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary-yellow transition-all"
                                                       >
                                                         <img
-                                                          src={parcel.device_photo_url}
-                                                          alt={language === "ar" ? "صورة الجهاز" : "Device photo"}
+                                                          src={
+                                                            parcel.device_photo_url
+                                                          }
+                                                          alt={
+                                                            language === "ar"
+                                                              ? "صورة الجهاز"
+                                                              : "Device photo"
+                                                          }
                                                           className="w-full h-32 object-cover"
                                                         />
                                                       </a>
@@ -5485,17 +5593,27 @@ export default function DashboardPage() {
                                                   {parcel.electronics_picture_url && (
                                                     <div>
                                                       <p className="text-xs text-gray-600 mb-1">
-                                                        {language === "ar" ? "صورة الإلكترونيات" : "Electronics Picture"}
+                                                        {language === "ar"
+                                                          ? "صورة الإلكترونيات"
+                                                          : "Electronics Picture"}
                                                       </p>
                                                       <a
-                                                        href={parcel.electronics_picture_url}
+                                                        href={
+                                                          parcel.electronics_picture_url
+                                                        }
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="block rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary-yellow transition-all"
                                                       >
                                                         <img
-                                                          src={parcel.electronics_picture_url}
-                                                          alt={language === "ar" ? "صورة الإلكترونيات" : "Electronics picture"}
+                                                          src={
+                                                            parcel.electronics_picture_url
+                                                          }
+                                                          alt={
+                                                            language === "ar"
+                                                              ? "صورة الإلكترونيات"
+                                                              : "Electronics picture"
+                                                          }
                                                           className="w-full h-32 object-cover"
                                                         />
                                                       </a>
