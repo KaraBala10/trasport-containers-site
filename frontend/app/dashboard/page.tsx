@@ -10,6 +10,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useToast } from "@/contexts/ToastContext";
+import Dialog from "@/components/Dialog";
 
 interface FCLQuote {
   id: number;
@@ -207,6 +208,63 @@ export default function DashboardPage() {
   const [productRequestStatus, setProductRequestStatus] = useState<string>("");
   const [productRequestNotes, setProductRequestNotes] = useState<string>("");
   const [updatingProductRequest, setUpdatingProductRequest] = useState(false);
+
+  // Dialog state
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message?: string;
+    placeholder?: string;
+    defaultValue?: string;
+    type?: "text" | "number" | "textarea";
+    required?: boolean;
+    onConfirm?: (value: string) => void;
+    onCancel?: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    showCancel?: boolean;
+  }>({
+    isOpen: false,
+    title: "",
+  });
+
+  // Helper function to show dialog (replaces prompt)
+  const showDialog = (
+    title: string,
+    options?: {
+      message?: string;
+      placeholder?: string;
+      defaultValue?: string;
+      type?: "text" | "number" | "textarea";
+      required?: boolean;
+      confirmText?: string;
+      cancelText?: string;
+      showCancel?: boolean;
+    }
+  ): Promise<string | null> => {
+    return new Promise((resolve) => {
+      setDialogConfig({
+        isOpen: true,
+        title,
+        message: options?.message,
+        placeholder: options?.placeholder,
+        defaultValue: options?.defaultValue || "",
+        type: options?.type || "text",
+        required: options?.required || false,
+        confirmText: options?.confirmText,
+        cancelText: options?.cancelText,
+        showCancel: options?.showCancel !== false,
+        onConfirm: (value: string) => {
+          setDialogConfig((prev) => ({ ...prev, isOpen: false }));
+          resolve(value);
+        },
+        onCancel: () => {
+          setDialogConfig((prev) => ({ ...prev, isOpen: false }));
+          resolve(null);
+        },
+      });
+    });
+  };
 
   const translations = useMemo(
     () => ({
@@ -1096,15 +1154,27 @@ export default function DashboardPage() {
       const currentAmountPaid = Number(shipment.amount_paid) || 0;
       const totalPrice = Number(shipment.total_price) || 0;
 
-      const amountPaidInput = prompt(
-        language === "ar"
-          ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR):`
-          : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR):`
+      const amountPaidResult = await showDialog(
+        language === "ar" ? "تحديث المبلغ المدفوع" : "Update Amount Paid",
+        {
+          message: language === "ar"
+            ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR)`
+            : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR)`,
+          type: "number",
+          placeholder: language === "ar" ? "مثال: 1000" : "e.g., 1000",
+          defaultValue: String(currentAmountPaid),
+          required: true,
+          confirmText: language === "ar" ? "تأكيد" : "Confirm",
+          cancelText: language === "ar" ? "إلغاء" : "Cancel",
+        }
       );
-      if (amountPaidInput === null) {
+      
+      if (amountPaidResult === null) {
         // User cancelled
         return;
       }
+      
+      const amountPaidInput = amountPaidResult;
       const parsedAmount = parseFloat(amountPaidInput || "0");
       if (isNaN(parsedAmount) || parsedAmount < 0) {
         showSuccess(
@@ -1203,15 +1273,27 @@ export default function DashboardPage() {
       const currentAmountPaid = quote.amount_paid || 0;
       const totalPrice = quote.total_price || 0;
 
-      const amountPaidInput = prompt(
-        language === "ar"
-          ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR):`
-          : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR):`
+      const amountPaidResult = await showDialog(
+        language === "ar" ? "تحديث المبلغ المدفوع" : "Update Amount Paid",
+        {
+          message: language === "ar"
+            ? `أدخل المبلغ المدفوع (الحالي: ${currentAmountPaid} EUR, السعر الإجمالي: ${totalPrice} EUR)`
+            : `Enter amount paid (Current: ${currentAmountPaid} EUR, Total Price: ${totalPrice} EUR)`,
+          type: "number",
+          placeholder: language === "ar" ? "مثال: 1000" : "e.g., 1000",
+          defaultValue: String(currentAmountPaid),
+          required: true,
+          confirmText: language === "ar" ? "تأكيد" : "Confirm",
+          cancelText: language === "ar" ? "إلغاء" : "Cancel",
+        }
       );
-      if (amountPaidInput === null) {
+      
+      if (amountPaidResult === null) {
         // User cancelled
         return;
       }
+      
+      const amountPaidInput = amountPaidResult;
       const parsedAmount = parseFloat(amountPaidInput || "0");
       if (isNaN(parsedAmount) || parsedAmount < 0) {
         showSuccess(
@@ -1317,64 +1399,92 @@ export default function DashboardPage() {
       let amountPaid: number | undefined = undefined;
       let totalPrice: number | undefined = undefined;
 
-      // If changing to OFFER_SENT, prompt for message
+      // If changing to OFFER_SENT, show dialog for message
       if (newStatus === "OFFER_SENT") {
-        offerMessage =
-          prompt(
-            language === "ar"
-              ? "أدخل رسالة العرض للمستخدم:"
-              : "Enter offer message for the user:"
-          ) || "";
-        if (offerMessage === null || offerMessage.trim() === "") {
+        const messageResult = await showDialog(
+          language === "ar" ? "رسالة العرض" : "Offer Message",
+          {
+            message: language === "ar" 
+              ? "أدخل رسالة العرض للمستخدم:" 
+              : "Enter offer message for the user:",
+            type: "textarea",
+            placeholder: language === "ar" 
+              ? "اكتب رسالة العرض هنا..." 
+              : "Type your offer message here...",
+            required: true,
+            confirmText: language === "ar" ? "إرسال" : "Send",
+            cancelText: language === "ar" ? "إلغاء" : "Cancel",
+          }
+        );
+        
+        if (messageResult === null || messageResult.trim() === "") {
           // User cancelled or empty message, don't update status
-          showSuccess(
-            language === "ar"
-              ? "يجب إدخال رسالة العرض"
-              : "Offer message is required"
-          );
           return;
         }
+        
+        offerMessage = messageResult;
         
         // Optionally prompt for total price when sending offer
         const quote = fclQuotes.find((q) => q.id === quoteId);
         const currentTotalPrice = quote?.total_price || 0;
-        const totalPriceInput = prompt(
-          language === "ar"
-            ? `أدخل السعر الإجمالي (EUR) (اختياري)${
-                currentTotalPrice > 0 ? ` (الحالي: ${currentTotalPrice})` : ""
-              } - اضغط Cancel للتخطي:`
-            : `Enter total price (EUR) (optional)${
-                currentTotalPrice > 0 ? ` (Current: ${currentTotalPrice})` : ""
-              } - Press Cancel to skip:`
+        const totalPriceResult = await showDialog(
+          language === "ar" ? "السعر الإجمالي" : "Total Price",
+          {
+            message: language === "ar"
+              ? `أدخل السعر الإجمالي (EUR) (اختياري)${
+                  currentTotalPrice > 0 ? ` (الحالي: ${currentTotalPrice})` : ""
+                }`
+              : `Enter total price (EUR) (optional)${
+                  currentTotalPrice > 0 ? ` (Current: ${currentTotalPrice})` : ""
+                }`,
+            type: "number",
+            placeholder: language === "ar" ? "مثال: 5000" : "e.g., 5000",
+            defaultValue: currentTotalPrice > 0 ? String(currentTotalPrice) : "",
+            required: false,
+            confirmText: language === "ar" ? "تأكيد" : "Confirm",
+            cancelText: language === "ar" ? "تخطي" : "Skip",
+          }
         );
-        if (totalPriceInput !== null && totalPriceInput.trim() !== "") {
-          const parsedTotalPrice = parseFloat(totalPriceInput || "0");
+        
+        if (totalPriceResult !== null && totalPriceResult.trim() !== "") {
+          const parsedTotalPrice = parseFloat(totalPriceResult || "0");
           if (!isNaN(parsedTotalPrice) && parsedTotalPrice > 0) {
             totalPrice = parsedTotalPrice;
           }
         }
       }
 
-      // If changing to PENDING_PAYMENT, always prompt for total price and amount paid
+      // If changing to PENDING_PAYMENT, always show dialog for total price and amount paid
       if (newStatus === "PENDING_PAYMENT") {
         const quote = fclQuotes.find((q) => q.id === quoteId);
         const currentTotalPrice = quote?.total_price || 0;
 
-        // Always prompt for total price
-        const totalPriceInput = prompt(
-          language === "ar"
-            ? `أدخل السعر الإجمالي (EUR)${
-                currentTotalPrice > 0 ? ` (الحالي: ${currentTotalPrice})` : ""
-              }:`
-            : `Enter total price (EUR)${
-                currentTotalPrice > 0 ? ` (Current: ${currentTotalPrice})` : ""
-              }:`
+        // Always show dialog for total price
+        const totalPriceResult = await showDialog(
+          language === "ar" ? "السعر الإجمالي" : "Total Price",
+          {
+            message: language === "ar"
+              ? `أدخل السعر الإجمالي (EUR)${
+                  currentTotalPrice > 0 ? ` (الحالي: ${currentTotalPrice})` : ""
+                }`
+              : `Enter total price (EUR)${
+                  currentTotalPrice > 0 ? ` (Current: ${currentTotalPrice})` : ""
+                }`,
+            type: "number",
+            placeholder: language === "ar" ? "مثال: 5000" : "e.g., 5000",
+            defaultValue: currentTotalPrice > 0 ? String(currentTotalPrice) : "",
+            required: true,
+            confirmText: language === "ar" ? "تأكيد" : "Confirm",
+            cancelText: language === "ar" ? "إلغاء" : "Cancel",
+          }
         );
-        if (totalPriceInput === null) {
+        
+        if (totalPriceResult === null) {
           // User cancelled, don't update status
           return;
         }
-        const parsedTotalPrice = parseFloat(totalPriceInput || "0");
+        
+        const parsedTotalPrice = parseFloat(totalPriceResult || "0");
         if (isNaN(parsedTotalPrice) || parsedTotalPrice <= 0) {
           showSuccess(
             language === "ar"
@@ -1385,17 +1495,33 @@ export default function DashboardPage() {
         }
         totalPrice = parsedTotalPrice;
 
-        // Prompt for amount paid
-        const amountPaidInput = prompt(
-          language === "ar"
-            ? `أدخل المبلغ المدفوع (السعر الإجمالي: ${totalPrice} EUR):`
-            : `Enter amount paid (Total Price: ${totalPrice} EUR):`
+        // Show dialog for amount paid
+        const currentAmountPaid = quote?.amount_paid || 0;
+        const amountPaidResult = await showDialog(
+          language === "ar" ? "المبلغ المدفوع" : "Amount Paid",
+          {
+            message: language === "ar"
+              ? `أدخل المبلغ المدفوع (السعر الإجمالي: ${totalPrice} EUR)${
+                  currentAmountPaid > 0 ? ` (الحالي: ${currentAmountPaid})` : ""
+                }`
+              : `Enter amount paid (Total Price: ${totalPrice} EUR)${
+                  currentAmountPaid > 0 ? ` (Current: ${currentAmountPaid})` : ""
+                }`,
+            type: "number",
+            placeholder: language === "ar" ? "مثال: 0" : "e.g., 0",
+            defaultValue: currentAmountPaid > 0 ? String(currentAmountPaid) : "0",
+            required: true,
+            confirmText: language === "ar" ? "تأكيد" : "Confirm",
+            cancelText: language === "ar" ? "إلغاء" : "Cancel",
+          }
         );
-        if (amountPaidInput === null) {
+        
+        if (amountPaidResult === null) {
           // User cancelled, don't update status
           return;
         }
-        const parsedAmount = parseFloat(amountPaidInput || "0");
+        
+        const parsedAmount = parseFloat(amountPaidResult || "0");
         if (isNaN(parsedAmount) || parsedAmount < 0) {
           showSuccess(
             language === "ar"
@@ -2953,17 +3079,29 @@ export default function DashboardPage() {
                                                   "PENDING" && (
                                                   <div className="flex gap-2">
                                                     <button
-                                                      onClick={() => {
-                                                        const message = prompt(
-                                                          language === "ar"
-                                                            ? "رسالة اختيارية للموافقة:"
-                                                            : "Optional message for approval:"
+                                                      onClick={async () => {
+                                                        const message = await showDialog(
+                                                          language === "ar" ? "رسالة الموافقة" : "Approval Message",
+                                                          {
+                                                            message: language === "ar"
+                                                              ? "رسالة اختيارية للموافقة:"
+                                                              : "Optional message for approval:",
+                                                            type: "textarea",
+                                                            placeholder: language === "ar"
+                                                              ? "اكتب رسالتك هنا (اختياري)..."
+                                                              : "Type your message here (optional)...",
+                                                            required: false,
+                                                            confirmText: language === "ar" ? "موافقة" : "Approve",
+                                                            cancelText: language === "ar" ? "إلغاء" : "Cancel",
+                                                          }
                                                         );
-                                                        handleApproveDeclineEditRequest(
-                                                          quote.id,
-                                                          "approve",
-                                                          message || undefined
-                                                        );
+                                                        if (message !== null) {
+                                                          handleApproveDeclineEditRequest(
+                                                            quote.id,
+                                                            "approve",
+                                                            message || undefined
+                                                          );
+                                                        }
                                                       }}
                                                       disabled={
                                                         approvingDeclining ===
@@ -2981,17 +3119,29 @@ export default function DashboardPage() {
                                                         : "Approve"}
                                                     </button>
                                                     <button
-                                                      onClick={() => {
-                                                        const message = prompt(
-                                                          language === "ar"
-                                                            ? "رسالة اختيارية للرفض:"
-                                                            : "Optional message for decline:"
+                                                      onClick={async () => {
+                                                        const message = await showDialog(
+                                                          language === "ar" ? "رسالة الرفض" : "Decline Message",
+                                                          {
+                                                            message: language === "ar"
+                                                              ? "رسالة اختيارية للرفض:"
+                                                              : "Optional message for decline:",
+                                                            type: "textarea",
+                                                            placeholder: language === "ar"
+                                                              ? "اكتب رسالتك هنا (اختياري)..."
+                                                              : "Type your message here (optional)...",
+                                                            required: false,
+                                                            confirmText: language === "ar" ? "رفض" : "Decline",
+                                                            cancelText: language === "ar" ? "إلغاء" : "Cancel",
+                                                          }
                                                         );
-                                                        handleApproveDeclineEditRequest(
-                                                          quote.id,
-                                                          "decline",
-                                                          message || undefined
-                                                        );
+                                                        if (message !== null) {
+                                                          handleApproveDeclineEditRequest(
+                                                            quote.id,
+                                                            "decline",
+                                                            message || undefined
+                                                          );
+                                                        }
                                                       }}
                                                       disabled={
                                                         approvingDeclining ===
@@ -7537,6 +7687,28 @@ export default function DashboardPage() {
       </main>
 
       <Footer />
+
+      {/* Dialog Component */}
+      <Dialog
+        isOpen={dialogConfig.isOpen}
+        onClose={() => {
+          setDialogConfig((prev) => ({ ...prev, isOpen: false }));
+          if (dialogConfig.onCancel) {
+            dialogConfig.onCancel();
+          }
+        }}
+        onConfirm={dialogConfig.onConfirm}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        placeholder={dialogConfig.placeholder}
+        defaultValue={dialogConfig.defaultValue}
+        type={dialogConfig.type}
+        required={dialogConfig.required}
+        language={language}
+        confirmText={dialogConfig.confirmText}
+        cancelText={dialogConfig.cancelText}
+        showCancel={dialogConfig.showCancel}
+      />
     </div>
   );
 }
