@@ -2346,6 +2346,91 @@ export default function DashboardPage() {
                     {/* Bottom Shine Effect */}
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-primary-yellow transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
                   </Link>
+
+                  {/* Customs Documents Card */}
+                  <Link
+                    href="/dashboard/customs-documents"
+                    className="group relative bg-gradient-to-br from-green-50 via-white to-teal-50 rounded-2xl shadow-lg p-6 border-2 border-transparent hover:border-primary-yellow transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-2 overflow-hidden"
+                  >
+                    {/* Animated Background Pattern */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-yellow to-green-400 rounded-full blur-3xl"></div>
+                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-primary-dark to-teal-400 rounded-full blur-3xl"></div>
+                    </div>
+
+                    <div className="relative flex items-start gap-4">
+                      {/* Icon Container */}
+                      <div className="relative">
+                        <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                          <div className="absolute inset-0 bg-green-400 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
+
+                          <svg
+                            className="w-8 h-8 text-white relative z-10 drop-shadow-lg"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2.5}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                        </div>
+
+                        <div className="absolute inset-0 rounded-2xl border-2 border-green-400 animate-ping opacity-20"></div>
+                      </div>
+
+                      {/* Text Content */}
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-primary-dark mb-2 group-hover:scale-105 transition-transform duration-300">
+                          {language === "ar"
+                            ? "المستندات الجمركية"
+                            : "Customs Documents"}
+                        </h3>
+                        <p className="text-sm text-gray-600 font-medium mb-2">
+                          {language === "ar"
+                            ? "إدارة المستندات الجمركية"
+                            : "Manage customs documents"}
+                        </p>
+
+                        {/* Feature Tags */}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-semibold border border-green-200">
+                            {language === "ar" ? "جمركي" : "Customs"}
+                          </span>
+                          <span className="text-xs bg-teal-50 text-teal-700 px-2 py-1 rounded-full font-semibold border border-teal-200">
+                            {language === "ar" ? "مستندات" : "Documents"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Arrow Icon */}
+                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                        <svg
+                          className="w-6 h-6 text-primary-yellow"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d={
+                              language === "ar"
+                                ? "M15 19l-7-7 7-7"
+                                : "M9 5l7 7-7 7"
+                            }
+                          />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Bottom Shine Effect */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 via-teal-400 to-primary-dark transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                  </Link>
                 </div>
               </div>
             )}
