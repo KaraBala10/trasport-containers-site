@@ -1134,6 +1134,7 @@ export default function FCLQuotePage() {
       acceptTerms: "أوافق على الشروط والأحكام",
       privacyPolicy: "سياسة الخصوصية",
       readTerms: "قراءة الشروط",
+      mustReadPolicies: "يجب قراءة ملف السياسات والشروط",
 
       // Buttons
       confirmBooking: "تأكيد الحجز",
@@ -1265,6 +1266,7 @@ export default function FCLQuotePage() {
       acceptTerms: "I accept the terms and conditions",
       privacyPolicy: "Privacy Policy",
       readTerms: "Read Terms",
+      mustReadPolicies: "Please read the policies and terms file",
 
       // Buttons
       confirmBooking: "Confirm Booking",
@@ -3653,6 +3655,10 @@ export default function FCLQuotePage() {
                             >
                               {t.readTerms}
                             </a>
+                            {" "}
+                            <span className="text-gray-700">
+                              - {t.mustReadPolicies}
+                            </span>
                             {!formData.accepted_terms && (
                               <span className="text-red-500 ml-1">*</span>
                             )}

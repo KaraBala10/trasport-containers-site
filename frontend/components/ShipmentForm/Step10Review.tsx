@@ -81,6 +81,7 @@ export default function Step10Review({
       acceptPolicies: "أوافق على السياسات التشغيلية",
       readTerms: "قراءة الشروط",
       readPolicies: "قراءة السياسات",
+      mustReadPolicies: "يجب قراءة ملف السياسات والشروط",
       createShipment: "إنشاء الشحنة",
       creating: "جاري الإنشاء...",
       euToSy: "من أوروبا إلى سورية",
@@ -130,6 +131,7 @@ export default function Step10Review({
       acceptPolicies: "I agree to the Operational Policies",
       readTerms: "Read Terms",
       readPolicies: "Read Policies",
+      mustReadPolicies: "Please read the policies and terms file",
       createShipment: "Create Shipment",
       creating: "Creating...",
       euToSy: "Europe to Syria",
@@ -460,6 +462,9 @@ export default function Step10Review({
             >
               {t.readPolicies}
             </Link>
+            <span className="text-sm text-gray-700 mx-2">
+              - {t.mustReadPolicies}
+            </span>
           </div>
           <div className="flex items-start gap-3">
             <input
@@ -497,6 +502,9 @@ export default function Step10Review({
           >
             {t.readTerms}
           </Link>
+          <span className="text-sm text-gray-700 mx-2">
+            - {t.mustReadPolicies}
+          </span>
         </div>
         <div className="flex items-start gap-3">
           <input
