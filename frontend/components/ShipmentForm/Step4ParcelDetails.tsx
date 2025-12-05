@@ -197,6 +197,18 @@ export default function Step4ParcelDetails({
               : "Product category is required"
           );
         }
+
+        // Insurance (declaredShipmentValue) is required for electronics shipments
+        if (
+          !parcel.declaredShipmentValue ||
+          parcel.declaredShipmentValue <= 0
+        ) {
+          parcelErrors.push(
+            language === "ar"
+              ? "التأمين مطلوب (يجب إدخال قيمة التأمين)"
+              : "Insurance is required (please enter insurance value)"
+          );
+        }
       } else {
         // For Regular Parcel
         // Dimensions are required
