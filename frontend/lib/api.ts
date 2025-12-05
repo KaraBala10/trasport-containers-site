@@ -283,6 +283,13 @@ export const apiService = {
     return apiClient.post('/shipments/create-checkout-session/', data);
   },
 
+  confirmShipmentPayment: (data: {
+    shipment_id: number;
+    session_id?: string;
+  }) => {
+    return apiClient.post('/shipments/confirm-payment/', data);
+  },
+
   getPaymentStatus: (id: number) => {
     return apiClient.get(`/fcl/quotes/${id}/payment-status/`);
   },

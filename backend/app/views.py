@@ -1962,31 +1962,36 @@ def stripe_webhook_view(request):
                                     # Convert from cents to decimal
                                     paid_amount = Decimal(str(amount_total)) / 100
                                     shipment.amount_paid = paid_amount
-                                    # Update status to PENDING_PAYMENT if payment is complete
-                                    shipment.status = "PENDING_PAYMENT"
+                                    # Update status based on whether Sendcloud parcel exists
+                                    # If Sendcloud parcel exists, status should already be PENDING_PICKUP
+                                    # Otherwise, set to PENDING_PICKUP (payment is complete, waiting for pickup)
+                                    if not shipment.sendcloud_id:
+                                        shipment.status = "PENDING_PICKUP"
                                     shipment.paid_at = timezone.now()
 
                                     logger.info(
-                                        f"✅ Updated shipment {shipment.id} - amount_paid: {old_amount_paid} -> {paid_amount}, status: {old_status} -> PENDING_PAYMENT"
+                                        f"✅ Updated shipment {shipment.id} - amount_paid: {old_amount_paid} -> {paid_amount}, status: {old_status} -> {shipment.status}"
                                     )
                                 elif amount_subtotal:
                                     # Fallback to subtotal if total is missing
                                     paid_amount = Decimal(str(amount_subtotal)) / 100
                                     shipment.amount_paid = paid_amount
-                                    shipment.status = "PENDING_PAYMENT"
+                                    if not shipment.sendcloud_id:
+                                        shipment.status = "PENDING_PICKUP"
                                     shipment.paid_at = timezone.now()
 
                                     logger.info(
-                                        f"✅ Updated shipment {shipment.id} using subtotal - amount_paid: {old_amount_paid} -> {paid_amount}, status: {old_status} -> PENDING_PAYMENT"
+                                        f"✅ Updated shipment {shipment.id} using subtotal - amount_paid: {old_amount_paid} -> {paid_amount}, status: {old_status} -> {shipment.status}"
                                     )
                                 elif shipment.total_price and shipment.total_price > 0:
                                     # Final fallback: use total_price
                                     shipment.amount_paid = shipment.total_price
-                                    shipment.status = "PENDING_PAYMENT"
+                                    if not shipment.sendcloud_id:
+                                        shipment.status = "PENDING_PICKUP"
                                     shipment.paid_at = timezone.now()
 
                                     logger.warning(
-                                        f"⚠️ Using total_price as fallback for shipment {shipment.id} - amount_paid: {old_amount_paid} -> {shipment.total_price}"
+                                        f"⚠️ Using total_price as fallback for shipment {shipment.id} - amount_paid: {old_amount_paid} -> {shipment.total_price}, status: {old_status} -> {shipment.status}"
                                     )
                                 else:
                                     logger.error(
@@ -5537,10 +5542,12 @@ def create_shipment_checkout_session(request):
         )
 
         # Add query parameters if not already present
+        # Use {CHECKOUT_SESSION_ID} placeholder which Stripe will replace
         if "type=shipment" not in success_url and "shipment_id" not in success_url:
             success_url += (
-                "&" if "?" in success_url else "?"
-            ) + f"type=shipment&shipment_id={shipment_id}"
+                ("&" if "?" in success_url else "?")
+                + f"type=shipment&shipment_id={shipment_id}&session_id={{CHECKOUT_SESSION_ID}}"
+            )
         if "type=shipment" not in cancel_url and "shipment_id" not in cancel_url:
             cancel_url += (
                 "&" if "?" in cancel_url else "?"
@@ -5662,5 +5669,120 @@ def create_shipment_checkout_session(request):
         )
         return Response(
             {"success": False, "error": f"An error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def confirm_shipment_payment_view(request):
+    """
+    Confirm shipment payment after Stripe redirect
+    Verifies payment with Stripe and updates shipment status
+    """
+    logger = logging.getLogger(__name__)
+
+    if not STRIPE_AVAILABLE:
+        return Response(
+            {"success": False, "error": "Stripe is not available"},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    try:
+        shipment_id = request.data.get("shipment_id")
+        session_id = request.data.get("session_id")
+
+        if not shipment_id:
+            return Response(
+                {"success": False, "error": "Shipment ID is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get shipment
+        try:
+            shipment = LCLShipment.objects.get(pk=shipment_id, user=request.user)
+        except LCLShipment.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Shipment not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # If session_id provided, verify with Stripe
+        if session_id:
+            try:
+                session = stripe.checkout.Session.retrieve(session_id)
+                payment_status = session.get("payment_status")
+
+                logger.info(
+                    f"🔍 Verifying payment for shipment {shipment_id} - session_id: {session_id}, payment_status: {payment_status}"
+                )
+
+                if payment_status == "paid":
+                    # Get amount from session
+                    amount_total = session.get("amount_total")
+                    if amount_total:
+                        paid_amount = Decimal(str(amount_total)) / 100
+                        shipment.amount_paid = paid_amount
+                        shipment.payment_status = "paid"
+                        if not shipment.sendcloud_id:
+                            shipment.status = "PENDING_PICKUP"
+                        shipment.paid_at = timezone.now()
+                        shipment.save()
+
+                        logger.info(
+                            f"✅ Payment confirmed for shipment {shipment.id} - amount_paid: {paid_amount}, status: {shipment.status}"
+                        )
+
+                        return Response(
+                            {
+                                "success": True,
+                                "message": "Payment confirmed successfully",
+                                "shipment_id": shipment.id,
+                                "amount_paid": float(shipment.amount_paid),
+                                "status": shipment.status,
+                            }
+                        )
+                    else:
+                        logger.warning(
+                            f"⚠️ Payment is paid but amount_total is missing for session {session_id}"
+                        )
+                else:
+                    logger.warning(
+                        f"⚠️ Payment status is '{payment_status}' (not paid) for session {session_id}"
+                    )
+            except stripe.error.StripeError as e:
+                logger.error(f"❌ Stripe API error: {str(e)}", exc_info=True)
+                return Response(
+                    {
+                        "success": False,
+                        "error": f"Stripe verification failed: {str(e)}",
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+        # If no session_id or verification failed, check current shipment status
+        if shipment.payment_status == "paid" and shipment.amount_paid:
+            return Response(
+                {
+                    "success": True,
+                    "message": "Payment already confirmed",
+                    "shipment_id": shipment.id,
+                    "amount_paid": float(shipment.amount_paid),
+                    "status": shipment.status,
+                }
+            )
+
+        return Response(
+            {
+                "success": False,
+                "error": "Payment not confirmed. Please wait for webhook processing.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    except Exception as e:
+        logger.error(f"❌ Error confirming payment: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": "An error occurred while confirming payment"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

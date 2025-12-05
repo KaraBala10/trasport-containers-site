@@ -773,7 +773,8 @@ export default function CreateShipmentPage() {
         typeof window !== "undefined"
           ? window.location.origin
           : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-      const successUrl = `${baseUrl}/dashboard?payment=success&type=shipment&shipment_id=${shipmentId}`;
+      // Note: session_id will be added after checkout session is created
+      const successUrl = `${baseUrl}/payment-success?type=shipment&shipment_id=${shipmentId}`;
       const cancelUrl = `${baseUrl}/create-shipment?payment=cancelled&shipment_id=${shipmentId}`;
 
       // Then create checkout session with shipment ID in metadata
@@ -812,6 +813,7 @@ export default function CreateShipmentPage() {
         }
 
         // Redirect to Stripe checkout
+        // Note: session_id will be included in success URL via {CHECKOUT_SESSION_ID} placeholder
         console.log("🔗 Redirecting to:", checkoutResponse.data.checkout_url);
         window.location.href = checkoutResponse.data.checkout_url;
       } else {
