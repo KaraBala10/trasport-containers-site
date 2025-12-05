@@ -5082,9 +5082,7 @@ def download_receipt_view(request, pk):
         # 2. Or shipment has arrived at warehouse (ARRIVED_WATTWEG_5)
         can_generate_receipt = (
             shipment.payment_status == "paid" and shipment.status != "PENDING_PAYMENT"
-        ) or (
-            shipment.status == "ARRIVED_WATTWEG_5"
-        )
+        ) or (shipment.status == "ARRIVED_WATTWEG_5")
 
         if not can_generate_receipt:
             return Response(
@@ -5530,17 +5528,23 @@ def create_shipment_checkout_session(request):
         # Ensure shipment_id is still set correctly after merge
         final_metadata["shipment_id"] = str(shipment_id)[:500]
 
-        # Build URLs - ensure they're valid
-        success_url = settings.STRIPE_REDIRECT_SUCCESS_URL
-        cancel_url = settings.STRIPE_REDIRECT_CANCEL_URL
+        # Build URLs - use from request if provided, otherwise use settings
+        success_url = (
+            request.data.get("success_url") or settings.STRIPE_REDIRECT_SUCCESS_URL
+        )
+        cancel_url = (
+            request.data.get("cancel_url") or settings.STRIPE_REDIRECT_CANCEL_URL
+        )
 
-        # Add query parameters
-        success_url += (
-            "&" if "?" in success_url else "?"
-        ) + f"type=shipment&shipment_id={shipment_id}"
-        cancel_url += (
-            "&" if "?" in cancel_url else "?"
-        ) + f"type=shipment&shipment_id={shipment_id}"
+        # Add query parameters if not already present
+        if "type=shipment" not in success_url and "shipment_id" not in success_url:
+            success_url += (
+                "&" if "?" in success_url else "?"
+            ) + f"type=shipment&shipment_id={shipment_id}"
+        if "type=shipment" not in cancel_url and "shipment_id" not in cancel_url:
+            cancel_url += (
+                "&" if "?" in cancel_url else "?"
+            ) + f"type=shipment&shipment_id={shipment_id}"
 
         # Validate URLs
         if not success_url.startswith(("http://", "https://")):

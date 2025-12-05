@@ -276,6 +276,8 @@ export const apiService = {
     shipment_id: number;
     amount: number;
     currency: string;
+    success_url?: string;
+    cancel_url?: string;
     metadata?: Record<string, string>;
   }) => {
     return apiClient.post('/shipments/create-checkout-session/', data);

@@ -290,7 +290,13 @@ export default function CreateShipmentPage() {
 
     // For stripe and cash, just having payment method is enough
     return true;
-  }, [paymentMethod, direction, transferSenderName, transferReference, transferSlip]);
+  }, [
+    paymentMethod,
+    direction,
+    transferSenderName,
+    transferReference,
+    transferSlip,
+  ]);
 
   // Auto-select Stripe payment for eu-sy direction
   useEffect(() => {
@@ -305,6 +311,58 @@ export default function CreateShipmentPage() {
       router.push("/login");
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // Handle payment cancellation - update shipment to PENDING_PICKUP with full paid amount
+  useEffect(() => {
+    const handlePaymentCancellation = async () => {
+      if (typeof window === "undefined") return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get("payment");
+      const shipmentIdParam = urlParams.get("shipment_id");
+
+      if (paymentStatus === "cancelled" && shipmentIdParam) {
+        const shipmentId = parseInt(shipmentIdParam, 10);
+        if (!isNaN(shipmentId)) {
+          try {
+            // Get shipment details to get total_price
+            const shipmentResponse = await apiService.getShipment(shipmentId);
+            const shipment = shipmentResponse.data;
+
+            if (shipment && shipment.total_price) {
+              // Update shipment to PENDING_PICKUP status with full paid amount
+              await apiService.updateShipment(shipmentId, {
+                status: "PENDING_PICKUP",
+                amount_paid: shipment.total_price,
+                payment_status: "paid",
+              });
+
+              showSuccess(
+                language === "ar"
+                  ? "تم تحديث الشحنة إلى حالة انتظار الاستلام مع المبلغ المدفوع بالكامل"
+                  : "Shipment updated to Pending Pickup status with full paid amount"
+              );
+
+              // Redirect to dashboard
+              router.push("/dashboard");
+            }
+          } catch (error: any) {
+            console.error("Error handling payment cancellation:", error);
+            showError(
+              language === "ar"
+                ? "حدث خطأ أثناء تحديث حالة الشحنة"
+                : "An error occurred while updating shipment status"
+            );
+          }
+
+          // Clean up URL parameters
+          window.history.replaceState({}, "", "/create-shipment");
+        }
+      }
+    };
+
+    handlePaymentCancellation();
+  }, [router, language, showSuccess, showError]);
 
   // Calculate pricing using API for base price - only when user reaches Step 5
   useEffect(() => {
@@ -710,11 +768,21 @@ export default function CreateShipmentPage() {
         throw new Error("Failed to create shipment");
       }
 
+      // Build success and cancel URLs based on current origin
+      const baseUrl =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+      const successUrl = `${baseUrl}/dashboard?payment=success&type=shipment&shipment_id=${shipmentId}`;
+      const cancelUrl = `${baseUrl}/create-shipment?payment=cancelled&shipment_id=${shipmentId}`;
+
       // Then create checkout session with shipment ID in metadata
       const checkoutResponse = await apiService.createShipmentCheckout({
         shipment_id: shipmentId,
         amount: grandTotalWithTransport,
         currency: "eur",
+        success_url: successUrl,
+        cancel_url: cancelUrl,
         metadata: {
           direction: direction || "",
           shipment_id: shipmentId.toString(),
@@ -1521,7 +1589,11 @@ export default function CreateShipmentPage() {
                 paymentMethod={paymentMethod}
                 onPaymentMethodChange={(method) => {
                   // For eu-sy direction, only allow Stripe
-                  if (direction === "eu-sy" && method !== "stripe" && method !== null) {
+                  if (
+                    direction === "eu-sy" &&
+                    method !== "stripe" &&
+                    method !== null
+                  ) {
                     setPaymentMethod("stripe");
                   } else {
                     setPaymentMethod(method);
@@ -1589,6 +1661,12 @@ export default function CreateShipmentPage() {
                           ? "يرجى إكمال جميع بيانات الدفع المطلوبة"
                           : "Please complete all required payment information"
                       );
+                      return;
+                    }
+
+                    // If payment method is Stripe, use handleStripePayment instead of creating shipment directly
+                    if (paymentMethod === "stripe") {
+                      await handleStripePayment();
                       return;
                     }
 
