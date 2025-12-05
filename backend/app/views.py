@@ -2052,36 +2052,105 @@ def stripe_webhook_view(request):
                                     )
 
                                     # Check if Sendcloud is needed (EU pickup with shipping method selected)
+                                    # Validate all required EU pickup fields with fallbacks
+                                    missing_fields = []
+
+                                    # Use fallback for name if missing (use receiver_name for EU pickup)
+                                    pickup_name = shipment.eu_pickup_name
+                                    if not pickup_name or not pickup_name.strip():
+                                        pickup_name = shipment.receiver_name
+                                        if not pickup_name or not pickup_name.strip():
+                                            missing_fields.append("name")
+
+                                    # Check address
+                                    if (
+                                        not shipment.eu_pickup_address
+                                        or not shipment.eu_pickup_address.strip()
+                                    ):
+                                        missing_fields.append("address")
+
+                                    # Check city
+                                    if (
+                                        not shipment.eu_pickup_city
+                                        or not shipment.eu_pickup_city.strip()
+                                    ):
+                                        missing_fields.append("city")
+
+                                    # Check postal_code
+                                    if (
+                                        not shipment.eu_pickup_postal_code
+                                        or not shipment.eu_pickup_postal_code.strip()
+                                    ):
+                                        missing_fields.append("postal_code")
+
+                                    # Check country
+                                    if (
+                                        not shipment.eu_pickup_country
+                                        or not shipment.eu_pickup_country.strip()
+                                    ):
+                                        missing_fields.append("country")
+
+                                    # Check weight
+                                    if (
+                                        not shipment.eu_pickup_weight
+                                        or float(shipment.eu_pickup_weight) <= 0
+                                    ):
+                                        missing_fields.append("weight")
+
+                                    # Only create Sendcloud parcel if all required fields are present
                                     if (
                                         shipment.selected_eu_shipping_method
-                                        and shipment.eu_pickup_country
-                                        and shipment.eu_pickup_address
-                                        and shipment.eu_pickup_weight
-                                        and shipment.eu_pickup_weight > 0
+                                        and not missing_fields
                                     ):
                                         logger.info(
-                                            f"🚀 Attempting to create Sendcloud parcel for shipment {shipment.id}"
+                                            f"🚀 Attempting to automatically create Sendcloud parcel for shipment {shipment.id} after Stripe payment"
                                         )
 
-                                        # Prepare shipment data for Sendcloud
+                                        # Prepare shipment data for Sendcloud (using new form fields with fallbacks)
                                         shipment_data = {
-                                            "receiver_name": shipment.receiver_name,
-                                            "receiver_address": shipment.eu_pickup_address,
-                                            "receiver_city": shipment.eu_pickup_city,
-                                            "receiver_postal_code": shipment.eu_pickup_postal_code,
-                                            "receiver_country": shipment.eu_pickup_country,
+                                            "name": pickup_name.strip(),
+                                            "address": shipment.eu_pickup_address.strip(),
+                                            "city": shipment.eu_pickup_city.strip(),
+                                            "postal_code": shipment.eu_pickup_postal_code.strip(),
+                                            "country": shipment.eu_pickup_country.strip(),
                                             "weight": float(shipment.eu_pickup_weight),
                                         }
 
-                                        # Add optional fields if available
-                                        if shipment.receiver_email:
-                                            shipment_data["receiver_email"] = (
-                                                shipment.receiver_email
+                                        # Add optional fields with fallbacks
+                                        if shipment.eu_pickup_company_name:
+                                            shipment_data["company_name"] = (
+                                                shipment.eu_pickup_company_name
                                             )
-                                        if shipment.receiver_phone:
-                                            shipment_data["receiver_phone"] = (
-                                                shipment.receiver_phone
+
+                                        if shipment.eu_pickup_house_number:
+                                            shipment_data["house_number"] = (
+                                                shipment.eu_pickup_house_number
                                             )
+
+                                        # Use fallback for email if missing (use receiver_email)
+                                        pickup_email = shipment.eu_pickup_email
+                                        if not pickup_email or not pickup_email.strip():
+                                            pickup_email = shipment.receiver_email
+                                        if pickup_email and pickup_email.strip():
+                                            shipment_data["email"] = (
+                                                pickup_email.strip()
+                                            )
+
+                                        # Use fallback for telephone if missing (use receiver_phone)
+                                        pickup_telephone = shipment.eu_pickup_telephone
+                                        if (
+                                            not pickup_telephone
+                                            or not pickup_telephone.strip()
+                                        ):
+                                            pickup_telephone = shipment.receiver_phone
+                                        if (
+                                            pickup_telephone
+                                            and pickup_telephone.strip()
+                                        ):
+                                            shipment_data["telephone"] = (
+                                                pickup_telephone.strip()
+                                            )
+
                                         if shipment.shipment_number:
                                             shipment_data["order_number"] = (
                                                 shipment.shipment_number
@@ -2097,11 +2166,36 @@ def stripe_webhook_view(request):
                                         shipment.sendcloud_id = sendcloud_result.get(
                                             "sendcloud_id"
                                         )
-                                        shipment.tracking_number = sendcloud_result.get(
+                                        tracking_number = sendcloud_result.get(
                                             "tracking_number", ""
                                         )
+                                        shipment.tracking_number = (
+                                            tracking_number if tracking_number else ""
+                                        )
+
+                                        tracking_url = sendcloud_result.get(
+                                            "tracking_url"
+                                        )
+                                        shipment.tracking_url = (
+                                            tracking_url if tracking_url else None
+                                        )
+
+                                        label_url_a6 = sendcloud_result.get(
+                                            "label_url_a6"
+                                        )
+                                        label_url = sendcloud_result.get("label_url")
                                         shipment.sendcloud_label_url = (
-                                            sendcloud_result.get("label_url")
+                                            label_url_a6 or label_url or None
+                                        )
+
+                                        # Store A4 labels
+                                        normal_printer_labels = sendcloud_result.get(
+                                            "normal_printer_labels", []
+                                        )
+                                        shipment.normal_printer_labels = (
+                                            normal_printer_labels
+                                            if normal_printer_labels
+                                            else []
                                         )
 
                                         # Update status to PENDING_PICKUP if parcel was created
@@ -2110,7 +2204,7 @@ def stripe_webhook_view(request):
                                             shipment.save()
 
                                             logger.info(
-                                                f"✅ Successfully created Sendcloud parcel for shipment {shipment.id}: "
+                                                f"✅ Successfully automatically created Sendcloud parcel for shipment {shipment.id} after Stripe payment: "
                                                 f"sendcloud_id={shipment.sendcloud_id}, "
                                                 f"tracking_number={shipment.tracking_number}"
                                             )
@@ -2120,14 +2214,17 @@ def stripe_webhook_view(request):
                                             logger.warning(
                                                 f"⚠️ Sendcloud parcel creation returned no sendcloud_id for shipment {shipment.id}"
                                             )
-
                                     else:
-                                        logger.info(
-                                            f"ℹ️ Skipping Sendcloud parcel creation for shipment {shipment.id}: "
-                                            f"missing required fields (shipping_method={shipment.selected_eu_shipping_method}, "
-                                            f"eu_pickup_country={shipment.eu_pickup_country}, "
-                                            f"eu_pickup_weight={shipment.eu_pickup_weight})"
-                                        )
+                                        if missing_fields:
+                                            logger.info(
+                                                f"ℹ️ Skipping automatic Sendcloud parcel creation for shipment {shipment.id}: "
+                                                f"missing required fields: {', '.join(missing_fields)}"
+                                            )
+                                        elif not shipment.selected_eu_shipping_method:
+                                            logger.info(
+                                                f"ℹ️ Skipping automatic Sendcloud parcel creation for shipment {shipment.id}: "
+                                                f"no shipping method selected"
+                                            )
 
                                 except SendcloudValidationError as e:
                                     logger.warning(
@@ -5855,14 +5952,222 @@ def confirm_shipment_payment_view(request):
                         # Update stripe_session_id if not already set
                         if not shipment.stripe_session_id:
                             shipment.stripe_session_id = session_id
-                        if not shipment.sendcloud_id:
-                            shipment.status = "PENDING_PICKUP"
                         shipment.paid_at = timezone.now()
                         shipment.save()
 
                         logger.info(
-                            f"✅ Payment confirmed for shipment {shipment.id} - amount_paid: {paid_amount}, status: {shipment.status}"
+                            f"✅ Payment confirmed for shipment {shipment.id} - amount_paid: {paid_amount}, payment_status: {shipment.payment_status}"
                         )
+
+                        # ✅ Automatically create Sendcloud parcel if payment is paid and Sendcloud is configured
+                        if not shipment.sendcloud_id:
+                            try:
+                                from .sendcloud_service import (
+                                    SendcloudAPIError,
+                                    SendcloudValidationError,
+                                    create_parcel,
+                                )
+
+                                # Validate all required EU pickup fields with fallbacks
+                                missing_fields = []
+
+                                # Use fallback for name if missing (use receiver_name for EU pickup)
+                                pickup_name = shipment.eu_pickup_name
+                                if not pickup_name or not pickup_name.strip():
+                                    pickup_name = shipment.receiver_name
+                                    if not pickup_name or not pickup_name.strip():
+                                        missing_fields.append("name")
+
+                                # Check address
+                                if (
+                                    not shipment.eu_pickup_address
+                                    or not shipment.eu_pickup_address.strip()
+                                ):
+                                    missing_fields.append("address")
+
+                                # Check city
+                                if (
+                                    not shipment.eu_pickup_city
+                                    or not shipment.eu_pickup_city.strip()
+                                ):
+                                    missing_fields.append("city")
+
+                                # Check postal_code
+                                if (
+                                    not shipment.eu_pickup_postal_code
+                                    or not shipment.eu_pickup_postal_code.strip()
+                                ):
+                                    missing_fields.append("postal_code")
+
+                                # Check country
+                                if (
+                                    not shipment.eu_pickup_country
+                                    or not shipment.eu_pickup_country.strip()
+                                ):
+                                    missing_fields.append("country")
+
+                                # Check weight
+                                if (
+                                    not shipment.eu_pickup_weight
+                                    or float(shipment.eu_pickup_weight) <= 0
+                                ):
+                                    missing_fields.append("weight")
+
+                                # Only create Sendcloud parcel if all required fields are present
+                                if (
+                                    shipment.selected_eu_shipping_method
+                                    and not missing_fields
+                                ):
+                                    logger.info(
+                                        f"🚀 Attempting to automatically create Sendcloud parcel for shipment {shipment.id} after payment confirmation"
+                                    )
+
+                                    # Prepare shipment data for Sendcloud (using new form fields with fallbacks)
+                                    shipment_data = {
+                                        "name": pickup_name.strip(),
+                                        "address": shipment.eu_pickup_address.strip(),
+                                        "city": shipment.eu_pickup_city.strip(),
+                                        "postal_code": shipment.eu_pickup_postal_code.strip(),
+                                        "country": shipment.eu_pickup_country.strip(),
+                                        "weight": float(shipment.eu_pickup_weight),
+                                    }
+
+                                    # Add optional fields with fallbacks
+                                    if shipment.eu_pickup_company_name:
+                                        shipment_data["company_name"] = (
+                                            shipment.eu_pickup_company_name
+                                        )
+
+                                    if shipment.eu_pickup_house_number:
+                                        shipment_data["house_number"] = (
+                                            shipment.eu_pickup_house_number
+                                        )
+
+                                    # Use fallback for email if missing (use receiver_email)
+                                    pickup_email = shipment.eu_pickup_email
+                                    if not pickup_email or not pickup_email.strip():
+                                        pickup_email = shipment.receiver_email
+                                    if pickup_email and pickup_email.strip():
+                                        shipment_data["email"] = pickup_email.strip()
+
+                                    # Use fallback for telephone if missing (use receiver_phone)
+                                    pickup_telephone = shipment.eu_pickup_telephone
+                                    if (
+                                        not pickup_telephone
+                                        or not pickup_telephone.strip()
+                                    ):
+                                        pickup_telephone = shipment.receiver_phone
+                                    if pickup_telephone and pickup_telephone.strip():
+                                        shipment_data["telephone"] = (
+                                            pickup_telephone.strip()
+                                        )
+
+                                    if shipment.shipment_number:
+                                        shipment_data["order_number"] = (
+                                            shipment.shipment_number
+                                        )
+
+                                    # Create parcel in Sendcloud
+                                    sendcloud_result = create_parcel(
+                                        shipment_data=shipment_data,
+                                        selected_shipping_method=shipment.selected_eu_shipping_method,
+                                    )
+
+                                    # Update shipment with Sendcloud data
+                                    shipment.sendcloud_id = sendcloud_result.get(
+                                        "sendcloud_id"
+                                    )
+                                    tracking_number = sendcloud_result.get(
+                                        "tracking_number", ""
+                                    )
+                                    shipment.tracking_number = (
+                                        tracking_number if tracking_number else ""
+                                    )
+
+                                    tracking_url = sendcloud_result.get("tracking_url")
+                                    shipment.tracking_url = (
+                                        tracking_url if tracking_url else None
+                                    )
+
+                                    label_url_a6 = sendcloud_result.get("label_url_a6")
+                                    label_url = sendcloud_result.get("label_url")
+                                    shipment.sendcloud_label_url = (
+                                        label_url_a6 or label_url or None
+                                    )
+
+                                    # Store A4 labels
+                                    normal_printer_labels = sendcloud_result.get(
+                                        "normal_printer_labels", []
+                                    )
+                                    shipment.normal_printer_labels = (
+                                        normal_printer_labels
+                                        if normal_printer_labels
+                                        else []
+                                    )
+
+                                    # Update status to PENDING_PICKUP if parcel was created
+                                    if shipment.sendcloud_id:
+                                        shipment.status = "PENDING_PICKUP"
+                                        shipment.save()
+
+                                        logger.info(
+                                            f"✅ Successfully automatically created Sendcloud parcel for shipment {shipment.id} after payment confirmation: "
+                                            f"sendcloud_id={shipment.sendcloud_id}, "
+                                            f"tracking_number={shipment.tracking_number}"
+                                        )
+                                    else:
+                                        logger.warning(
+                                            f"⚠️ Sendcloud parcel creation returned no sendcloud_id for shipment {shipment.id}"
+                                        )
+                                else:
+                                    if missing_fields:
+                                        logger.info(
+                                            f"ℹ️ Skipping automatic Sendcloud parcel creation for shipment {shipment.id}: "
+                                            f"missing required fields: {', '.join(missing_fields)}"
+                                        )
+                                    elif not shipment.selected_eu_shipping_method:
+                                        logger.info(
+                                            f"ℹ️ Skipping automatic Sendcloud parcel creation for shipment {shipment.id}: "
+                                            f"no shipping method selected"
+                                        )
+                                    # If no Sendcloud parcel created, set status to PENDING_PICKUP anyway
+                                    if not shipment.sendcloud_id:
+                                        shipment.status = "PENDING_PICKUP"
+                                        shipment.save()
+                            except SendcloudValidationError as e:
+                                logger.warning(
+                                    f"⚠️ Sendcloud validation error for shipment {shipment.id}: {str(e)}"
+                                )
+                                # Don't fail payment confirmation - payment is still processed
+                                if not shipment.sendcloud_id:
+                                    shipment.status = "PENDING_PICKUP"
+                                    shipment.save()
+                            except SendcloudAPIError as e:
+                                logger.error(
+                                    f"❌ Sendcloud API error for shipment {shipment.id}: {str(e)}"
+                                )
+                                # Don't fail payment confirmation - payment is still processed
+                                if not shipment.sendcloud_id:
+                                    shipment.status = "PENDING_PICKUP"
+                                    shipment.save()
+                            except Exception as e:
+                                logger.error(
+                                    f"❌ Unexpected error creating Sendcloud parcel for shipment {shipment.id}: {str(e)}",
+                                    exc_info=True,
+                                )
+                                # Don't fail payment confirmation - payment is still processed
+                                if not shipment.sendcloud_id:
+                                    shipment.status = "PENDING_PICKUP"
+                                    shipment.save()
+                        else:
+                            # Sendcloud parcel already exists, just update status if needed
+                            shipment.refresh_from_db()
+                            if shipment.status == "PENDING_PAYMENT":
+                                shipment.status = "PENDING_PICKUP"
+                                shipment.save()
+
+                        # Refresh shipment from DB to get latest state
+                        shipment.refresh_from_db()
 
                         return Response(
                             {
@@ -5871,6 +6176,8 @@ def confirm_shipment_payment_view(request):
                                 "shipment_id": shipment.id,
                                 "amount_paid": float(shipment.amount_paid),
                                 "status": shipment.status,
+                                "sendcloud_id": shipment.sendcloud_id,
+                                "tracking_number": shipment.tracking_number or None,
                             }
                         )
                     else:
