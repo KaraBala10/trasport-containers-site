@@ -1609,481 +1609,496 @@ export default function CreateShipmentPage() {
                 </motion.button>
 
                 {/* Continue Button - Payment step creates shipment */}
-                <motion.button
-                  onClick={async () => {
-                    if (!direction) {
-                      console.error("Direction is required to create shipment");
-                      return;
-                    }
-
-                    if (!isStep7Valid) {
-                      showWarning(
-                        language === "ar"
-                          ? "يرجى إكمال جميع بيانات الدفع المطلوبة"
-                          : "Please complete all required payment information"
-                      );
-                      return;
-                    }
-
-                    // If payment method is Stripe, use handleStripePayment instead of creating shipment directly
-                    if (paymentMethod === "stripe") {
-                      await handleStripePayment();
-                      return;
-                    }
-
-                    setIsCreatingShipment(true);
-                    try {
-                      // Prepare shipment data for new API
-                      // Set country based on direction: eu-sy means receiver is in Syria, sy-eu means sender is in Syria
-                      const receiverCountry =
-                        direction === "eu-sy"
-                          ? "Syria"
-                          : receiver?.country || "";
-                      const senderCountry =
-                        direction === "sy-eu" ? "Syria" : sender?.country || "";
-
-                      // Validate sender based on direction
-                      // sy-eu: sender needs country + province (no city)
-                      // eu-sy: sender needs city + country
-                      const isSYtoEU = direction === "sy-eu";
-                      const senderValid = isSYtoEU
-                        ? !!(
-                            sender?.fullName?.trim() &&
-                            sender?.email?.trim() &&
-                            sender?.phone?.trim() &&
-                            sender?.country?.trim() &&
-                            sender?.province?.trim() &&
-                            senderCountry
-                          )
-                        : !!(
-                            sender?.fullName?.trim() &&
-                            sender?.email?.trim() &&
-                            sender?.phone?.trim() &&
-                            sender?.city?.trim() &&
-                            sender?.country?.trim() &&
-                            senderCountry
-                          );
-
-                      if (!senderValid) {
-                        // Debug: log what's missing
-                        console.log("Sender validation failed:", {
-                          direction,
-                          isSYtoEU,
-                          fullName: sender?.fullName,
-                          email: sender?.email,
-                          phone: sender?.phone,
-                          country: sender?.country,
-                          province: sender?.province,
-                          city: sender?.city,
-                          senderCountry,
-                        });
-
-                        showSuccess(
-                          language === "ar"
-                            ? isSYtoEU
-                              ? "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، الدولة، المحافظة)"
-                              : "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
-                            : isSYtoEU
-                            ? "Please complete all required sender information (name, email, phone, country, province)"
-                            : "Please complete all required sender information (name, email, phone, city, country)"
+                {/* For eu-sy direction with Stripe: Hide all buttons - user should use "Pay Now via Stripe" button inside Step9Payment component */}
+                {!(direction === "eu-sy" && paymentMethod === "stripe") && (
+                  <motion.button
+                    onClick={async () => {
+                      if (!direction) {
+                        console.error(
+                          "Direction is required to create shipment"
                         );
-                        setIsCreatingShipment(false);
                         return;
                       }
 
-                      // Validate receiver based on direction
-                      // eu-sy: receiver needs country + province (no city)
-                      // sy-eu: receiver needs city + country
-                      const isEUtoSY = direction === "eu-sy";
-                      const receiverValid = isEUtoSY
-                        ? !!(
-                            receiver?.fullName?.trim() &&
-                            receiver?.email?.trim() &&
-                            receiver?.phone?.trim() &&
-                            receiver?.country?.trim() &&
-                            receiver?.province?.trim() &&
-                            receiverCountry
-                          )
-                        : !!(
-                            receiver?.fullName?.trim() &&
-                            receiver?.email?.trim() &&
-                            receiver?.phone?.trim() &&
-                            receiver?.city?.trim() &&
-                            receiver?.country?.trim() &&
-                            receiverCountry
-                          );
-
-                      if (!receiverValid) {
-                        // Debug: log what's missing
-                        console.log("Receiver validation failed:", {
-                          direction,
-                          isEUtoSY,
-                          fullName: receiver?.fullName,
-                          email: receiver?.email,
-                          phone: receiver?.phone,
-                          country: receiver?.country,
-                          province: receiver?.province,
-                          city: receiver?.city,
-                          receiverCountry,
-                        });
-
-                        showSuccess(
-                          language === "ar"
-                            ? isEUtoSY
-                              ? "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، الدولة، المحافظة)"
-                              : "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
-                            : isEUtoSY
-                            ? "Please complete all required receiver information (name, email, phone, country, province)"
-                            : "Please complete all required receiver information (name, email, phone, city, country)"
-                        );
-                        setIsCreatingShipment(false);
-                        return;
-                      }
-
-                      if (!sender?.street || !receiver?.street) {
-                        showSuccess(
-                          language === "ar"
-                            ? "يرجى إدخال عنوان المرسل والمستقبل"
-                            : "Please enter sender and receiver addresses"
-                        );
-                        setIsCreatingShipment(false);
-                        return;
-                      }
-
-                      if (parcels.length === 0) {
+                      if (!isStep7Valid) {
                         showWarning(
                           language === "ar"
-                            ? "يرجى إضافة طرد واحد على الأقل"
-                            : "Please add at least one parcel"
+                            ? "يرجى إكمال جميع بيانات الدفع المطلوبة"
+                            : "Please complete all required payment information"
                         );
-                        setIsCreatingShipment(false);
                         return;
                       }
 
-                      // Get reCAPTCHA v3 token (same pattern as register page)
-                      let recaptchaToken = "";
-                      const recaptchaSiteKey =
-                        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+                      // If payment method is Stripe (for sy-eu), use handleStripePayment
+                      if (paymentMethod === "stripe") {
+                        await handleStripePayment();
+                        return;
+                      }
 
-                      if (recaptchaSiteKey) {
-                        if (executeRecaptcha) {
-                          try {
-                            recaptchaToken = await executeRecaptcha(
-                              "create_shipment"
+                      setIsCreatingShipment(true);
+                      try {
+                        // Prepare shipment data for new API
+                        // Set country based on direction: eu-sy means receiver is in Syria, sy-eu means sender is in Syria
+                        const receiverCountry =
+                          direction === "eu-sy"
+                            ? "Syria"
+                            : receiver?.country || "";
+                        const senderCountry =
+                          direction === "sy-eu"
+                            ? "Syria"
+                            : sender?.country || "";
+
+                        // Validate sender based on direction
+                        // sy-eu: sender needs country + province (no city)
+                        // eu-sy: sender needs city + country
+                        const isSYtoEU = direction === "sy-eu";
+                        const senderValid = isSYtoEU
+                          ? !!(
+                              sender?.fullName?.trim() &&
+                              sender?.email?.trim() &&
+                              sender?.phone?.trim() &&
+                              sender?.country?.trim() &&
+                              sender?.province?.trim() &&
+                              senderCountry
+                            )
+                          : !!(
+                              sender?.fullName?.trim() &&
+                              sender?.email?.trim() &&
+                              sender?.phone?.trim() &&
+                              sender?.city?.trim() &&
+                              sender?.country?.trim() &&
+                              senderCountry
                             );
-                            console.log("reCAPTCHA v3 token obtained");
-                          } catch (recaptchaError) {
-                            console.error(
-                              "reCAPTCHA execution failed:",
-                              recaptchaError
-                            );
-                            showError(
-                              language === "ar"
-                                ? "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى."
-                                : "reCAPTCHA verification failed. Please try again."
-                            );
-                            setIsCreatingShipment(false);
-                            return;
-                          }
-                        } else {
-                          showError(
+
+                        if (!senderValid) {
+                          // Debug: log what's missing
+                          console.log("Sender validation failed:", {
+                            direction,
+                            isSYtoEU,
+                            fullName: sender?.fullName,
+                            email: sender?.email,
+                            phone: sender?.phone,
+                            country: sender?.country,
+                            province: sender?.province,
+                            city: sender?.city,
+                            senderCountry,
+                          });
+
+                          showSuccess(
                             language === "ar"
-                              ? "التحقق من reCAPTCHA مطلوب. يرجى المحاولة مرة أخرى."
-                              : "reCAPTCHA verification is required. Please try again."
+                              ? isSYtoEU
+                                ? "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، الدولة، المحافظة)"
+                                : "يرجى إكمال جميع بيانات المرسل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
+                              : isSYtoEU
+                              ? "Please complete all required sender information (name, email, phone, country, province)"
+                              : "Please complete all required sender information (name, email, phone, city, country)"
                           );
                           setIsCreatingShipment(false);
                           return;
                         }
-                      }
 
-                      // Prepare parcels data without File objects (for JSON)
-                      // IMPORTANT: Do NOT include photos, devicePhoto, or electronicsPicture in JSON
-                      // These are File objects and will be sent separately in FormData
-                      const parcelsData = parcels.map((parcel) => {
-                        const parcelData: any = {
-                          id: parcel.id,
-                          length: parcel.length,
-                          width: parcel.width,
-                          height: parcel.height,
-                          weight: parcel.weight,
-                          cbm: parcel.cbm,
-                          productCategory: parcel.productCategory,
-                          quantity: parcel.quantity,
-                          repeatCount: parcel.repeatCount,
-                          shipmentType: parcel.shipmentType,
-                        };
-
-                        // Add optional fields
-                        if (parcel.isCustomProduct)
-                          parcelData.isCustomProduct = parcel.isCustomProduct;
-                        if (parcel.customProductName)
-                          parcelData.customProductName =
-                            parcel.customProductName;
-                        if (parcel.packagingType)
-                          parcelData.packagingType = parcel.packagingType;
-                        if (parcel.hs_code) parcelData.hs_code = parcel.hs_code;
-                        if (parcel.wantsInsurance)
-                          parcelData.wantsInsurance = parcel.wantsInsurance;
-                        if (parcel.declaredShipmentValue)
-                          parcelData.declaredShipmentValue =
-                            parcel.declaredShipmentValue;
-
-                        // Electronics fields (but NOT devicePhoto or electronicsPicture - those are files)
-                        if (parcel.isElectronicsShipment) {
-                          parcelData.isElectronicsShipment =
-                            parcel.isElectronicsShipment;
-                          if (parcel.deviceType)
-                            parcelData.deviceType = parcel.deviceType;
-                          if (parcel.deviceModel)
-                            parcelData.deviceModel = parcel.deviceModel;
-                          if (parcel.declaredValue)
-                            parcelData.declaredValue = parcel.declaredValue;
-                          if (parcel.hasInvoice)
-                            parcelData.hasInvoice = parcel.hasInvoice;
-                          if (parcel.electronicsName)
-                            parcelData.electronicsName = parcel.electronicsName;
-                        }
-
-                        // Explicitly exclude File objects (photos, devicePhoto, electronicsPicture)
-                        // These will be sent separately in FormData
-                        // Make sure these fields are NOT in parcelData
-                        delete parcelData.photos;
-                        delete parcelData.devicePhoto;
-                        delete parcelData.electronicsPicture;
-
-                        return parcelData;
-                      });
-
-                      // Create FormData for file uploads
-                      const formData = new FormData();
-
-                      // Add all shipment data as JSON string
-                      formData.append(
-                        "shipment_data",
-                        JSON.stringify({
-                          direction: direction,
-                          sender_name: sender?.fullName || "",
-                          sender_email: sender?.email || "",
-                          sender_phone: sender?.phone || "",
-                          sender_address:
-                            sender?.street && sender?.streetNumber
-                              ? `${sender.street} ${sender.streetNumber}`.trim()
-                              : sender?.street || "",
-                          sender_city:
-                            direction === "sy-eu"
-                              ? sender?.country || sender?.province || ""
-                              : sender?.city || "",
-                          sender_postal_code: sender?.postalCode || "",
-                          sender_country: senderCountry,
-                          receiver_name: receiver?.fullName || "",
-                          receiver_email: receiver?.email || "",
-                          receiver_phone: receiver?.phone || "",
-                          receiver_address:
-                            receiver?.street && receiver?.streetNumber
-                              ? `${receiver.street} ${receiver.streetNumber}`.trim()
-                              : receiver?.street || "",
-                          receiver_city:
-                            direction === "eu-sy"
-                              ? receiver?.country || receiver?.province || ""
-                              : receiver?.city || "",
-                          receiver_postal_code: receiver?.postalCode || "",
-                          receiver_country: receiverCountry,
-                          parcels: parcelsData,
-                          eu_pickup_name: euPickupName,
-                          eu_pickup_company_name: euPickupCompanyName,
-                          eu_pickup_address: euPickupAddress,
-                          eu_pickup_house_number: euPickupHouseNumber,
-                          eu_pickup_city: euPickupCity,
-                          eu_pickup_postal_code: euPickupPostalCode,
-                          eu_pickup_country: euPickupCountry,
-                          eu_pickup_email: euPickupEmail,
-                          eu_pickup_telephone: euPickupTelephone,
-                          eu_pickup_weight: euPickupWeight,
-                          selected_eu_shipping_method: selectedEUShippingMethod,
-                          selected_eu_shipping_name: selectedEUShippingName,
-                          syria_province: syriaProvince,
-                          syria_weight: syriaWeight,
-                          payment_method: paymentMethod,
-                          transfer_sender_name: transferSenderName,
-                          transfer_reference: transferReference,
-                          total_price: Number(
-                            Number(grandTotalWithTransport || 0).toFixed(2)
-                          ),
-                          recaptcha_token: recaptchaToken || undefined,
-                        })
-                      );
-
-                      // Add parcel photos
-                      parcels.forEach((parcel, parcelIndex) => {
-                        // Parcel photos (for non-electronics)
-                        if (parcel.photos && parcel.photos.length > 0) {
-                          console.log(
-                            `Adding ${parcel.photos.length} photos for parcel ${parcelIndex}`
-                          );
-                          parcel.photos.forEach((photo, photoIndex) => {
-                            const key = `parcel_${parcelIndex}_photo_${photoIndex}`;
-                            formData.append(key, photo);
-                            console.log(
-                              `Added photo: ${key}, size: ${photo.size}`
+                        // Validate receiver based on direction
+                        // eu-sy: receiver needs country + province (no city)
+                        // sy-eu: receiver needs city + country
+                        const isEUtoSY = direction === "eu-sy";
+                        const receiverValid = isEUtoSY
+                          ? !!(
+                              receiver?.fullName?.trim() &&
+                              receiver?.email?.trim() &&
+                              receiver?.phone?.trim() &&
+                              receiver?.country?.trim() &&
+                              receiver?.province?.trim() &&
+                              receiverCountry
+                            )
+                          : !!(
+                              receiver?.fullName?.trim() &&
+                              receiver?.email?.trim() &&
+                              receiver?.phone?.trim() &&
+                              receiver?.city?.trim() &&
+                              receiver?.country?.trim() &&
+                              receiverCountry
                             );
+
+                        if (!receiverValid) {
+                          // Debug: log what's missing
+                          console.log("Receiver validation failed:", {
+                            direction,
+                            isEUtoSY,
+                            fullName: receiver?.fullName,
+                            email: receiver?.email,
+                            phone: receiver?.phone,
+                            country: receiver?.country,
+                            province: receiver?.province,
+                            city: receiver?.city,
+                            receiverCountry,
                           });
-                        } else {
-                          console.log(`Parcel ${parcelIndex} has no photos`);
-                        }
 
-                        // Electronics photos
-                        if (parcel.isElectronicsShipment) {
-                          console.log(
-                            `Parcel ${parcelIndex} is electronics shipment`
+                          showSuccess(
+                            language === "ar"
+                              ? isEUtoSY
+                                ? "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، الدولة، المحافظة)"
+                                : "يرجى إكمال جميع بيانات المستقبل المطلوبة (الاسم، البريد الإلكتروني، الهاتف، المدينة، الدولة)"
+                              : isEUtoSY
+                              ? "Please complete all required receiver information (name, email, phone, country, province)"
+                              : "Please complete all required receiver information (name, email, phone, city, country)"
                           );
-                          if (parcel.devicePhoto) {
-                            formData.append(
-                              `parcel_${parcelIndex}_device_photo`,
-                              parcel.devicePhoto
+                          setIsCreatingShipment(false);
+                          return;
+                        }
+
+                        if (!sender?.street || !receiver?.street) {
+                          showSuccess(
+                            language === "ar"
+                              ? "يرجى إدخال عنوان المرسل والمستقبل"
+                              : "Please enter sender and receiver addresses"
+                          );
+                          setIsCreatingShipment(false);
+                          return;
+                        }
+
+                        if (parcels.length === 0) {
+                          showWarning(
+                            language === "ar"
+                              ? "يرجى إضافة طرد واحد على الأقل"
+                              : "Please add at least one parcel"
+                          );
+                          setIsCreatingShipment(false);
+                          return;
+                        }
+
+                        // Get reCAPTCHA v3 token (same pattern as register page)
+                        let recaptchaToken = "";
+                        const recaptchaSiteKey =
+                          process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+                        if (recaptchaSiteKey) {
+                          if (executeRecaptcha) {
+                            try {
+                              recaptchaToken = await executeRecaptcha(
+                                "create_shipment"
+                              );
+                              console.log("reCAPTCHA v3 token obtained");
+                            } catch (recaptchaError) {
+                              console.error(
+                                "reCAPTCHA execution failed:",
+                                recaptchaError
+                              );
+                              showError(
+                                language === "ar"
+                                  ? "فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى."
+                                  : "reCAPTCHA verification failed. Please try again."
+                              );
+                              setIsCreatingShipment(false);
+                              return;
+                            }
+                          } else {
+                            showError(
+                              language === "ar"
+                                ? "التحقق من reCAPTCHA مطلوب. يرجى المحاولة مرة أخرى."
+                                : "reCAPTCHA verification is required. Please try again."
                             );
-                            console.log(
-                              `Added device photo for parcel ${parcelIndex}`
-                            );
-                          }
-                          if (parcel.electronicsPicture) {
-                            formData.append(
-                              `parcel_${parcelIndex}_electronics_picture`,
-                              parcel.electronicsPicture
-                            );
-                            console.log(
-                              `Added electronics picture for parcel ${parcelIndex}`
-                            );
+                            setIsCreatingShipment(false);
+                            return;
                           }
                         }
-                      });
 
-                      // Log FormData contents
-                      console.log(
-                        "FormData keys:",
-                        Array.from(formData.keys())
-                      );
+                        // Prepare parcels data without File objects (for JSON)
+                        // IMPORTANT: Do NOT include photos, devicePhoto, or electronicsPicture in JSON
+                        // These are File objects and will be sent separately in FormData
+                        const parcelsData = parcels.map((parcel) => {
+                          const parcelData: any = {
+                            id: parcel.id,
+                            length: parcel.length,
+                            width: parcel.width,
+                            height: parcel.height,
+                            weight: parcel.weight,
+                            cbm: parcel.cbm,
+                            productCategory: parcel.productCategory,
+                            quantity: parcel.quantity,
+                            repeatCount: parcel.repeatCount,
+                            shipmentType: parcel.shipmentType,
+                          };
 
-                      // Create shipment via API
-                      const response = await apiService.createShipment(
-                        formData
-                      );
+                          // Add optional fields
+                          if (parcel.isCustomProduct)
+                            parcelData.isCustomProduct = parcel.isCustomProduct;
+                          if (parcel.customProductName)
+                            parcelData.customProductName =
+                              parcel.customProductName;
+                          if (parcel.packagingType)
+                            parcelData.packagingType = parcel.packagingType;
+                          if (parcel.hs_code)
+                            parcelData.hs_code = parcel.hs_code;
+                          if (parcel.wantsInsurance)
+                            parcelData.wantsInsurance = parcel.wantsInsurance;
+                          if (parcel.declaredShipmentValue)
+                            parcelData.declaredShipmentValue =
+                              parcel.declaredShipmentValue;
 
-                      if (response.data?.id || response.data?.shipment_number) {
-                        setShipmentId(
-                          response.data.id || response.data.shipment_number
+                          // Electronics fields (but NOT devicePhoto or electronicsPicture - those are files)
+                          if (parcel.isElectronicsShipment) {
+                            parcelData.isElectronicsShipment =
+                              parcel.isElectronicsShipment;
+                            if (parcel.deviceType)
+                              parcelData.deviceType = parcel.deviceType;
+                            if (parcel.deviceModel)
+                              parcelData.deviceModel = parcel.deviceModel;
+                            if (parcel.declaredValue)
+                              parcelData.declaredValue = parcel.declaredValue;
+                            if (parcel.hasInvoice)
+                              parcelData.hasInvoice = parcel.hasInvoice;
+                            if (parcel.electronicsName)
+                              parcelData.electronicsName =
+                                parcel.electronicsName;
+                          }
+
+                          // Explicitly exclude File objects (photos, devicePhoto, electronicsPicture)
+                          // These will be sent separately in FormData
+                          // Make sure these fields are NOT in parcelData
+                          delete parcelData.photos;
+                          delete parcelData.devicePhoto;
+                          delete parcelData.electronicsPicture;
+
+                          return parcelData;
+                        });
+
+                        // Create FormData for file uploads
+                        const formData = new FormData();
+
+                        // Add all shipment data as JSON string
+                        formData.append(
+                          "shipment_data",
+                          JSON.stringify({
+                            direction: direction,
+                            sender_name: sender?.fullName || "",
+                            sender_email: sender?.email || "",
+                            sender_phone: sender?.phone || "",
+                            sender_address:
+                              sender?.street && sender?.streetNumber
+                                ? `${sender.street} ${sender.streetNumber}`.trim()
+                                : sender?.street || "",
+                            sender_city:
+                              direction === "sy-eu"
+                                ? sender?.country || sender?.province || ""
+                                : sender?.city || "",
+                            sender_postal_code: sender?.postalCode || "",
+                            sender_country: senderCountry,
+                            receiver_name: receiver?.fullName || "",
+                            receiver_email: receiver?.email || "",
+                            receiver_phone: receiver?.phone || "",
+                            receiver_address:
+                              receiver?.street && receiver?.streetNumber
+                                ? `${receiver.street} ${receiver.streetNumber}`.trim()
+                                : receiver?.street || "",
+                            receiver_city:
+                              direction === "eu-sy"
+                                ? receiver?.country || receiver?.province || ""
+                                : receiver?.city || "",
+                            receiver_postal_code: receiver?.postalCode || "",
+                            receiver_country: receiverCountry,
+                            parcels: parcelsData,
+                            eu_pickup_name: euPickupName,
+                            eu_pickup_company_name: euPickupCompanyName,
+                            eu_pickup_address: euPickupAddress,
+                            eu_pickup_house_number: euPickupHouseNumber,
+                            eu_pickup_city: euPickupCity,
+                            eu_pickup_postal_code: euPickupPostalCode,
+                            eu_pickup_country: euPickupCountry,
+                            eu_pickup_email: euPickupEmail,
+                            eu_pickup_telephone: euPickupTelephone,
+                            eu_pickup_weight: euPickupWeight,
+                            selected_eu_shipping_method:
+                              selectedEUShippingMethod,
+                            selected_eu_shipping_name: selectedEUShippingName,
+                            syria_province: syriaProvince,
+                            syria_weight: syriaWeight,
+                            payment_method: paymentMethod,
+                            transfer_sender_name: transferSenderName,
+                            transfer_reference: transferReference,
+                            total_price: Number(
+                              Number(grandTotalWithTransport || 0).toFixed(2)
+                            ),
+                            recaptcha_token: recaptchaToken || undefined,
+                          })
                         );
-                        setCurrentStep(8); // Go to confirmation
-                      } else {
-                        console.error(
-                          "Failed to create shipment:",
-                          response.data?.error || response.data
+
+                        // Add parcel photos
+                        parcels.forEach((parcel, parcelIndex) => {
+                          // Parcel photos (for non-electronics)
+                          if (parcel.photos && parcel.photos.length > 0) {
+                            console.log(
+                              `Adding ${parcel.photos.length} photos for parcel ${parcelIndex}`
+                            );
+                            parcel.photos.forEach((photo, photoIndex) => {
+                              const key = `parcel_${parcelIndex}_photo_${photoIndex}`;
+                              formData.append(key, photo);
+                              console.log(
+                                `Added photo: ${key}, size: ${photo.size}`
+                              );
+                            });
+                          } else {
+                            console.log(`Parcel ${parcelIndex} has no photos`);
+                          }
+
+                          // Electronics photos
+                          if (parcel.isElectronicsShipment) {
+                            console.log(
+                              `Parcel ${parcelIndex} is electronics shipment`
+                            );
+                            if (parcel.devicePhoto) {
+                              formData.append(
+                                `parcel_${parcelIndex}_device_photo`,
+                                parcel.devicePhoto
+                              );
+                              console.log(
+                                `Added device photo for parcel ${parcelIndex}`
+                              );
+                            }
+                            if (parcel.electronicsPicture) {
+                              formData.append(
+                                `parcel_${parcelIndex}_electronics_picture`,
+                                parcel.electronicsPicture
+                              );
+                              console.log(
+                                `Added electronics picture for parcel ${parcelIndex}`
+                              );
+                            }
+                          }
+                        });
+
+                        // Log FormData contents
+                        console.log(
+                          "FormData keys:",
+                          Array.from(formData.keys())
                         );
+
+                        // Create shipment via API
+                        const response = await apiService.createShipment(
+                          formData
+                        );
+
+                        if (
+                          response.data?.id ||
+                          response.data?.shipment_number
+                        ) {
+                          setShipmentId(
+                            response.data.id || response.data.shipment_number
+                          );
+                          setCurrentStep(8); // Go to confirmation
+                        } else {
+                          console.error(
+                            "Failed to create shipment:",
+                            response.data?.error || response.data
+                          );
+                          showSuccess(
+                            language === "ar"
+                              ? "فشل إنشاء الشحنة. يرجى المحاولة مرة أخرى."
+                              : "Failed to create shipment. Please try again."
+                          );
+                        }
+                      } catch (error: any) {
+                        console.error("Error creating shipment:", error);
+                        console.error("Error response:", error.response?.data);
+
+                        // Extract error message from backend response
+                        let errorMessage = "";
+                        if (error.response?.data) {
+                          const errorData = error.response.data;
+                          // Handle Django REST Framework validation errors
+                          if (errorData.detail) {
+                            errorMessage = errorData.detail;
+                          } else if (typeof errorData === "object") {
+                            // Get first validation error
+                            const firstError = Object.values(errorData)[0];
+                            if (Array.isArray(firstError)) {
+                              errorMessage = firstError[0];
+                            } else if (typeof firstError === "string") {
+                              errorMessage = firstError;
+                            } else {
+                              errorMessage = JSON.stringify(errorData);
+                            }
+                          } else {
+                            errorMessage = String(errorData);
+                          }
+                        }
+
                         showSuccess(
                           language === "ar"
-                            ? "فشل إنشاء الشحنة. يرجى المحاولة مرة أخرى."
-                            : "Failed to create shipment. Please try again."
+                            ? errorMessage ||
+                                "حدث خطأ أثناء إنشاء الشحنة. يرجى التحقق من البيانات والمحاولة مرة أخرى."
+                            : errorMessage ||
+                                "An error occurred while creating the shipment. Please check your data and try again."
                         );
+                      } finally {
+                        setIsCreatingShipment(false);
                       }
-                    } catch (error: any) {
-                      console.error("Error creating shipment:", error);
-                      console.error("Error response:", error.response?.data);
-
-                      // Extract error message from backend response
-                      let errorMessage = "";
-                      if (error.response?.data) {
-                        const errorData = error.response.data;
-                        // Handle Django REST Framework validation errors
-                        if (errorData.detail) {
-                          errorMessage = errorData.detail;
-                        } else if (typeof errorData === "object") {
-                          // Get first validation error
-                          const firstError = Object.values(errorData)[0];
-                          if (Array.isArray(firstError)) {
-                            errorMessage = firstError[0];
-                          } else if (typeof firstError === "string") {
-                            errorMessage = firstError;
-                          } else {
-                            errorMessage = JSON.stringify(errorData);
-                          }
-                        } else {
-                          errorMessage = String(errorData);
-                        }
-                      }
-
-                      showSuccess(
-                        language === "ar"
-                          ? errorMessage ||
-                              "حدث خطأ أثناء إنشاء الشحنة. يرجى التحقق من البيانات والمحاولة مرة أخرى."
-                          : errorMessage ||
-                              "An error occurred while creating the shipment. Please check your data and try again."
-                      );
-                    } finally {
-                      setIsCreatingShipment(false);
+                    }}
+                    disabled={
+                      isCreatingShipment ||
+                      !isStep7Valid ||
+                      !acceptedTerms ||
+                      !acceptedPolicies ||
+                      !isRecaptchaValid
                     }
-                  }}
-                  disabled={
-                    isCreatingShipment ||
-                    !isStep7Valid ||
-                    !acceptedTerms ||
-                    !acceptedPolicies ||
-                    !isRecaptchaValid
-                  }
-                  className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
-                    isCreatingShipment ||
-                    !isStep7Valid ||
-                    !acceptedTerms ||
-                    !acceptedPolicies ||
-                    !isRecaptchaValid
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
-                  }`}
-                  whileHover={
-                    !isCreatingShipment &&
-                    isStep7Valid &&
-                    acceptedTerms &&
-                    acceptedPolicies &&
-                    isRecaptchaValid
-                      ? { scale: 1.08, y: -2 }
-                      : {}
-                  }
-                  whileTap={
-                    !isCreatingShipment &&
-                    isStep7Valid &&
-                    acceptedTerms &&
-                    acceptedPolicies &&
-                    isRecaptchaValid
-                      ? { scale: 0.96 }
-                      : {}
-                  }
-                >
-                  <span className="relative z-10 flex items-center gap-3">
-                    {isCreatingShipment
-                      ? language === "ar"
-                        ? "جاري الإنشاء..."
-                        : "Creating..."
-                      : language === "ar"
-                      ? "إتمام الطلب"
-                      : "Complete Order"}
-                    <motion.svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      initial={{ x: 0 }}
-                      whileHover={{ x: language === "ar" ? -5 : 5 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d={
-                          language === "ar" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"
-                        }
-                      />
-                    </motion.svg>
-                  </span>
-                </motion.button>
+                    className={`relative px-20 py-5 font-bold text-xl rounded-3xl shadow-2xl transition-all duration-500 overflow-hidden group ${
+                      isCreatingShipment ||
+                      !isStep7Valid ||
+                      !acceptedTerms ||
+                      !acceptedPolicies ||
+                      !isRecaptchaValid
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-primary-yellow to-primary-yellow/90 text-primary-dark hover:shadow-primary-yellow/50"
+                    }`}
+                    whileHover={
+                      !isCreatingShipment &&
+                      isStep7Valid &&
+                      acceptedTerms &&
+                      acceptedPolicies &&
+                      isRecaptchaValid
+                        ? { scale: 1.08, y: -2 }
+                        : {}
+                    }
+                    whileTap={
+                      !isCreatingShipment &&
+                      isStep7Valid &&
+                      acceptedTerms &&
+                      acceptedPolicies &&
+                      isRecaptchaValid
+                        ? { scale: 0.96 }
+                        : {}
+                    }
+                  >
+                    <span className="relative z-10 flex items-center gap-3">
+                      {isCreatingShipment
+                        ? language === "ar"
+                          ? "جاري الإنشاء..."
+                          : "Creating..."
+                        : language === "ar"
+                        ? "إتمام الطلب"
+                        : "Complete Order"}
+                      <motion.svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        initial={{ x: 0 }}
+                        whileHover={{ x: language === "ar" ? -5 : 5 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d={
+                            language === "ar"
+                              ? "M15 19l-7-7 7-7"
+                              : "M9 5l7 7-7 7"
+                          }
+                        />
+                      </motion.svg>
+                    </span>
+                  </motion.button>
+                )}
               </motion.div>
 
               {/* reCAPTCHA Widget (Development Only) */}
