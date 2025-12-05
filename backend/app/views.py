@@ -9,9 +9,8 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import generics, permissions, serializers, status
+from rest_framework import generics,, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -32,46 +31,22 @@ except ImportError:
     stripe = None
 
 from .email_service import (
-    send_contact_form_notification,
-    send_edit_request_confirmation_to_user,
-    send_fcl_quote_confirmation_email,
-    send_fcl_quote_notification,
+    send_contact_form_notification, send_edit_request_confirmation_to_user,
+    send_fcl_quote_confirmation_email, send_fcl_quote_notification,
     send_lcl_shipment_payment_reminder_email,
     send_lcl_shipment_payment_reminder_notification_to_admin,
-    send_payment_reminder_email,
-    send_payment_reminder_notification_to_admin,
-    send_status_update_email,
-    send_status_update_notification_to_admin,
-)
-from .models import (
-    City,
-    ContactMessage,
-    Country,
-    EditRequestMessage,
-    FCLQuote,
-    LCLShipment,
-    PackagingPrice,
-    Port,
-    Price,
-    ProductRequest,
-    SyrianProvincePrice,
-)
-from .serializers import (
-    ChangePasswordSerializer,
-    CitySerializer,
-    ContactMessageSerializer,
-    CountrySerializer,
-    EditRequestMessageSerializer,
-    FCLQuoteSerializer,
-    LCLShipmentSerializer,
-    PackagingPriceSerializer,
-    PortSerializer,
-    PriceSerializer,
-    ProductRequestSerializer,
-    RegisterSerializer,
-    SyrianProvincePriceSerializer,
-    UserSerializer,
-)
+    send_payment_reminder_email, send_payment_reminder_notification_to_admin,
+    send_status_update_email, send_status_update_notification_to_admin)
+from .models import (City, ContactMessage, Country, EditRequestMessage,
+                     FCLQuote, LCLShipment, PackagingPrice, Port, Price,
+                     ProductRequest, SyrianProvincePrice)
+from .serializers import (ChangePasswordSerializer, CitySerializer,
+                          ContactMessageSerializer, CountrySerializer,
+                          EditRequestMessageSerializer, FCLQuoteSerializer,
+                          LCLShipmentSerializer, PackagingPriceSerializer,
+                          PortSerializer, PriceSerializer,
+                          ProductRequestSerializer, RegisterSerializer,
+                          SyrianProvincePriceSerializer, UserSerializer)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -2049,8 +2024,7 @@ def stripe_webhook_view(request):
                                     from .sendcloud_service import (
                                         SendcloudAPIError,
                                         SendcloudValidationError,
-                                        create_parcel,
-                                    )
+                                        create_parcel)
 
                                     # Check if Sendcloud is needed (EU pickup with shipping method selected)
                                     if (
@@ -2657,11 +2631,9 @@ def calculate_eu_shipping_view(request):
     - Weight/dimension limits enforced
     - Secure logging (no personal data)
     """
-    from .sendcloud_service import (
-        SendcloudAPIError,
-        SendcloudValidationError,
-        get_shipping_methods,
-    )
+    from .sendcloud_service import (SendcloudAPIError,
+                                    SendcloudValidationError,
+                                    get_shipping_methods)
 
     logger = logging.getLogger(__name__)
 
@@ -2827,11 +2799,9 @@ def get_shipping_methods_simple_view(request):
         ]
     }
     """
-    from .sendcloud_service import (
-        SendcloudAPIError,
-        SendcloudValidationError,
-        get_shipping_methods_simple,
-    )
+    from .sendcloud_service import (SendcloudAPIError,
+                                    SendcloudValidationError,
+                                    get_shipping_methods_simple)
 
     logger = logging.getLogger(__name__)
 
@@ -2956,11 +2926,8 @@ def download_sendcloud_label_view(request, shipment_id):
     """
     from django.http import HttpResponse
 
-    from .sendcloud_service import (
-        SendcloudAPIError,
-        SendcloudValidationError,
-        download_label,
-    )
+    from .sendcloud_service import (SendcloudAPIError,
+                                    SendcloudValidationError, download_label)
 
     logger = logging.getLogger(__name__)
 
@@ -3030,11 +2997,8 @@ def approve_eu_shipping_view(request, shipment_id):
 
     Creates a parcel in Sendcloud using the form data from the shipment
     """
-    from .sendcloud_service import (
-        SendcloudAPIError,
-        SendcloudValidationError,
-        create_parcel,
-    )
+    from .sendcloud_service import (SendcloudAPIError,
+                                    SendcloudValidationError, create_parcel)
 
     logger = logging.getLogger(__name__)
 
@@ -3331,11 +3295,9 @@ def sendcloud_webhook_view(request):
     - Payload validation
     - Prevents fake webhook attacks
     """
-    from .sendcloud_service import (
-        SendcloudValidationError,
-        parse_webhook_data,
-        verify_webhook_signature,
-    )
+    from .sendcloud_service import (SendcloudValidationError,
+                                    parse_webhook_data,
+                                    verify_webhook_signature)
 
     logger = logging.getLogger(__name__)
 
@@ -4093,8 +4055,7 @@ class LCLShipmentView(generics.CreateAPIView):
 
             from .email_service import (
                 send_lcl_shipment_confirmation_email,
-                send_lcl_shipment_notification_to_admin,
-            )
+                send_lcl_shipment_notification_to_admin)
 
             def send_emails_async():
                 """Send emails in background thread"""
@@ -4444,15 +4405,12 @@ def update_lcl_shipment_status_view(request, pk):
             if shipment.payment_status == "paid" and not shipment.invoice_file:
                 try:
                     from .document_service import (
-                        generate_consolidated_export_invoice,
-                        generate_invoice,
-                        save_invoice_to_storage,
-                    )
+                        generate_consolidated_export_invoice, generate_invoice,
+                        save_invoice_to_storage)
                     from .email_service import (
                         send_consolidated_export_invoice_email_to_admin,
                         send_invoice_email_to_admin,
-                        send_invoice_email_to_user,
-                    )
+                        send_invoice_email_to_user)
 
                     # Generate regular invoice PDF
                     pdf_bytes = generate_invoice(shipment, language="ar")
@@ -4505,10 +4463,10 @@ def update_lcl_shipment_status_view(request, pk):
                 and shipment.payment_status == "paid"
             ):
                 try:
-                    from .document_service import generate_consolidated_export_invoice
-                    from .email_service import (
-                        send_consolidated_export_invoice_email_to_admin,
-                    )
+                    from .document_service import \
+                        generate_consolidated_export_invoice
+                    from .email_service import \
+                        send_consolidated_export_invoice_email_to_admin
 
                     consolidated_pdf = generate_consolidated_export_invoice(
                         shipment, language="en"
@@ -4543,14 +4501,10 @@ def update_lcl_shipment_status_view(request, pk):
 
             if should_generate_receipt:
                 try:
-                    from .document_service import (
-                        generate_receipt,
-                        save_receipt_to_storage,
-                    )
-                    from .email_service import (
-                        send_receipt_email_to_admin,
-                        send_receipt_email_to_user,
-                    )
+                    from .document_service import (generate_receipt,
+                                                   save_receipt_to_storage)
+                    from .email_service import (send_receipt_email_to_admin,
+                                                send_receipt_email_to_user)
 
                     # Generate receipt PDF
                     pdf_bytes = generate_receipt(shipment, language="ar")
@@ -4600,8 +4554,7 @@ def update_lcl_shipment_status_view(request, pk):
             try:
                 from .email_service import (
                     send_lcl_shipment_status_update_email,
-                    send_lcl_shipment_status_update_notification_to_admin,
-                )
+                    send_lcl_shipment_status_update_notification_to_admin)
 
                 # Send email to user
                 send_lcl_shipment_status_update_email(
@@ -4718,8 +4671,7 @@ def download_invoice_view(request, pk):
                         )
                         from .email_service import (
                             send_invoice_email_to_admin,
-                            send_invoice_email_to_user,
-                        )
+                            send_invoice_email_to_user)
 
                         user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
@@ -4793,10 +4745,8 @@ def download_invoice_view(request, pk):
         # Send emails if invoice was just generated (not already existed)
         if invoice_saved:
             try:
-                from .email_service import (
-                    send_invoice_email_to_admin,
-                    send_invoice_email_to_user,
-                )
+                from .email_service import (send_invoice_email_to_admin,
+                                            send_invoice_email_to_user)
 
                 user_sent = send_invoice_email_to_user(shipment, pdf_bytes)
                 admin_sent = send_invoice_email_to_admin(shipment, pdf_bytes)
@@ -4927,7 +4877,8 @@ def download_consolidated_export_invoice_view(request, pk):
 
         # Send consolidated export invoice by email to admin
         try:
-            from .email_service import send_consolidated_export_invoice_email_to_admin
+            from .email_service import \
+                send_consolidated_export_invoice_email_to_admin
 
             admin_sent = send_consolidated_export_invoice_email_to_admin(
                 shipment, pdf_bytes
@@ -5147,8 +5098,7 @@ def download_receipt_view(request, pk):
                         )
                         from .email_service import (
                             send_receipt_email_to_admin,
-                            send_receipt_email_to_user,
-                        )
+                            send_receipt_email_to_user)
 
                         user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
                         admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
@@ -5223,10 +5173,8 @@ def download_receipt_view(request, pk):
         # Send emails if receipt was just generated (not already existed)
         if receipt_saved:
             try:
-                from .email_service import (
-                    send_receipt_email_to_admin,
-                    send_receipt_email_to_user,
-                )
+                from .email_service import (send_receipt_email_to_admin,
+                                            send_receipt_email_to_user)
 
                 user_sent = send_receipt_email_to_user(shipment, pdf_bytes)
                 admin_sent = send_receipt_email_to_admin(shipment, pdf_bytes)
@@ -5344,10 +5292,8 @@ def download_shipping_labels_view(request, pk):
 
         # Send shipping labels by email
         try:
-            from .email_service import (
-                send_shipping_labels_email_to_admin,
-                send_shipping_labels_email_to_user,
-            )
+            from .email_service import (send_shipping_labels_email_to_admin,
+                                        send_shipping_labels_email_to_user)
 
             user_sent = send_shipping_labels_email_to_user(
                 shipment, pdf_bytes, num_labels=num_labels
@@ -5735,11 +5681,63 @@ def confirm_shipment_payment_view(request):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # If session_id provided, verify with Stripe
+        # If session_id not provided, try to get it from shipment's stripe_session_id
+        if not session_id and shipment.stripe_session_id:
+            session_id = shipment.stripe_session_id
+            logger.info(
+                f"🔍 Using stripe_session_id from shipment {shipment_id}: {session_id}"
+            )
+
+        # If still no session_id, try to find it by searching Stripe checkout sessions with this shipment_id in metadata
+        if not session_id:
+            try:
+                logger.info(
+                    f"🔍 No session_id found, searching Stripe for checkout sessions with shipment_id={shipment_id} in metadata..."
+                )
+                # List recent checkout sessions and find one with this shipment_id
+                # We'll search the last 100 sessions (Stripe limit is 100 per page)
+                sessions = stripe.checkout.Session.list(
+                    limit=100,
+                )
+
+                for sess in sessions.data:
+                    sess_metadata = sess.get("metadata", {})
+                    if (
+                        sess_metadata.get("shipment_id") == str(shipment_id)
+                        and sess_metadata.get("type") == "shipment"
+                    ):
+                        session_id = sess.id
+                        logger.info(
+                            f"✅ Found Stripe session {session_id} for shipment {shipment_id}"
+                        )
+                        # Also update shipment with this session_id for future reference
+                        if not shipment.stripe_session_id:
+                            shipment.stripe_session_id = session_id
+                            shipment.save()
+                        break
+            except stripe.error.StripeError as e:
+                logger.warning(f"⚠️ Could not search Stripe for sessions: {str(e)}")
+            except Exception as e:
+                logger.warning(f"⚠️ Error searching for Stripe session: {str(e)}")
+
+        # If session_id available (from request, shipment, or Stripe search), verify with Stripe
         if session_id:
             try:
                 session = stripe.checkout.Session.retrieve(session_id)
                 payment_status = session.get("payment_status")
+                metadata = session.get("metadata") or {}
+                if metadata.get("shipment_id") != str(shipment.id) or metadata.get("type") != "shipment":
+                    logger.warning(
+                        f"⚠️ Stripe session {session_id} metadata does not match shipment {shipment_id}"
+                    )
+                    return Response(
+                        {
+                            "success": False,
+                            "error": "Invalid payment session for this shipment",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
 
                 logger.info(
                     f"🔍 Verifying payment for shipment {shipment_id} - session_id: {session_id}, payment_status: {payment_status}"
@@ -5752,6 +5750,9 @@ def confirm_shipment_payment_view(request):
                         paid_amount = Decimal(str(amount_total)) / 100
                         shipment.amount_paid = paid_amount
                         shipment.payment_status = "paid"
+                        # Update stripe_session_id if not already set
+                        if not shipment.stripe_session_id:
+                            shipment.stripe_session_id = session_id
                         if not shipment.sendcloud_id:
                             shipment.status = "PENDING_PICKUP"
                         shipment.paid_at = timezone.now()
@@ -5774,6 +5775,33 @@ def confirm_shipment_payment_view(request):
                         logger.warning(
                             f"⚠️ Payment is paid but amount_total is missing for session {session_id}"
                         )
+                        # Still update payment_status even if amount is missing
+                        shipment.payment_status = "paid"
+                        if not shipment.stripe_session_id:
+                            shipment.stripe_session_id = session_id
+                        shipment.save()
+                elif payment_status == "pending":
+                    # Payment is still processing, check if webhook already updated it
+                    logger.info(
+                        f"ℹ️ Payment status is 'pending' for session {session_id}, checking if webhook already processed..."
+                    )
+                    # Refresh shipment from DB to get latest state
+                    shipment.refresh_from_db()
+                    # Check if webhook already updated the shipment
+                    if shipment.payment_status == "paid" and shipment.amount_paid:
+                        return Response(
+                            {
+                                "success": True,
+                                "message": "Payment already confirmed by webhook",
+                                "shipment_id": shipment.id,
+                                "amount_paid": float(shipment.amount_paid),
+                                "status": shipment.status,
+                            }
+                        )
+                    else:
+                        logger.warning(
+                            f"⚠️ Payment status is 'pending' for session {session_id} and webhook hasn't processed yet"
+                        )
                 else:
                     logger.warning(
                         f"⚠️ Payment status is '{payment_status}' (not paid) for session {session_id}"
@@ -5788,22 +5816,64 @@ def confirm_shipment_payment_view(request):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        # If no session_id or verification failed, check current shipment status
+        # If no session_id available, check current shipment status
+        if not session_id:
+            logger.warning(
+                f"⚠️ No session_id found for shipment {shipment_id} - checked request, shipment.stripe_session_id, and Stripe search"
+            )
+            # Check if payment is already confirmed (webhook might have processed it)
+            if shipment.payment_status == "paid" and shipment.amount_paid:
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Payment already confirmed by webhook",
+                        "shipment_id": shipment.id,
+                        "amount_paid": float(shipment.amount_paid),
+                        "status": shipment.status,
+                    }
+                )
+            else:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Payment not confirmed. Could not find Stripe session. Please wait for webhook processing or provide session_id.",
+                        "current_payment_status": shipment.payment_status,
+                        "current_amount_paid": float(shipment.amount_paid or 0),
+                        "stripe_session_id": shipment.stripe_session_id or None,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # If we reach here, session_id was found but payment wasn't "paid" in Stripe
+        # Refresh shipment from DB to get latest state (webhook might have updated it)
+        shipment.refresh_from_db()
+
+        # Check if webhook already processed it (final fallback)
         if shipment.payment_status == "paid" and shipment.amount_paid:
+            logger.info(
+                f"✅ Payment already confirmed by webhook for shipment {shipment_id}"
+            )
             return Response(
                 {
                     "success": True,
-                    "message": "Payment already confirmed",
+                    "message": "Payment already confirmed by webhook",
                     "shipment_id": shipment.id,
                     "amount_paid": float(shipment.amount_paid),
                     "status": shipment.status,
                 }
             )
 
+        # Payment not confirmed yet
+        logger.warning(
+            f"⚠️ Payment verification failed for shipment {shipment_id} - session_id: {session_id}, Stripe payment_status might not be 'paid' yet"
+        )
         return Response(
             {
                 "success": False,
-                "error": "Payment not confirmed. Please wait for webhook processing.",
+                "error": "Payment not confirmed yet. Please wait a moment and refresh, or wait for webhook processing.",
+                "current_payment_status": shipment.payment_status,
+                "current_amount_paid": float(shipment.amount_paid or 0),
+                "stripe_session_id": shipment.stripe_session_id,
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
