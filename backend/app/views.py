@@ -5978,9 +5978,7 @@ def confirm_fcl_quote_payment_view(request):
         # If session_id not provided, try to get it from quote's payment_id
         if not session_id and quote.payment_id:
             session_id = quote.payment_id
-            logger.info(
-                f"🔍 Using payment_id from quote {quote_id}: {session_id}"
-            )
+            logger.info(f"🔍 Using payment_id from quote {quote_id}: {session_id}")
 
         # If still no session_id, try to find it by searching Stripe checkout sessions with this quote_id in metadata
         if not session_id:
@@ -6020,7 +6018,10 @@ def confirm_fcl_quote_payment_view(request):
                 session = stripe.checkout.Session.retrieve(session_id)
                 payment_status = session.get("payment_status")
                 metadata = session.get("metadata") or {}
-                if metadata.get("quote_id") != str(quote.id) or metadata.get("type") != "quote":
+                if (
+                    metadata.get("quote_id") != str(quote.id)
+                    or metadata.get("type") != "quote"
+                ):
                     logger.warning(
                         f"⚠️ Stripe session {session_id} metadata does not match quote {quote_id}"
                     )
@@ -6151,9 +6152,7 @@ def confirm_fcl_quote_payment_view(request):
 
         # Check if webhook already processed it (final fallback)
         if quote.payment_status == "paid" and quote.amount_paid:
-            logger.info(
-                f"✅ Payment already confirmed by webhook for quote {quote_id}"
-            )
+            logger.info(f"✅ Payment already confirmed by webhook for quote {quote_id}")
             return Response(
                 {
                     "success": True,
