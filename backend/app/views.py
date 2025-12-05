@@ -71,6 +71,11 @@ from .serializers import (
     SyrianProvincePriceSerializer,
     UserSerializer,
 )
+from .whatsapp_service import (
+    send_contact_form_whatsapp_notification,
+    send_fcl_quote_whatsapp_notification,
+    send_lcl_shipment_whatsapp_notification,
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -261,6 +266,16 @@ class ContactMessageView(generics.CreateAPIView):
                 f"Failed to send contact form notification: {str(email_error)}"
             )
             # Don't fail the request if email fails
+
+        # Send WhatsApp notification to admin
+        try:
+            send_contact_form_whatsapp_notification(contact_message)
+        except Exception as whatsapp_error:
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Failed to send contact form WhatsApp notification: {str(whatsapp_error)}"
+            )
+            # Don't fail the request if WhatsApp fails
 
         return Response(
             {
@@ -462,6 +477,24 @@ class FCLQuoteView(generics.CreateAPIView):
                     f"Failed to send FCL quote email notifications: {str(email_error)}"
                 )
                 # Don't fail the request if email fails
+
+            # Send WhatsApp notifications to both admin and user
+            try:
+                quote = FCLQuote.objects.get(id=quote_id)
+                results = send_fcl_quote_whatsapp_notification(quote)
+                if results.get("admin"):
+                    logger.info(
+                        f"FCL quote WhatsApp notification sent to admin for quote {quote.id}"
+                    )
+                if results.get("user"):
+                    logger.info(
+                        f"FCL quote WhatsApp notification sent to user for quote {quote.id}"
+                    )
+            except Exception as whatsapp_error:
+                logger.error(
+                    f"Failed to send FCL quote WhatsApp notifications: {str(whatsapp_error)}"
+                )
+                # Don't fail the request if WhatsApp fails
 
         return Response(
             {
@@ -4252,11 +4285,37 @@ class LCLShipmentView(generics.CreateAPIView):
                         exc_info=True,
                     )
 
+            def send_whatsapp_async():
+                """Send WhatsApp notifications in background thread (to admin and user)"""
+                try:
+                    # Send WhatsApp notifications to both admin and user
+                    results = send_lcl_shipment_whatsapp_notification(shipment)
+                    if results.get("admin"):
+                        logger.info(
+                            f"LCL shipment WhatsApp notification sent to admin for shipment {shipment.id}"
+                        )
+                    if results.get("user"):
+                        logger.info(
+                            f"LCL shipment WhatsApp notification sent to user for shipment {shipment.id}"
+                        )
+                except Exception as whatsapp_error:
+                    logger.error(
+                        f"Failed to send LCL shipment WhatsApp notifications: {str(whatsapp_error)}",
+                        exc_info=True,
+                    )
+
             # Start email sending in background thread
             email_thread = threading.Thread(target=send_emails_async, daemon=True)
             email_thread.start()
             logger.info(
                 f"Started background thread for sending LCL shipment emails for shipment {shipment.id}"
+            )
+
+            # Start WhatsApp notification in background thread
+            whatsapp_thread = threading.Thread(target=send_whatsapp_async, daemon=True)
+            whatsapp_thread.start()
+            logger.info(
+                f"Started background thread for sending LCL shipment WhatsApp notification for shipment {shipment.id}"
             )
         except Exception as email_error:
             logger.error(

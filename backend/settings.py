@@ -301,3 +301,12 @@ RECAPTCHA_ENTERPRISE_PROJECT_ID = config(
 RECAPTCHA_SCORE_THRESHOLD = config("RECAPTCHA_SCORE_THRESHOLD", default=0.3, cast=float)
 
 SENDCLOUD_WEBHOOK_URL = config("SENDCLOUD_WEBHOOK_URL", default="")
+
+# Twilio WhatsApp Configuration
+TWILIO_ACCOUNT_SID = config("TWILIO_ACCOUNT_SID", default="").strip()
+TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN", default="").strip()
+TWILIO_WHATSAPP_FROM_NUMBER = config("TWILIO_WHATSAPP_FROM_NUMBER", default="").strip()
+# Admin WhatsApp number to receive notifications (in E.164 format, e.g., +31683083916)
+TWILIO_ADMIN_WHATSAPP_NUMBER = config(
+    "TWILIO_ADMIN_WHATSAPP_NUMBER", default=""
+).strip()

@@ -15,3 +15,5 @@ Pillow>=10.0.0
 qrcode>=7.4.2
 python-barcode>=0.15.1
 PyPDF2>=3.0.0
+# Twilio WhatsApp integration
+twilio>=8.0.0
