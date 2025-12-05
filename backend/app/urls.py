@@ -30,6 +30,7 @@ from .views import (
     calculate_pricing_view,
     calculate_syria_transport_view,
     cities_list_view,
+    confirm_fcl_quote_payment_view,
     confirm_shipment_payment_view,
     countries_list_view,
     create_shipment_checkout_session,
@@ -279,6 +280,12 @@ urlpatterns = [
         "shipments/confirm-payment/",
         confirm_shipment_payment_view,
         name="confirm-shipment-payment",
+    ),
+    # FCL Quote payment confirmation
+    path(
+        "fcl/quotes/confirm-payment/",
+        confirm_fcl_quote_payment_view,
+        name="confirm-fcl-quote-payment",
     ),
     # Shipment payment reminder
     path(

@@ -1020,7 +1020,19 @@ export default function DashboardPage() {
   const handleInitiatePayment = async (quoteId: number) => {
     try {
       setProcessingPayment(quoteId);
-      const response = await apiService.initiatePayment(quoteId);
+      
+      // Build success and cancel URLs based on current origin
+      const baseUrl =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+      const successUrl = `${baseUrl}/payment-success?type=quote&quote_id=${quoteId}`;
+      const cancelUrl = `${baseUrl}/dashboard?payment=cancelled&quote_id=${quoteId}`;
+
+      const response = await apiService.initiatePayment(quoteId, {
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
 
       if (response.data?.success && response.data?.checkout_url) {
         // Redirect to Stripe checkout

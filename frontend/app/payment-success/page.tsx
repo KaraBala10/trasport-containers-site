@@ -17,6 +17,7 @@ export default function PaymentSuccessPage() {
     const confirmPayment = async () => {
       const type = searchParams.get("type");
       const shipmentId = searchParams.get("shipment_id");
+      const quoteId = searchParams.get("quote_id");
       const sessionId = searchParams.get("session_id");
 
       if (type === "shipment" && shipmentId) {
@@ -64,8 +65,53 @@ export default function PaymentSuccessPage() {
         } finally {
           setIsProcessing(false);
         }
+      } else if (type === "quote" && quoteId) {
+        try {
+          // Make POST request to confirm FCL quote payment
+          const response = await apiService.confirmFCLQuotePayment({
+            quote_id: parseInt(quoteId, 10),
+            session_id: sessionId || undefined,
+          });
+
+          if (response.data?.success) {
+            showSuccess(
+              language === "ar"
+                ? "تم تأكيد الدفع بنجاح"
+                : "Payment confirmed successfully"
+            );
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+              router.push("/dashboard");
+            }, 1500);
+          } else {
+            showError(
+              response.data?.error ||
+                (language === "ar"
+                  ? "فشل تأكيد الدفع"
+                  : "Failed to confirm payment")
+            );
+            // Still redirect to dashboard
+            setTimeout(() => {
+              router.push("/dashboard");
+            }, 2000);
+          }
+        } catch (error: any) {
+          console.error("Error confirming payment:", error);
+          showError(
+            error.response?.data?.error ||
+              (language === "ar"
+                ? "حدث خطأ أثناء تأكيد الدفع"
+                : "An error occurred while confirming payment")
+          );
+          // Still redirect to dashboard
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 2000);
+        } finally {
+          setIsProcessing(false);
+        }
       } else {
-        // Not a shipment payment, redirect to dashboard
+        // Not a recognized payment type, redirect to dashboard
         router.push("/dashboard");
       }
     };

@@ -1719,10 +1719,38 @@ def initiate_stripe_payment_view(request, pk):
                     }
                 ],
                 mode="payment",
-                success_url=settings.STRIPE_REDIRECT_SUCCESS_URL
-                + f"&quote_id={quote.id}",
-                cancel_url=settings.STRIPE_REDIRECT_CANCEL_URL
-                + f"&quote_id={quote.id}",
+                success_url=(
+                    request.data.get("success_url")
+                    or settings.STRIPE_REDIRECT_SUCCESS_URL
+                )
+                + (
+                    (
+                        "&"
+                        if "?"
+                        in (
+                            request.data.get("success_url")
+                            or settings.STRIPE_REDIRECT_SUCCESS_URL
+                        )
+                        else "?"
+                    )
+                    + f"type=quote&quote_id={quote.id}&session_id={{CHECKOUT_SESSION_ID}}"
+                ),
+                cancel_url=(
+                    request.data.get("cancel_url")
+                    or settings.STRIPE_REDIRECT_CANCEL_URL
+                )
+                + (
+                    (
+                        "&"
+                        if "?"
+                        in (
+                            request.data.get("cancel_url")
+                            or settings.STRIPE_REDIRECT_CANCEL_URL
+                        )
+                        else "?"
+                    )
+                    + f"type=quote&quote_id={quote.id}"
+                ),
                 metadata={
                     "quote_id": str(quote.id),
                     "quote_number": quote.quote_number or f"#{quote.id}",
@@ -5769,6 +5797,127 @@ def confirm_shipment_payment_view(request):
                     "shipment_id": shipment.id,
                     "amount_paid": float(shipment.amount_paid),
                     "status": shipment.status,
+                }
+            )
+
+        return Response(
+            {
+                "success": False,
+                "error": "Payment not confirmed. Please wait for webhook processing.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    except Exception as e:
+        logger.error(f"❌ Error confirming payment: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": "An error occurred while confirming payment"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def confirm_fcl_quote_payment_view(request):
+    """
+    Confirm FCL quote payment after Stripe redirect
+    Verifies payment with Stripe and updates quote status
+    """
+    logger = logging.getLogger(__name__)
+
+    if not STRIPE_AVAILABLE:
+        return Response(
+            {"success": False, "error": "Stripe is not available"},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    try:
+        quote_id = request.data.get("quote_id")
+        session_id = request.data.get("session_id")
+
+        if not quote_id:
+            return Response(
+                {"success": False, "error": "Quote ID is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get quote
+        try:
+            quote = FCLQuote.objects.get(pk=quote_id, user=request.user)
+        except FCLQuote.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Quote not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # If session_id provided, verify with Stripe
+        if session_id:
+            try:
+                session = stripe.checkout.Session.retrieve(session_id)
+                payment_status = session.get("payment_status")
+
+                logger.info(
+                    f"🔍 Verifying payment for quote {quote_id} - session_id: {session_id}, payment_status: {payment_status}"
+                )
+
+                if payment_status == "paid":
+                    # Get amount from session
+                    amount_total = session.get("amount_total")
+                    if amount_total:
+                        paid_amount = Decimal(str(amount_total)) / 100
+                        current_amount_paid = quote.amount_paid or Decimal("0")
+                        total_price = quote.total_price or Decimal("0")
+
+                        # Add to existing amount_paid (for partial payments)
+                        new_amount_paid = current_amount_paid + paid_amount
+                        # Cap at total_price to prevent overpayment
+                        quote.amount_paid = min(new_amount_paid, total_price)
+                        quote.payment_status = "paid"
+                        quote.payment_updated_at = timezone.now()
+                        quote.save()
+
+                        logger.info(
+                            f"✅ Payment confirmed for quote {quote.id} - amount_paid: {current_amount_paid} -> {quote.amount_paid}, payment_status: {quote.payment_status}"
+                        )
+
+                        return Response(
+                            {
+                                "success": True,
+                                "message": "Payment confirmed successfully",
+                                "quote_id": quote.id,
+                                "amount_paid": float(quote.amount_paid),
+                                "total_price": float(total_price),
+                                "payment_status": quote.payment_status,
+                            }
+                        )
+                    else:
+                        logger.warning(
+                            f"⚠️ Payment is paid but amount_total is missing for session {session_id}"
+                        )
+                else:
+                    logger.warning(
+                        f"⚠️ Payment status is '{payment_status}' (not paid) for session {session_id}"
+                    )
+            except stripe.error.StripeError as e:
+                logger.error(f"❌ Stripe API error: {str(e)}", exc_info=True)
+                return Response(
+                    {
+                        "success": False,
+                        "error": f"Stripe verification failed: {str(e)}",
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+        # If no session_id or verification failed, check current quote status
+        if quote.payment_status == "paid" and quote.amount_paid:
+            return Response(
+                {
+                    "success": True,
+                    "message": "Payment already confirmed",
+                    "quote_id": quote.id,
+                    "amount_paid": float(quote.amount_paid),
+                    "total_price": float(quote.total_price or 0),
+                    "payment_status": quote.payment_status,
                 }
             )
 

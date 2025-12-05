@@ -268,8 +268,8 @@ export const apiService = {
     return apiClient.post(`/shipments/${id}/send-payment-reminder/`);
   },
 
-  initiatePayment: (id: number) => {
-    return apiClient.post(`/fcl/quotes/${id}/initiate-stripe-payment/`);
+  initiatePayment: (id: number, data?: { success_url?: string; cancel_url?: string }) => {
+    return apiClient.post(`/fcl/quotes/${id}/initiate-stripe-payment/`, data || {});
   },
 
   createShipmentCheckout: (data: {
@@ -288,6 +288,13 @@ export const apiService = {
     session_id?: string;
   }) => {
     return apiClient.post('/shipments/confirm-payment/', data);
+  },
+
+  confirmFCLQuotePayment: (data: {
+    quote_id: number;
+    session_id?: string;
+  }) => {
+    return apiClient.post('/fcl/quotes/confirm-payment/', data);
   },
 
   getPaymentStatus: (id: number) => {
