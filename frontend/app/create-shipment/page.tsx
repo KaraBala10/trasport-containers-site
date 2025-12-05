@@ -215,52 +215,11 @@ export default function CreateShipmentPage() {
   }, [sender, receiver, direction]);
 
   const isStep4Valid = useMemo(() => {
-    // Internal Transport is optional, but if user starts filling a card, all required fields must be filled
-    // Note: Shipping method selection is optional - users can proceed without selecting a method
-
-    // Check if EU Transport card is started (any field filled)
-    const euTransportStarted =
-      euPickupName?.trim() ||
-      euPickupAddress?.trim() ||
-      euPickupCity?.trim() ||
-      euPickupPostalCode?.trim() ||
-      euPickupCountry?.trim() ||
-      euPickupWeight > 0;
-
-    // If EU Transport is started, validate all required fields (except shipping method selection)
-    if (euTransportStarted) {
-      const euTransportValid =
-        euPickupAddress?.trim() &&
-        euPickupCity?.trim() &&
-        euPickupPostalCode?.trim() &&
-        euPickupCountry?.trim() &&
-        euPickupWeight > 0;
-      // Note: selectedEUShippingMethod is optional - users can proceed without selecting
-
-      if (!euTransportValid) return false;
-    }
-
-    // Check if Syria Transport card is started (any field filled)
-    const syriaTransportStarted = syriaProvince?.trim() || syriaWeight > 0;
-
-    // If Syria Transport is started, validate all required fields
-    if (syriaTransportStarted) {
-      const syriaTransportValid = syriaProvince?.trim() && syriaWeight > 0;
-      if (!syriaTransportValid) return false;
-    }
-
-    // If no transport is started, or all started transports are valid, return true
+    // Internal Transport is completely optional - users can proceed without filling any fields
+    // Both EU Transport and Syria Transport are optional sections
+    // Users can continue even if fields are empty or partially filled
     return true;
-  }, [
-    direction,
-    euPickupAddress,
-    euPickupCity,
-    euPickupPostalCode,
-    euPickupCountry,
-    euPickupWeight,
-    syriaProvince,
-    syriaWeight,
-  ]);
+  }, []);
 
   const isStep5Valid = useMemo(() => {
     return pricing !== null && pricing.grandTotal > 0;

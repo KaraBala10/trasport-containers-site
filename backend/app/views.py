@@ -4038,6 +4038,53 @@ class LCLShipmentView(generics.CreateAPIView):
                     f"reCAPTCHA token provided but verification failed (reCAPTCHA may not be configured): {verification_result.get('error')}"
                 )
 
+        # Validate payment method based on direction
+        direction = shipment_data.get("direction")
+        payment_method = shipment_data.get("payment_method")
+
+        if direction == "eu-sy":
+            # For EU to Syria: Only allow creation if payment method is Stripe
+            if payment_method != "stripe":
+                logger.warning(
+                    f"❌ Shipment creation rejected for eu-sy direction: payment_method={payment_method} (must be 'stripe')"
+                )
+                return Response(
+                    {
+                        "success": False,
+                        "error": "For shipments from Europe to Syria, Stripe payment is required. Please select Stripe as your payment method.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            logger.info(
+                f"✅ EU to Syria shipment creation allowed: payment_method={payment_method}"
+            )
+        elif direction == "sy-eu":
+            # For Syria to Europe: Allow creation with 0 paid_amount
+            # Set amount_paid to 0 if not provided
+            if (
+                "amount_paid" not in shipment_data
+                or shipment_data.get("amount_paid") is None
+            ):
+                shipment_data["amount_paid"] = 0
+                # Also update request.data for regular JSON requests (if mutable)
+                if not shipment_data_json:
+                    try:
+                        if hasattr(request.data, "_mutable"):
+                            request.data._mutable = True
+                            request.data["amount_paid"] = 0
+                            request.data._mutable = False
+                        else:
+                            # If request.data is not a QueryDict, it might be a dict - try to update it
+                            if isinstance(request.data, dict):
+                                request.data["amount_paid"] = 0
+                    except (AttributeError, TypeError) as e:
+                        logger.warning(
+                            f"Could not modify request.data for amount_paid: {str(e)}. Model default will be used."
+                        )
+            logger.info(
+                f"✅ Syria to Europe shipment creation allowed: amount_paid={shipment_data.get('amount_paid', 0)}"
+            )
+
         # If we processed FormData, manually create serializer with processed data
         if shipment_data_json:
             # Ensure parcels is a list (not string) for JSONField
