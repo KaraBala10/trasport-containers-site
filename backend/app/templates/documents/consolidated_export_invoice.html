@@ -348,6 +348,7 @@
             font-size: 9px;
             width: 100%;
             table-layout: fixed;
+            margin-bottom: 8px;
         }
 
         .product-table th {
@@ -375,6 +376,12 @@
         .product-table .description-cell {
             font-size: 8px;
             line-height: 1.4;
+        }
+
+        .product-tables-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
         }
 
         /* Large input fields for manual writing */
@@ -607,33 +614,56 @@
             </div>
         </div>
 
-        <table class="light-border-table product-table">
-            <tr>
+        <div class="product-tables-container">
+            <!-- First table: Columns 1-6 -->
+            <table class="light-border-table product-table">
+                <tr>
+                    <th style="width: 13%;">Product Code</th>
+                    <th style="width: 40%;">Description</th>
+                    <th style="width: 17%;" class="text-center">Origin</th>
+                    <th style="width: 13%;" class="text-center">HS Code</th>
+                    <th style="width: 12%;" class="text-center">CBM</th>
+                    <th style="width: 8%;" class="text-center">Unit</th>
+                </tr>
                 {% if shipment_data %}
-                <th style="width: 7%;">Shipment No.</th>
-                {% endif %}
-                <th style="width: {% if shipment_data %}7%{% else %}8%{% endif %};">Product Code</th>
-                <th style="width: {% if shipment_data %}20%{% else %}24%{% endif %};">Description</th>
-                <th style="width: 9%;" class="text-center">Made In Country of Origin</th>
-                <th style="width: 7%;" class="text-center">HS Code</th>
-                <th style="width: 6%;" class="text-center">CBM</th>
-                <th style="width: 5%;" class="text-center">Unit</th>
-                <th style="width: 6%;" class="text-center">Qty</th>
-                <th style="width: 8%;" class="text-right">Unit Price</th>
-                <th style="width: 8%;" class="text-right">Value</th>
-                <th style="width: 8%;" class="text-right">Gross Wt</th>
-                <th style="width: 8%;" class="text-right">Nett Wt</th>
-            </tr>
-            {% if shipment_data %}
-                {# Bulk mode: multiple shipments #}
-                {% for shipment_info in shipment_data %}
-                    {% for item in shipment_info.items %}
+                    {# Bulk mode: multiple shipments #}
+                    {% for shipment_info in shipment_data %}
+                        {% for item in shipment_info.items %}
+                            <tr>
+                                <td class="small-text">
+                                    {{ item.shipment_number|default:"" }}
+                                </td>
+                                <td class="small-text description-cell">
+                                    <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
+                                    {% if item.product_name_ar %}
+                                        <br><span style="color: #6b7280; font-size: 8px;">{{ item.product_name_ar }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small-text text-center empty-cell"></td>
+                                <td class="small-text text-center">
+                                    {{ item.hs_code|default_if_none:"" }}
+                                </td>
+                                <td class="small-text text-center">
+                                    {{ item.cbm|floatformat:3 }}
+                                </td>
+                                <td class="small-text text-center">
+                                    PCS
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                                No shipment data available.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    {# Single shipment mode #}
+                    {% for item in pricing.parcel_calculations %}
                         <tr>
                             <td class="small-text">
-                                {{ item.shipment_number|default:"" }}
-                            </td>
-                            <td class="small-text">
-                                {{ item.shipment_number|default:"" }}
+                                {{ shipment.shipment_number|default_if_none:"" }}
                             </td>
                             <td class="small-text description-cell">
                                 <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
@@ -646,15 +676,70 @@
                                 {{ item.hs_code|default_if_none:"" }}
                             </td>
                             <td class="small-text text-center">
-                                {{ item.cbm|floatformat:3 }}
+                                {{ item.cbm|default:0|floatformat:3 }}
                             </td>
                             <td class="small-text text-center">
                                 PCS
                             </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                                No parcel breakdown available.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </table>
+
+            <!-- Second table: Columns 7-11 -->
+            <table class="light-border-table product-table">
+                <tr>
+                    <th style="width: 18%;" class="text-center">Qty</th>
+                    <th style="width: 20%;" class="text-right">Unit Price</th>
+                    <th style="width: 20%;" class="text-right">Value</th>
+                    <th style="width: 20%;" class="text-right">Gross Wt</th>
+                    <th style="width: 22%;" class="text-right">Nett Wt</th>
+                </tr>
+                {% if shipment_data %}
+                    {# Bulk mode: multiple shipments #}
+                    {% for shipment_info in shipment_data %}
+                        {% for item in shipment_info.items %}
+                            <tr>
+                                <td class="small-text text-center">
+                                    <strong>{{ item.repeat_count|default:1 }}</strong>
+                                </td>
+                                <td class="small-text text-right empty-cell"></td>
+                                <td class="small-text text-right">
+                                    <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                                </td>
+                                <td class="small-text text-right">
+                                    {{ item.weight|default:0|floatformat:2 }}
+                                </td>
+                                <td class="small-text text-right">
+                                    {{ item.weight|default:0|floatformat:2 }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                                No shipment data available.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    {# Single shipment mode #}
+                    {% for item in pricing.parcel_calculations %}
+                        <tr>
                             <td class="small-text text-center">
                                 <strong>{{ item.repeat_count|default:1 }}</strong>
                             </td>
-                            <td class="small-text text-right empty-cell"></td>
+                            <td class="small-text text-right empty-cell">
+                                {% if item.price_per_kg %}
+                                    €{{ item.price_per_kg|floatformat:2 }}
+                                {% endif %}
+                            </td>
                             <td class="small-text text-right">
                                 <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
                             </td>
@@ -665,72 +750,28 @@
                                 {{ item.weight|default:0|floatformat:2 }}
                             </td>
                         </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                                No parcel breakdown available.
+                            </td>
+                        </tr>
                     {% endfor %}
-                {% empty %}
-                    <tr>
-                        <td colspan="12" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
-                            No shipment data available.
-                        </td>
-                    </tr>
-                {% endfor %}
-            {% else %}
-                {# Single shipment mode #}
-                {% for item in pricing.parcel_calculations %}
-                    <tr>
-                        <td class="small-text">
-                            {{ shipment.shipment_number|default_if_none:"" }}
-                        </td>
-                        <td class="small-text description-cell">
-                            <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
-                            {% if item.product_name_ar %}
-                                <br><span style="color: #6b7280; font-size: 8px;">{{ item.product_name_ar }}</span>
-                            {% endif %}
-                        </td>
-                        <td class="small-text text-center empty-cell"></td>
-                        <td class="small-text text-center">
-                            {{ item.hs_code|default_if_none:"" }}
-                        </td>
-                        <td class="small-text text-center">
-                            {{ item.cbm|default:0|floatformat:3 }}
-                        </td>
-                        <td class="small-text text-center">
-                            PCS
-                        </td>
-                        <td class="small-text text-center">
-                            <strong>{{ item.repeat_count|default:1 }}</strong>
-                        </td>
-                        <td class="small-text text-right empty-cell">
-                            {% if item.price_per_kg %}
-                                €{{ item.price_per_kg|floatformat:2 }}
-                            {% endif %}
-                        </td>
-                        <td class="small-text text-right">
-                            <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
-                        </td>
-                        <td class="small-text text-right">
-                            {{ item.weight|default:0|floatformat:2 }}
-                        </td>
-                        <td class="small-text text-right">
-                            {{ item.weight|default:0|floatformat:2 }}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="11" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
-                            No parcel breakdown available.
-                        </td>
-                    </tr>
-                {% endfor %}
-            {% endif %}
-        </table>
+                {% endif %}
+            </table>
+        </div>
 
         <table class="info-grid">
             <tr>
-                <td style="width: 50%;">
+                <td style="width: 33.33%;">
                     <div class="info-label">SALES TAX</div>
                     <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;"></div>
                 </td>
-                <td style="width: 50%;">
+                <td style="width: 33.33%;">
+                    <div class="info-label">PACKAGES</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;"></div>
+                </td>
+                <td style="width: 33.33%;">
                     <div class="info-label">TOTAL INVOICE VALUE</div>
                     <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
                         EUR {% if grand_total_value %}{{ grand_total_value|floatformat:2 }}{% else %}{{ pricing.total_price|floatformat:2 }}{% endif %}
