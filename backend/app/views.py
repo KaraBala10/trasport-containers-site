@@ -5285,6 +5285,94 @@ def download_packing_list_view(request, pk):
         )
 
 
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def generate_bulk_customs_documents_view(request):
+    """
+    Generate consolidated Packing List or Consolidated Export Invoice for multiple LCL shipments.
+    POST /api/customs-documents/bulk/
+    
+    Body:
+    {
+        "document_type": "packing_list" or "consolidated_export_invoice",
+        "shipment_ids": [1, 2, 3, ...],
+        "language": "en" (optional, default: "en")
+    }
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        document_type = request.data.get("document_type")
+        shipment_ids = request.data.get("shipment_ids", [])
+        language = request.data.get("language", "en")
+
+        if not document_type:
+            return Response(
+                {"success": False, "error": "document_type is required (packing_list or consolidated_export_invoice)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if document_type not in ["packing_list", "consolidated_export_invoice"]:
+            return Response(
+                {"success": False, "error": "document_type must be 'packing_list' or 'consolidated_export_invoice'"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not shipment_ids or not isinstance(shipment_ids, list):
+            return Response(
+                {"success": False, "error": "shipment_ids must be a non-empty list"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get shipments
+        shipments = LCLShipment.objects.filter(id__in=shipment_ids)
+
+        if not shipments.exists():
+            return Response(
+                {"success": False, "error": "No shipments found with provided IDs"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Validate all shipments are paid
+        unpaid_shipments = shipments.exclude(payment_status="paid")
+        if unpaid_shipments.exists():
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Some shipments are not paid. Shipment IDs: {list(unpaid_shipments.values_list('id', flat=True))}",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Convert to list for document generation
+        shipments_list = list(shipments)
+
+        # Generate document
+        from .document_service import (
+            generate_consolidated_export_invoice_bulk,
+            generate_consolidated_packing_list,
+        )
+
+        if document_type == "packing_list":
+            pdf_bytes = generate_consolidated_packing_list(shipments_list, language=language)
+            filename = f"Consolidated-Packing-List-{timezone.now().strftime('%Y%m%d')}.pdf"
+        else:  # consolidated_export_invoice
+            pdf_bytes = generate_consolidated_export_invoice_bulk(shipments_list, language=language)
+            filename = f"Consolidated-Export-Invoice-{timezone.now().strftime('%Y%m%d')}.pdf"
+
+        # Return PDF as response
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="{filename}"'
+        return response
+
+    except Exception as e:
+        logger.error(f"Error generating bulk customs documents: {str(e)}", exc_info=True)
+        return Response(
+            {"success": False, "error": f"An error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def download_receipt_view(request, pk):

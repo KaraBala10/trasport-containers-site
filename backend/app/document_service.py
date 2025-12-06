@@ -5,21 +5,23 @@ This module handles generation of PDF documents (invoices, packing lists, etc.)
 for LCL shipments.
 """
 
+import base64
+import io
 import logging
+import os
+import re
 from decimal import Decimal
 from typing import Dict, List, Optional
+
+import qrcode
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils import timezone
-from weasyprint import HTML, CSS
+from weasyprint import CSS, HTML
 from weasyprint.text.fonts import FontConfiguration
-import io
-import os
-import base64
-import re
-import qrcode
 
-from .models import LCLShipment, FCLQuote, Price, PackagingPrice, SyrianProvincePrice
+from .models import (FCLQuote, LCLShipment, PackagingPrice, Price,
+                     SyrianProvincePrice)
 
 logger = logging.getLogger(__name__)
 
@@ -593,6 +595,273 @@ def generate_packing_list(shipment: LCLShipment, language: str = 'en') -> bytes:
         raise
 
 
+def generate_consolidated_packing_list(shipments: List[LCLShipment], language: str = 'en') -> bytes:
+    """
+    Generate Consolidated Packing List for multiple LCL shipments.
+    Combines common information and shows different shipments as rows.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: kept for future use (currently template is EN)
+
+    Returns:
+        PDF bytes
+    """
+    try:
+        if not shipments:
+            raise ValueError("No shipments provided for consolidated packing list")
+
+        # Company info (for logo and site URL)
+        company_info = get_company_info()
+
+        # Aggregate data from all shipments
+        all_shipment_data = []
+        grand_total_cbm = 0.0
+        grand_total_packages = 0
+        grand_total_weight = 0.0
+        grand_total_value = 0.0
+
+        for shipment in shipments:
+            # Reuse invoice pricing calculations
+            pricing = calculate_invoice_totals(shipment)
+
+            # Calculate totals for this shipment
+            total_cbm = 0.0
+            total_packages = 0
+            total_weight = 0.0
+            total_value = 0.0
+
+            for item in pricing.get("parcel_calculations", []):
+                try:
+                    cbm_value = float(item.get("cbm", 0) or 0)
+                except (TypeError, ValueError):
+                    cbm_value = 0.0
+                total_cbm += cbm_value
+
+                try:
+                    weight_value = float(item.get("weight", 0) or 0)
+                except (TypeError, ValueError):
+                    weight_value = 0.0
+                repeat_count = int(item.get("repeat_count", 1) or 1)
+                total_weight += weight_value * repeat_count
+                total_packages += repeat_count
+
+                try:
+                    price_value = float(item.get("price_by_weight", 0) or 0)
+                except (TypeError, ValueError):
+                    price_value = 0.0
+                total_value += price_value
+
+            grand_total_cbm += total_cbm
+            grand_total_packages += total_packages
+            grand_total_weight += total_weight
+            grand_total_value += total_value
+
+            # Collect all parcel items for this shipment
+            shipment_items = []
+            for item in pricing.get("parcel_calculations", []):
+                shipment_items.append({
+                    "shipment_number": shipment.shipment_number or f"#{shipment.id}",
+                    "product_name_en": item.get("product_name_en", ""),
+                    "product_name_ar": item.get("product_name_ar", ""),
+                    "hs_code": item.get("hs_code", ""),
+                    "cbm": float(item.get("cbm", 0) or 0),
+                    "repeat_count": int(item.get("repeat_count", 1) or 1),
+                    "price_by_weight": float(item.get("price_by_weight", 0) or 0),
+                    "weight": float(item.get("weight", 0) or 0),
+                })
+
+            all_shipment_data.append({
+                "shipment": shipment,
+                "pricing": pricing,
+                "items": shipment_items,
+                "total_cbm": total_cbm,
+                "total_packages": total_packages,
+                "total_weight": total_weight,
+                "total_value": total_value,
+            })
+
+        # Get signature from first shipment (if available)
+        signature_base64 = None
+        if shipments[0].invoice_signature:
+            try:
+                signature_path = shipments[0].invoice_signature.path
+                if os.path.exists(signature_path):
+                    with open(signature_path, 'rb') as f:
+                        signature_data = f.read()
+                        signature_base64 = base64.b64encode(signature_data).decode('utf-8')
+            except Exception as e:
+                logger.warning(f"Could not read signature file: {str(e)}")
+
+        context = {
+            "shipments": shipments,
+            "shipment_data": all_shipment_data,
+            "company": company_info,
+            "language": language,
+            "invoice_date": timezone.now(),
+            "grand_total_cbm": grand_total_cbm,
+            "grand_total_packages": grand_total_packages,
+            "grand_total_weight": grand_total_weight,
+            "grand_total_value": grand_total_value,
+            "signature_base64": signature_base64,
+        }
+
+        html_string = render_to_string("documents/consolidated_packing_list.html", context)
+
+        font_config = FontConfiguration()
+        html = HTML(string=html_string, base_url=settings.BASE_DIR)
+        pdf_bytes = html.write_pdf(font_config=font_config)
+
+        logger.info(f"Successfully generated consolidated packing list PDF for {len(shipments)} shipments")
+        return pdf_bytes
+
+    except Exception as e:
+        logger.error(f"Error generating consolidated packing list: {str(e)}", exc_info=True)
+        raise
+
+
+def generate_consolidated_export_invoice_bulk(shipments: List[LCLShipment], language: str = 'en') -> bytes:
+    """
+    Generate Consolidated Export Invoice for multiple LCL shipments.
+    Combines common information and shows different shipments as rows.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: kept for future use (currently template is EN)
+
+    Returns:
+        PDF bytes
+    """
+    try:
+        if not shipments:
+            raise ValueError("No shipments provided for consolidated export invoice")
+
+        # Company info (for logo and site URL)
+        company_info = get_company_info()
+
+        # Aggregate data from all shipments
+        all_shipment_data = []
+        grand_total_cbm = 0.0
+        grand_total_packages = 0
+        grand_total_weight = 0.0
+        grand_total_value = 0.0
+        all_shipment_types = []
+
+        for shipment in shipments:
+            # Reuse invoice pricing calculations
+            pricing = calculate_invoice_totals(shipment)
+
+            # Calculate totals for this shipment
+            total_cbm = 0.0
+            total_packages = 0
+            total_weight = 0.0
+            total_value = 0.0
+            shipment_types = []
+
+            for item in pricing.get("parcel_calculations", []):
+                try:
+                    cbm_value = float(item.get("cbm", 0) or 0)
+                except (TypeError, ValueError):
+                    cbm_value = 0.0
+                total_cbm += cbm_value
+
+                try:
+                    weight_value = float(item.get("weight", 0) or 0)
+                except (TypeError, ValueError):
+                    weight_value = 0.0
+                repeat_count = int(item.get("repeat_count", 1) or 1)
+                total_weight += weight_value * repeat_count
+                total_packages += repeat_count
+
+                try:
+                    price_value = float(item.get("price_by_weight", 0) or 0)
+                except (TypeError, ValueError):
+                    price_value = 0.0
+                total_value += price_value
+
+            # Get shipment types from parcels
+            if shipment.parcels:
+                for parcel in shipment.parcels:
+                    if isinstance(parcel, dict):
+                        parcel_type = parcel.get("shipmentType") or parcel.get("shipment_type")
+                        if parcel_type:
+                            shipment_types.append(parcel_type)
+
+            all_shipment_types.extend(shipment_types)
+
+            grand_total_cbm += total_cbm
+            grand_total_packages += total_packages
+            grand_total_weight += total_weight
+            grand_total_value += total_value
+
+            # Collect all parcel items for this shipment
+            shipment_items = []
+            for item in pricing.get("parcel_calculations", []):
+                shipment_items.append({
+                    "shipment_number": shipment.shipment_number or f"#{shipment.id}",
+                    "product_name_en": item.get("product_name_en", ""),
+                    "product_name_ar": item.get("product_name_ar", ""),
+                    "hs_code": item.get("hs_code", ""),
+                    "cbm": float(item.get("cbm", 0) or 0),
+                    "repeat_count": int(item.get("repeat_count", 1) or 1),
+                    "price_by_weight": float(item.get("price_by_weight", 0) or 0),
+                    "weight": float(item.get("weight", 0) or 0),
+                })
+
+            # Determine shipment type
+            unique_types = list(set(shipment_types))
+            is_personal_only = len(unique_types) == 1 and unique_types[0] == "personal"
+            is_commercial_only = len(unique_types) == 1 and unique_types[0] == "commercial"
+            is_mixed = len(unique_types) > 1
+
+            all_shipment_data.append({
+                "shipment": shipment,
+                "pricing": pricing,
+                "items": shipment_items,
+                "total_cbm": total_cbm,
+                "total_packages": total_packages,
+                "total_weight": total_weight,
+                "total_value": total_value,
+                "is_personal_only": is_personal_only,
+                "is_commercial_only": is_commercial_only,
+                "is_mixed": is_mixed,
+            })
+
+        # Determine overall type
+        unique_all_types = list(set(all_shipment_types))
+        overall_is_personal_only = len(unique_all_types) == 1 and unique_all_types[0] == "personal"
+        overall_is_commercial_only = len(unique_all_types) == 1 and unique_all_types[0] == "commercial"
+        overall_is_mixed = len(unique_all_types) > 1
+
+        context = {
+            "shipments": shipments,
+            "shipment_data": all_shipment_data,
+            "company": company_info,
+            "language": language,
+            "invoice_date": timezone.now(),
+            "grand_total_cbm": grand_total_cbm,
+            "grand_total_packages": grand_total_packages,
+            "grand_total_weight": grand_total_weight,
+            "grand_total_value": grand_total_value,
+            "is_personal_only": overall_is_personal_only,
+            "is_commercial_only": overall_is_commercial_only,
+            "is_mixed": overall_is_mixed,
+        }
+
+        html_string = render_to_string("documents/consolidated_export_invoice_bulk.html", context)
+
+        font_config = FontConfiguration()
+        html = HTML(string=html_string, base_url=settings.BASE_DIR)
+        pdf_bytes = html.write_pdf(font_config=font_config)
+
+        logger.info(f"Successfully generated consolidated export invoice PDF for {len(shipments)} shipments")
+        return pdf_bytes
+
+    except Exception as e:
+        logger.error(f"Error generating consolidated export invoice bulk: {str(e)}", exc_info=True)
+        raise
+
+
 def generate_shipping_labels(shipment: LCLShipment, language: str = 'ar', num_labels: Optional[int] = None) -> bytes:
     """
     Generate shipping labels PDF for LCL shipment.
@@ -865,7 +1134,7 @@ def save_invoice_to_storage(shipment: LCLShipment, pdf_bytes: bytes) -> str:
     """
     try:
         from django.core.files.base import ContentFile
-        
+
         # Generate filename
         filename = f"Invoice-{shipment.shipment_number}.pdf"
         
@@ -1017,7 +1286,7 @@ def save_receipt_to_storage(shipment: LCLShipment, pdf_bytes: bytes) -> str:
     """
     try:
         from django.core.files.base import ContentFile
-        
+
         # Generate filename
         filename = f"Receipt-{shipment.shipment_number}.pdf"
         

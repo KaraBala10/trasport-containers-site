@@ -418,6 +418,16 @@ export const apiService = {
     });
   },
 
+  generateBulkCustomsDocuments: (data: {
+    document_type: 'packing_list' | 'consolidated_export_invoice';
+    shipment_ids: number[];
+    language?: string;
+  }) => {
+    return apiClient.post('/customs-documents/bulk/', data, {
+      responseType: 'blob',
+    });
+  },
+
   downloadReceipt: (shipmentId: string | number, language?: string) => {
     return apiClient.get(`/shipments/${shipmentId}/receipt/`, {
       responseType: 'blob',

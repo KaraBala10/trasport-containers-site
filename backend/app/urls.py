@@ -41,6 +41,7 @@ from .views import (
     download_invoice_view,
     download_packing_list_view,
     download_receipt_view,
+    generate_bulk_customs_documents_view,
     download_sendcloud_label_view,
     download_shipping_labels_view,
     get_packaging_prices_view,
@@ -168,6 +169,11 @@ urlpatterns = [
         "shipments/<int:pk>/packing-list/",
         download_packing_list_view,
         name="lcl_shipment_packing_list",
+    ),
+    path(
+        "customs-documents/bulk/",
+        generate_bulk_customs_documents_view,
+        name="bulk_customs_documents",
     ),
     path(
         "shipments/<int:pk>/receipt/",
