@@ -346,16 +346,35 @@
         /* Product table - ensure it fits */
         .product-table {
             font-size: 9px;
+            width: 100%;
+            table-layout: fixed;
         }
 
         .product-table th {
             padding: 10px 6px;
             font-size: 8px;
+            font-weight: 700;
+            word-wrap: break-word;
+            line-height: 1.3;
         }
 
         .product-table td {
             padding: 10px 6px;
             font-size: 9px;
+            min-height: 40px;
+            vertical-align: middle;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .product-table td.empty-cell {
+            min-height: 40px;
+            padding: 10px 6px;
+        }
+        
+        .product-table .description-cell {
+            font-size: 8px;
+            line-height: 1.4;
         }
 
         /* Large input fields for manual writing */
@@ -591,19 +610,19 @@
         <table class="light-border-table product-table">
             <tr>
                 {% if shipment_data %}
-                <th style="width: 8%;">Shipment No.</th>
+                <th style="width: 7%;">Shipment No.</th>
                 {% endif %}
-                <th style="width: {% if shipment_data %}8%{% else %}10%{% endif %};">Product Code</th>
-                <th style="width: {% if shipment_data %}18%{% else %}22%{% endif %};">Description</th>
-                <th style="width: 8%;" class="text-center">Made In Country of Origin</th>
+                <th style="width: {% if shipment_data %}7%{% else %}8%{% endif %};">Product Code</th>
+                <th style="width: {% if shipment_data %}20%{% else %}24%{% endif %};">Description</th>
+                <th style="width: 9%;" class="text-center">Made In Country of Origin</th>
                 <th style="width: 7%;" class="text-center">HS Code</th>
-                <th style="width: 7%;" class="text-center">CBM</th>
-                <th style="width: 6%;" class="text-center">Unit</th>
-                <th style="width: 7%;" class="text-center">Quantity</th>
-                <th style="width: 9%;" class="text-right">Unit Price (EUR)</th>
-                <th style="width: 9%;" class="text-right">Value (EUR)</th>
-                <th style="width: 9%;" class="text-right">Gross Weight (kg)</th>
-                <th style="width: 9%;" class="text-right">Nett Weight (kg)</th>
+                <th style="width: 6%;" class="text-center">CBM</th>
+                <th style="width: 5%;" class="text-center">Unit</th>
+                <th style="width: 6%;" class="text-center">Qty</th>
+                <th style="width: 8%;" class="text-right">Unit Price</th>
+                <th style="width: 8%;" class="text-right">Value</th>
+                <th style="width: 8%;" class="text-right">Gross Wt</th>
+                <th style="width: 8%;" class="text-right">Nett Wt</th>
             </tr>
             {% if shipment_data %}
                 {# Bulk mode: multiple shipments #}
@@ -616,13 +635,13 @@
                             <td class="small-text">
                                 {{ item.shipment_number|default:"" }}
                             </td>
-                            <td class="small-text">
+                            <td class="small-text description-cell">
                                 <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
                                 {% if item.product_name_ar %}
-                                    <br><span style="color: #6b7280; font-size: 9px;">{{ item.product_name_ar }}</span>
+                                    <br><span style="color: #6b7280; font-size: 8px;">{{ item.product_name_ar }}</span>
                                 {% endif %}
                             </td>
-                            <td class="small-text text-center"></td>
+                            <td class="small-text text-center empty-cell"></td>
                             <td class="small-text text-center">
                                 {{ item.hs_code|default_if_none:"" }}
                             </td>
@@ -635,7 +654,7 @@
                             <td class="small-text text-center">
                                 <strong>{{ item.repeat_count|default:1 }}</strong>
                             </td>
-                            <td class="small-text text-right"></td>
+                            <td class="small-text text-right empty-cell"></td>
                             <td class="small-text text-right">
                                 <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
                             </td>
@@ -654,27 +673,6 @@
                         </td>
                     </tr>
                 {% endfor %}
-                <tr class="totals-row">
-                    <td colspan="3" class="text-right"><strong>TOTAL</strong></td>
-                    <td class="text-center"></td>
-                    <td class="text-center"></td>
-                    <td class="text-center">
-                        <strong>{{ grand_total_cbm|floatformat:3 }} m³</strong>
-                    </td>
-                    <td colspan="2" class="text-center">
-                        <strong>{{ grand_total_packages }} PCS</strong>
-                    </td>
-                    <td class="text-right"></td>
-                    <td class="text-right">
-                        <strong>€{{ grand_total_value|floatformat:2 }}</strong>
-                    </td>
-                    <td class="text-right">
-                        <strong>{{ grand_total_weight|floatformat:2 }} kg</strong>
-                    </td>
-                    <td class="text-right">
-                        <strong>{{ grand_total_weight|floatformat:2 }} kg</strong>
-                    </td>
-                </tr>
             {% else %}
                 {# Single shipment mode #}
                 {% for item in pricing.parcel_calculations %}
@@ -682,13 +680,13 @@
                         <td class="small-text">
                             {{ shipment.shipment_number|default_if_none:"" }}
                         </td>
-                        <td class="small-text">
+                        <td class="small-text description-cell">
                             <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
                             {% if item.product_name_ar %}
-                                <br><span style="color: #6b7280; font-size: 9px;">{{ item.product_name_ar }}</span>
+                                <br><span style="color: #6b7280; font-size: 8px;">{{ item.product_name_ar }}</span>
                             {% endif %}
                         </td>
-                        <td class="small-text text-center"></td>
+                        <td class="small-text text-center empty-cell"></td>
                         <td class="small-text text-center">
                             {{ item.hs_code|default_if_none:"" }}
                         </td>
@@ -701,7 +699,7 @@
                         <td class="small-text text-center">
                             <strong>{{ item.repeat_count|default:1 }}</strong>
                         </td>
-                        <td class="small-text text-right">
+                        <td class="small-text text-right empty-cell">
                             {% if item.price_per_kg %}
                                 €{{ item.price_per_kg|floatformat:2 }}
                             {% endif %}
@@ -723,27 +721,6 @@
                         </td>
                     </tr>
                 {% endfor %}
-                <tr class="totals-row">
-                    <td colspan="2" class="text-right"><strong>TOTAL</strong></td>
-                    <td class="text-center"></td>
-                    <td class="text-center"></td>
-                    <td class="text-center">
-                        <strong>{{ total_cbm|floatformat:3 }} m³</strong>
-                    </td>
-                    <td colspan="2" class="text-center">
-                        <strong>{{ total_packages }} PCS</strong>
-                    </td>
-                    <td class="text-right"></td>
-                    <td class="text-right">
-                        <strong>€{{ pricing.total_price|floatformat:2 }}</strong>
-                    </td>
-                    <td class="text-right">
-                        <strong>{{ total_weight|floatformat:2 }} kg</strong>
-                    </td>
-                    <td class="text-right">
-                        <strong>{{ total_weight|floatformat:2 }} kg</strong>
-                    </td>
-                </tr>
             {% endif %}
         </table>
 
@@ -751,9 +728,7 @@
             <tr>
                 <td style="width: 50%;">
                     <div class="info-label">SALES TAX</div>
-                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
-                        {% if is_personal_only %}0.00{% else %}—{% endif %} %
-                    </div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;"></div>
                 </td>
                 <td style="width: 50%;">
                     <div class="info-label">TOTAL INVOICE VALUE</div>
