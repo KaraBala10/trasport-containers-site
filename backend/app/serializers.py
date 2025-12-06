@@ -602,15 +602,30 @@ class LCLShipmentSerializer(serializers.ModelSerializer):
                     f"{field} already in validated_data: {repr(validated_data[field])}"
                 )
 
+        # Set default shipment_type if not provided (from step 1 selector)
+        if "shipment_type" not in validated_data or not validated_data.get(
+            "shipment_type"
+        ):
+            # Default to personal if not specified (should be set from step 1)
+            validated_data["shipment_type"] = "personal"
+
         # Log parcels data before saving
         if "parcels" in validated_data:
             parcels_data = validated_data["parcels"]
-            logger.info(f"Creating shipment with {len(parcels_data) if isinstance(parcels_data, list) else 'unknown'} parcels")
+            logger.info(
+                f"Creating shipment with {len(parcels_data) if isinstance(parcels_data, list) else 'unknown'} parcels"
+            )
             if isinstance(parcels_data, list) and len(parcels_data) > 0:
                 first_parcel = parcels_data[0]
-                logger.info(f"First parcel has photo_urls: {first_parcel.get('photo_urls', [])}")
-                logger.info(f"First parcel has device_photo_url: {first_parcel.get('device_photo_url')}")
-                logger.info(f"First parcel has electronics_picture_url: {first_parcel.get('electronics_picture_url')}")
+                logger.info(
+                    f"First parcel has photo_urls: {first_parcel.get('photo_urls', [])}"
+                )
+                logger.info(
+                    f"First parcel has device_photo_url: {first_parcel.get('device_photo_url')}"
+                )
+                logger.info(
+                    f"First parcel has electronics_picture_url: {first_parcel.get('electronics_picture_url')}"
+                )
 
         # Create the shipment
         shipment = super().create(validated_data)
@@ -620,15 +635,21 @@ class LCLShipmentSerializer(serializers.ModelSerializer):
         for field in eu_pickup_fields:
             value = getattr(shipment, field, None)
             logger.info(f"  {field}: {value}")
-        
+
         # Log saved parcels
         if shipment.parcels:
             logger.info(f"Saved parcels count: {len(shipment.parcels)}")
             if len(shipment.parcels) > 0:
                 first_saved_parcel = shipment.parcels[0]
-                logger.info(f"First saved parcel has photo_urls: {first_saved_parcel.get('photo_urls', [])}")
-                logger.info(f"First saved parcel has device_photo_url: {first_saved_parcel.get('device_photo_url')}")
-                logger.info(f"First saved parcel has electronics_picture_url: {first_saved_parcel.get('electronics_picture_url')}")
+                logger.info(
+                    f"First saved parcel has photo_urls: {first_saved_parcel.get('photo_urls', [])}"
+                )
+                logger.info(
+                    f"First saved parcel has device_photo_url: {first_saved_parcel.get('device_photo_url')}"
+                )
+                logger.info(
+                    f"First saved parcel has electronics_picture_url: {first_saved_parcel.get('electronics_picture_url')}"
+                )
 
         return shipment
 
@@ -656,6 +677,7 @@ class LCLShipmentSerializer(serializers.ModelSerializer):
             "receiver_postal_code",
             "receiver_country",
             "parcels",
+            "shipment_type",
             "eu_pickup_name",
             "eu_pickup_company_name",
             "eu_pickup_address",

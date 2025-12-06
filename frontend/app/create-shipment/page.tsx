@@ -44,6 +44,7 @@ export default function CreateShipmentPage() {
   const [recaptchaToken, setRecaptchaToken] = useState<string>("");
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [direction, setDirection] = useState<ShippingDirection | null>(null);
+  const [shipmentType, setShipmentType] = useState<"personal" | "commercial">("personal");
   const [sender, setSender] = useState<PersonInfo | null>(null);
   const [receiver, setReceiver] = useState<PersonInfo | null>(null);
   const [parcels, setParcels] = useState<Parcel[]>([]);
@@ -681,6 +682,9 @@ export default function CreateShipmentPage() {
       const senderCountry =
         direction === "sy-eu" ? "Syria" : sender.country || "";
 
+      // Use shipment type selected in step 1
+      const calculatedShipmentType: "personal" | "commercial" = shipmentType || "personal";
+
       const shipmentData = {
         direction: direction,
         sender_name: sender.fullName,
@@ -701,6 +705,7 @@ export default function CreateShipmentPage() {
         receiver_postal_code: receiver.postalCode || "",
         receiver_country: receiverCountry,
         parcels: parcels,
+        shipment_type: calculatedShipmentType,
         eu_pickup_name: euPickupName,
         eu_pickup_company_name: euPickupCompanyName,
         eu_pickup_address: euPickupAddress,
@@ -905,6 +910,10 @@ export default function CreateShipmentPage() {
                 direction={direction}
                 onDirectionChange={(dir) => {
                   setDirection(dir);
+                }}
+                shipmentType={shipmentType}
+                onShipmentTypeChange={(type) => {
+                  setShipmentType(type);
                 }}
                 language={language}
               />
@@ -1816,7 +1825,7 @@ export default function CreateShipmentPage() {
                             productCategory: parcel.productCategory,
                             quantity: parcel.quantity,
                             repeatCount: parcel.repeatCount,
-                            shipmentType: parcel.shipmentType,
+                            // shipmentType removed - using shipment_type from step 1 instead
                           };
 
                           // Add optional fields

@@ -6,12 +6,16 @@ import { ShippingDirection } from "@/types/shipment";
 interface Step1DirectionProps {
   direction: ShippingDirection | null;
   onDirectionChange: (direction: ShippingDirection) => void;
+  shipmentType: "personal" | "commercial";
+  onShipmentTypeChange: (type: "personal" | "commercial") => void;
   language: "ar" | "en";
 }
 
 export default function Step1Direction({
   direction,
   onDirectionChange,
+  shipmentType,
+  onShipmentTypeChange,
   language,
 }: Step1DirectionProps) {
   const translations = {
@@ -26,6 +30,9 @@ export default function Step1Direction({
         description:
           "تجميع من المحافظات، الشرق الأوسط، الشحن إلى Bergen op Zoom (هولندا)، ثم إلى أوروبا",
       },
+      shipmentType: "نوع الشحنة",
+      personal: "شخصية",
+      commercial: "تجارية",
       continue: "متابعة",
     },
     en: {
@@ -39,6 +46,9 @@ export default function Step1Direction({
         description:
           "Collection from Provinces, Middle East, shipping to Bergen op Zoom (Netherlands), then to Europe",
       },
+      shipmentType: "Shipment Type",
+      personal: "Personal",
+      commercial: "Commercial",
       continue: "Continue",
     },
   };
@@ -75,6 +85,98 @@ export default function Step1Direction({
       animate="visible"
       className="space-y-8"
     >
+      {/* Shipment Type Selector */}
+      <motion.div
+        variants={cardVariants}
+        className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-lg"
+      >
+        <label className="block text-lg font-semibold text-gray-800 mb-4">
+          {t.shipmentType} *
+        </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            onClick={() => onShipmentTypeChange("personal")}
+            className={`
+              p-4 rounded-xl border-2 transition-all duration-300
+              ${
+                shipmentType === "personal"
+                  ? "border-primary-yellow bg-primary-yellow/10 shadow-lg"
+                  : "border-gray-200 bg-white hover:border-primary-dark/30"
+              }
+            `}
+          >
+            <div className="flex items-center justify-between">
+              <span
+                className={`font-medium ${
+                  shipmentType === "personal"
+                    ? "text-primary-dark"
+                    : "text-gray-700"
+                }`}
+              >
+                {t.personal}
+              </span>
+              {shipmentType === "personal" && (
+                <motion.svg
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="w-5 h-5 text-primary-yellow"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </motion.svg>
+              )}
+            </div>
+          </button>
+          <button
+            onClick={() => onShipmentTypeChange("commercial")}
+            className={`
+              p-4 rounded-xl border-2 transition-all duration-300
+              ${
+                shipmentType === "commercial"
+                  ? "border-primary-yellow bg-primary-yellow/10 shadow-lg"
+                  : "border-gray-200 bg-white hover:border-primary-dark/30"
+              }
+            `}
+          >
+            <div className="flex items-center justify-between">
+              <span
+                className={`font-medium ${
+                  shipmentType === "commercial"
+                    ? "text-primary-dark"
+                    : "text-gray-700"
+                }`}
+              >
+                {t.commercial}
+              </span>
+              {shipmentType === "commercial" && (
+                <motion.svg
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="w-5 h-5 text-primary-yellow"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </motion.svg>
+              )}
+            </div>
+          </button>
+        </div>
+      </motion.div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* EU → SY Option */}
         <motion.button

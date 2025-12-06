@@ -454,7 +454,6 @@ export default function Step4ParcelDetails({
       electronicsPicture: undefined,
       wantsInsurance: true, // Force insurance
       declaredShipmentValue: 0,
-      shipmentType: "personal",
     };
     onParcelsChange([...parcels, newElectronics]);
   };
@@ -473,7 +472,6 @@ export default function Step4ParcelDetails({
       photos: [],
       wantsInsurance: false as boolean,
       declaredShipmentValue: 0 as number,
-      shipmentType: "personal",
     };
     onParcelsChange([...parcels, newParcel]);
   };
@@ -1225,27 +1223,6 @@ export default function Step4ParcelDetails({
                 </p>
               </div>
 
-              {/* Shipment Type */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t.shipmentType} *
-                </label>
-                <select
-                  value={parcel.shipmentType || "personal"}
-                  onChange={(e) =>
-                    updateParcel(
-                      parcel.id,
-                      "shipmentType",
-                      e.target.value as "personal" | "commercial"
-                    )
-                  }
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-primary-yellow focus:border-primary-yellow bg-white"
-                  required
-                >
-                  <option value="personal">{t.personal}</option>
-                  <option value="commercial">{t.commercial}</option>
-                </select>
-              </div>
 
               {/* Electronics Specific Fields */}
               {parcel.isElectronicsShipment && (

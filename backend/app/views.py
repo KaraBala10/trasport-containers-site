@@ -1016,7 +1016,12 @@ def update_fcl_quote_status_view(request, pk):
                             },
                             status=status.HTTP_400_BAD_REQUEST,
                         )
-                    if quote.total_price and amount_paid_decimal > quote.total_price:
+                    # Allow small tolerance (0.01) for floating point precision errors
+                    tolerance = 0.01
+                    if (
+                        quote.total_price
+                        and amount_paid_decimal > quote.total_price + tolerance
+                    ):
                         return Response(
                             {
                                 "success": False,
@@ -1024,6 +1029,9 @@ def update_fcl_quote_status_view(request, pk):
                             },
                             status=status.HTTP_400_BAD_REQUEST,
                         )
+                    # Cap amount_paid to total_price if it's slightly over due to rounding
+                    if quote.total_price and amount_paid_decimal > quote.total_price:
+                        amount_paid_decimal = float(quote.total_price)
                     quote.amount_paid = amount_paid_decimal
                 except (ValueError, TypeError):
                     return Response(
@@ -4444,6 +4452,11 @@ def update_lcl_shipment_status_view(request, pk):
         amount_paid = request.data.get("amount_paid")
         tracking_number = request.data.get("tracking_number")
 
+        # Log received data for debugging
+        logger.info(
+            f"📥 Received data: status={new_status}, amount_paid={amount_paid} (type: {type(amount_paid)}), tracking_number={tracking_number}"
+        )
+
         # Store old status for email notification (before any updates)
         old_status = shipment.status
         old_payment_status = shipment.payment_status
@@ -4499,7 +4512,47 @@ def update_lcl_shipment_status_view(request, pk):
         # Update amount_paid if provided
         if amount_paid is not None:
             try:
-                amount_paid_decimal = float(amount_paid)
+                # Log the raw value before processing
+                logger.info(
+                    f"🔍 Processing amount_paid: {repr(amount_paid)} (type: {type(amount_paid).__name__})"
+                )
+
+                # Handle different input types (string, int, float, Decimal)
+                from decimal import Decimal
+
+                if isinstance(amount_paid, Decimal):
+                    amount_paid_decimal = float(amount_paid)
+                elif isinstance(amount_paid, str):
+                    # Remove any whitespace and try to convert
+                    amount_paid_clean = amount_paid.strip()
+                    if not amount_paid_clean or amount_paid_clean.lower() in [
+                        "null",
+                        "none",
+                        "",
+                    ]:
+                        raise ValueError(
+                            f"Empty or invalid string value: '{amount_paid}'"
+                        )
+                    try:
+                        amount_paid_decimal = float(amount_paid_clean)
+                    except ValueError as ve:
+                        logger.error(
+                            f"❌ Failed to convert string '{amount_paid_clean}' to float: {str(ve)}"
+                        )
+                        raise ValueError(
+                            f"Cannot convert '{amount_paid_clean}' to number: {str(ve)}"
+                        )
+                elif isinstance(amount_paid, (int, float)):
+                    amount_paid_decimal = float(amount_paid)
+                else:
+                    raise ValueError(f"Unsupported type: {type(amount_paid)}")
+
+                # Check for NaN or Infinity
+                import math
+
+                if math.isnan(amount_paid_decimal) or math.isinf(amount_paid_decimal):
+                    raise ValueError("Invalid numeric value (NaN or Infinity)")
+
                 if amount_paid_decimal < 0:
                     return Response(
                         {
@@ -4508,20 +4561,44 @@ def update_lcl_shipment_status_view(request, pk):
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                if shipment.total_price and amount_paid_decimal > shipment.total_price:
+                # Allow small tolerance (0.01) for floating point precision errors
+                tolerance = 0.01
+                # Convert total_price to float for comparison (it might be Decimal)
+                total_price_float = (
+                    float(shipment.total_price) if shipment.total_price else None
+                )
+                if (
+                    total_price_float
+                    and amount_paid_decimal > total_price_float + tolerance
+                ):
                     return Response(
                         {
                             "success": False,
-                            "error": "Amount paid cannot be greater than total price.",
+                            "error": f"Amount paid ({amount_paid_decimal}) cannot be greater than total price ({total_price_float}).",
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+                # Cap amount_paid to total_price if it's slightly over due to rounding
+                if total_price_float and amount_paid_decimal > total_price_float:
+                    amount_paid_decimal = total_price_float
+                    logger.info(
+                        f"⚠️ Capped amount_paid to total_price: {amount_paid_decimal}"
+                    )
                 shipment.amount_paid = amount_paid_decimal
-            except (ValueError, TypeError):
+                logger.info(
+                    f"✅ Updated amount_paid to {amount_paid_decimal} for shipment {shipment.id}"
+                )
+            except (ValueError, TypeError) as e:
+                import traceback
+
+                logger.error(
+                    f"❌ Error converting amount_paid: {repr(amount_paid)} (type: {type(amount_paid)}), error: {str(e)}"
+                )
+                logger.error(f"❌ Traceback: {traceback.format_exc()}")
                 return Response(
                     {
                         "success": False,
-                        "error": "Invalid amount_paid value.",
+                        "error": f"Invalid amount_paid value: {repr(amount_paid)}. Please provide a valid number. Error: {str(e)}",
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -5291,7 +5368,7 @@ def generate_bulk_customs_documents_view(request):
     """
     Generate consolidated Packing List or Consolidated Export Invoice for multiple LCL shipments.
     POST /api/customs-documents/bulk/
-    
+
     Body:
     {
         "document_type": "packing_list" or "consolidated_export_invoice",
@@ -5308,13 +5385,19 @@ def generate_bulk_customs_documents_view(request):
 
         if not document_type:
             return Response(
-                {"success": False, "error": "document_type is required (packing_list or consolidated_export_invoice)"},
+                {
+                    "success": False,
+                    "error": "document_type is required (packing_list or consolidated_export_invoice)",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if document_type not in ["packing_list", "consolidated_export_invoice"]:
             return Response(
-                {"success": False, "error": "document_type must be 'packing_list' or 'consolidated_export_invoice'"},
+                {
+                    "success": False,
+                    "error": "document_type must be 'packing_list' or 'consolidated_export_invoice'",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -5354,11 +5437,19 @@ def generate_bulk_customs_documents_view(request):
         )
 
         if document_type == "packing_list":
-            pdf_bytes = generate_consolidated_packing_list(shipments_list, language=language)
-            filename = f"Consolidated-Packing-List-{timezone.now().strftime('%Y%m%d')}.pdf"
+            pdf_bytes = generate_consolidated_packing_list(
+                shipments_list, language=language
+            )
+            filename = (
+                f"Consolidated-Packing-List-{timezone.now().strftime('%Y%m%d')}.pdf"
+            )
         else:  # consolidated_export_invoice
-            pdf_bytes = generate_consolidated_export_invoice_bulk(shipments_list, language=language)
-            filename = f"Consolidated-Export-Invoice-{timezone.now().strftime('%Y%m%d')}.pdf"
+            pdf_bytes = generate_consolidated_export_invoice_bulk(
+                shipments_list, language=language
+            )
+            filename = (
+                f"Consolidated-Export-Invoice-{timezone.now().strftime('%Y%m%d')}.pdf"
+            )
 
         # Return PDF as response
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
@@ -5366,7 +5457,9 @@ def generate_bulk_customs_documents_view(request):
         return response
 
     except Exception as e:
-        logger.error(f"Error generating bulk customs documents: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error generating bulk customs documents: {str(e)}", exc_info=True
+        )
         return Response(
             {"success": False, "error": f"An error occurred: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,

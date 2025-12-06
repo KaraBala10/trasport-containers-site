@@ -19,6 +19,8 @@ interface LCLShipment {
   sender_name: string;
   receiver_name: string;
   total_price: number;
+  shipment_type?: "personal" | "commercial" | null;
+  parcels?: any[];
   created_at: string;
 }
 
@@ -50,6 +52,7 @@ export default function CustomsDocumentsPage() {
         shipmentNumber: "رقم الشحنة",
         status: "الحالة",
         direction: "الاتجاه",
+        shipmentType: "نوع الشحنة",
         sender: "المرسل",
         receiver: "المستلم",
         totalPrice: "السعر الإجمالي",
@@ -70,6 +73,7 @@ export default function CustomsDocumentsPage() {
         shipmentNumber: "Shipment Number",
         status: "Status",
         direction: "Direction",
+        shipmentType: "Shipment Type",
         sender: "Sender",
         receiver: "Receiver",
         totalPrice: "Total Price",
@@ -331,6 +335,9 @@ export default function CustomsDocumentsPage() {
                         {t.direction}
                       </th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                        {t.shipmentType}
+                      </th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">
                         {t.sender}
                       </th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">
@@ -373,6 +380,29 @@ export default function CustomsDocumentsPage() {
                             : language === "ar"
                             ? "سوريا → أوروبا"
                             : "SY → EU"}
+                        </td>
+                        <td className="py-3 px-4">
+                          {shipment.shipment_type ? (
+                            <span
+                              className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                shipment.shipment_type === "personal"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-purple-100 text-purple-800"
+                              }`}
+                            >
+                              {shipment.shipment_type === "personal"
+                                ? language === "ar"
+                                  ? "شخصية"
+                                  : "Personal"
+                                : language === "ar"
+                                ? "تجارية"
+                                : "Commercial"}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-xs">
+                              {language === "ar" ? "غير محدد" : "N/A"}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-gray-700">
                           {shipment.sender_name}

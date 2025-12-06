@@ -761,6 +761,11 @@ class LCLShipment(models.Model):
         ("sy-eu", "Syria to Europe"),
     ]
 
+    SHIPMENT_TYPE_CHOICES = [
+        ("personal", "Personal"),
+        ("commercial", "Commercial"),
+    ]
+
     PAYMENT_METHOD_CHOICES = [
         ("stripe", "Stripe"),
         ("cash", "Cash"),
@@ -779,6 +784,15 @@ class LCLShipment(models.Model):
 
     # Direction
     direction = models.CharField(max_length=10, choices=DIRECTION_CHOICES)
+
+    # Shipment Type
+    shipment_type = models.CharField(
+        max_length=20,
+        choices=SHIPMENT_TYPE_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Type of shipment: personal, commercial, or mixed",
+    )
 
     # Sender Information
     sender_name = models.CharField(max_length=255)
@@ -802,15 +816,25 @@ class LCLShipment(models.Model):
     parcels = models.JSONField(default=list, help_text="List of parcel objects")
 
     # EU Pickup (for eu-sy direction) - Sendcloud Parcel Form Fields
-    eu_pickup_name = models.CharField(max_length=255, blank=True, help_text="Name for Sendcloud parcel")
-    eu_pickup_company_name = models.CharField(max_length=255, blank=True, help_text="Company name for Sendcloud parcel")
+    eu_pickup_name = models.CharField(
+        max_length=255, blank=True, help_text="Name for Sendcloud parcel"
+    )
+    eu_pickup_company_name = models.CharField(
+        max_length=255, blank=True, help_text="Company name for Sendcloud parcel"
+    )
     eu_pickup_address = models.TextField(blank=True)
-    eu_pickup_house_number = models.CharField(max_length=50, blank=True, help_text="House number for Sendcloud parcel")
+    eu_pickup_house_number = models.CharField(
+        max_length=50, blank=True, help_text="House number for Sendcloud parcel"
+    )
     eu_pickup_city = models.CharField(max_length=255, blank=True)
     eu_pickup_postal_code = models.CharField(max_length=50, blank=True)
     eu_pickup_country = models.CharField(max_length=100, blank=True)
-    eu_pickup_email = models.EmailField(blank=True, help_text="Email for Sendcloud parcel")
-    eu_pickup_telephone = models.CharField(max_length=50, blank=True, help_text="Telephone for Sendcloud parcel")
+    eu_pickup_email = models.EmailField(
+        blank=True, help_text="Email for Sendcloud parcel"
+    )
+    eu_pickup_telephone = models.CharField(
+        max_length=50, blank=True, help_text="Telephone for Sendcloud parcel"
+    )
     eu_pickup_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     selected_eu_shipping_method = models.IntegerField(null=True, blank=True)
     selected_eu_shipping_name = models.CharField(max_length=255, blank=True)
@@ -841,16 +865,40 @@ class LCLShipment(models.Model):
     # Tracking
     tracking_number = models.CharField(max_length=255, blank=True, default="")
     sendcloud_id = models.IntegerField(null=True, blank=True)
-    sendcloud_label_url = models.URLField(max_length=500, blank=True, null=True, help_text="URL to download shipping label from Sendcloud")
+    sendcloud_label_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="URL to download shipping label from Sendcloud",
+    )
 
     # Invoice
-    invoice_file = models.FileField(upload_to="invoices/", blank=True, null=True, help_text="Generated invoice PDF file")
-    invoice_generated_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when invoice was generated")
-    invoice_signature = models.ImageField(upload_to="invoice_signatures/", blank=True, null=True, help_text="Electronic signature for invoice")
-    
+    invoice_file = models.FileField(
+        upload_to="invoices/",
+        blank=True,
+        null=True,
+        help_text="Generated invoice PDF file",
+    )
+    invoice_generated_at = models.DateTimeField(
+        null=True, blank=True, help_text="Timestamp when invoice was generated"
+    )
+    invoice_signature = models.ImageField(
+        upload_to="invoice_signatures/",
+        blank=True,
+        null=True,
+        help_text="Electronic signature for invoice",
+    )
+
     # Receipt
-    receipt_file = models.FileField(upload_to="receipts/", blank=True, null=True, help_text="Generated receipt PDF file")
-    receipt_generated_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when receipt was generated")
+    receipt_file = models.FileField(
+        upload_to="receipts/",
+        blank=True,
+        null=True,
+        help_text="Generated receipt PDF file",
+    )
+    receipt_generated_at = models.DateTimeField(
+        null=True, blank=True, help_text="Timestamp when receipt was generated"
+    )
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -869,6 +917,41 @@ class LCLShipment(models.Model):
 
     def __str__(self):
         return f"LCL Shipment #{self.id} - {self.shipment_number or 'N/A'} - {self.get_status_display()}"
+
+    def get_shipment_type(self):
+        """
+        Determine shipment type based on parcels.
+        Returns: 'personal' or 'commercial'
+        """
+        if not self.parcels or len(self.parcels) == 0:
+            return None
+
+        shipment_types = []
+
+        for parcel in self.parcels:
+            if not isinstance(parcel, dict):
+                continue
+
+            # Try multiple possible field names (camelCase, snake_case, lowercase)
+            parcel_type = (
+                parcel.get("shipmentType")
+                or parcel.get("shipment_type")
+                or parcel.get("shipmenttype")
+            )
+
+            # Normalize the value (handle case variations)
+            if parcel_type:
+                parcel_type = parcel_type.lower().strip()
+                if parcel_type in ["personal", "commercial"]:
+                    shipment_types.append(parcel_type)
+
+        # If no parcels have shipmentType, return None (old shipments)
+        if not shipment_types:
+            return None
+
+        # Return the first type found (or most common if needed)
+        unique_types = list(set(shipment_types))
+        return unique_types[0] if unique_types else None  # 'personal' or 'commercial'
 
     def save(self, *args, **kwargs):
         if not self.shipment_number:
