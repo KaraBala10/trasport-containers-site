@@ -848,7 +848,7 @@ def generate_consolidated_export_invoice_bulk(shipments: List[LCLShipment], lang
             "is_mixed": overall_is_mixed,
         }
 
-        html_string = render_to_string("documents/consolidated_export_invoice_bulk.html", context)
+        html_string = render_to_string("documents/consolidated_export_invoice.html", context)
 
         font_config = FontConfiguration()
         html = HTML(string=html_string, base_url=settings.BASE_DIR)

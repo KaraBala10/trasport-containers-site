@@ -11,6 +11,8 @@
 
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
@@ -18,124 +20,209 @@
             font-size: 13px;
             line-height: 1.6;
             color: #111827;
+            background: #ffffff;
         }
 
         .page {
             width: 100%;
+            page-break-inside: avoid;
+        }
+
+        .page-break {
+            page-break-before: always;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
-            gap: 16px;
-            border-bottom: 2px solid #111827;
-            padding-bottom: 8px;
-            margin-bottom: 8px;
+            align-items: flex-start;
+            gap: 20px;
+            border-bottom: 3px solid #111827;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
         }
 
         .logo-title {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 8px;
+            flex: 1;
         }
 
         .logo {
-            max-width: 150px;
-            max-height: 60px;
-            margin-bottom: 4px;
+            max-width: 180px;
+            max-height: 70px;
+            margin-bottom: 8px;
+            object-fit: contain;
         }
 
         .brand-line {
-            font-weight: 700;
-            font-size: 15px;
+            font-weight: 800;
+            font-size: 18px;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
+            color: #111827;
+            line-height: 1.2;
+        }
+
+        .shipper-block {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .shipper-title {
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #374151;
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        .shipper-details {
+            font-size: 11px;
+            color: #4b5563;
+            line-height: 1.7;
+            font-weight: 500;
         }
 
         .barcode-container {
             text-align: right;
-            font-size: 11px;
+            min-width: 180px;
         }
 
         .barcode-container img {
-            max-width: 150px;
+            max-width: 180px;
             height: auto;
-            max-height: 40px;
+            max-height: 50px;
+            border: 2px solid #111827;
+            padding: 4px;
+            background: white;
+            border-radius: 4px;
+        }
+
+        .barcode-label {
+            font-size: 10px;
+            color: #374151;
+            font-weight: 600;
+            margin-top: 6px;
+            text-align: center;
         }
 
         .section-title {
             font-weight: 700;
-            font-size: 13px;
+            font-size: 14px;
             text-transform: uppercase;
-            margin-top: 6px;
-            margin-bottom: 2px;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            color: #111827;
+            letter-spacing: 0.05em;
         }
 
         .muted {
             color: #6b7280;
         }
 
-        .shipper-block {
-            margin-top: 4px;
-            font-size: 12px;
-        }
-
         .info-grid {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 8px;
-            margin-bottom: 8px;
+            margin-top: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .info-grid td {
             border: 1px solid #d1d5db;
-            padding: 8px 10px;
+            padding: 12px 10px;
             vertical-align: top;
+            background: #ffffff;
         }
 
         .info-label {
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
             color: #6b7280;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
         }
 
         .info-value {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
-            min-height: 20px;
-            line-height: 1.5;
-            padding: 2px 0;
+            min-height: 30px;
+            line-height: 1.6;
+            padding: 6px 0;
+            color: #111827;
+        }
+
+        .info-value.empty {
+            color: #9ca3af;
+            font-style: italic;
+            font-weight: 400;
         }
 
         .invoice-title-row {
             text-align: center;
-            margin-top: 4px;
-            margin-bottom: 8px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+            border: 2px solid #111827;
+            border-radius: 6px;
         }
 
         .invoice-main-title {
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 900;
             text-transform: uppercase;
+            color: #111827;
+            letter-spacing: 0.05em;
+            line-height: 1.3;
         }
 
         .light-border-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 4px;
-            margin-bottom: 8px;
-            font-size: 11px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            font-size: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            page-break-inside: avoid;
         }
 
         .light-border-table th,
         .light-border-table td {
             border: 1px solid #d1d5db;
-            padding: 8px 10px;
+            padding: 10px 8px;
+            text-align: left;
         }
 
         .light-border-table th {
-            background-color: #f3f4f6;
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
             font-weight: 700;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.05em;
+            padding: 12px 8px;
+        }
+
+        .light-border-table td {
+            background: #ffffff;
+            font-size: 10px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .light-border-table tr:nth-child(even) td {
+            background: #f9fafb;
+        }
+
+        .light-border-table tr:hover td {
+            background: #f3f4f6;
         }
 
         .text-right {
@@ -147,18 +234,143 @@
         }
 
         .totals-row td {
-            font-weight: 700;
-        }
-
-        .small-text {
+            font-weight: 800;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+            color: #92400e;
+            border-top: 2px solid #f59e0b;
+            padding: 12px 8px;
             font-size: 11px;
         }
 
-        .footer-notes {
-            margin-top: 10px;
+        .small-text {
             font-size: 10px;
+        }
+
+        .footer-notes {
+            margin-top: 15px;
+            font-size: 10px;
+            line-height: 1.7;
+            color: #4b5563;
+            page-break-inside: avoid;
+        }
+
+        .footer-notes strong {
+            font-size: 11px;
+            color: #111827;
+            font-weight: 700;
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .warning-box {
+            margin: 12px 0;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+        }
+
+        .warning-box .small-text {
+            font-weight: 700;
+            color: #92400e;
             line-height: 1.6;
-            color: #374151;
+        }
+
+        /* Shipping details grid - split into 2 rows to prevent overflow */
+        .shipping-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .shipping-details-box {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 12px;
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        }
+
+        .shipping-details-box .info-label {
+            font-size: 9px;
+            margin-bottom: 8px;
+        }
+
+        .shipping-details-box .info-value {
+            font-size: 12px;
+            min-height: 35px;
+            padding: 8px 0;
+        }
+
+        /* Address grid for consignee info */
+        .address-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .address-box {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        }
+
+        .address-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+        }
+
+        .address-value {
+            font-size: 12px;
+            font-weight: 600;
+            color: #111827;
+            min-height: 50px;
+            line-height: 1.7;
+            padding: 8px 0;
+        }
+
+        .address-value.empty {
+            color: #9ca3af;
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        /* Product table - ensure it fits */
+        .product-table {
+            font-size: 9px;
+        }
+
+        .product-table th {
+            padding: 10px 6px;
+            font-size: 8px;
+        }
+
+        .product-table td {
+            padding: 10px 6px;
+            font-size: 9px;
+        }
+
+        /* Large input fields for manual writing */
+        .large-field {
+            min-height: 40px;
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: #ffffff;
+        }
+
+        .large-field.empty {
+            background: #f9fafb;
+            color: #9ca3af;
         }
     </style>
 </head>
@@ -173,8 +385,8 @@
                     medo-freight.eu Ship. Route. Deliver
                 </div>
                 <div class="shipper-block">
-                    <div class="section-title">Shipper Address</div>
-                    <div class="small-text">
+                    <div class="shipper-title">Shipper Address</div>
+                    <div class="shipper-details">
                         Titanlaan 1, 4624 AX Bergen op Zoom, The Netherlands<br>
                         Kvk nr: 75251663<br>
                         TAX nr: NL002518102B41<br>
@@ -188,30 +400,42 @@
             <div class="barcode-container">
                 {% if barcode_base64 %}
                     <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Shipment Barcode" />
-                    <div>Shipment: {{ shipment.shipment_number }}</div>
+                    <div class="barcode-label">
+                        {% if shipment %}
+                            Shipment: {{ shipment.shipment_number }}
+                        {% elif shipments %}
+                            Multiple Shipments
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
         </div>
 
         <table class="info-grid">
             <tr>
-                <td>
+                <td style="width: 20%;">
                     <div class="info-label">Invoice No.</div>
-                    <div class="info-value">&nbsp;</div>
+                    <div class="info-value {% if shipment and not shipment.shipment_number %}empty{% elif not shipment %}empty{% endif %}">
+                        {% if shipment %}{{ shipment.shipment_number|default:"—" }}{% else %}—{% endif %}
+                    </div>
                 </td>
-                <td>
+                <td style="width: 20%;">
                     <div class="info-label">Invoice Date</div>
-                    <div class="info-value">&nbsp;</div>
+                    <div class="info-value">
+                        {% now "Y-m-d" %}
+                    </div>
                 </td>
-                <td>
+                <td style="width: 20%;">
                     <div class="info-label">GST Reg No.</div>
-                    <div class="info-value">0.00%</div>
+                    <div class="info-value">NL002518102B41</div>
                 </td>
-                <td>
+                <td style="width: 20%;">
                     <div class="info-label">Your Order No.</div>
-                    <div class="info-value">&nbsp;</div>
+                    <div class="info-value {% if shipment and not shipment.shipment_number %}empty{% elif not shipment %}empty{% endif %}">
+                        {% if shipment %}{{ shipment.shipment_number|default:"—" }}{% else %}—{% endif %}
+                    </div>
                 </td>
-                <td>
+                <td style="width: 20%;">
                     <div class="info-label">Page No.</div>
                     <div class="info-value">1</div>
                 </td>
@@ -224,36 +448,64 @@
             </div>
         </div>
         
-        {% if total_cbm > 65 or total_weight > 24000 %}
-        <div style="margin: 8px 0; padding: 8px; background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 4px;">
-            <div class="small-text" style="font-weight: 700; color: #92400e;">
-                NOTE: If CBM exceeds 65 or weight exceeds 24 tons, additional invoices will be generated for each type and page numbers will be activated.
+        {% if grand_total_cbm %}
+            {% if grand_total_cbm > 65 or grand_total_weight > 24000 %}
+        <div class="warning-box">
+            <div class="small-text">
+                <strong>NOTE:</strong> If CBM exceeds 65 or weight exceeds 24 tons, additional invoices will be generated for each type and page numbers will be activated.
             </div>
         </div>
+            {% endif %}
+        {% else %}
+            {% if total_cbm > 65 or total_weight > 24000 %}
+        <div class="warning-box">
+            <div class="small-text">
+                <strong>NOTE:</strong> If CBM exceeds 65 or weight exceeds 24 tons, additional invoices will be generated for each type and page numbers will be activated.
+            </div>
+        </div>
+            {% endif %}
         {% endif %}
 
-        <table class="info-grid">
-            <tr>
-                <td>
-                    <div class="info-label">For Account of Consignee</div>
-                    <div class="info-value">&nbsp;</div>
-                </td>
-                <td>
-                    <div class="info-label">Deliver To Consignee</div>
-                    <div class="info-value">&nbsp;</div>
-                </td>
-            </tr>
-        </table>
+        <div class="address-grid">
+            <div class="address-box">
+                <div class="address-label">For Account of Consignee</div>
+                <div class="address-value {% if shipment and not shipment.receiver_name %}empty{% elif not shipment %}empty{% endif %}">
+                    {% if shipment and shipment.receiver_name %}
+                        {{ shipment.receiver_name }}<br>
+                        {% if shipment.receiver_address %}{{ shipment.receiver_address }}<br>{% endif %}
+                        {% if shipment.receiver_city %}{{ shipment.receiver_city }}{% endif %}
+                        {% if shipment.receiver_country %}, {{ shipment.receiver_country }}{% endif %}
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+            </div>
+            <div class="address-box">
+                <div class="address-label">Deliver To Consignee</div>
+                <div class="address-value {% if shipment and not shipment.receiver_name %}empty{% elif not shipment %}empty{% endif %}">
+                    {% if shipment and shipment.receiver_name %}
+                        {{ shipment.receiver_name }}<br>
+                        {% if shipment.receiver_address %}{{ shipment.receiver_address }}<br>{% endif %}
+                        {% if shipment.receiver_city %}{{ shipment.receiver_city }}{% endif %}
+                        {% if shipment.receiver_country %}, {{ shipment.receiver_country }}{% endif %}
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
         <table class="info-grid">
             <tr>
                 <td style="width: 50%;">
                     <div class="info-label">Customer No.</div>
-                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">&nbsp;</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
+                        {% if shipment %}{% if shipment.shipment_number %}{{ shipment.shipment_number }}{% else %}—{% endif %}{% else %}—{% endif %}
+                    </div>
                 </td>
                 <td style="width: 50%;">
                     <div class="info-label">Currency</div>
-                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">EUR</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">EUR</div>
                 </td>
             </tr>
         </table>
@@ -262,11 +514,15 @@
             <tr>
                 <td style="width: 50%;">
                     <div class="info-label">Payment Terms</div>
-                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">Prepaid</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
+                        {% if shipment %}{% if shipment.payment_status == 'paid' %}Prepaid{% else %}Pending{% endif %}{% else %}Prepaid{% endif %}
+                    </div>
                 </td>
                 <td style="width: 50%;">
                     <div class="info-label">Sales Area</div>
-                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">&nbsp;</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
+                        {% if shipment %}{% if shipment.direction == 'eu-sy' %}EU → Middle East{% else %}Middle East → EU{% endif %}{% else %}—{% endif %}
+                    </div>
                 </td>
             </tr>
         </table>
@@ -275,143 +531,256 @@
             <tr>
                 <td style="width: 50%;">
                     <div class="info-label">Incoterms</div>
-                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">&nbsp;</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">LCL</div>
                 </td>
                 <td style="width: 50%;">
                     <div class="info-label">Bank Details</div>
-                    <div class="info-value" style="min-height: 35px; font-size: 15px; padding: 6px 0;">&nbsp;</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
+                        Contact: contact@medo-freight.eu
+                    </div>
                 </td>
             </tr>
         </table>
 
-        <table class="light-border-table">
-            <tr>
-                <th>Made In Country of Origin</th>
-                <th>Bill of Lading</th>
-                <th>Loading Port / City</th>
-                <th>Destination Port</th>
-                <th>Despatch</th>
-                <th>Mode / Vessel Name</th>
-                <th>Container No.</th>
-                <th>Voyage No.</th>
-                <th>ETD</th>
-                <th>ETA</th>
-                <th>Shipping</th>
-                <th>Seal No.</th>
-            </tr>
-            <tr>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-                <td class="small-text">&nbsp;</td>
-            </tr>
-        </table>
+        <!-- Shipping Details - Split into 2 rows to prevent overflow -->
+        <div class="shipping-details-grid">
+            <div class="shipping-details-box">
+                <div class="info-label">Made In Country of Origin</div>
+                <div class="info-value empty">—</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Bill of Lading</div>
+                <div class="info-value empty">—</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Loading Port / City</div>
+                <div class="info-value">
+                    {% if shipment and shipment.sender_city %}{{ shipment.sender_city }}{% else %}—{% endif %}
+                </div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Destination Port</div>
+                <div class="info-value">
+                    {% if shipment and shipment.receiver_city %}{{ shipment.receiver_city }}{% else %}—{% endif %}
+                </div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Despatch</div>
+                <div class="info-value empty">—</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Mode / Vessel Name</div>
+                <div class="info-value">LCL</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Container No.</div>
+                <div class="info-value empty">—</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Voyage No.</div>
+                <div class="info-value empty">—</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">ETD</div>
+                <div class="info-value empty">—</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">ETA</div>
+                <div class="info-value empty">—</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Shipping</div>
+                <div class="info-value">LCL</div>
+            </div>
+            <div class="shipping-details-box">
+                <div class="info-label">Seal No.</div>
+                <div class="info-value empty">—</div>
+            </div>
+        </div>
 
-        <table class="light-border-table">
+        <table class="light-border-table product-table">
             <tr>
-                <th>Product Code</th>
-                <th>Description</th>
-                <th class="text-center">HS Code</th>
-                <th class="text-center">CBM</th>
-                <th class="text-center">Unit</th>
-                <th class="text-center">Quantity</th>
-                <th class="text-right">Unit Price (EUR)</th>
-                <th class="text-right">Value (EUR)</th>
-                <th class="text-right">Gross Weight (kg)</th>
-                <th class="text-right">Nett Weight (kg)</th>
+                {% if shipment_data %}
+                <th style="width: 10%;">Shipment No.</th>
+                {% endif %}
+                <th style="width: {% if shipment_data %}10%{% else %}12%{% endif %};">Product Code</th>
+                <th style="width: {% if shipment_data %}20%{% else %}25%{% endif %};">Description</th>
+                <th style="width: 8%;" class="text-center">HS Code</th>
+                <th style="width: 8%;" class="text-center">CBM</th>
+                <th style="width: 7%;" class="text-center">Unit</th>
+                <th style="width: 8%;" class="text-center">Quantity</th>
+                <th style="width: 10%;" class="text-right">Unit Price (EUR)</th>
+                <th style="width: 10%;" class="text-right">Value (EUR)</th>
+                <th style="width: 10%;" class="text-right">Gross Weight (kg)</th>
+                <th style="width: 10%;" class="text-right">Nett Weight (kg)</th>
             </tr>
-            {% for item in pricing.parcel_calculations %}
-                <tr>
-                    <td class="small-text">
-                        {{ shipment.shipment_number|default_if_none:"" }}
+            {% if shipment_data %}
+                {# Bulk mode: multiple shipments #}
+                {% for shipment_info in shipment_data %}
+                    {% for item in shipment_info.items %}
+                        <tr>
+                            <td class="small-text">
+                                {{ item.shipment_number|default:"—" }}
+                            </td>
+                            <td class="small-text">
+                                {{ item.shipment_number|default:"—" }}
+                            </td>
+                            <td class="small-text">
+                                <strong>{{ item.product_name_en|default_if_none:"—" }}</strong>
+                                {% if item.product_name_ar %}
+                                    <br><span style="color: #6b7280; font-size: 9px;">{{ item.product_name_ar }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small-text text-center">
+                                {{ item.hs_code|default_if_none:"—" }}
+                            </td>
+                            <td class="small-text text-center">
+                                {{ item.cbm|floatformat:3 }}
+                            </td>
+                            <td class="small-text text-center">
+                                PCS
+                            </td>
+                            <td class="small-text text-center">
+                                <strong>{{ item.repeat_count|default:1 }}</strong>
+                            </td>
+                            <td class="small-text text-right">
+                                —
+                            </td>
+                            <td class="small-text text-right">
+                                <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                            </td>
+                            <td class="small-text text-right">
+                                {{ item.weight|default:0|floatformat:2 }}
+                            </td>
+                            <td class="small-text text-right">
+                                {{ item.weight|default:0|floatformat:2 }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% empty %}
+                    <tr>
+                        <td colspan="11" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                            No shipment data available.
+                        </td>
+                    </tr>
+                {% endfor %}
+                <tr class="totals-row">
+                    <td colspan="3" class="text-right"><strong>TOTAL</strong></td>
+                    <td class="text-center">—</td>
+                    <td class="text-center">
+                        <strong>{{ grand_total_cbm|floatformat:3 }} m³</strong>
                     </td>
-                    <td class="small-text">
-                        {{ item.product_name_en|default_if_none:"" }} / {{ item.product_name_ar|default_if_none:"" }}
+                    <td colspan="2" class="text-center">
+                        <strong>{{ grand_total_packages }} PCS</strong>
                     </td>
-                    <td class="small-text text-center">
-                        {{ item.hs_code|default_if_none:"" }}
+                    <td class="text-right">—</td>
+                    <td class="text-right">
+                        <strong>€{{ grand_total_value|floatformat:2 }}</strong>
                     </td>
-                    <td class="small-text text-center">
-                        {{ item.cbm|default:0|floatformat:3 }}
+                    <td class="text-right">
+                        <strong>{{ grand_total_weight|floatformat:2 }} kg</strong>
                     </td>
-                    <td class="small-text text-center">
-                        PCS
-                    </td>
-                    <td class="small-text text-center">
-                        {{ item.repeat_count|default:1 }}
-                    </td>
-                    <td class="small-text text-right">
-                        &nbsp;
-                    </td>
-                    <td class="small-text text-right">
-                        {{ item.price_by_weight|floatformat:2 }}
-                    </td>
-                    <td class="small-text text-right">
-                        {{ item.weight|default:0|floatformat:2 }}
-                    </td>
-                    <td class="small-text text-right">
-                        &nbsp;
+                    <td class="text-right">
+                        <strong>{{ grand_total_weight|floatformat:2 }} kg</strong>
                     </td>
                 </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="10" class="small-text">
-                        No parcel breakdown available.
+            {% else %}
+                {# Single shipment mode #}
+                {% for item in pricing.parcel_calculations %}
+                    <tr>
+                        <td class="small-text">
+                            {{ shipment.shipment_number|default_if_none:"—" }}
+                        </td>
+                        <td class="small-text">
+                            <strong>{{ item.product_name_en|default_if_none:"—" }}</strong>
+                            {% if item.product_name_ar %}
+                                <br><span style="color: #6b7280; font-size: 9px;">{{ item.product_name_ar }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small-text text-center">
+                            {{ item.hs_code|default_if_none:"—" }}
+                        </td>
+                        <td class="small-text text-center">
+                            {{ item.cbm|default:0|floatformat:3 }}
+                        </td>
+                        <td class="small-text text-center">
+                            PCS
+                        </td>
+                        <td class="small-text text-center">
+                            <strong>{{ item.repeat_count|default:1 }}</strong>
+                        </td>
+                        <td class="small-text text-right">
+                            {% if item.price_per_kg %}
+                                €{{ item.price_per_kg|floatformat:2 }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="small-text text-right">
+                            <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                        </td>
+                        <td class="small-text text-right">
+                            {{ item.weight|default:0|floatformat:2 }}
+                        </td>
+                        <td class="small-text text-right">
+                            {{ item.weight|default:0|floatformat:2 }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="10" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                            No parcel breakdown available.
+                        </td>
+                    </tr>
+                {% endfor %}
+                <tr class="totals-row">
+                    <td colspan="2" class="text-right"><strong>TOTAL</strong></td>
+                    <td class="text-center">—</td>
+                    <td class="text-center">
+                        <strong>{{ total_cbm|floatformat:3 }} m³</strong>
+                    </td>
+                    <td colspan="2" class="text-center">
+                        <strong>{{ total_packages }} PCS</strong>
+                    </td>
+                    <td class="text-right">—</td>
+                    <td class="text-right">
+                        <strong>€{{ pricing.total_price|floatformat:2 }}</strong>
+                    </td>
+                    <td class="text-right">
+                        <strong>{{ total_weight|floatformat:2 }} kg</strong>
+                    </td>
+                    <td class="text-right">
+                        <strong>{{ total_weight|floatformat:2 }} kg</strong>
                     </td>
                 </tr>
-            {% endfor %}
-            <tr class="totals-row">
-                <td colspan="2" class="text-right">TOTAL</td>
-                <td class="text-center">&nbsp;</td>
-                <td class="text-center">
-                    {{ total_cbm|floatformat:3 }} m³
-                </td>
-                <td colspan="2" class="text-center">
-                    {{ total_packages }}
-                </td>
-                <td class="text-right">&nbsp;</td>
-                <td class="text-right">
-                    {{ pricing.total_price|floatformat:2 }}
-                </td>
-                <td class="text-right">
-                    {{ total_weight|floatformat:2 }}
-                </td>
-                <td class="text-right">&nbsp;</td>
-            </tr>
+            {% endif %}
         </table>
 
-        <table class="light-border-table">
+        <table class="info-grid">
             <tr>
                 <td style="width: 50%;">
-                    <div class="small-text">
-                        SALES TAX: {% if is_personal_only %}0.00{% else %}&nbsp;{% endif %} %<br>
-                        TOTAL INVOICE VALUE: EUR {{ pricing.total_price|floatformat:2 }}
+                    <div class="info-label">SALES TAX</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
+                        {% if is_personal_only %}0.00{% else %}—{% endif %} %
                     </div>
                 </td>
                 <td style="width: 50%;">
-                    <div class="small-text text-right">
-                        &nbsp;
+                    <div class="info-label">TOTAL INVOICE VALUE</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
+                        EUR {% if grand_total_value %}{{ grand_total_value|floatformat:2 }}{% else %}{{ pricing.total_price|floatformat:2 }}{% endif %}
                     </div>
                 </td>
             </tr>
         </table>
 
         <div class="footer-notes">
-            <strong>A - Legal &amp; Customs Declaration</strong><br>
+            <strong>A - Legal &amp; Customs Declaration</strong>
             MEDO-B2B EU acts solely as a freight consolidator and export agent on behalf of multiple clients.
             The declared values are for customs declaration purposes only and do not represent sales or transfer of ownership.
             This shipment is handled under EU Export Compliance (EX-A). MEDO-B2B EU bears no ownership or sales relation
             to the goods. All clients have submitted their own declaration forms confirming that their items are personal
             or commercial as described.<br><br>
-            <strong>B - Freight &amp; Service Terms</strong><br>
+            <strong>B - Freight &amp; Service Terms</strong>
             Payment is due only for freight and handling services, by bank transfer or cash, 100% prepaid before departure.
             The consignee acknowledges that all goods were inspected and accepted before loading. No return, refund, or
             complaint is accepted after the container has been sealed and departed. MEDO-B2B EU provides transport
@@ -421,5 +790,3 @@
     </div>
 </body>
 </html>
-
-
