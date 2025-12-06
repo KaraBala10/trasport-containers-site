@@ -506,7 +506,7 @@
             <tr>
                 <td style="width: 20%;">
                     <div class="info-label">Invoice No.</div>
-                    <div class="info-value"></div>
+                    <div class="info-value">{% if invoice_number %}{{ invoice_number }}{% else %}{{ invoice_date|date:"Ymd" }}{% endif %}</div>
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">Invoice Date</div>
@@ -744,9 +744,25 @@
                                 <td class="small-text text-center">
                                     <strong>{{ item.repeat_count|default:1 }}</strong>
                                 </td>
-                                <td class="small-text text-right empty-cell"></td>
+                                <td class="small-text text-right empty-cell">
+                                    {% if item.shipment_type == "commercial" %}
+                                        {# Commercial: empty field - leave blank #}
+                                    {% elif item.shipment_type == "personal" %}
+                                        €0.00
+                                    {% else %}
+                                        {% if item.price_per_kg and item.price_per_kg > 0 %}
+                                            €{{ item.price_per_kg|floatformat:2 }}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
                                 <td class="small-text text-right">
-                                    <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                                    {% if item.shipment_type == "commercial" %}
+                                        {# Commercial: empty field - leave blank #}
+                                    {% elif item.shipment_type == "personal" %}
+                                        <strong>€0.00</strong>
+                                    {% else %}
+                                        <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                                    {% endif %}
                                 </td>
                                 <td class="small-text text-right">
                                     {{ item.weight|default:0|floatformat:2 }}
@@ -769,12 +785,22 @@
                                 <strong>{{ item.repeat_count|default:1 }}</strong>
                             </td>
                             <td class="small-text text-right empty-cell">
-                                {% if item.price_per_kg %}
+                                {% if item.shipment_type == "commercial" %}
+                                    {# Commercial: empty field #}
+                                {% elif item.shipment_type == "personal" %}
+                                    €0.00
+                                {% elif item.price_per_kg %}
                                     €{{ item.price_per_kg|floatformat:2 }}
                                 {% endif %}
                             </td>
                             <td class="small-text text-right">
-                                <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                                {% if item.shipment_type == "commercial" %}
+                                    {# Commercial: empty field #}
+                                {% elif item.shipment_type == "personal" %}
+                                    <strong>€0.00</strong>
+                                {% else %}
+                                    <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                                {% endif %}
                             </td>
                             <td class="small-text text-right">
                                 {{ item.weight|default:0|floatformat:2 }}

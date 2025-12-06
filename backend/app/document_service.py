@@ -119,6 +119,13 @@ def calculate_invoice_totals(shipment: LCLShipment) -> Dict:
             cbm = float(parcel_data.get("cbm", 0))
             repeat_count = int(parcel_data.get("repeatCount", 1))
 
+            # Get shipment_type from parcel, with fallback to shipment-level
+            parcel_shipment_type = parcel_data.get("shipmentType") or parcel_data.get(
+                "shipment_type"
+            )
+            if not parcel_shipment_type and shipment.shipment_type:
+                parcel_shipment_type = shipment.shipment_type
+
             # Collect declared value for insurance
             if parcel_data.get("wantsInsurance") or parcel_data.get(
                 "isElectronicsShipment"
@@ -175,7 +182,7 @@ def calculate_invoice_totals(shipment: LCLShipment) -> Dict:
                                 "price_by_cbm": round(price_by_cbm, 2),
                                 "is_electronics": True,
                                 "hs_code": parcel_data.get("hs_code"),
-                                "shipment_type": parcel_data.get("shipmentType"),
+                                "shipment_type": parcel_shipment_type,
                                 "repeat_count": repeat_count,
                             }
                         )
@@ -222,7 +229,7 @@ def calculate_invoice_totals(shipment: LCLShipment) -> Dict:
                                 "price_by_cbm": round(parcel_price, 2),
                                 "is_electronics": False,
                                 "hs_code": parcel_data.get("hs_code"),
-                                "shipment_type": parcel_data.get("shipmentType"),
+                                "shipment_type": parcel_shipment_type,
                                 "repeat_count": repeat_count,
                             }
                         )
@@ -797,7 +804,9 @@ def generate_consolidated_packing_list(
 
 
 def generate_consolidated_export_invoice_bulk(
-    shipments: List[LCLShipment], language: str = "en"
+    shipments: List[LCLShipment],
+    language: str = "en",
+    invoice_number: Optional[str] = None,
 ) -> bytes:
     """
     Generate Consolidated Export Invoice for multiple LCL shipments.
@@ -876,7 +885,33 @@ def generate_consolidated_export_invoice_bulk(
 
             # Collect all parcel items for this shipment
             shipment_items = []
-            for item in pricing.get("parcel_calculations", []):
+            for idx, item in enumerate(pricing.get("parcel_calculations", [])):
+                # Try to get shipment_type from item first, then fallback to shipment-level
+                shipment_type = item.get("shipment_type") or None
+
+                # If not found in item, try to get from shipment.parcels directly
+                if not shipment_type and shipment.parcels:
+                    try:
+                        # Match by index if possible
+                        if idx < len(shipment.parcels):
+                            parcel = shipment.parcels[idx]
+                            if isinstance(parcel, dict):
+                                shipment_type = parcel.get(
+                                    "shipmentType"
+                                ) or parcel.get("shipment_type")
+                    except (IndexError, TypeError):
+                        pass
+
+                # Final fallback: use shipment-level shipment_type
+                if not shipment_type and shipment.shipment_type:
+                    shipment_type = shipment.shipment_type
+
+                # Log for debugging
+                logger.info(
+                    f"Shipment {shipment.id} item {idx}: shipment_type={shipment_type}, "
+                    f"price_by_weight={item.get('price_by_weight', 0)}"
+                )
+
                 shipment_items.append(
                     {
                         "shipment_number": shipment.shipment_number
@@ -887,7 +922,9 @@ def generate_consolidated_export_invoice_bulk(
                         "cbm": float(item.get("cbm", 0) or 0),
                         "repeat_count": int(item.get("repeat_count", 1) or 1),
                         "price_by_weight": float(item.get("price_by_weight", 0) or 0),
+                        "price_per_kg": float(item.get("price_per_kg", 0) or 0),
                         "weight": float(item.get("weight", 0) or 0),
+                        "shipment_type": shipment_type,  # personal or commercial
                     }
                 )
 
@@ -924,12 +961,17 @@ def generate_consolidated_export_invoice_bulk(
         )
         overall_is_mixed = len(unique_all_types) > 1
 
+        # Generate invoice number if not provided
+        if not invoice_number:
+            invoice_number = f"INV-{timezone.now().strftime('%Y%m%d')}-{len(shipments)}"
+
         context = {
             "shipments": shipments,
             "shipment_data": all_shipment_data,
             "company": company_info,
             "language": language,
             "invoice_date": timezone.now(),
+            "invoice_number": invoice_number,
             "grand_total_cbm": grand_total_cbm,
             "grand_total_packages": grand_total_packages,
             "grand_total_weight": grand_total_weight,
@@ -955,6 +997,203 @@ def generate_consolidated_export_invoice_bulk(
     except Exception as e:
         logger.error(
             f"Error generating consolidated export invoice bulk: {str(e)}",
+            exc_info=True,
+        )
+        raise
+
+
+def split_shipments_by_limits(
+    shipments: List[LCLShipment],
+    max_cbm: float = 65.0,
+    max_weight_kg: float = 24000.0,
+) -> List[List[LCLShipment]]:
+    """
+    Split shipments into groups based on CBM and weight limits.
+    Each group will not exceed max_cbm or max_weight_kg.
+    If a single shipment exceeds the limits, it will be duplicated across multiple groups
+    to ensure each invoice stays within limits.
+
+    Args:
+        shipments: List of LCLShipment instances
+        max_cbm: Maximum CBM per group (default: 65.0)
+        max_weight_kg: Maximum weight in kg per group (default: 24000.0)
+
+    Returns:
+        List of shipment groups, where each group is a list of shipments
+    """
+    groups = []
+    current_group = []
+    current_cbm = 0.0
+    current_weight = 0.0
+
+    for shipment in shipments:
+        # Calculate totals for this shipment
+        try:
+            pricing = calculate_invoice_totals(shipment)
+            shipment_cbm = 0.0
+            shipment_weight = 0.0
+
+            for item in pricing.get("parcel_calculations", []):
+                try:
+                    cbm_value = float(item.get("cbm", 0) or 0)
+                except (TypeError, ValueError):
+                    cbm_value = 0.0
+                shipment_cbm += cbm_value
+
+                try:
+                    weight_value = float(item.get("weight", 0) or 0)
+                except (TypeError, ValueError):
+                    weight_value = 0.0
+                repeat_count = int(item.get("repeat_count", 1) or 1)
+                shipment_weight += weight_value * repeat_count
+
+            # If this single shipment exceeds limits, we need to split it across multiple groups
+            # Calculate how many groups this shipment needs
+            if shipment_cbm > max_cbm or shipment_weight > max_weight_kg:
+                # Calculate number of groups needed for this shipment
+                groups_needed_cbm = int(shipment_cbm / max_cbm) + (
+                    1 if shipment_cbm % max_cbm > 0 else 0
+                )
+                groups_needed_weight = int(shipment_weight / max_weight_kg) + (
+                    1 if shipment_weight % max_weight_kg > 0 else 0
+                )
+                groups_needed = max(groups_needed_cbm, groups_needed_weight)
+
+                # If current group has items, finalize it first
+                if current_group:
+                    groups.append(current_group)
+                    current_group = []
+                    current_cbm = 0.0
+                    current_weight = 0.0
+
+                # Distribute this shipment across multiple groups
+                # Each group gets a copy of the shipment (they will show the same data but different invoice numbers)
+                for i in range(groups_needed):
+                    groups.append([shipment])
+
+                # Reset current group since we've distributed this shipment
+                current_group = []
+                current_cbm = 0.0
+                current_weight = 0.0
+                continue
+
+            # Check if adding this shipment would exceed limits
+            if current_group and (
+                current_cbm + shipment_cbm > max_cbm
+                or current_weight + shipment_weight > max_weight_kg
+            ):
+                # Start a new group
+                groups.append(current_group)
+                current_group = [shipment]
+                current_cbm = shipment_cbm
+                current_weight = shipment_weight
+            else:
+                # Add to current group
+                current_group.append(shipment)
+                current_cbm += shipment_cbm
+                current_weight += shipment_weight
+
+        except Exception as e:
+            logger.error(
+                f"Error calculating totals for shipment {shipment.id}: {str(e)}"
+            )
+            # Add shipment anyway to avoid losing data
+            if current_group:
+                groups.append(current_group)
+            current_group = [shipment]
+            current_cbm = 0.0
+            current_weight = 0.0
+
+    # Add the last group if it has shipments
+    if current_group:
+        groups.append(current_group)
+
+    logger.info(
+        f"Split {len(shipments)} shipments into {len(groups)} groups based on CBM ({max_cbm}) and weight ({max_weight_kg} kg) limits"
+    )
+    return groups
+
+
+def generate_multiple_consolidated_invoices(
+    shipments: List[LCLShipment],
+    language: str = "en",
+    max_cbm: float = 65.0,
+    max_weight_kg: float = 24000.0,
+) -> bytes:
+    """
+    Generate multiple consolidated export invoices split by CBM and weight limits,
+    and return them as a ZIP file.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: Language for invoices (default: 'en')
+        max_cbm: Maximum CBM per invoice (default: 65.0)
+        max_weight_kg: Maximum weight per invoice (default: 24000.0)
+
+    Returns:
+        ZIP file bytes containing all invoices
+    """
+    import zipfile
+    from datetime import datetime
+
+    try:
+        # Split shipments into groups
+        groups = split_shipments_by_limits(shipments, max_cbm, max_weight_kg)
+
+        if not groups:
+            raise ValueError("No shipment groups created")
+
+        # Create ZIP file in memory
+        zip_buffer = io.BytesIO()
+        date_str = datetime.now().strftime("%Y%m%d")
+
+        try:
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                for idx, group in enumerate(groups, start=1):
+                    # Generate invoice number for this group
+                    invoice_number = f"INV-{date_str}-{idx:03d}"
+
+                    # Generate PDF for this group
+                    pdf_bytes = generate_consolidated_export_invoice_bulk(
+                        group, language=language, invoice_number=invoice_number
+                    )
+
+                    # Add PDF to ZIP
+                    filename = f"Consolidated-Export-Invoice-{invoice_number}.pdf"
+                    zip_file.writestr(filename, pdf_bytes)
+
+                    logger.info(
+                        f"Generated invoice {invoice_number} with {len(group)} shipments"
+                    )
+
+            # Ensure ZIP file is properly closed and get bytes
+            zip_buffer.seek(0)
+            zip_bytes = zip_buffer.getvalue()
+
+            # Verify ZIP file is valid
+            if len(zip_bytes) == 0:
+                raise ValueError("Generated ZIP file is empty")
+
+            # Test ZIP file integrity
+            test_zip = zipfile.ZipFile(io.BytesIO(zip_bytes), "r")
+            test_zip.close()
+
+            logger.info(
+                f"ZIP file created successfully, size: {len(zip_bytes)} bytes, files: {len(groups)}"
+            )
+
+        except Exception as zip_error:
+            logger.error(f"Error creating ZIP file: {str(zip_error)}", exc_info=True)
+            raise
+
+        logger.info(
+            f"Successfully generated {len(groups)} invoices and compressed into ZIP file"
+        )
+        return zip_bytes
+
+    except Exception as e:
+        logger.error(
+            f"Error generating multiple consolidated invoices: {str(e)}",
             exc_info=True,
         )
         raise

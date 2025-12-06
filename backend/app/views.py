@@ -5434,6 +5434,8 @@ def generate_bulk_customs_documents_view(request):
         from .document_service import (
             generate_consolidated_export_invoice_bulk,
             generate_consolidated_packing_list,
+            generate_multiple_consolidated_invoices,
+            split_shipments_by_limits,
         )
 
         if document_type == "packing_list":
@@ -5443,18 +5445,91 @@ def generate_bulk_customs_documents_view(request):
             filename = (
                 f"Consolidated-Packing-List-{timezone.now().strftime('%Y%m%d')}.pdf"
             )
+            # Return PDF as response
+            response = HttpResponse(pdf_bytes, content_type="application/pdf")
+            response["Content-Disposition"] = f'inline; filename="{filename}"'
+            return response
         else:  # consolidated_export_invoice
-            pdf_bytes = generate_consolidated_export_invoice_bulk(
-                shipments_list, language=language
-            )
-            filename = (
-                f"Consolidated-Export-Invoice-{timezone.now().strftime('%Y%m%d')}.pdf"
-            )
+            # Calculate total CBM and weight first
+            from .document_service import calculate_invoice_totals
 
-        # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type="application/pdf")
-        response["Content-Disposition"] = f'inline; filename="{filename}"'
-        return response
+            total_cbm = 0.0
+            total_weight = 0.0
+
+            for shipment in shipments_list:
+                try:
+                    pricing = calculate_invoice_totals(shipment)
+                    for item in pricing.get("parcel_calculations", []):
+                        try:
+                            cbm_value = float(item.get("cbm", 0) or 0)
+                        except (TypeError, ValueError):
+                            cbm_value = 0.0
+                        total_cbm += cbm_value
+
+                        try:
+                            weight_value = float(item.get("weight", 0) or 0)
+                        except (TypeError, ValueError):
+                            weight_value = 0.0
+                        repeat_count = int(item.get("repeat_count", 1) or 1)
+                        total_weight += weight_value * repeat_count
+                except Exception as e:
+                    logger.error(
+                        f"Error calculating totals for shipment {shipment.id}: {str(e)}"
+                    )
+
+            # Check if total exceeds limits - if so, always split into multiple invoices
+            max_cbm_limit = 65.0
+            max_weight_limit = 24000.0
+
+            if total_cbm > max_cbm_limit or total_weight > max_weight_limit:
+                # Total exceeds limits - split into multiple invoices
+                zip_bytes = generate_multiple_consolidated_invoices(
+                    shipments_list,
+                    language=language,
+                    max_cbm=max_cbm_limit,
+                    max_weight_kg=max_weight_limit,
+                )
+                filename = f"Consolidated-Export-Invoices-{timezone.now().strftime('%Y%m%d')}.zip"
+                response = HttpResponse(zip_bytes, content_type="application/zip")
+                response["Content-Disposition"] = f'attachment; filename="{filename}"'
+                response["Content-Length"] = str(len(zip_bytes))
+                response["Content-Transfer-Encoding"] = "binary"
+                return response
+            else:
+                # Total within limits - check if splitting is needed
+                groups = split_shipments_by_limits(
+                    shipments_list,
+                    max_cbm=max_cbm_limit,
+                    max_weight_kg=max_weight_limit,
+                )
+
+                if len(groups) == 1:
+                    # Only one group - return as PDF
+                    date_str = timezone.now().strftime("%Y%m%d")
+                    invoice_number = f"INV-{date_str}-001"
+                    pdf_bytes = generate_consolidated_export_invoice_bulk(
+                        groups[0], language=language, invoice_number=invoice_number
+                    )
+                    filename = f"Consolidated-Export-Invoice-{invoice_number}.pdf"
+                    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+                    response["Content-Disposition"] = f'inline; filename="{filename}"'
+                    return response
+                else:
+                    # Multiple groups - return as ZIP
+                    zip_bytes = generate_multiple_consolidated_invoices(
+                        shipments_list,
+                        language=language,
+                        max_cbm=max_cbm_limit,
+                        max_weight_kg=max_weight_limit,
+                    )
+                    filename = f"Consolidated-Export-Invoices-{timezone.now().strftime('%Y%m%d')}.zip"
+                    response = HttpResponse(zip_bytes, content_type="application/zip")
+                    response["Content-Disposition"] = (
+                        f'attachment; filename="{filename}"'
+                    )
+                    response["Content-Length"] = str(len(zip_bytes))
+                    response["Content-Transfer-Encoding"] = "binary"
+                    return response
 
     except Exception as e:
         logger.error(

@@ -160,19 +160,24 @@ export default function CustomsDocumentsPage() {
         language: "en",
       });
 
+      // Determine file type based on content-type header or document type
+      const contentType = response.headers["content-type"] || "";
+      const isZip = contentType.includes("application/zip") || contentType.includes("zip");
+      const mimeType = isZip ? "application/zip" : "application/pdf";
+      const fileExtension = isZip ? "zip" : "pdf";
+      const baseFileName =
+        documentType === "packing_list"
+          ? "Consolidated-Packing-List"
+          : isZip
+          ? "Consolidated-Export-Invoices"
+          : "Consolidated-Export-Invoice";
+
       // Create blob and download
-      const blob = new Blob([response.data], { type: "application/pdf" });
+      const blob = new Blob([response.data], { type: mimeType });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download =
-        documentType === "packing_list"
-          ? `Consolidated-Packing-List-${
-              new Date().toISOString().split("T")[0]
-            }.pdf`
-          : `Consolidated-Export-Invoice-${
-              new Date().toISOString().split("T")[0]
-            }.pdf`;
+      link.download = `${baseFileName}-${new Date().toISOString().split("T")[0]}.${fileExtension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
