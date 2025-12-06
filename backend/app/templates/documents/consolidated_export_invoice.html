@@ -415,15 +415,13 @@
             <tr>
                 <td style="width: 20%;">
                     <div class="info-label">Invoice No.</div>
-                    <div class="info-value {% if shipment and not shipment.shipment_number %}empty{% elif not shipment %}empty{% endif %}">
-                        {% if shipment %}{{ shipment.shipment_number|default:"—" }}{% else %}—{% endif %}
+                    <div class="info-value">
+                        {% if shipment and shipment.shipment_number %}{{ shipment.shipment_number }}{% endif %}
                     </div>
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">Invoice Date</div>
-                    <div class="info-value">
-                        {% now "Y-m-d" %}
-                    </div>
+                    <div class="info-value">{% now "Y-m-d" %}</div>
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">GST Reg No.</div>
@@ -431,8 +429,8 @@
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">Your Order No.</div>
-                    <div class="info-value {% if shipment and not shipment.shipment_number %}empty{% elif not shipment %}empty{% endif %}">
-                        {% if shipment %}{{ shipment.shipment_number|default:"—" }}{% else %}—{% endif %}
+                    <div class="info-value">
+                        {% if shipment and shipment.shipment_number %}{{ shipment.shipment_number }}{% endif %}
                     </div>
                 </td>
                 <td style="width: 20%;">
@@ -469,27 +467,23 @@
         <div class="address-grid">
             <div class="address-box">
                 <div class="address-label">For Account of Consignee</div>
-                <div class="address-value {% if shipment and not shipment.receiver_name %}empty{% elif not shipment %}empty{% endif %}">
+                <div class="address-value">
                     {% if shipment and shipment.receiver_name %}
                         {{ shipment.receiver_name }}<br>
                         {% if shipment.receiver_address %}{{ shipment.receiver_address }}<br>{% endif %}
                         {% if shipment.receiver_city %}{{ shipment.receiver_city }}{% endif %}
                         {% if shipment.receiver_country %}, {{ shipment.receiver_country }}{% endif %}
-                    {% else %}
-                        —
                     {% endif %}
                 </div>
             </div>
             <div class="address-box">
                 <div class="address-label">Deliver To Consignee</div>
-                <div class="address-value {% if shipment and not shipment.receiver_name %}empty{% elif not shipment %}empty{% endif %}">
+                <div class="address-value">
                     {% if shipment and shipment.receiver_name %}
                         {{ shipment.receiver_name }}<br>
                         {% if shipment.receiver_address %}{{ shipment.receiver_address }}<br>{% endif %}
                         {% if shipment.receiver_city %}{{ shipment.receiver_city }}{% endif %}
                         {% if shipment.receiver_country %}, {{ shipment.receiver_country }}{% endif %}
-                    {% else %}
-                        —
                     {% endif %}
                 </div>
             </div>
@@ -500,7 +494,7 @@
                 <td style="width: 50%;">
                     <div class="info-label">Customer No.</div>
                     <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
-                        {% if shipment %}{% if shipment.shipment_number %}{{ shipment.shipment_number }}{% else %}—{% endif %}{% else %}—{% endif %}
+                        {% if shipment and shipment.shipment_number %}{{ shipment.shipment_number }}{% endif %}
                     </div>
                 </td>
                 <td style="width: 50%;">
@@ -515,13 +509,13 @@
                 <td style="width: 50%;">
                     <div class="info-label">Payment Terms</div>
                     <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
-                        {% if shipment %}{% if shipment.payment_status == 'paid' %}Prepaid{% else %}Pending{% endif %}{% else %}Prepaid{% endif %}
+                        {% if shipment and shipment.payment_status == 'paid' %}Prepaid{% elif shipment %}Pending{% endif %}
                     </div>
                 </td>
                 <td style="width: 50%;">
                     <div class="info-label">Sales Area</div>
                     <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
-                        {% if shipment %}{% if shipment.direction == 'eu-sy' %}EU → Middle East{% else %}Middle East → EU{% endif %}{% else %}—{% endif %}
+                        {% if shipment and shipment.direction == 'eu-sy' %}EU → Middle East{% elif shipment and shipment.direction %}Middle East → EU{% endif %}
                     </div>
                 </td>
             </tr>
@@ -542,31 +536,27 @@
             </tr>
         </table>
 
-        <!-- Shipping Details - Split into 2 rows to prevent overflow -->
+        <!-- Shipping Details -->
         <div class="shipping-details-grid">
             <div class="shipping-details-box">
-                <div class="info-label">Made In Country of Origin</div>
-                <div class="info-value empty">—</div>
-            </div>
-            <div class="shipping-details-box">
                 <div class="info-label">Bill of Lading</div>
-                <div class="info-value empty">—</div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Loading Port / City</div>
                 <div class="info-value">
-                    {% if shipment and shipment.sender_city %}{{ shipment.sender_city }}{% else %}—{% endif %}
+                    {% if shipment and shipment.sender_city %}{{ shipment.sender_city }}{% endif %}
                 </div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Destination Port</div>
                 <div class="info-value">
-                    {% if shipment and shipment.receiver_city %}{{ shipment.receiver_city }}{% else %}—{% endif %}
+                    {% if shipment and shipment.receiver_city %}{{ shipment.receiver_city }}{% endif %}
                 </div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Despatch</div>
-                <div class="info-value empty">—</div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Mode / Vessel Name</div>
@@ -574,19 +564,19 @@
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Container No.</div>
-                <div class="info-value empty">—</div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Voyage No.</div>
-                <div class="info-value empty">—</div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">ETD</div>
-                <div class="info-value empty">—</div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">ETA</div>
-                <div class="info-value empty">—</div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Shipping</div>
@@ -594,25 +584,26 @@
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Seal No.</div>
-                <div class="info-value empty">—</div>
+                <div class="info-value"></div>
             </div>
         </div>
 
         <table class="light-border-table product-table">
             <tr>
                 {% if shipment_data %}
-                <th style="width: 10%;">Shipment No.</th>
+                <th style="width: 8%;">Shipment No.</th>
                 {% endif %}
-                <th style="width: {% if shipment_data %}10%{% else %}12%{% endif %};">Product Code</th>
-                <th style="width: {% if shipment_data %}20%{% else %}25%{% endif %};">Description</th>
-                <th style="width: 8%;" class="text-center">HS Code</th>
-                <th style="width: 8%;" class="text-center">CBM</th>
-                <th style="width: 7%;" class="text-center">Unit</th>
-                <th style="width: 8%;" class="text-center">Quantity</th>
-                <th style="width: 10%;" class="text-right">Unit Price (EUR)</th>
-                <th style="width: 10%;" class="text-right">Value (EUR)</th>
-                <th style="width: 10%;" class="text-right">Gross Weight (kg)</th>
-                <th style="width: 10%;" class="text-right">Nett Weight (kg)</th>
+                <th style="width: {% if shipment_data %}8%{% else %}10%{% endif %};">Product Code</th>
+                <th style="width: {% if shipment_data %}18%{% else %}22%{% endif %};">Description</th>
+                <th style="width: 8%;" class="text-center">Made In Country of Origin</th>
+                <th style="width: 7%;" class="text-center">HS Code</th>
+                <th style="width: 7%;" class="text-center">CBM</th>
+                <th style="width: 6%;" class="text-center">Unit</th>
+                <th style="width: 7%;" class="text-center">Quantity</th>
+                <th style="width: 9%;" class="text-right">Unit Price (EUR)</th>
+                <th style="width: 9%;" class="text-right">Value (EUR)</th>
+                <th style="width: 9%;" class="text-right">Gross Weight (kg)</th>
+                <th style="width: 9%;" class="text-right">Nett Weight (kg)</th>
             </tr>
             {% if shipment_data %}
                 {# Bulk mode: multiple shipments #}
@@ -620,19 +611,20 @@
                     {% for item in shipment_info.items %}
                         <tr>
                             <td class="small-text">
-                                {{ item.shipment_number|default:"—" }}
+                                {{ item.shipment_number|default:"" }}
                             </td>
                             <td class="small-text">
-                                {{ item.shipment_number|default:"—" }}
+                                {{ item.shipment_number|default:"" }}
                             </td>
                             <td class="small-text">
-                                <strong>{{ item.product_name_en|default_if_none:"—" }}</strong>
+                                <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
                                 {% if item.product_name_ar %}
                                     <br><span style="color: #6b7280; font-size: 9px;">{{ item.product_name_ar }}</span>
                                 {% endif %}
                             </td>
+                            <td class="small-text text-center"></td>
                             <td class="small-text text-center">
-                                {{ item.hs_code|default_if_none:"—" }}
+                                {{ item.hs_code|default_if_none:"" }}
                             </td>
                             <td class="small-text text-center">
                                 {{ item.cbm|floatformat:3 }}
@@ -643,9 +635,7 @@
                             <td class="small-text text-center">
                                 <strong>{{ item.repeat_count|default:1 }}</strong>
                             </td>
-                            <td class="small-text text-right">
-                                —
-                            </td>
+                            <td class="small-text text-right"></td>
                             <td class="small-text text-right">
                                 <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
                             </td>
@@ -659,21 +649,22 @@
                     {% endfor %}
                 {% empty %}
                     <tr>
-                        <td colspan="11" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                        <td colspan="12" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
                             No shipment data available.
                         </td>
                     </tr>
                 {% endfor %}
                 <tr class="totals-row">
                     <td colspan="3" class="text-right"><strong>TOTAL</strong></td>
-                    <td class="text-center">—</td>
+                    <td class="text-center"></td>
+                    <td class="text-center"></td>
                     <td class="text-center">
                         <strong>{{ grand_total_cbm|floatformat:3 }} m³</strong>
                     </td>
                     <td colspan="2" class="text-center">
                         <strong>{{ grand_total_packages }} PCS</strong>
                     </td>
-                    <td class="text-right">—</td>
+                    <td class="text-right"></td>
                     <td class="text-right">
                         <strong>€{{ grand_total_value|floatformat:2 }}</strong>
                     </td>
@@ -689,16 +680,17 @@
                 {% for item in pricing.parcel_calculations %}
                     <tr>
                         <td class="small-text">
-                            {{ shipment.shipment_number|default_if_none:"—" }}
+                            {{ shipment.shipment_number|default_if_none:"" }}
                         </td>
                         <td class="small-text">
-                            <strong>{{ item.product_name_en|default_if_none:"—" }}</strong>
+                            <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
                             {% if item.product_name_ar %}
                                 <br><span style="color: #6b7280; font-size: 9px;">{{ item.product_name_ar }}</span>
                             {% endif %}
                         </td>
+                        <td class="small-text text-center"></td>
                         <td class="small-text text-center">
-                            {{ item.hs_code|default_if_none:"—" }}
+                            {{ item.hs_code|default_if_none:"" }}
                         </td>
                         <td class="small-text text-center">
                             {{ item.cbm|default:0|floatformat:3 }}
@@ -712,8 +704,6 @@
                         <td class="small-text text-right">
                             {% if item.price_per_kg %}
                                 €{{ item.price_per_kg|floatformat:2 }}
-                            {% else %}
-                                —
                             {% endif %}
                         </td>
                         <td class="small-text text-right">
@@ -728,21 +718,22 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="10" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                        <td colspan="11" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
                             No parcel breakdown available.
                         </td>
                     </tr>
                 {% endfor %}
                 <tr class="totals-row">
                     <td colspan="2" class="text-right"><strong>TOTAL</strong></td>
-                    <td class="text-center">—</td>
+                    <td class="text-center"></td>
+                    <td class="text-center"></td>
                     <td class="text-center">
                         <strong>{{ total_cbm|floatformat:3 }} m³</strong>
                     </td>
                     <td colspan="2" class="text-center">
                         <strong>{{ total_packages }} PCS</strong>
                     </td>
-                    <td class="text-right">—</td>
+                    <td class="text-right"></td>
                     <td class="text-right">
                         <strong>€{{ pricing.total_price|floatformat:2 }}</strong>
                     </td>
