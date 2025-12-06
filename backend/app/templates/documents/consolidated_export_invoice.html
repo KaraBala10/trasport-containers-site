@@ -398,6 +398,47 @@
             background: #f9fafb;
             color: #9ca3af;
         }
+
+        /* Signature and stamp section */
+        .signature-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            gap: 30px;
+            page-break-inside: avoid;
+        }
+
+        .signature-box {
+            flex: 1;
+            min-height: 120px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            padding: 15px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .signature-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #374151;
+            margin-bottom: 60px;
+            text-align: center;
+            letter-spacing: 0.05em;
+        }
+
+        .signature-line {
+            border-top: 2px solid #111827;
+            margin-top: auto;
+            padding-top: 8px;
+            text-align: center;
+            font-size: 10px;
+            color: #6b7280;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -441,23 +482,19 @@
             <tr>
                 <td style="width: 20%;">
                     <div class="info-label">Invoice No.</div>
-                    <div class="info-value">
-                        {% if shipment and shipment.shipment_number %}{{ shipment.shipment_number }}{% endif %}
-                    </div>
+                    <div class="info-value"></div>
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">Invoice Date</div>
-                    <div class="info-value">{% now "Y-m-d" %}</div>
+                    <div class="info-value"></div>
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">GST Reg No.</div>
-                    <div class="info-value">NL002518102B41</div>
+                    <div class="info-value">0.00%</div>
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">Your Order No.</div>
-                    <div class="info-value">
-                        {% if shipment and shipment.shipment_number %}{{ shipment.shipment_number }}{% endif %}
-                    </div>
+                    <div class="info-value"></div>
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">Page No.</div>
@@ -493,25 +530,11 @@
         <div class="address-grid">
             <div class="address-box">
                 <div class="address-label">For Account of Consignee</div>
-                <div class="address-value">
-                    {% if shipment and shipment.receiver_name %}
-                        {{ shipment.receiver_name }}<br>
-                        {% if shipment.receiver_address %}{{ shipment.receiver_address }}<br>{% endif %}
-                        {% if shipment.receiver_city %}{{ shipment.receiver_city }}{% endif %}
-                        {% if shipment.receiver_country %}, {{ shipment.receiver_country }}{% endif %}
-                    {% endif %}
-                </div>
+                <div class="address-value"></div>
             </div>
             <div class="address-box">
                 <div class="address-label">Deliver To Consignee</div>
-                <div class="address-value">
-                    {% if shipment and shipment.receiver_name %}
-                        {{ shipment.receiver_name }}<br>
-                        {% if shipment.receiver_address %}{{ shipment.receiver_address }}<br>{% endif %}
-                        {% if shipment.receiver_city %}{{ shipment.receiver_city }}{% endif %}
-                        {% if shipment.receiver_country %}, {{ shipment.receiver_country }}{% endif %}
-                    {% endif %}
-                </div>
+                <div class="address-value"></div>
             </div>
         </div>
 
@@ -519,9 +542,7 @@
             <tr>
                 <td style="width: 50%;">
                     <div class="info-label">Customer No.</div>
-                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
-                        {% if shipment and shipment.shipment_number %}{{ shipment.shipment_number }}{% endif %}
-                    </div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;"></div>
                 </td>
                 <td style="width: 50%;">
                     <div class="info-label">Currency</div>
@@ -534,15 +555,11 @@
             <tr>
                 <td style="width: 50%;">
                     <div class="info-label">Payment Terms</div>
-                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
-                        {% if shipment and shipment.payment_status == 'paid' %}Prepaid{% elif shipment %}Pending{% endif %}
-                    </div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;"></div>
                 </td>
                 <td style="width: 50%;">
                     <div class="info-label">Sales Area</div>
-                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
-                        {% if shipment and shipment.direction == 'eu-sy' %}EU → Middle East{% elif shipment and shipment.direction %}Middle East → EU{% endif %}
-                    </div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;"></div>
                 </td>
             </tr>
         </table>
@@ -551,13 +568,11 @@
             <tr>
                 <td style="width: 50%;">
                     <div class="info-label">Incoterms</div>
-                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">LCL</div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;"></div>
                 </td>
                 <td style="width: 50%;">
                     <div class="info-label">Bank Details</div>
-                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;">
-                        Contact: contact@medo-freight.eu
-                    </div>
+                    <div class="info-value" style="min-height: 45px; font-size: 18px; padding: 10px 0;"></div>
                 </td>
             </tr>
         </table>
@@ -570,15 +585,11 @@
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Loading Port / City</div>
-                <div class="info-value">
-                    {% if shipment and shipment.sender_city %}{{ shipment.sender_city }}{% endif %}
-                </div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Destination Port</div>
-                <div class="info-value">
-                    {% if shipment and shipment.receiver_city %}{{ shipment.receiver_city }}{% endif %}
-                </div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Despatch</div>
@@ -586,7 +597,7 @@
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Mode / Vessel Name</div>
-                <div class="info-value">LCL</div>
+                <div class="info-value"></div>
             </div>
             <div class="shipping-details-box">
                 <div class="info-label">Container No.</div>
@@ -716,9 +727,7 @@
                                 <td class="small-text text-right">
                                     {{ item.weight|default:0|floatformat:2 }}
                                 </td>
-                                <td class="small-text text-right">
-                                    {{ item.weight|default:0|floatformat:2 }}
-                                </td>
+                                <td class="small-text text-right empty-cell"></td>
                             </tr>
                         {% endfor %}
                     {% empty %}
@@ -746,9 +755,7 @@
                             <td class="small-text text-right">
                                 {{ item.weight|default:0|floatformat:2 }}
                             </td>
-                            <td class="small-text text-right">
-                                {{ item.weight|default:0|floatformat:2 }}
-                            </td>
+                            <td class="small-text text-right empty-cell"></td>
                         </tr>
                     {% empty %}
                         <tr>
@@ -793,6 +800,22 @@
             complaint is accepted after the container has been sealed and departed. MEDO-B2B EU provides transport
             services under CIF Incoterms (Cost, Insurance, Freight) unless otherwise agreed in writing. Our general
             terms and conditions apply to all shipments and can be provided upon request.
+        </div>
+
+        <!-- Signature and Stamp Section -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-label">Authorized Signature &amp; Stamp</div>
+                <div class="signature-line">
+                    Signature
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-label">Date</div>
+                <div class="signature-line">
+                    Date
+                </div>
+            </div>
         </div>
     </div>
 </body>
