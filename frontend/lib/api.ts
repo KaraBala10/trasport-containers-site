@@ -222,9 +222,12 @@ export const apiService = {
 
   updateFCLQuoteStatus: (id: number, status: string, offerMessage?: string, amountPaid?: number, totalPrice?: number) => {
     const payload: any = {
-      status: status,
       offer_message: offerMessage || '',
     };
+    // Only include status if it's provided and not empty
+    if (status && status.trim() !== '') {
+      payload.status = status;
+    }
     if (amountPaid !== undefined) {
       payload.amount_paid = amountPaid;
     }

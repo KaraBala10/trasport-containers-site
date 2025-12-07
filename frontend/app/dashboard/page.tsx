@@ -1362,9 +1362,18 @@ export default function DashboardPage() {
       }
 
       const amountPaidInput = amountPaidResult;
-      const parsedAmount = parseFloat(amountPaidInput || "0");
-      if (isNaN(parsedAmount) || parsedAmount < 0) {
-        showSuccess(
+      if (!amountPaidInput || amountPaidInput.trim() === "") {
+        showError(
+          language === "ar"
+            ? "يرجى إدخال مبلغ صحيح"
+            : "Please enter a valid amount"
+        );
+        return;
+      }
+      
+      const parsedAmount = parseFloat(amountPaidInput);
+      if (isNaN(parsedAmount) || !isFinite(parsedAmount) || parsedAmount < 0) {
+        showError(
           language === "ar"
             ? "يرجى إدخال مبلغ صحيح"
             : "Please enter a valid amount"
@@ -1372,7 +1381,7 @@ export default function DashboardPage() {
         return;
       }
       if (totalPrice > 0 && parsedAmount > totalPrice) {
-        showSuccess(
+        showError(
           language === "ar"
             ? "المبلغ المدفوع لا يمكن أن يكون أكبر من السعر الإجمالي"
             : "Amount paid cannot be greater than total price"
@@ -1410,9 +1419,12 @@ export default function DashboardPage() {
       );
     } catch (error: any) {
       console.error("Error updating paid amount:", error);
-      showError(
-        t.error + ": " + (error.response?.data?.message || error.message)
-      );
+      const errorMessage = 
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.message || 
+        (language === "ar" ? "حدث خطأ أثناء تحديث المبلغ المدفوع" : "An error occurred while updating the paid amount");
+      showError(errorMessage);
     }
   };
 

@@ -914,100 +914,209 @@ def update_fcl_quote_status_view(request, pk):
 
     try:
         quote = FCLQuote.objects.get(pk=pk)
-        new_status = request.data.get("status")
+        new_status_raw = request.data.get("status")
+        # Normalize status: treat empty string, None, or whitespace as None
+        if isinstance(new_status_raw, str):
+            new_status_raw = new_status_raw.strip()
+            if new_status_raw == "":
+                new_status = None
+            else:
+                new_status = new_status_raw
+        else:
+            new_status = new_status_raw
+            
         offer_message = request.data.get("offer_message", "")
-
-        if not new_status:
+        
+        # Log incoming data for debugging
+        logger.info(f"FCL Quote {pk} update request - data keys: {list(request.data.keys())}, status: {new_status}, amount_paid: {request.data.get('amount_paid')}, type: {type(request.data.get('amount_paid'))}, full_data: {request.data}")
+        
+        # Check if we're only updating amount_paid or total_price (no status change)
+        # Handle QueryDict (form data) - get first value if it's a list
+        amount_paid_raw = request.data.get("amount_paid")
+        if isinstance(amount_paid_raw, list) and len(amount_paid_raw) > 0:
+            amount_paid = amount_paid_raw[0]
+        else:
+            amount_paid = amount_paid_raw
+            
+        total_price_raw = request.data.get("total_price")
+        if isinstance(total_price_raw, list) and len(total_price_raw) > 0:
+            total_price = total_price_raw[0]
+        else:
+            total_price = total_price_raw
+            
+        # Check if we're updating payment info (amount_paid or total_price)
+        is_updating_payment = amount_paid is not None or total_price is not None
+        
+        # Check if we're updating status (new_status is provided and not empty)
+        is_updating_status = new_status is not None and new_status != ""
+        
+        # If we're not updating anything, return error
+        if not is_updating_payment and not is_updating_status:
             return Response(
-                {"success": False, "error": "Status is required."},
+                {"success": False, "error": "At least one field (status, amount_paid, or total_price) must be provided."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Validate status
-        valid_statuses = [choice[0] for choice in FCLQuote.STATUS_CHOICES]
-        if new_status not in valid_statuses:
-            return Response(
-                {
-                    "success": False,
-                    "error": f"Invalid status. Valid statuses are: {', '.join(valid_statuses)}",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Check if payment is 100% before allowing status updates to IN_TRANSIT_TO_SYRIA and beyond
-        restricted_statuses = [
-            "IN_TRANSIT_TO_SYRIA",
-            "ARRIVED_SYRIA",
-            "SYRIA_SORTING",
-            "READY_FOR_DELIVERY",
-            "OUT_FOR_DELIVERY",
-            "DELIVERED",
-        ]
-        if new_status in restricted_statuses:
-            if quote.total_price and quote.total_price > 0:
-                payment_percentage = (
-                    (quote.amount_paid or 0) / quote.total_price * 100
-                    if quote.amount_paid
-                    else 0
-                )
-                if payment_percentage < 100:
-                    return Response(
-                        {
-                            "success": False,
-                            "error": f"Cannot update status to {new_status}. Payment must be 100% complete. Current payment: {payment_percentage:.1f}%",
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
 
         # Store old status for email notification
         old_status = quote.status
 
-        quote.status = new_status
+        # Only validate and update status if it's provided
+        if new_status:
+            # Validate status
+            valid_statuses = [choice[0] for choice in FCLQuote.STATUS_CHOICES]
+            if new_status not in valid_statuses:
+                return Response(
+                    {
+                        "success": False,
+                        "error": f"Invalid status. Valid statuses are: {', '.join(valid_statuses)}",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        # If status is OFFER_SENT, save message and timestamp
-        if new_status == "OFFER_SENT" and offer_message:
-            quote.offer_message = offer_message
-            from django.utils import timezone
-
-            quote.offer_sent_at = timezone.now()
-            quote.user_response = (
-                "PENDING"  # Reset user response when new offer is sent
-            )
-
-        # Allow setting/updating total_price and amount_paid for OFFER_SENT and PENDING_PAYMENT
-        if (
-            new_status == "OFFER_SENT"
-            or new_status == "PENDING_PAYMENT"
-            or quote.status == "PENDING_PAYMENT"
-        ):
-            # Allow setting/updating total_price
-            total_price = request.data.get("total_price")
-            if total_price is not None:
-                try:
-                    total_price_decimal = float(total_price)
-                    if total_price_decimal < 0:
+            # Check if payment is 100% before allowing status updates to IN_TRANSIT_TO_SYRIA and beyond
+            restricted_statuses = [
+                "IN_TRANSIT_TO_SYRIA",
+                "ARRIVED_SYRIA",
+                "SYRIA_SORTING",
+                "READY_FOR_DELIVERY",
+                "OUT_FOR_DELIVERY",
+                "DELIVERED",
+            ]
+            if new_status in restricted_statuses:
+                if quote.total_price and quote.total_price > 0:
+                    payment_percentage = (
+                        (quote.amount_paid or 0) / quote.total_price * 100
+                        if quote.amount_paid
+                        else 0
+                    )
+                    if payment_percentage < 100:
                         return Response(
                             {
                                 "success": False,
-                                "error": "Total price cannot be negative.",
+                                "error": f"Cannot update status to {new_status}. Payment must be 100% complete. Current payment: {payment_percentage:.1f}%",
                             },
                             status=status.HTTP_400_BAD_REQUEST,
                         )
-                    quote.total_price = total_price_decimal
-                except (ValueError, TypeError):
+
+            quote.status = new_status
+
+            # If status is OFFER_SENT, save message and timestamp
+            if new_status == "OFFER_SENT" and offer_message:
+                quote.offer_message = offer_message
+                from django.utils import timezone
+
+                quote.offer_sent_at = timezone.now()
+                quote.user_response = (
+                    "PENDING"  # Reset user response when new offer is sent
+                )
+
+        # Allow setting/updating total_price and amount_paid for any status (admin can update payment info anytime)
+        if amount_paid is not None or total_price is not None:
+            # Allow setting/updating total_price
+            if total_price is not None:
+                try:
+                    # Handle empty string, None, or whitespace
+                    if isinstance(total_price, str):
+                        total_price = total_price.strip()
+                        if total_price == "" or total_price.lower() == "none":
+                            total_price = None
+                    
+                    # If total_price is None or empty after processing, skip update
+                    if total_price is None or total_price == "":
+                        pass  # Don't update total_price if it's empty
+                    else:
+                        total_price_decimal = float(total_price)
+                        if total_price_decimal < 0:
+                            return Response(
+                                {
+                                    "success": False,
+                                    "error": "Total price cannot be negative.",
+                                },
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+                        quote.total_price = total_price_decimal
+                except (ValueError, TypeError) as e:
+                    logger.error(f"Error converting total_price to float: {str(e)}, value: {total_price}, type: {type(total_price)}")
                     return Response(
                         {
                             "success": False,
-                            "error": "Invalid total_price value.",
+                            "error": f"Invalid total_price value: {total_price}. Please provide a valid number.",
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
             # Allow setting/updating amount_paid
-            amount_paid = request.data.get("amount_paid")
             if amount_paid is not None:
+                # Save original value for error messages
+                original_amount_paid_value = amount_paid
                 try:
-                    amount_paid_decimal = float(amount_paid)
+                    # Log the incoming value for debugging
+                    logger.info(f"Processing amount_paid: value={amount_paid}, type={type(amount_paid)}, repr={repr(amount_paid)}")
+                    
+                    # Handle different input types
+                    if isinstance(amount_paid, bool):
+                        # Boolean: convert to 0 or 1
+                        amount_paid_decimal = 1.0 if amount_paid else 0.0
+                    elif isinstance(amount_paid, (int, float, Decimal)):
+                        # Already a number, use directly
+                        # int, float, and Decimal should all convert to float without issues
+                        amount_paid_decimal = float(amount_paid)
+                    elif isinstance(amount_paid, str):
+                        # Handle string input
+                        original_amount_paid = amount_paid  # Keep original for error messages
+                        amount_paid_str = amount_paid.strip()
+                        if amount_paid_str == "" or amount_paid_str.lower() in ("none", "null", "undefined"):
+                            amount_paid_decimal = 0.0
+                        else:
+                            # Remove any commas, spaces, or currency symbols
+                            amount_paid_cleaned = amount_paid_str.replace(",", "").replace(" ", "").replace("€", "").replace("EUR", "").replace("$", "").strip()
+                            if amount_paid_cleaned == "":
+                                amount_paid_decimal = 0.0
+                            else:
+                                try:
+                                    amount_paid_decimal = float(amount_paid_cleaned)
+                                except ValueError as ve:
+                                    # If float() fails, try using regex to extract number
+                                    import re
+                                    numbers = re.findall(r'-?\d+\.?\d*', amount_paid_cleaned)
+                                    if numbers:
+                                        amount_paid_decimal = float(numbers[0])
+                                        logger.warning(f"Extracted number {amount_paid_decimal} from string '{original_amount_paid}' using regex")
+                                    else:
+                                        raise ValueError(f"Cannot convert string '{original_amount_paid}' to number")
+                    elif isinstance(amount_paid, (list, tuple)):
+                        # If it's a list/tuple, take the first element
+                        logger.warning(f"amount_paid is a list/tuple: {amount_paid}, using first element")
+                        if len(amount_paid) > 0:
+                            amount_paid_decimal = float(amount_paid[0])
+                        else:
+                            amount_paid_decimal = 0.0
+                    elif isinstance(amount_paid, dict):
+                        # If it's a dict, try to get a value
+                        logger.warning(f"amount_paid is a dict: {amount_paid}")
+                        if "value" in amount_paid:
+                            amount_paid_decimal = float(amount_paid["value"])
+                        elif "amount" in amount_paid:
+                            amount_paid_decimal = float(amount_paid["amount"])
+                        else:
+                            # Try to convert the dict to string and parse
+                            raise ValueError(f"Cannot convert dict to number: {amount_paid}")
+                    elif amount_paid is None:
+                        amount_paid_decimal = 0.0
+                    else:
+                        # For any other type, try to convert to string first
+                        logger.warning(f"Unexpected amount_paid type: {type(amount_paid)}, value: {amount_paid}")
+                        amount_paid_str = str(amount_paid).strip()
+                        if amount_paid_str == "" or amount_paid_str.lower() in ("none", "null", "undefined"):
+                            amount_paid_decimal = 0.0
+                        else:
+                            # Remove any commas, spaces, or currency symbols
+                            amount_paid_str = amount_paid_str.replace(",", "").replace(" ", "").replace("€", "").replace("EUR", "").replace("$", "").strip()
+                            if amount_paid_str == "":
+                                amount_paid_decimal = 0.0
+                            else:
+                                amount_paid_decimal = float(amount_paid_str)
+                    
                     if amount_paid_decimal < 0:
                         return Response(
                             {
@@ -1018,65 +1127,90 @@ def update_fcl_quote_status_view(request, pk):
                         )
                     # Allow small tolerance (0.01) for floating point precision errors
                     tolerance = 0.01
-                    if (
-                        quote.total_price
-                        and amount_paid_decimal > quote.total_price + tolerance
-                    ):
-                        return Response(
-                            {
-                                "success": False,
-                                "error": "Amount paid cannot be greater than total price.",
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                    # Cap amount_paid to total_price if it's slightly over due to rounding
-                    if quote.total_price and amount_paid_decimal > quote.total_price:
-                        amount_paid_decimal = float(quote.total_price)
+                    if quote.total_price:
+                        # Convert total_price to float for comparison
+                        total_price_float = float(quote.total_price)
+                        if amount_paid_decimal > total_price_float + tolerance:
+                            return Response(
+                                {
+                                    "success": False,
+                                    "error": "Amount paid cannot be greater than total price.",
+                                },
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+                        # Cap amount_paid to total_price if it's slightly over due to rounding
+                        if amount_paid_decimal > total_price_float:
+                            amount_paid_decimal = total_price_float
                     quote.amount_paid = amount_paid_decimal
-                except (ValueError, TypeError):
+                except (ValueError, TypeError) as e:
+                    # Use original value for error message
+                    logger.error(f"Error converting amount_paid to float: {str(e)}, original_value={original_amount_paid_value}, original_type={type(original_amount_paid_value)}, repr={repr(original_amount_paid_value)}", exc_info=True)
+                    # Try to provide more helpful error message
+                    error_msg = f"Invalid amount_paid value: {original_amount_paid_value} (type: {type(original_amount_paid_value).__name__}). Please provide a valid number."
+                    if isinstance(original_amount_paid_value, (list, dict)):
+                        error_msg = f"Invalid amount_paid value: expected a number, but received {type(original_amount_paid_value).__name__}. Please provide a valid number."
+                    elif isinstance(original_amount_paid_value, str):
+                        # Try to see if we can extract a number from the string
+                        try:
+                            # Remove all non-numeric characters except decimal point and minus sign
+                            import re
+                            cleaned = re.sub(r'[^\d.-]', '', original_amount_paid_value)
+                            if cleaned:
+                                test_float = float(cleaned)
+                                logger.warning(f"Could extract number {test_float} from string '{original_amount_paid_value}', but original conversion failed")
+                        except:
+                            pass
                     return Response(
                         {
                             "success": False,
-                            "error": "Invalid amount_paid value.",
+                            "error": error_msg,
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
         quote.save()
 
-        # Send email notifications
-        try:
-            # Send email to user
-            send_status_update_email(
-                quote=quote,
-                old_status=old_status,
-                new_status=new_status,
-                offer_message=offer_message if new_status == "OFFER_SENT" else None,
-            )
-            # Send email to admin
-            send_status_update_notification_to_admin(
-                quote=quote,
-                old_status=old_status,
-                new_status=new_status,
-                offer_message=offer_message if new_status == "OFFER_SENT" else None,
-            )
-        except Exception as email_error:
-            # Log email error but don't fail the request
-            logger = logging.getLogger(__name__)
-            logger.error(
-                f"Failed to send status update email notifications: {str(email_error)}"
-            )
+        # Send email notifications only if status was changed
+        if new_status and old_status != new_status:
+            try:
+                # Send email to user
+                send_status_update_email(
+                    quote=quote,
+                    old_status=old_status,
+                    new_status=new_status,
+                    offer_message=offer_message if new_status == "OFFER_SENT" else None,
+                )
+                # Send email to admin
+                send_status_update_notification_to_admin(
+                    quote=quote,
+                    old_status=old_status,
+                    new_status=new_status,
+                    offer_message=offer_message if new_status == "OFFER_SENT" else None,
+                )
+            except Exception as email_error:
+                # Log email error but don't fail the request
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Failed to send status update email notifications: {str(email_error)}"
+                )
 
         # Refresh quote from database to ensure we have latest data (especially invoice fields)
         quote.refresh_from_db()
 
         # Get status display name
-        status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status, new_status)
+        status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status or old_status, new_status or old_status)
 
         # Prepare response data
+        if new_status and old_status != new_status:
+            message = f"FCL quote status updated to {status_display} successfully."
+        elif amount_paid is not None or total_price is not None:
+            message = "FCL quote payment information updated successfully."
+        else:
+            message = "FCL quote updated successfully."
+        
         response_data = {
             "success": True,
-            "message": f"FCL quote status updated to {status_display} successfully.",
+            "message": message,
             "data": FCLQuoteSerializer(quote).data,
         }
 
@@ -1096,11 +1230,15 @@ def update_fcl_quote_status_view(request, pk):
         )
     except Exception as e:
         logger = logging.getLogger(__name__)
-        logger.error(f"Error updating quote status: {str(e)}")
+        logger.error(f"Error updating quote status: {str(e)}", exc_info=True)
+        # Return more detailed error message in development
+        error_message = "An error occurred while processing the request."
+        if settings.DEBUG:
+            error_message = f"Error: {str(e)}"
         return Response(
             {
                 "success": False,
-                "error": "An error occurred while processing the request.",
+                "error": error_message,
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
