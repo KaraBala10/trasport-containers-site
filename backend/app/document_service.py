@@ -734,6 +734,12 @@ def generate_consolidated_packing_list(
         # Company info (for logo and site URL)
         company_info = get_company_info()
 
+        # Generate tracking URL for barcode
+        tracking_url = f"{company_info['site_url']}/tracking"
+
+        # Generate barcode with tracking URL
+        barcode_base64 = generate_tracking_barcode(tracking_url)
+
         # Aggregate data from all shipments
         all_shipment_data = []
         grand_total_cbm = 0.0
@@ -831,6 +837,8 @@ def generate_consolidated_packing_list(
             "grand_total_weight": grand_total_weight,
             "grand_total_value": grand_total_value,
             "signature_base64": signature_base64,
+            "barcode_base64": barcode_base64,
+            "tracking_url": tracking_url,
         }
 
         html_string = render_to_string(
@@ -849,6 +857,237 @@ def generate_consolidated_packing_list(
     except Exception as e:
         logger.error(
             f"Error generating consolidated packing list: {str(e)}", exc_info=True
+        )
+        raise
+
+
+def generate_consolidated_packing_list_bulk(
+    shipments: List[LCLShipment],
+    language: str = "en",
+    packing_list_number: Optional[str] = None,
+) -> bytes:
+    """
+    Generate Consolidated Packing List for multiple LCL shipments.
+    Similar to generate_consolidated_export_invoice_bulk but for packing lists.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: kept for future use (currently template is EN)
+        packing_list_number: Optional packing list number
+
+    Returns:
+        PDF bytes
+    """
+    try:
+        if not shipments:
+            raise ValueError("No shipments provided for consolidated packing list")
+
+        # Company info (for logo and site URL)
+        company_info = get_company_info()
+
+        # Generate tracking URL for barcode
+        tracking_url = f"{company_info['site_url']}/tracking"
+
+        # Generate barcode with tracking URL
+        barcode_base64 = generate_tracking_barcode(tracking_url)
+
+        # Aggregate data from all shipments
+        all_shipment_data = []
+        grand_total_cbm = 0.0
+        grand_total_packages = 0
+        grand_total_weight = 0.0
+        grand_total_value = 0.0
+
+        for shipment in shipments:
+            # Reuse invoice pricing calculations
+            pricing = calculate_invoice_totals(shipment)
+
+            # Calculate totals for this shipment
+            total_cbm = 0.0
+            total_packages = 0
+            total_weight = 0.0
+            total_value = 0.0
+
+            for item in pricing.get("parcel_calculations", []):
+                try:
+                    cbm_value = float(item.get("cbm", 0) or 0)
+                except (TypeError, ValueError):
+                    cbm_value = 0.0
+                total_cbm += cbm_value
+
+                try:
+                    weight_value = float(item.get("weight", 0) or 0)
+                except (TypeError, ValueError):
+                    weight_value = 0.0
+                repeat_count = int(item.get("repeat_count", 1) or 1)
+                total_weight += weight_value * repeat_count
+                total_packages += repeat_count
+
+                try:
+                    price_value = float(item.get("price_by_weight", 0) or 0)
+                except (TypeError, ValueError):
+                    price_value = 0.0
+                total_value += price_value
+
+            grand_total_cbm += total_cbm
+            grand_total_packages += total_packages
+            grand_total_weight += total_weight
+            grand_total_value += total_value
+
+            # Collect all parcel items for this shipment
+            shipment_items = []
+            for item in pricing.get("parcel_calculations", []):
+                shipment_items.append(
+                    {
+                        "shipment_number": shipment.shipment_number
+                        or f"#{shipment.id}",
+                        "product_name_en": item.get("product_name_en", ""),
+                        "product_name_ar": item.get("product_name_ar", ""),
+                        "hs_code": item.get("hs_code", ""),
+                        "cbm": float(item.get("cbm", 0) or 0),
+                        "repeat_count": int(item.get("repeat_count", 1) or 1),
+                        "price_by_weight": float(item.get("price_by_weight", 0) or 0),
+                        "weight": float(item.get("weight", 0) or 0),
+                    }
+                )
+
+            all_shipment_data.append(
+                {
+                    "shipment": shipment,
+                    "pricing": pricing,
+                    "items": shipment_items,
+                    "total_cbm": total_cbm,
+                    "total_packages": total_packages,
+                    "total_weight": total_weight,
+                    "total_value": total_value,
+                }
+            )
+
+        # Generate packing list number if not provided
+        if not packing_list_number:
+            packing_list_number = (
+                f"PL-{timezone.now().strftime('%Y%m%d')}-{len(shipments)}"
+            )
+
+        context = {
+            "shipments": shipments,
+            "shipment_data": all_shipment_data,
+            "company": company_info,
+            "language": language,
+            "invoice_date": timezone.now(),
+            "packing_list_number": packing_list_number,
+            "grand_total_cbm": grand_total_cbm,
+            "grand_total_packages": grand_total_packages,
+            "grand_total_weight": grand_total_weight,
+            "grand_total_value": grand_total_value,
+            "barcode_base64": barcode_base64,
+            "tracking_url": tracking_url,
+        }
+
+        html_string = render_to_string(
+            "documents/consolidated_packing_list.html", context
+        )
+
+        font_config = FontConfiguration()
+        html = HTML(string=html_string, base_url=settings.BASE_DIR)
+        pdf_bytes = html.write_pdf(font_config=font_config)
+
+        logger.info(
+            f"Successfully generated consolidated packing list PDF for {len(shipments)} shipments"
+        )
+        return pdf_bytes
+
+    except Exception as e:
+        logger.error(
+            f"Error generating consolidated packing list bulk: {str(e)}",
+            exc_info=True,
+        )
+        raise
+
+
+def generate_multiple_consolidated_packing_lists(
+    shipments: List[LCLShipment],
+    language: str = "en",
+    max_cbm: float = 65.0,
+    max_weight_kg: float = 24000.0,
+) -> bytes:
+    """
+    Generate multiple consolidated packing lists split by CBM and weight limits,
+    and return them as a ZIP file.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: Language for packing lists (default: 'en')
+        max_cbm: Maximum CBM per packing list (default: 65.0)
+        max_weight_kg: Maximum weight per packing list (default: 24000.0)
+
+    Returns:
+        ZIP file bytes containing all packing lists
+    """
+    import zipfile
+    from datetime import datetime
+
+    try:
+        # Split shipments into groups
+        groups = split_shipments_by_limits(shipments, max_cbm, max_weight_kg)
+
+        if not groups:
+            raise ValueError("No shipment groups created")
+
+        # Create ZIP file in memory
+        zip_buffer = io.BytesIO()
+        date_str = datetime.now().strftime("%Y%m%d")
+
+        try:
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                for idx, group in enumerate(groups, start=1):
+                    # Generate packing list number for this group
+                    packing_list_number = f"PL-{date_str}-{idx:03d}"
+
+                    # Generate PDF for this group
+                    pdf_bytes = generate_consolidated_packing_list_bulk(
+                        group,
+                        language=language,
+                        packing_list_number=packing_list_number,
+                    )
+
+                    # Add PDF to ZIP
+                    filename = f"Consolidated-Packing-List-{packing_list_number}.pdf"
+                    zip_file.writestr(filename, pdf_bytes)
+
+                    logger.info(
+                        f"Generated packing list {packing_list_number} with {len(group)} shipments"
+                    )
+
+            # Ensure ZIP file is properly closed and get bytes
+            zip_buffer.seek(0)
+            zip_bytes = zip_buffer.getvalue()
+
+            # Verify ZIP file is valid
+            if len(zip_bytes) == 0:
+                raise ValueError("Generated ZIP file is empty")
+
+            # Test ZIP file integrity
+            test_zip = zipfile.ZipFile(io.BytesIO(zip_bytes), "r")
+            test_zip.close()
+
+            logger.info(
+                f"ZIP file created successfully, size: {len(zip_bytes)} bytes, files: {len(groups)}"
+            )
+
+        except Exception as zip_error:
+            logger.error(f"Error creating ZIP file: {str(zip_error)}", exc_info=True)
+            raise
+
+        logger.info(
+            f"Successfully generated {len(groups)} packing lists and compressed into ZIP file"
+        )
+        return zip_bytes
+
+    except Exception as e:
+        logger.error(
+            f"Error generating multiple consolidated packing lists: {str(e)}",
+            exc_info=True,
         )
         raise
 

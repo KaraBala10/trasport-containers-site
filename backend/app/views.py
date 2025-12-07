@@ -5434,21 +5434,90 @@ def generate_bulk_customs_documents_view(request):
         from .document_service import (
             generate_consolidated_export_invoice_bulk,
             generate_consolidated_packing_list,
+            generate_consolidated_packing_list_bulk,
             generate_multiple_consolidated_invoices,
+            generate_multiple_consolidated_packing_lists,
             split_shipments_by_limits,
+            calculate_invoice_totals,
         )
 
         if document_type == "packing_list":
-            pdf_bytes = generate_consolidated_packing_list(
-                shipments_list, language=language
-            )
-            filename = (
-                f"Consolidated-Packing-List-{timezone.now().strftime('%Y%m%d')}.pdf"
-            )
-            # Return PDF as response
-            response = HttpResponse(pdf_bytes, content_type="application/pdf")
-            response["Content-Disposition"] = f'inline; filename="{filename}"'
-            return response
+            # Calculate total CBM and weight first
+            total_cbm = 0.0
+            total_weight = 0.0
+
+            for shipment in shipments_list:
+                try:
+                    pricing = calculate_invoice_totals(shipment)
+                    for item in pricing.get("parcel_calculations", []):
+                        try:
+                            cbm_value = float(item.get("cbm", 0) or 0)
+                        except (TypeError, ValueError):
+                            cbm_value = 0.0
+                        total_cbm += cbm_value
+
+                        try:
+                            weight_value = float(item.get("weight", 0) or 0)
+                        except (TypeError, ValueError):
+                            weight_value = 0.0
+                        repeat_count = int(item.get("repeat_count", 1) or 1)
+                        total_weight += weight_value * repeat_count
+                except Exception as e:
+                    logger.error(
+                        f"Error calculating totals for shipment {shipment.id}: {str(e)}"
+                    )
+
+            # Check if total exceeds limits - if so, always split into multiple packing lists
+            max_cbm_limit = 65.0
+            max_weight_limit = 24000.0
+
+            if total_cbm > max_cbm_limit or total_weight > max_weight_limit:
+                # Total exceeds limits - split into multiple packing lists
+                zip_bytes = generate_multiple_consolidated_packing_lists(
+                    shipments_list,
+                    language=language,
+                    max_cbm=max_cbm_limit,
+                    max_weight_kg=max_weight_limit,
+                )
+                filename = f"Consolidated-Packing-Lists-{timezone.now().strftime('%Y%m%d')}.zip"
+                response = HttpResponse(zip_bytes, content_type="application/zip")
+                response["Content-Disposition"] = f'attachment; filename="{filename}"'
+                response["Content-Length"] = str(len(zip_bytes))
+                response["Content-Transfer-Encoding"] = "binary"
+                return response
+            else:
+                # Total within limits - check if splitting is needed
+                groups = split_shipments_by_limits(
+                    shipments_list,
+                    max_cbm=max_cbm_limit,
+                    max_weight_kg=max_weight_limit,
+                )
+
+                if len(groups) == 1:
+                    # Only one group - return as PDF
+                    date_str = timezone.now().strftime("%Y%m%d")
+                    packing_list_number = f"PL-{date_str}-001"
+                    pdf_bytes = generate_consolidated_packing_list_bulk(
+                        groups[0], language=language, packing_list_number=packing_list_number
+                    )
+                    filename = f"Consolidated-Packing-List-{packing_list_number}.pdf"
+                    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+                    response["Content-Disposition"] = f'inline; filename="{filename}"'
+                    return response
+                else:
+                    # Multiple groups - return as ZIP
+                    zip_bytes = generate_multiple_consolidated_packing_lists(
+                        shipments_list,
+                        language=language,
+                        max_cbm=max_cbm_limit,
+                        max_weight_kg=max_weight_limit,
+                    )
+                    filename = f"Consolidated-Packing-Lists-{timezone.now().strftime('%Y%m%d')}.zip"
+                    response = HttpResponse(zip_bytes, content_type="application/zip")
+                    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+                    response["Content-Length"] = str(len(zip_bytes))
+                    response["Content-Transfer-Encoding"] = "binary"
+                    return response
         else:  # consolidated_export_invoice
             # Calculate total CBM and weight first
             from .document_service import calculate_invoice_totals
