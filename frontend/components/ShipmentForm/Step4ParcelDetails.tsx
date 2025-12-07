@@ -360,7 +360,7 @@ export default function Step4ParcelDetails({
       insurance: "التأمين",
       insuranceCheckbox: "أريد التأمين على الشحنة",
       insuranceDesc:
-        "يمكنك اختيار تأمين إضافي على قيمة الشحنة (1.5% من القيمة المعلنة + حساب الشحنة)",
+        "يمكنك اختيار تأمين إضافي على قيمة الشحنة (2% من القيمة المعلنة + حساب الشحنة)",
       declaredValueShipment: "القيمة المعلنة للشحنة (€)",
       note: "ملاحظة: التأمين اختياري. سيتم حساب التأمين في صفحة ملخص التسعير.",
     },
@@ -401,7 +401,7 @@ export default function Step4ParcelDetails({
       insurance: "Insurance",
       insuranceCheckbox: "I want insurance for the shipment",
       insuranceDesc:
-        "You can choose additional insurance on shipment value (1.5% of declared value + calculation)",
+        "You can choose additional insurance on shipment value (2% of declared value + calculation)",
       declaredValueShipment: "Declared Shipment Value (€)",
       note: "Note: Insurance is optional. Insurance will be calculated in the Pricing Summary page.",
     },

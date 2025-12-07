@@ -844,8 +844,8 @@ def calculate_pricing_view(request):
         )
         insurance_cost = 0
         if declared_shipment_value > 0:
-            # Insurance: (Base LCL Price + declared value) * 1.5%
-            insurance_cost = (base_lcl_price + declared_shipment_value) * 0.015
+            # Insurance: (Base LCL Price + declared value) * 2%
+            insurance_cost = (base_lcl_price + declared_shipment_value) * 0.02
 
         total_price = calculation_total + insurance_cost
 
@@ -859,7 +859,7 @@ def calculate_pricing_view(request):
 
         if insurance_cost > 0:
             formula_dict["insurance"] = (
-                f"({base_lcl_price:.2f} + {declared_shipment_value:.2f}) × 1.5% = {insurance_cost:.2f}"
+                f"({base_lcl_price:.2f} + {declared_shipment_value:.2f}) × 2% = {insurance_cost:.2f}"
             )
             formula_dict["totalPrice"] = (
                 f"{calculation_total:.2f} + {insurance_cost:.2f} = {total_price:.2f}"

@@ -470,7 +470,7 @@ export default function CreateShipmentPage() {
             0
           );
           const electronicsInsurance =
-            (electronicsTotal + electronicsInsuranceValue) * 0.015;
+            (electronicsTotal + electronicsInsuranceValue) * 0.02;
 
           // Calculate packaging for electronics
           // Base packaging: 5€ per piece × repeatCount (forced)

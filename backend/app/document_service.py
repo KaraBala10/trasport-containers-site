@@ -290,8 +290,8 @@ def calculate_invoice_totals(shipment: LCLShipment) -> Dict:
         # Calculate insurance if declared value exists
         insurance_cost = 0
         if total_declared_value > 0:
-            # Insurance: (Base LCL Price + declared value) * 1.5%
-            insurance_cost = (base_lcl_price + total_declared_value) * 0.015
+            # Insurance: (Base LCL Price + declared value) * 2%
+            insurance_cost = (base_lcl_price + total_declared_value) * 0.02
 
         # Calculate EU Shipping (if exists)
         eu_shipping_cost = 0
