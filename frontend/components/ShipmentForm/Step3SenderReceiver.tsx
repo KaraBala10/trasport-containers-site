@@ -191,7 +191,19 @@ export default function Step3SenderReceiver({
   ): string | null => {
     switch (field) {
       case "email":
-        return validateEmail(value);
+        // Email is optional for sender when direction is sy-eu (Middle East to Europe)
+        if (!isEUtoSY && (!value || value.trim() === "")) {
+          return null; // Optional, no error
+        }
+        // If email is provided, validate it
+        if (value && value.trim() !== "") {
+          return validateEmail(value);
+        }
+        // Email is required for sender when direction is eu-sy (Europe to Middle East)
+        if (isEUtoSY) {
+          return validateEmail(value);
+        }
+        return null;
       case "phone":
         return validatePhone(value);
       case "fullName":
@@ -243,7 +255,19 @@ export default function Step3SenderReceiver({
   ): string | null => {
     switch (field) {
       case "email":
-        return validateEmail(value);
+        // Email is optional for receiver when direction is eu-sy (Europe to Middle East)
+        if (isEUtoSY && (!value || value.trim() === "")) {
+          return null; // Optional, no error
+        }
+        // If email is provided, validate it
+        if (value && value.trim() !== "") {
+          return validateEmail(value);
+        }
+        // Email is required for receiver when direction is sy-eu (Middle East to Europe)
+        if (!isEUtoSY) {
+          return validateEmail(value);
+        }
+        return null;
       case "phone":
         return validatePhone(value);
       case "fullName":
@@ -413,7 +437,7 @@ export default function Step3SenderReceiver({
           {/* Email */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t.email} *
+              {t.email} {isEUtoSY ? "*" : ""}
             </label>
             <input
               type="email"
@@ -431,7 +455,7 @@ export default function Step3SenderReceiver({
                   ? "border-red-500 focus:border-red-500"
                   : "border-gray-300 focus:border-primary-yellow"
               }`}
-              required
+              required={isEUtoSY}
             />
             {senderErrors.email && (
               <p className="mt-1 text-sm text-red-600">{senderErrors.email}</p>
@@ -729,7 +753,7 @@ export default function Step3SenderReceiver({
           {/* Email */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t.email} *
+              {t.email} {!isEUtoSY ? "*" : ""}
             </label>
             <input
               type="email"
@@ -747,7 +771,7 @@ export default function Step3SenderReceiver({
                   ? "border-red-500 focus:border-red-500"
                   : "border-gray-300 focus:border-primary-yellow"
               }`}
-              required
+              required={!isEUtoSY}
             />
             {receiverErrors.email && (
               <p className="mt-1 text-sm text-red-600">

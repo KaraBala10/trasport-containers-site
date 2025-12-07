@@ -189,24 +189,24 @@ export default function CreateShipmentPage() {
     if (!sender || !receiver) return false;
 
     // Validate sender
-    // eu-sy: sender needs city + country
-    // sy-eu: sender needs country + province (no city)
+    // eu-sy: sender needs city + country, email required
+    // sy-eu: sender needs country + province (no city), email optional
     const senderValid =
       sender.fullName?.trim() &&
       sender.phone?.trim() &&
-      sender.email?.trim() &&
+      (direction === "eu-sy" ? sender.email?.trim() : true) && // Email required only for eu-sy
       sender.street?.trim() &&
       (direction === "eu-sy"
         ? sender.city?.trim() && sender.country?.trim()
         : sender.country?.trim() && sender.province?.trim());
 
     // Validate receiver
-    // eu-sy: receiver needs country + province (no city)
-    // sy-eu: receiver needs city + country
+    // eu-sy: receiver needs country + province (no city), email optional
+    // sy-eu: receiver needs city + country, email required
     const receiverValid =
       receiver.fullName?.trim() &&
       receiver.phone?.trim() &&
-      receiver.email?.trim() &&
+      (direction === "sy-eu" ? receiver.email?.trim() : true) && // Email required only for sy-eu
       receiver.street?.trim() &&
       (direction === "eu-sy"
         ? receiver.country?.trim() && receiver.province?.trim()
