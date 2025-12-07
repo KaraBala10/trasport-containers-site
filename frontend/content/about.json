@@ -79,7 +79,7 @@
         "label": "سنة خبرة"
       },
       {
-        "number": 5000,
+        "number": 12,
         "suffix": "+",
         "label": "شحنة سنوياً"
       },
@@ -89,7 +89,7 @@
         "label": "دولة أوروبية"
       },
       {
-        "number": 99,
+        "number": 65,
         "suffix": "%",
         "label": "رضا العملاء"
       }
@@ -229,7 +229,7 @@
         "label": "Years Experience"
       },
       {
-        "number": 5000,
+        "number": 12,
         "suffix": "+",
         "label": "Shipments Yearly"
       },
@@ -239,7 +239,7 @@
         "label": "European Countries"
       },
       {
-        "number": 99,
+        "number": 65,
         "suffix": "%",
         "label": "Customer Satisfaction"
       }

@@ -26,7 +26,7 @@ export default function Home() {
         shippingStages: "مراحل الشحن",
         stage1: "التجميع",
         stage2: "النقل",
-        stage3: "التخزين",
+        stage3: "التخزين المؤقت",
         stage4: "التوصيل",
         trustTitle: "الثقة والامتثال",
         fclQuote: "عرض سعر FCL",
@@ -69,7 +69,7 @@ export default function Home() {
         shippingStages: "Shipping Stages",
         stage1: "Collection",
         stage2: "Transport",
-        stage3: "Storage",
+        stage3: "Temporary Storage",
         stage4: "Delivery",
         trustTitle: "Trust & Compliance",
         fclQuote: "FCL Quote",
@@ -352,7 +352,7 @@ export default function Home() {
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <div className="text-center">
-                <div className="text-5xl md:text-6xl font-bold text-primary-yellow mb-2">10K+</div>
+                <div className="text-5xl md:text-6xl font-bold text-primary-yellow mb-2">+12</div>
                 <div className="text-lg text-gray-300">{t.statsShipments}</div>
               </div>
               <div className="text-center">
@@ -733,6 +733,70 @@ export default function Home() {
         <section className="py-16 bg-gradient-to-b from-slate-100 to-gray-50" aria-labelledby="map-heading">
           <div className="container mx-auto px-4">
             <InteractiveMap language={language} />
+            
+            {/* Company Information */}
+            <div className="mt-12 max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 border border-gray-200">
+              <h3 className="text-xl md:text-2xl font-bold text-primary-dark mb-6 text-center">
+                {language === "ar" ? "مزود خدمات لوجستية" : "Logistics Service Provider"}
+              </h3>
+              <div className="grid md:grid-cols-2 gap-6 text-sm md:text-base">
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-semibold text-primary-dark">
+                      {language === "ar" ? "العنوان:" : "Address:"}
+                    </span>
+                    <p className="text-gray-700 mt-1">
+                      Titanlaan 1, 4624 AX Bergen op Zoom<br />
+                      The Netherlands
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-primary-dark">
+                      KvK nr:
+                    </span>
+                    <span className="text-gray-700 ml-2">75251663</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-primary-dark">
+                      TAX nr:
+                    </span>
+                    <span className="text-gray-700 ml-2">NL002518102B41</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-semibold text-primary-dark">
+                      EORI number:
+                    </span>
+                    <span className="text-gray-700 ml-2">NL1320963189</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-primary-dark">
+                      {language === "ar" ? "الهاتف:" : "Tel:"}
+                    </span>
+                    <a href="tel:+31639788989" className="text-primary-yellow hover:text-primary-dark ml-2 transition-colors">
+                      +31 6 39 788 989
+                    </a>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-primary-dark">
+                      {language === "ar" ? "البريد الإلكتروني:" : "E-mail:"}
+                    </span>
+                    <a href="mailto:contact@medo-freight.eu" className="text-primary-yellow hover:text-primary-dark ml-2 transition-colors">
+                      contact@medo-freight.eu
+                    </a>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-primary-dark">
+                      {language === "ar" ? "الموقع الإلكتروني:" : "Website:"}
+                    </span>
+                    <a href="http://medo-freight.eu" target="_blank" rel="noopener noreferrer" className="text-primary-yellow hover:text-primary-dark ml-2 transition-colors">
+                      http://medo-freight.eu
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

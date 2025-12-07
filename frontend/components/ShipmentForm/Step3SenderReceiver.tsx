@@ -353,7 +353,7 @@ export default function Step3SenderReceiver({
           <span className="w-10 h-10 bg-primary-yellow rounded-full flex items-center justify-center text-primary-dark font-bold">
             1
           </span>
-          {t.senderInfo} {isEUtoSY ? `(${t.inEurope})` : `(${t.inSyria})`}
+          {t.senderInfo}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -665,7 +665,7 @@ export default function Step3SenderReceiver({
           <span className="w-10 h-10 bg-primary-yellow rounded-full flex items-center justify-center text-primary-dark font-bold">
             2
           </span>
-          {t.receiverInfo} {isEUtoSY ? `(${t.inSyria})` : `(${t.inEurope})`}
+          {t.receiverInfo}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
