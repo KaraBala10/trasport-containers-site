@@ -90,17 +90,20 @@
 
         .barcode-container {
             text-align: right;
-            min-width: 180px;
+            min-width: 280px;
         }
 
         .barcode-container img {
-            max-width: 180px;
+            max-width: 280px;
+            width: 100%;
             height: auto;
-            max-height: 50px;
-            border: 2px solid #111827;
-            padding: 4px;
+            max-height: 90px;
+            min-height: 70px;
+            border: 3px solid #111827;
+            padding: 8px;
             background: white;
-            border-radius: 4px;
+            border-radius: 6px;
+            object-fit: contain;
         }
 
         .barcode-label {
@@ -761,7 +764,7 @@
                                     {% elif item.shipment_type == "personal" %}
                                         <strong>€0.00</strong>
                                     {% else %}
-                                        <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                                    <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
                                     {% endif %}
                                 </td>
                                 <td class="small-text text-right">
@@ -799,7 +802,7 @@
                                 {% elif item.shipment_type == "personal" %}
                                     <strong>€0.00</strong>
                                 {% else %}
-                                    <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
+                                <strong>€{{ item.price_by_weight|floatformat:2 }}</strong>
                                 {% endif %}
                             </td>
                             <td class="small-text text-right">

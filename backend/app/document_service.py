@@ -82,6 +82,52 @@ def generate_barcode(shipment_number: str) -> Optional[str]:
         return None
 
 
+def generate_tracking_barcode(tracking_url: str) -> Optional[str]:
+    """
+    Generate Code128 barcode for tracking URL.
+    When scanned, the barcode will contain the tracking URL.
+
+    Args:
+        tracking_url: Tracking URL to encode (e.g., https://medo-freight.eu/tracking)
+
+    Returns:
+        Base64 encoded barcode image string, or None if generation fails
+    """
+    if not BARCODE_AVAILABLE:
+        logger.warning("Barcode library not available, skipping barcode generation")
+        return None
+
+    if not tracking_url:
+        return None
+
+    try:
+        # Create Code128 barcode with tracking URL
+        code128 = Code128(str(tracking_url), writer=ImageWriter())
+
+        # Generate barcode image with larger size for better visibility
+        img_buffer = io.BytesIO()
+        code128.write(
+            img_buffer,
+            {
+                "module_width": 0.5,  # Increased from 0.3 for thicker bars
+                "module_height": 25.0,  # Increased from 15.0 for taller bars
+                "quiet_zone": 4.0,  # Increased from 2.0 for better scanning
+                "font_size": 12,  # Increased from 8 for better readability
+                "text_distance": 5.0,  # Increased from 3.0 for better spacing
+                "background": "white",
+                "foreground": "black",
+            },
+        )
+        img_buffer.seek(0)
+
+        # Convert to base64
+        barcode_base64 = base64.b64encode(img_buffer.read()).decode("utf-8")
+        return barcode_base64
+    except Exception as e:
+        logger.warning(f"Could not generate tracking barcode: {str(e)}", exc_info=True)
+        return None
+
+
 def calculate_invoice_totals(shipment: LCLShipment) -> Dict:
     """
     Calculate all pricing totals for invoice generation.
@@ -493,8 +539,10 @@ def generate_consolidated_export_invoice(
         # Generate tracking URL
         tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
 
-        # Generate barcode for shipment number (replacing QR code)
-        barcode_base64 = generate_barcode(shipment.shipment_number or str(shipment.id))
+        # Generate barcode with tracking URL (scannable to go to tracking page)
+        barcode_base64 = generate_tracking_barcode(
+            f"{company_info['site_url']}/tracking"
+        )
 
         # Aggregate totals for CBM, packages, and weight
         total_cbm = 0.0
@@ -592,8 +640,10 @@ def generate_packing_list(shipment: LCLShipment, language: str = "en") -> bytes:
         # Generate tracking URL
         tracking_url = f"{company_info['site_url']}/tracking?shipment_id={shipment.id}"
 
-        # Generate barcode for shipment number (replacing QR code)
-        barcode_base64 = generate_barcode(shipment.shipment_number or str(shipment.id))
+        # Generate barcode with tracking URL (scannable to go to tracking page)
+        barcode_base64 = generate_tracking_barcode(
+            f"{company_info['site_url']}/tracking"
+        )
 
         # Aggregate totals for CBM, packages, and weight
         total_cbm = 0.0
@@ -965,6 +1015,12 @@ def generate_consolidated_export_invoice_bulk(
         if not invoice_number:
             invoice_number = f"INV-{timezone.now().strftime('%Y%m%d')}-{len(shipments)}"
 
+        # Generate tracking URL for barcode
+        tracking_url = f"{company_info['site_url']}/tracking"
+
+        # Generate barcode with tracking URL
+        barcode_base64 = generate_tracking_barcode(tracking_url)
+
         context = {
             "shipments": shipments,
             "shipment_data": all_shipment_data,
@@ -979,6 +1035,8 @@ def generate_consolidated_export_invoice_bulk(
             "is_personal_only": overall_is_personal_only,
             "is_commercial_only": overall_is_commercial_only,
             "is_mixed": overall_is_mixed,
+            "barcode_base64": barcode_base64,
+            "tracking_url": tracking_url,
         }
 
         html_string = render_to_string(
