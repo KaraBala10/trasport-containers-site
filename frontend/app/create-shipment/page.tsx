@@ -691,7 +691,7 @@ export default function CreateShipmentPage() {
         sender_email: sender.email,
         sender_phone: sender.phone,
         sender_address: `${sender.street} ${sender.streetNumber}`.trim(),
-        sender_city: sender.city,
+        sender_city: direction === "sy-eu" ? sender.province || "" : sender.city || "",
         sender_postal_code: sender.postalCode || "",
         sender_country: senderCountry,
         receiver_name: receiver.fullName,
@@ -1888,7 +1888,7 @@ export default function CreateShipmentPage() {
                                 : sender?.street || "",
                             sender_city:
                               direction === "sy-eu"
-                                ? sender?.country || sender?.province || ""
+                                ? sender?.province || ""
                                 : sender?.city || "",
                             sender_postal_code: sender?.postalCode || "",
                             sender_country: senderCountry,
