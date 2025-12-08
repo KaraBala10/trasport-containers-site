@@ -581,37 +581,22 @@ export default function Home() {
                     : "Demonstration video"
                 }
               >
-                {/* Video Placeholder - Replace with actual video */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <div className="w-24 h-24 bg-primary-yellow/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
-                      <svg
-                        className="w-12 h-12 text-primary-dark ml-1"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                        aria-hidden="true"
-                        role="img"
-                      >
-                        <title>
-                          {language === "ar"
-                            ? "أيقونة تشغيل الفيديو"
-                            : "Play video icon"}
-                        </title>
-                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                      </svg>
-                    </div>
-                    <p className="text-xl font-semibold mb-2">
-                      {language === "ar"
-                        ? "فيديو تعريفي"
-                        : "Intro Video"}
-                    </p>
-                    <p className="text-gray-300 text-sm">
-                      {language === "ar"
-                        ? "سيتم إضافة الفيديو الحقيقي قريباً"
-                        : "Real video will be added soon"}
-                    </p>
-                  </div>
-                </div>
+                <video
+                  className="w-full h-full object-cover"
+                  controls
+                  preload="metadata"
+                  aria-label={
+                    language === "ar"
+                      ? "فيديو رحلة الشحنة"
+                      : "Shipment journey video"
+                  }
+                  poster="/images/hero-ship.avif"
+                >
+                  <source src="/video.mp4" type="video/mp4" />
+                  {language === "ar" 
+                    ? "متصفحك لا يدعم عرض الفيديو. يرجى تحديث المتصفح."
+                    : "Your browser does not support the video tag. Please update your browser."}
+                </video>
               </div>
             </div>
           </div>
