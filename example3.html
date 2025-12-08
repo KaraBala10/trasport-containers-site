@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Shipping Receipt - {{ receipt_number }}</title>
+    <title>Global Shipping Receipt</title>
     <!-- Combined Google Fonts: Cairo for Arabic, Libre Barcode for barcode, Roboto for English -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,6 +14,7 @@
     <style>
         :root {
             --brand-color: #d40511;
+            /* DHL-like Red or standard logistics red */
             --brand-dark: #cc0000;
             --text-black: #000000;
             --text-dark: #333333;
@@ -30,15 +31,10 @@
             print-color-adjust: exact;
         }
 
-        @page {
-            size: A4;
-            margin: 10mm;
-        }
-
         body {
             margin: 0;
-            padding: 0;
-            background-color: #ffffff;
+            padding: 20px;
+            background-color: #f5f5f5;
             font-family: var(--font-family);
             font-size: 12px;
             color: var(--text-black);
@@ -46,11 +42,15 @@
 
         .page-container {
             width: 210mm;
+            /* A4 width */
             min-height: 297mm;
+            /* A4 height */
             margin: 0 auto;
             background: white;
             padding: 10mm;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             position: relative;
+            border: 1px solid #ccc;
         }
 
         /* Header Section */
@@ -92,20 +92,16 @@
             margin-bottom: 5px;
         }
 
-        .qr-code img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
         .barcode-area {
             margin-bottom: 5px;
         }
 
-        .barcode-area img {
-            max-width: 200px;
-            height: auto;
-            max-height: 50px;
+        .barcode-font {
+            font-family: 'Libre Barcode 39 Text', cursive;
+            font-size: 50px;
+            color: #000;
+            line-height: 1;
+            margin-bottom: 5px;
         }
 
         .tracking-number {
@@ -114,12 +110,6 @@
             font-family: 'Courier New', monospace;
             letter-spacing: 2px;
             display: block;
-            margin-bottom: 5px;
-        }
-
-        .document-info .info-line {
-            margin-top: 5px;
-            font-size: 11px;
         }
 
         /* Combined Grid for Parties */
@@ -236,12 +226,6 @@
             margin-top: auto;
         }
 
-        .legal-text {
-            flex: 1;
-            padding-right: 20px;
-            line-height: 1.5;
-        }
-
         .signature-box {
             width: 200px;
             text-align: center;
@@ -253,13 +237,6 @@
             height: 30px;
         }
 
-        .signature-image {
-            max-width: 180px;
-            max-height: 70px;
-            margin: 8px auto;
-            display: block;
-        }
-
         @media print {
             body {
                 padding: 0;
@@ -267,6 +244,8 @@
             }
 
             .page-container {
+                box-shadow: none;
+                border: none;
                 width: 100%;
                 margin: 0;
                 padding: 0;
@@ -282,42 +261,27 @@
         <!-- Header -->
         <header class="header">
             <div class="brand-section">
-                {% if company.logo_base64 %}
-                <div style="margin-bottom: 10px;">
-                    <img src="data:image/png;base64,{{ company.logo_base64 }}" alt="Logo" style="max-width: 140px; max-height: 70px; object-fit: contain;">
-                </div>
-                {% endif %}
-                <h1>Medo-Freight EU</h1>
-                <div class="subtitle">Ship · Route · Deliver</div>
+                <!-- Simple Geometric Logo Placeholder -->
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    style="margin-bottom: 10px;">
+                    <rect width="12" height="40" fill="#d40511" />
+                    <rect x="14" width="12" height="40" fill="#d40511" />
+                    <rect x="28" width="12" height="40" fill="#d40511" />
+                </svg>
+                <h1>GLOBALShip</h1>
+                <div class="subtitle">Worldwide Logistics Solutions</div>
             </div>
 
             <div class="document-info">
-                {% if qr_code_base64 %}
-                <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" class="qr-code">
-                {% endif %}
-                {% if barcode_base64 %}
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=WAYBILL892293102" alt="QR Code"
+                    class="qr-code">
                 <div class="barcode-area">
-                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
+                    <div class="barcode-font">*892293102*</div>
                 </div>
-                {% endif %}
-                <div class="tracking-number">RECEIPT #: {{ receipt_number }}</div>
-                <div class="info-line"><b>Date:</b> {{ receipt_date|date:"M d, Y" }}</div>
-                <div class="info-line">
-                    <b>Origin:</b> 
-                    {% if shipment.direction == 'sy-eu' %}
-                        MIDDLE EAST (ME)
-                    {% else %}
-                        EUROPE (EU)
-                    {% endif %}
-                </div>
-                <div class="info-line">
-                    <b>Destination:</b> 
-                    {% if shipment.direction == 'sy-eu' %}
-                        EUROPE (EU)
-                    {% else %}
-                        MIDDLE EAST (ME)
-                    {% endif %}
-                </div>
+                <div class="tracking-number">WAYBILL #: 892 293 102</div>
+                <div style="margin-top: 5px; font-size: 11px;"><b>Date:</b> Oct 24, 2025</div>
+                <div style="font-size: 11px;"><b>Origin:</b> ROTTERDAM (NL)</div>
+                <div style="font-size: 11px;"><b>Destination:</b> MIDDLE EAST (ME)</div>
             </div>
         </header>
 
@@ -326,46 +290,26 @@
             <!-- Sender -->
             <div class="party-box">
                 <div class="box-header">Sender / Shipper <span>[Origin Party]</span></div>
-                <span class="company-name" style="color: var(--text-grey); font-style: italic;">
-                    {{ shipment.sender_name|default:"[Client/Sender Name]" }}
-                </span>
+                <span class="company-name" style="color: var(--text-grey); font-style: italic;">[Client/Sender
+                    Name]</span>
                 <div class="address-lines">
-                    {{ shipment.sender_address|default:"[Sender Address Line 1]" }}<br>
-                    {{ shipment.sender_city|default:"[City]" }}, 
-                    {% if shipment.direction == 'sy-eu' %}
-                        Middle East
-                    {% else %}
-                        Europe
-                    {% endif %}<br>
-                    {% if shipment.sender_phone %}
-                    <strong>Phone:</strong> {{ shipment.sender_phone }}<br>
-                    {% endif %}
-                    {% if shipment.sender_email %}
-                    <strong>Email:</strong> {{ shipment.sender_email }}
-                    {% endif %}
+                    [Sender Address Line 1]<br>
+                    [City, Country]<br>
+                    <strong>Contact:</strong> [Contact Person]<br>
+                    <strong>Phone:</strong> [Phone Number]
                 </div>
             </div>
 
             <!-- Receiver -->
             <div class="party-box">
                 <div class="box-header">Receiver / Consignee <span>[Destination Party]</span></div>
-                <span class="company-name" style="color: var(--text-grey); font-style: italic;">
-                    {{ shipment.receiver_name|default:"[Client/Receiver Name]" }}
-                </span>
+                <span class="company-name" style="color: var(--text-grey); font-style: italic;">[Client/Receiver
+                    Name]</span>
                 <div class="address-lines">
-                    {{ shipment.receiver_address|default:"[Receiver Address Line 1]" }}<br>
-                    {{ shipment.receiver_city|default:"[City]" }}, 
-                    {% if shipment.direction == 'sy-eu' %}
-                        Europe
-                    {% else %}
-                        Middle East
-                    {% endif %}<br>
-                    {% if shipment.receiver_phone %}
-                    <strong>Phone:</strong> {{ shipment.receiver_phone }}<br>
-                    {% endif %}
-                    {% if shipment.receiver_email %}
-                    <strong>Email:</strong> {{ shipment.receiver_email }}
-                    {% endif %}
+                    [Receiver Address Line 1]<br>
+                    [City, Country]<br>
+                    <strong>Contact:</strong> [Contact Person]<br>
+                    <strong>Phone:</strong> [Phone Number]
                 </div>
             </div>
         </section>
@@ -392,8 +336,7 @@
                     الرامسة (بجانب كراج البولمان) – الشرق الأوسط<br>
                     المدينة الصناعية، الشيخ نجار (منطقة مكاتب الشحن الدولي)<br>
                     <div style="direction: ltr; margin-top: 2px; text-align: right;">
-                        <strong>Tel:</strong> +963 995 477 8188<br>
-                        <strong>Email:</strong> alikramtrading.co@gmail.com
+                        <strong>Tel:</strong> +963 995 477 8188
                     </div>
                 </div>
             </div>
@@ -403,19 +346,19 @@
         <section class="shipment-grid">
             <div class="grid-item">
                 <span class="grid-label">Total Weight</span>
-                <span class="grid-value">{{ total_weight|default:0|floatformat:2 }} KG</span>
+                <span class="grid-value">145.50 KG</span>
             </div>
             <div class="grid-item">
                 <span class="grid-label">Chargeable Weight</span>
-                <span class="grid-value">{{ chargeable_weight|default:0|floatformat:2 }} KG</span>
+                <span class="grid-value">146.00 KG</span>
             </div>
             <div class="grid-item">
                 <span class="grid-label">Total Pieces</span>
-                <span class="grid-value">{{ total_pieces|default:0 }}</span>
+                <span class="grid-value">12</span>
             </div>
             <div class="grid-item">
                 <span class="grid-label">Service Type</span>
-                <span class="grid-value">LCL SHIPPING</span>
+                <span class="grid-value">EXPRESS WORLDWIDE</span>
             </div>
         </section>
 
@@ -430,70 +373,36 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% if receipt_items %}
-                        {% for item in receipt_items %}
-                            <tr>
-                                <td>
-                                    <strong>
-                                        {% if language == 'ar' %}
-                                            {{ item.product_name_ar }}
-                                        {% else %}
-                                            {{ item.product_name_en }}
-                                        {% endif %}
-                                    </strong>
-                                    {% if item.description %}
-                                    <br>
-                                    <span style="color: #666; font-size: 10px;">{{ item.description }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ item.hs_code }}</td>
-                                <td>{{ item.quantity }}</td>
-                            </tr>
-                        {% endfor %}
-                    {% elif shipment.parcels %}
-                        {% for parcel in shipment.parcels %}
-                            <tr>
-                                <td>
-                                    <strong>
-                                        {% if parcel.description %}
-                                            {{ parcel.description }}
-                                        {% elif parcel.productName %}
-                                            {{ parcel.productName }}
-                                        {% else %}
-                                            General Goods
-                                        {% endif %}
-                                    </strong>
-                                    {% if parcel.notes %}
-                                    <br>
-                                    <span style="color: #666; font-size: 10px;">{{ parcel.notes }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if parcel.hsCode %}
-                                        {{ parcel.hsCode }}
-                                    {% elif parcel.hs_code %}
-                                        {{ parcel.hs_code }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </td>
-                                <td>{{ parcel.repeatCount|default:1 }}</td>
-                            </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="3" style="text-align: center; color: #666; font-style: italic;">
-                                No parcel information available
-                            </td>
-                        </tr>
-                    {% endif %}
+                    <tr>
+                        <td>
+                            <strong>Industrial Parts (Steel Bearings)</strong><br>
+                            <span style="color: #666; font-size: 10px;">Ref: PO-2025-001</span>
+                        </td>
+                        <td>8482.10.00</td>
+                        <td>50</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>Electronic Sensors</strong><br>
+                            <span style="color: #666; font-size: 10px;">Ref: PO-2025-001 (Fragile)</span>
+                        </td>
+                        <td>9032.89.00</td>
+                        <td>20</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <strong>Cabling Kits</strong>
+                        </td>
+                        <td>8544.42.00</td>
+                        <td>10</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- Footer / Legal -->
         <footer class="footer">
-            <div class="legal-text">
+            <div class="legal-text" style="flex: 1; padding-right: 20px;">
                 <strong>Terms and Conditions:</strong><br>
                 By signing this document, the shipper agrees to the standard terms and conditions of carriage. Liability
                 is limited as per the Warsaw Convention or Montreal Convention, whichever is applicable. Goods are
@@ -503,9 +412,6 @@
             <div class="signature-box">
                 <div class="signature-line"></div>
                 <div>Logistics Provider Signature</div>
-                {% if signature_base64 %}
-                <img src="data:image/png;base64,{{ signature_base64 }}" alt="Company Signature" class="signature-image">
-                {% endif %}
             </div>
             <div class="signature-box">
                 <div class="signature-line"></div>

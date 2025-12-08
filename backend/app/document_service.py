@@ -1917,6 +1917,73 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
         # Ensure receipt_number is never None
         display_receipt_number = shipment.shipment_number or f"LCL-{shipment.id:06d}"
 
+        # Calculate shipment totals and prepare parcel items for receipt
+        total_weight = 0.0
+        chargeable_weight = 0.0
+        total_pieces = 0
+        receipt_items = []
+        
+        # Use calculate_invoice_totals to get proper product names and HS codes
+        pricing = calculate_invoice_totals(shipment)
+        
+        parcels_data = shipment.parcels if shipment.parcels else []
+        for idx, parcel_data in enumerate(parcels_data):
+            if not parcel_data or not isinstance(parcel_data, dict):
+                continue
+                
+            try:
+                weight = float(parcel_data.get("weight", 0) or 0)
+                cbm = float(parcel_data.get("cbm", 0) or 0)
+                length = float(parcel_data.get("length", 0) or 0)
+                width = float(parcel_data.get("width", 0) or 0)
+                height = float(parcel_data.get("height", 0) or 0)
+                repeat_count = int(parcel_data.get("repeatCount", 1) or 1)
+                
+                # Calculate volumetric weight: (L × W × H) / 6,000 or CBM × 167
+                if length > 0 and width > 0 and height > 0:
+                    volumetric_weight = (length * width * height) / 6000
+                elif cbm > 0:
+                    volumetric_weight = cbm * 167
+                else:
+                    volumetric_weight = 0
+                
+                # Chargeable weight = max(actual_weight, volumetric_weight)
+                parcel_chargeable = max(weight, volumetric_weight)
+                
+                # Add to totals (multiply by repeat_count)
+                total_weight += weight * repeat_count
+                chargeable_weight += parcel_chargeable * repeat_count
+                total_pieces += repeat_count
+                
+                # Get product name and HS code from pricing calculations if available
+                product_name_ar = None
+                product_name_en = None
+                hs_code = parcel_data.get("hs_code") or parcel_data.get("hsCode")
+                
+                # Try to find matching calculation from pricing
+                if idx < len(pricing.get("parcel_calculations", [])):
+                    calc = pricing["parcel_calculations"][idx]
+                    product_name_ar = calc.get("product_name_ar")
+                    product_name_en = calc.get("product_name_en")
+                    if not hs_code:
+                        hs_code = calc.get("hs_code")
+                
+                # Fallback to parcel data
+                if not product_name_ar and not product_name_en:
+                    product_name_ar = parcel_data.get("description") or parcel_data.get("productName")
+                    product_name_en = product_name_ar
+                
+                receipt_items.append({
+                    "product_name_ar": product_name_ar or "General Goods",
+                    "product_name_en": product_name_en or "General Goods",
+                    "hs_code": hs_code or "N/A",
+                    "quantity": repeat_count,
+                    "description": parcel_data.get("description") or parcel_data.get("notes"),
+                })
+            except (TypeError, ValueError) as e:
+                logger.warning(f"Error calculating parcel totals: {str(e)}")
+                continue
+
         # Prepare context for template
         context = {
             "shipment": shipment,
@@ -1935,6 +2002,10 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
             ),
             "tracking_url": tracking_url,
             "signature_base64": signature_base64,
+            "total_weight": round(total_weight, 2),
+            "chargeable_weight": round(chargeable_weight, 2),
+            "total_pieces": total_pieces,
+            "receipt_items": receipt_items,
         }
 
         # Render HTML template
