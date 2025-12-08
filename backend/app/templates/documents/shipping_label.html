@@ -1,427 +1,418 @@
 <!DOCTYPE html>
-<html lang="{{ language }}" dir="ltr">
+<html lang="{{ language }}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shipping Label</title>
+    <title>Shipping Label 4x6 - Medo-Freight</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Roboto+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet">
     <style>
-      @page {
-        size: 6in 4in;
-        margin: 0;
-      }
-    
-      * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-      }
-  
-      body {
-          font-family: Arial, sans-serif;
-          font-size: 10px;
-          color: #000;
-          padding: 0;
-          margin: 0;
-          background: #fff;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-      }
+        :root {
+            --primary: #000000;
+            --border-thick: 3px solid var(--primary);
+            --border-thin: 1px solid var(--primary);
+        }
 
-      /* Container */
-      .container {
-          width: 6in;
-          height: 4in;
-          padding: 3px;
-          border: 2px solid #000;
-      }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
 
-      /* Header */
-      .header {
-          display: table;
-          width: 100%;
-          border-bottom: 2px solid #000;
-          padding-bottom: 2px;
-          margin-bottom: 3px;
-      }
+        @page {
+            size: 4in 6in;
+            margin: 0;
+        }
 
-      .header-row {
-          display: table-row;
-      }
+        body {
+            width: 4in;
+            height: 6in;
+            font-family: 'Inter', sans-serif;
+            background: white;
+            color: black;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
 
-      .header-cell {
-          display: table-cell;
-          vertical-align: middle;
-          padding-right: 3px;
-      }
+        .label-container {
+            width: 100%;
+            height: 100%;
+            border: 2px solid black;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
 
-      .logo-cell {
-          width: 55px;
-          text-align: center;
-          vertical-align: middle;
-      }
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border-bottom: var(--border-thick);
+            flex: 0 0 auto;
+            min-height: 0;
+        }
 
-      .logo-cell img {
-          max-width: 45px;
-          max-height: 24px;
-      }
+        .brand {
+            flex: 1;
+            min-width: 0;
+        }
 
-      .company-cell {
-          padding-left: 3px;
-      }
+        .brand h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            line-height: 1;
+            margin: 0;
+            padding: 0;
+        }
 
-      .company-name {
-          font-size: 9px;
-          font-weight: 900;
-          margin-bottom: 1px;
-          line-height: 1.1;
-      }
+        .brand span {
+            font-size: 0.5rem;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            display: block;
+            margin-top: 1px;
+        }
 
-      .company-tag {
-          font-size: 6px;
-          font-weight: 700;
-          line-height: 1.1;
-      }
+        .brand .company-name {
+            font-size: 0.55rem;
+            font-weight: 700;
+            margin-top: 2px;
+            display: block;
+        }
 
-      .codes-cell {
-          width: 110px;
-          text-align: center;
-      }
+        .service-type {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            border: 3px solid black;
+            padding: 0 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
 
-      .tracking-cell {
-          width: 65px;
-          text-align: center;
-          background: #000;
-          color: #fff;
-          padding: 1px;
-      }
+        /* Tracking Section */
+        .tracking-section {
+            text-align: center;
+            padding: 6px 0;
+            border-bottom: var(--border-thick);
+            flex: 0 0 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
-      .tracking-label {
-          font-size: 4px;
-          margin-bottom: 0;
-          font-weight: 700;
-          line-height: 1;
-      }
+        .codes-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            position: relative;
+        }
 
-      .tracking-number {
-          font-size: 6px;
-          font-weight: 900;
-          font-family: monospace;
-          line-height: 1;
-          word-break: break-all;
-      }
+        .barcode {
+            height: 35px;
+            flex: 1;
+            max-width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-      .qr-barcode-box {
-          border: 1px solid #000;
-          padding: 1px;
-          display: inline-block;
-          vertical-align: top;
-      }
+        .barcode img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
 
-      .qr-barcode-box img {
-          max-width: 45px;
-          height: auto;
-          display: block;
-          margin: 0 auto;
-      }
-      
-      .codes-wrapper {
-          white-space: nowrap;
-      }
+        .qr-code {
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            right: 10px;
+        }
 
-      /* Three Columns */
-      .columns {
-          display: table;
-          width: 100%;
-          margin-bottom: 3px;
-      }
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
 
-      .columns-row {
-          display: table-row;
-      }
+        .tracking-number {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin: 0;
+            padding: 0;
+        }
 
-      .column {
-          display: table-cell;
-          vertical-align: top;
-          padding: 4px;
-          border: 1px solid #000;
-          width: 33.33%;
-      }
+        /* Addresses Grid */
+        .address-grid {
+            display: flex;
+            border-bottom: var(--border-thick);
+            flex: 0 0 auto;
+            min-height: 0;
+        }
 
-      .column-title {
-          font-size: 8px;
-          font-weight: 900;
-          border-bottom: 2px solid #000;
-          padding-bottom: 2px;
-          margin-bottom: 4px;
-          text-transform: uppercase;
-      }
+        .addr-box {
+            flex: 1;
+            padding: 5px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+            overflow: hidden;
+        }
 
-      .field {
-          margin-bottom: 4px;
-      }
+        .addr-box:first-child {
+            border-right: var(--border-thin);
+        }
 
-      .field-label {
-          font-size: 7px;
-          font-weight: 900;
-          margin-bottom: 1px;
-      }
+        .addr-label {
+            font-size: 0.55rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+            background: black;
+            color: white;
+            display: inline-block;
+            padding: 1px 3px;
+            align-self: flex-start;
+            white-space: nowrap;
+        }
 
-      .field-value {
-          font-size: 8px;
-          font-weight: 700;
-          border-bottom: 1px solid #000;
-          padding-bottom: 1px;
-          min-height: 10px;
-      }
+        .addr-content {
+            font-size: 0.7rem;
+            line-height: 1.2;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
 
-      .center-item {
-          margin-bottom: 5px;
-      }
+        .addr-name {
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 1px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
 
-      .center-item:last-child {
-          margin-bottom: 0;
-      }
+        /* Collection Centers Info */
+        .collection-info {
+            border-bottom: var(--border-thick);
+            padding: 5px 8px;
+            font-size: 0.6rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 0 0 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
 
-      .center-title {
-          font-size: 7px;
-          font-weight: 900;
-          border-bottom: 1px solid #000;
-          padding-bottom: 1px;
-          margin-bottom: 2px;
-      }
+        .collection-header {
+            font-weight: 800;
+            text-transform: uppercase;
+            border-bottom: 1px solid black;
+            margin-bottom: 3px;
+            padding-bottom: 1px;
+            font-size: 0.6rem;
+        }
 
-      .center-text {
-          font-size: 7px;
-          font-weight: 700;
-          line-height: 1.2;
-      }
-      
-      .center-text strong {
-          font-weight: 900;
-      }
+        .collection-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            gap: 6px;
+        }
 
-      /* Shipping Details */
-      .shipping-details {
-          border: 1px solid #000;
-          padding: 3px;
-      }
+        .collection-col {
+            width: 48%;
+            flex: 1;
+            min-width: 0;
+            word-wrap: break-word;
+        }
 
-      .shipping-title {
-          font-size: 8px;
-          font-weight: 900;
-          border-bottom: 2px solid #000;
-          padding-bottom: 2px;
-          margin-bottom: 3px;
-          text-transform: uppercase;
-      }
+        .col-title {
+            font-weight: 700;
+            text-decoration: underline;
+            margin-bottom: 1px;
+            display: block;
+            font-size: 0.6rem;
+        }
 
-      .method-box {
-          background: #000;
-          color: #fff;
-          text-align: center;
-          padding: 3px;
-          font-size: 10px;
-          font-weight: 900;
-          margin-bottom: 3px;
-      }
+        /* Footer Details */
+        .footer-details {
+            display: flex;
+            flex: 0 0 auto;
+            min-height: 0;
+        }
 
-      .parcel-row {
-          display: table;
-          width: 100%;
-          border: 1px solid #000;
-      }
+        .detail-item {
+            flex: 1;
+            border-right: var(--border-thin);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3px;
+            min-width: 0;
+            overflow: hidden;
+        }
 
-      .parcel-row-row {
-          display: table-row;
-      }
+        .detail-item:last-child {
+            border-right: none;
+        }
 
-      .parcel-cell {
-          display: table-cell;
-          width: 33.33%;
-          padding: 3px;
-          text-align: center;
-          border-right: 1px solid #000;
-      }
+        .detail-label {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 1px;
+            text-align: center;
+        }
 
-      .parcel-cell:last-child {
-          border-right: none;
-      }
+        .detail-value {
+            font-size: 0.85rem;
+            font-weight: 800;
+            font-family: 'Oswald', sans-serif;
+            text-align: center;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
 
-      .parcel-label {
-          font-size: 7px;
-          font-weight: 900;
-          border-bottom: 1px solid #000;
-          padding-bottom: 1px;
-          margin-bottom: 2px;
-      }
+        @media print {
+            @page {
+                size: 4in 6in;
+                margin: 0;
+            }
 
-      .parcel-value {
-          font-size: 9px;
-          font-weight: 900;
-      }
+            body {
+                margin: 0;
+                padding: 0;
+            }
 
-      .route-box {
-          margin-top: 3px;
-          border: 1px solid #000;
-          padding: 3px;
-          text-align: center;
-          font-size: 8px;
-          font-weight: 900;
-          background: #f0f0f0;
-      }
+            .label-container {
+                page-break-after: always;
+            }
+        }
     </style>
 </head>
+
 <body>
-    <div class="container">
+
+    <div class="label-container">
         <!-- Header -->
         <div class="header">
-            <div class="header-row">
-                <div class="header-cell company-cell">
-                    <div class="company-name">Medo-Freight EU</div>
-                    <div class="company-tag">Ship · Route · Deliver</div>
+            <div class="brand">
+                <h1>Medo-Freight EU</h1>
+                <span>Ship · Route · Deliver</span>
+                <span class="company-name">شركة الإكرام في الشرق الأوسط</span>
+            </div>
+            <div class="service-type">LCL</div>
+        </div>
+
+        <!-- Tracking -->
+        <div class="tracking-section">
+            <div class="codes-container">
+                {% if barcode_base64 %}
+                <div class="barcode">
+                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
                 </div>
-                <div class="header-cell logo-cell">
-                    {% if company and company.logo_base64 %}
-                    <img src="data:image/png;base64,{{ company.logo_base64 }}" alt="Logo">
-                    {% endif %}
+                {% else %}
+                <div class="barcode"></div>
+                {% endif %}
+                {% if qr_code_base64 %}
+                <div class="qr-code">
+                    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
                 </div>
-                <div class="header-cell codes-cell">
-                    <div class="codes-wrapper">
-                        {% if barcode_base64 %}
-                        <div class="qr-barcode-box" style="margin-right: 2px;">
-                            <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
-                            <div style="font-size: 4px; font-weight: 900; line-height: 1;">TRACK</div>
-                        </div>
-                        {% endif %}
-                        {% if qr_code_base64 %}
-                        <div class="qr-barcode-box">
-                            <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR">
-                            <div style="font-size: 4px; font-weight: 900; line-height: 1;">TRACK</div>
-                        </div>
-                        {% endif %}
-                    </div>
+                {% endif %}
+            </div>
+            <div class="tracking-number">{{ shipment.shipment_number|default:"______" }}</div>
+        </div>
+
+        <!-- From / To -->
+        <div class="address-grid">
+            <div class="addr-box">
+                <span class="addr-label">FROM</span>
+                <div class="addr-content">
+                    <span class="addr-name">{{ shipment.sender_name|default:"-" }}</span>
+                    {% if shipment.sender_address %}<span>{{ shipment.sender_address }}</span><br>{% endif %}
+                    <span>{{ shipment.sender_city|default:"" }}{% if shipment.sender_country %}, {{ shipment.sender_country }}{% endif %}</span><br>
+                    {% if shipment.sender_phone %}<span>Tel: {{ shipment.sender_phone }}</span>{% endif %}
                 </div>
-                <div class="header-cell tracking-cell">
-                    <div class="tracking-label">TRACK</div>
-                    <div class="tracking-number">{{ shipment.shipment_number|default:"______" }}</div>
+            </div>
+            <div class="addr-box">
+                <span class="addr-label">TO</span>
+                <div class="addr-content">
+                    <span class="addr-name">{{ shipment.receiver_name|default:"-" }}</span>
+                    {% if shipment.receiver_address %}<span>{{ shipment.receiver_address }}</span><br>{% endif %}
+                    <span>{{ shipment.receiver_city|default:"" }}{% if shipment.receiver_country %}, {{ shipment.receiver_country }}{% endif %}</span><br>
+                    {% if shipment.receiver_phone %}<span>Tel: {{ shipment.receiver_phone }}</span>{% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Three Columns -->
-        <div class="columns">
-            <div class="columns-row">
-                <!-- Left: Collection Centers -->
-                <div class="column">
-                    <div class="column-title">Collection Centers</div>
-                    
-                    <div class="center-item">
-                        <div class="center-title">Company</div>
-                        <div class="center-text">
-                            <strong>Medo-Freight-EU</strong><br>
-                            Phone: 0031683083916<br>
-                            Email: contact@medo-freight.eu
-                        </div>
-                    </div>
-                    
-                    <div class="center-item">
-                        <div class="center-title">Small (&lt;20kg)</div>
-                        <div class="center-text">
-                            Wattweg 5<br>
-                            4622 RA<br>
-                            <strong>Storage: 0220-0221</strong>
-                        </div>
-                    </div>
-                    
-                    <div class="center-item">
-                        <div class="center-title">Large (50+kg)</div>
-                        <div class="center-text">
-                            Meekrapweg 2<br>
-                            4571 RX, Axel<br>
-                            <strong>Storage: A2</strong>
-                        </div>
-                    </div>
+        <!-- Collection Centers -->
+        <div class="collection-info">
+            <div class="collection-header">COLLECTION CENTERS (Medo-Freight-EU)</div>
+            <div class="collection-row">
+                <div class="collection-col">
+                    <span class="col-title">Small (&lt;20kg)</span>
+                    Wattweg 5, 4622 RA<br>
+                    <strong>Storage: 0220-0221</strong>
                 </div>
-
-                <!-- Middle: FROM -->
-                <div class="column">
-                    <div class="column-title">FROM:</div>
-                    
-                    <div class="field">
-                        <div class="field-label">Name:</div>
-                        <div class="field-value">{{ shipment.sender_name|default:"-" }}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">Phone:</div>
-                        <div class="field-value">{{ shipment.sender_phone|default:"-" }}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">City:</div>
-                        <div class="field-value">{{ shipment.sender_city|default:"-" }}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">Address:</div>
-                        <div class="field-value">{{ shipment.sender_address|default:"-" }}</div>
-                    </div>
+                <div class="collection-col">
+                    <span class="col-title">Large (50+kg)</span>
+                    Meekrapweg 2, 4571 RX, Axel<br>
+                    <strong>Storage: A2</strong><br>
+                    <span style="font-size: 0.6rem;">Pallets & Mobile Platforms</span>
                 </div>
-
-                <!-- Right: TO -->
-                <div class="column">
-                    <div class="column-title">TO:</div>
-                    
-                    <div class="field">
-                        <div class="field-label">Name:</div>
-                        <div class="field-value">{{ shipment.receiver_name|default:"-" }}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">Phone:</div>
-                        <div class="field-value">{{ shipment.receiver_phone|default:"-" }}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">City:</div>
-                        <div class="field-value">{{ shipment.receiver_city|default:"-" }}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">Address:</div>
-                        <div class="field-value">{{ shipment.receiver_address|default:"-" }}</div>
-                    </div>
-                </div>
+            </div>
+            <div style="margin-top: 1px; font-size: 0.55rem;">
+                Ph: 0031683083916 | Email: contact@medo-freight.eu
             </div>
         </div>
 
-        <!-- Shipping Details -->
-        <div class="shipping-details">
-            <div class="shipping-title">Shipping & Parcel Details</div>
-            
-            <div class="method-box">LCL</div>
-            
-            <div class="parcel-row">
-                <div class="parcel-row-row">
-                    <div class="parcel-cell">
-                        <div class="parcel-label">Packages</div>
-                        <div class="parcel-value">{% if parcel and parcel.repeat_count %}{{ parcel.repeat_count }}{% else %}1{% endif %}</div>
-                    </div>
-                    <div class="parcel-cell">
-                        <div class="parcel-label">Weight</div>
-                        <div class="parcel-value">{% if parcel and parcel.weight %}{{ parcel.weight }}{% else %}0{% endif %} kg</div>
-                    </div>
-                    <div class="parcel-cell">
-                        <div class="parcel-label">Volume</div>
-                        <div class="parcel-value">{% if parcel and parcel.cbm %}{{ parcel.cbm }}{% elif parcel and parcel.volume %}{{ parcel.volume }}{% else %}0{% endif %} m³</div>
-                    </div>
-                </div>
+        <!-- Footer Details -->
+        <div class="footer-details">
+            <div class="detail-item">
+                <span class="detail-label">Packages</span>
+                <span class="detail-value">{% if parcel.repeat_count %}{{ parcel.repeat_count }}{% else %}1{% endif %}</span>
             </div>
-            
-            <div class="route-box">
-                Route: {% if shipment.direction == 'eu-sy' %}EU → SY{% else %}SY → EU{% endif %}
+            <div class="detail-item">
+                <span class="detail-label">Weight</span>
+                <span class="detail-value">{% if parcel.weight %}{{ parcel.weight }}{% else %}0{% endif %} kg</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Volume (CBM)</span>
+                <span class="detail-value">{% if parcel.cbm %}{{ parcel.cbm|floatformat:3 }}{% else %}0{% endif %} m³</span>
             </div>
         </div>
     </div>
+
 </body>
+
 </html>
