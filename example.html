@@ -1,21 +1,22 @@
 <!DOCTYPE html>
-<html lang="{{ language }}" dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+<html lang="ar" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فاتورة رسمية | Invoice {{ invoice_number }}</title>
+    <title>فاتورة رسمية | Invoice LCL-20251208-0002</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap"
         rel="stylesheet">
     <style>
-        /* stylelint-disable */
         :root {
             --primary-color: #0f172a;
+            /* Dark Slate */
             --secondary-color: #334155;
             --accent-color: #0ea5e9;
+            /* Sky Blue for logistics feel */
             --text-color: #1e293b;
             --text-light: #64748b;
             --bg-color: #f8fafc;
@@ -32,34 +33,27 @@
             padding: 0;
         }
 
-        @page {
-            size: A4;
-            margin: 15mm;
-        }
-
         body {
             font-family: var(--font-ar);
             background-color: var(--bg-color);
             color: var(--text-color);
             line-height: 1.5;
-        }
-        
-        body[dir="rtl"] {
+            padding: 40px 20px;
             direction: rtl;
-        }
-        
-        body[dir="ltr"] {
-            direction: ltr;
         }
 
         .invoice-container {
             max-width: 210mm;
+            /* A4 Width */
             margin: 0 auto;
             background-color: var(--white);
             padding: 40px;
+            border-radius: 2px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             position: relative;
         }
 
+        /* Bilingual Support Classes */
         .en-text {
             font-family: var(--font-en);
             direction: ltr;
@@ -77,6 +71,7 @@
             font-family: var(--font-en);
         }
 
+        /* Header */
         .header-top {
             display: flex;
             justify-content: space-between;
@@ -106,10 +101,6 @@
         .invoice-meta {
             text-align: left;
         }
-        
-        body[dir="ltr"] .invoice-meta {
-            text-align: right;
-        }
 
         .invoice-meta h2 {
             font-size: 2.5rem;
@@ -138,11 +129,8 @@
             font-family: var(--font-en);
             text-align: right;
         }
-        
-        body[dir="ltr"] .meta-value {
-            text-align: left;
-        }
 
+        /* Addresses */
         .addresses-section {
             display: flex;
             justify-content: space-between;
@@ -178,6 +166,7 @@
             margin-bottom: 3px;
         }
 
+        /* Shipment Info Bar */
         .shipment-info-bar {
             background-color: var(--bg-color);
             border-radius: 6px;
@@ -218,9 +207,9 @@
             text-align: center;
         }
 
+        /* Table */
         .table-container {
             margin-bottom: 30px;
-            page-break-before: always;
         }
 
         table {
@@ -236,27 +225,13 @@
             text-align: right;
             font-weight: 600;
         }
-        
-        body[dir="ltr"] thead th {
-            text-align: left;
-        }
 
         thead th:first-child {
             border-top-right-radius: 4px;
         }
-        
-        body[dir="ltr"] thead th:first-child {
-            border-top-right-radius: 0;
-            border-top-left-radius: 4px;
-        }
 
         thead th:last-child {
             border-top-left-radius: 4px;
-        }
-        
-        body[dir="ltr"] thead th:last-child {
-            border-top-left-radius: 0;
-            border-top-right-radius: 4px;
         }
 
         tbody td {
@@ -287,24 +262,7 @@
             text-align: center;
         }
 
-        .type-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .type-badge.personal {
-            background-color: #dbeafe;
-            color: #1e40af;
-        }
-
-        .type-badge.commercial {
-            background-color: #fef3c7;
-            color: #92400e;
-        }
-
+        /* Totals */
         .totals-section {
             display: flex;
             justify-content: flex-end;
@@ -334,6 +292,7 @@
             color: var(--primary-color);
         }
 
+        /* Footer / Signatures */
         .signatures-section {
             display: flex;
             justify-content: space-between;
@@ -384,15 +343,15 @@
             }
 
             .invoice-container {
+                box-shadow: none;
                 max-width: 100%;
                 padding: 20px;
             }
         }
-        /* stylelint-enable */
     </style>
 </head>
 
-<body dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+<body>
 
     <div class="invoice-container">
         <!-- Header -->
@@ -407,13 +366,13 @@
                 <h2>INVOICE</h2>
                 <div class="meta-grid">
                     <div class="meta-label">رقم الفاتورة / Invoice #:</div>
-                    <div class="meta-value">{{ invoice_number }}</div>
+                    <div class="meta-value">LCL-20251208-0002</div>
 
                     <div class="meta-label">رقم الشحنة / Shipment #:</div>
-                    <div class="meta-value">{{ invoice_number }}</div>
+                    <div class="meta-value">LCL-20251208-0002</div>
 
                     <div class="meta-label">التاريخ / Date:</div>
-                    <div class="meta-value">{{ invoice_date|date:"Y-m-d" }}</div>
+                    <div class="meta-value">2025-12-08</div>
                 </div>
             </div>
         </header>
@@ -421,6 +380,7 @@
         <!-- Addresses -->
         <section class="addresses-section">
             <div class="address-box">
+
                 <span class="company-name en-text">Medo-Freight EU</span>
                 <div class="address-details en-text">
                     <p>Titanlaan 1, 4624 AX Bergen op Zoom</p>
@@ -430,7 +390,8 @@
                     <p>contact@medo-freight.eu | +31 6 39 788 989</p>
                 </div>
             </div>
-            <div class="address-box" style="text-align: right;">
+            <div class="address-box" style="text-align: left;">
+
                 <span class="company-name">شركة إكرام التجارية | AL IKRAM TRADING CO.</span>
                 <div class="address-details">
                     <p>مكتب الرمسة | Ramsa Office</p>
@@ -446,33 +407,20 @@
         <section class="shipment-info-bar">
             <div class="info-item">
                 <span class="info-label">الاتجاه / Direction</span>
-                <span class="info-value en-text">
-                    {% if shipment.direction == 'eu-sy' %}
-                    Europe <span style="color:var(--accent-color)">&#8594;</span> Syria
-                    {% else %}
-                    Syria <span style="color:var(--accent-color)">&#8594;</span> Europe
-                    {% endif %}
-                </span>
+                <span class="info-value en-text">Syria <span style="color:var(--accent-color)">&#8594;</span>
+                    Europe</span>
             </div>
             <div class="info-item">
                 <span class="info-label">طريقة الدفع / Payment Method</span>
-                <span class="info-value">
-                    {% if shipment.payment_method == 'cash' %}نقدي / Cash
-                    {% elif shipment.payment_method == 'stripe' %}إلكتروني / Electronic
-                    {% else %}N/A{% endif %}
-                </span>
+                <span class="info-value">نقدي / Cash</span>
             </div>
             <div class="info-item">
                 <span class="info-label">تاريخ الدفع / Payment Date</span>
-                <span class="info-value en-text">
-                    {% if shipment.paid_at %}{{ shipment.paid_at|date:"Y-m-d" }}{% else %}{{ invoice_date|date:"Y-m-d" }}{% endif %}
-                </span>
+                <span class="info-value en-text">2025-12-08</span>
             </div>
             <div class="info-item">
                 <span class="info-label">حالة الدفع / Status</span>
-                <span class="status-badge">
-                    {% if shipment.payment_status == 'paid' %}مدفوع / PAID{% else %}قيد الانتظار / PENDING{% endif %}
-                </span>
+                <span class="status-badge">مدفوع / PAID</span>
             </div>
         </section>
 
@@ -492,37 +440,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for calc in pricing.parcel_calculations %}
                     <tr>
                         <td class="product-cell">
-                            <span class="product-name">{% if language == 'ar' %}{{ calc.product_name_ar }}{% else %}{{ calc.product_name_en }}{% endif %}</span>
-                            {% if calc.repeat_count > 1 %}
-                            <span class="product-meta en-text">Qty: {{ calc.repeat_count }}</span>
-                            {% endif %}
+                            <span class="product-name">أواني ولوازم مطبخ من بلاستيك وزجاج</span>
+                            <span class="product-meta en-text">Kitchen utensils and supplies</span>
                         </td>
-                        <td class="num-cell">{% if calc.hs_code %}{{ calc.hs_code }}{% else %}-{% endif %}</td>
-                        <td class="num-cell">
-                            {% if calc.shipment_type %}
-                            <span class="type-badge {% if calc.shipment_type == 'personal' %}personal{% else %}commercial{% endif %}">
-                                {% if calc.shipment_type == 'personal' %}شخصي / Personal{% else %}تجاري / Commercial{% endif %}
-                            </span>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td class="num-cell">
-                            {% if not calc.is_electronics %}
-                            {{ calc.length }}×{{ calc.width }}×{{ calc.height }}
-                            {% else %}-{% endif %}
-                        </td>
-                        <td class="num-cell">{{ calc.weight }} kg</td>
-                        <td class="num-cell">
-                            {% if calc.cbm %}
-                            {{ calc.cbm|floatformat:3 }}
-                            {% else %}-{% endif %}
-                        </td>
-                        <td class="num-cell">€{{ calc.price_per_kg }} / kg</td>
-                        <td class="num-cell" style="font-weight:bold;">€{{ calc.price_by_weight }}</td>
+                        <td class="num-cell">85171200</td>
+                        <td>شخصي / Personal</td>
+                        <td class="num-cell">50x40x30</td>
+                        <td class="num-cell">50.0 kg</td>
+                        <td class="num-cell">0.060</td>
+                        <td class="num-cell">€2.75 / kg</td>
+                        <td class="num-cell" style="font-weight:bold;">€137.5</td>
                     </tr>
-                    {% endfor %}
                 </tbody>
             </table>
         </section>
@@ -531,31 +461,8 @@
         <section class="totals-section">
             <div class="totals-box">
                 <div class="total-row">
-                    <span>السعر الأساسي / Base Price</span>
-                    <span class="en-text">€{{ pricing.base_lcl_price }}</span>
-                </div>
-                {% if pricing.packaging_cost > 0 %}
-                <div class="total-row">
-                    <span>التغليف / Packaging</span>
-                    <span class="en-text">€{{ pricing.packaging_cost }}</span>
-                </div>
-                {% endif %}
-                {% if pricing.insurance_cost > 0 %}
-                <div class="total-row">
-                    <span>التأمين / Insurance</span>
-                    <span class="en-text">€{{ pricing.insurance_cost }}</span>
-                </div>
-                {% endif %}
-                {% if pricing.syria_transport_cost > 0 %}
-                <div class="total-row">
-                    <span>نقل سوريا / Syria Transport</span>
-                    <span class="en-text">€{{ pricing.syria_transport_cost }}</span>
-                </div>
-                {% endif %}
-                {% with subtotal=pricing.base_lcl_price|add:pricing.packaging_cost|add:pricing.insurance_cost|add:pricing.syria_transport_cost %}
-                <div class="total-row" style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
-                    <span>المجموع الفرعي / Subtotal</span>
-                    <span class="en-text">€{{ subtotal|floatformat:2 }}</span>
+                    <span>المجموع / Subtotal</span>
+                    <span class="en-text">€137.5</span>
                 </div>
                 <div class="total-row">
                     <span>الضرائب / Tax (0%)</span>
@@ -563,9 +470,8 @@
                 </div>
                 <div class="total-row final">
                     <span>الإجمالي / Total Amount</span>
-                    <span class="en-text">€{{ shipment.total_price }}</span>
+                    <span class="en-text">€137.5</span>
                 </div>
-                {% endwith %}
                 <div style="text-align: center; font-size: 0.8rem; color: var(--text-light); margin-top: 10px;">
                     الأسعار باليورو | All prices in EUR
                 </div>
@@ -580,15 +486,8 @@
             </div>
 
             <div class="qr-section">
-                {% if qr_code_base64 %}
-                <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" style="width: 80px; height: 80px; border: 1px solid var(--border-color); padding: 5px; margin-bottom: 10px;">
-                {% else %}
                 <div class="qr-placeholder">QR Code</div>
-                {% endif %}
-                {% if barcode_base64 %}
-                <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode" style="max-width: 150px; height: auto; border: 1px solid var(--border-color); padding: 5px; margin-bottom: 5px;">
-                {% endif %}
-                <div style="font-size: 0.75rem; font-weight: bold;">{{ invoice_number }}</div>
+                <div style="font-size: 0.75rem; font-weight: bold;">LCL-20251208-0002</div>
                 <div style="font-size: 0.7rem; color: var(--text-light);">تتبع الشحنة / Track Shipment</div>
             </div>
 
