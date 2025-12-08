@@ -162,9 +162,12 @@ export default function CustomsDocumentsPage() {
 
       // Determine file type based on content-type header or document type
       const contentType = response.headers["content-type"] || "";
-      const isZip = contentType.includes("application/zip") || contentType.includes("zip");
-      const mimeType = isZip ? "application/zip" : "application/pdf";
-      const fileExtension = isZip ? "zip" : "pdf";
+      const isZip =
+        contentType.includes("application/zip") || contentType.includes("zip");
+      const mimeType = isZip
+        ? "application/zip"
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const fileExtension = isZip ? "zip" : "docx";
       const baseFileName =
         documentType === "packing_list"
           ? "Consolidated-Packing-List"
@@ -177,7 +180,9 @@ export default function CustomsDocumentsPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${baseFileName}-${new Date().toISOString().split("T")[0]}.${fileExtension}`;
+      link.download = `${baseFileName}-${
+        new Date().toISOString().split("T")[0]
+      }.${fileExtension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

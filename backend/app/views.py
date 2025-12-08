@@ -924,12 +924,14 @@ def update_fcl_quote_status_view(request, pk):
                 new_status = new_status_raw
         else:
             new_status = new_status_raw
-            
+
         offer_message = request.data.get("offer_message", "")
-        
+
         # Log incoming data for debugging
-        logger.info(f"FCL Quote {pk} update request - data keys: {list(request.data.keys())}, status: {new_status}, amount_paid: {request.data.get('amount_paid')}, type: {type(request.data.get('amount_paid'))}, full_data: {request.data}")
-        
+        logger.info(
+            f"FCL Quote {pk} update request - data keys: {list(request.data.keys())}, status: {new_status}, amount_paid: {request.data.get('amount_paid')}, type: {type(request.data.get('amount_paid'))}, full_data: {request.data}"
+        )
+
         # Check if we're only updating amount_paid or total_price (no status change)
         # Handle QueryDict (form data) - get first value if it's a list
         amount_paid_raw = request.data.get("amount_paid")
@@ -937,23 +939,26 @@ def update_fcl_quote_status_view(request, pk):
             amount_paid = amount_paid_raw[0]
         else:
             amount_paid = amount_paid_raw
-            
+
         total_price_raw = request.data.get("total_price")
         if isinstance(total_price_raw, list) and len(total_price_raw) > 0:
             total_price = total_price_raw[0]
         else:
             total_price = total_price_raw
-            
+
         # Check if we're updating payment info (amount_paid or total_price)
         is_updating_payment = amount_paid is not None or total_price is not None
-        
+
         # Check if we're updating status (new_status is provided and not empty)
         is_updating_status = new_status is not None and new_status != ""
-        
+
         # If we're not updating anything, return error
         if not is_updating_payment and not is_updating_status:
             return Response(
-                {"success": False, "error": "At least one field (status, amount_paid, or total_price) must be provided."},
+                {
+                    "success": False,
+                    "error": "At least one field (status, amount_paid, or total_price) must be provided.",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1020,7 +1025,7 @@ def update_fcl_quote_status_view(request, pk):
                         total_price = total_price.strip()
                         if total_price == "" or total_price.lower() == "none":
                             total_price = None
-                    
+
                     # If total_price is None or empty after processing, skip update
                     if total_price is None or total_price == "":
                         pass  # Don't update total_price if it's empty
@@ -1036,7 +1041,9 @@ def update_fcl_quote_status_view(request, pk):
                             )
                         quote.total_price = total_price_decimal
                 except (ValueError, TypeError) as e:
-                    logger.error(f"Error converting total_price to float: {str(e)}, value: {total_price}, type: {type(total_price)}")
+                    logger.error(
+                        f"Error converting total_price to float: {str(e)}, value: {total_price}, type: {type(total_price)}"
+                    )
                     return Response(
                         {
                             "success": False,
@@ -1051,8 +1058,10 @@ def update_fcl_quote_status_view(request, pk):
                 original_amount_paid_value = amount_paid
                 try:
                     # Log the incoming value for debugging
-                    logger.info(f"Processing amount_paid: value={amount_paid}, type={type(amount_paid)}, repr={repr(amount_paid)}")
-                    
+                    logger.info(
+                        f"Processing amount_paid: value={amount_paid}, type={type(amount_paid)}, repr={repr(amount_paid)}"
+                    )
+
                     # Handle different input types
                     if isinstance(amount_paid, bool):
                         # Boolean: convert to 0 or 1
@@ -1063,13 +1072,26 @@ def update_fcl_quote_status_view(request, pk):
                         amount_paid_decimal = float(amount_paid)
                     elif isinstance(amount_paid, str):
                         # Handle string input
-                        original_amount_paid = amount_paid  # Keep original for error messages
+                        original_amount_paid = (
+                            amount_paid  # Keep original for error messages
+                        )
                         amount_paid_str = amount_paid.strip()
-                        if amount_paid_str == "" or amount_paid_str.lower() in ("none", "null", "undefined"):
+                        if amount_paid_str == "" or amount_paid_str.lower() in (
+                            "none",
+                            "null",
+                            "undefined",
+                        ):
                             amount_paid_decimal = 0.0
                         else:
                             # Remove any commas, spaces, or currency symbols
-                            amount_paid_cleaned = amount_paid_str.replace(",", "").replace(" ", "").replace("€", "").replace("EUR", "").replace("$", "").strip()
+                            amount_paid_cleaned = (
+                                amount_paid_str.replace(",", "")
+                                .replace(" ", "")
+                                .replace("€", "")
+                                .replace("EUR", "")
+                                .replace("$", "")
+                                .strip()
+                            )
                             if amount_paid_cleaned == "":
                                 amount_paid_decimal = 0.0
                             else:
@@ -1078,15 +1100,24 @@ def update_fcl_quote_status_view(request, pk):
                                 except ValueError as ve:
                                     # If float() fails, try using regex to extract number
                                     import re
-                                    numbers = re.findall(r'-?\d+\.?\d*', amount_paid_cleaned)
+
+                                    numbers = re.findall(
+                                        r"-?\d+\.?\d*", amount_paid_cleaned
+                                    )
                                     if numbers:
                                         amount_paid_decimal = float(numbers[0])
-                                        logger.warning(f"Extracted number {amount_paid_decimal} from string '{original_amount_paid}' using regex")
+                                        logger.warning(
+                                            f"Extracted number {amount_paid_decimal} from string '{original_amount_paid}' using regex"
+                                        )
                                     else:
-                                        raise ValueError(f"Cannot convert string '{original_amount_paid}' to number")
+                                        raise ValueError(
+                                            f"Cannot convert string '{original_amount_paid}' to number"
+                                        )
                     elif isinstance(amount_paid, (list, tuple)):
                         # If it's a list/tuple, take the first element
-                        logger.warning(f"amount_paid is a list/tuple: {amount_paid}, using first element")
+                        logger.warning(
+                            f"amount_paid is a list/tuple: {amount_paid}, using first element"
+                        )
                         if len(amount_paid) > 0:
                             amount_paid_decimal = float(amount_paid[0])
                         else:
@@ -1100,23 +1131,38 @@ def update_fcl_quote_status_view(request, pk):
                             amount_paid_decimal = float(amount_paid["amount"])
                         else:
                             # Try to convert the dict to string and parse
-                            raise ValueError(f"Cannot convert dict to number: {amount_paid}")
+                            raise ValueError(
+                                f"Cannot convert dict to number: {amount_paid}"
+                            )
                     elif amount_paid is None:
                         amount_paid_decimal = 0.0
                     else:
                         # For any other type, try to convert to string first
-                        logger.warning(f"Unexpected amount_paid type: {type(amount_paid)}, value: {amount_paid}")
+                        logger.warning(
+                            f"Unexpected amount_paid type: {type(amount_paid)}, value: {amount_paid}"
+                        )
                         amount_paid_str = str(amount_paid).strip()
-                        if amount_paid_str == "" or amount_paid_str.lower() in ("none", "null", "undefined"):
+                        if amount_paid_str == "" or amount_paid_str.lower() in (
+                            "none",
+                            "null",
+                            "undefined",
+                        ):
                             amount_paid_decimal = 0.0
                         else:
                             # Remove any commas, spaces, or currency symbols
-                            amount_paid_str = amount_paid_str.replace(",", "").replace(" ", "").replace("€", "").replace("EUR", "").replace("$", "").strip()
+                            amount_paid_str = (
+                                amount_paid_str.replace(",", "")
+                                .replace(" ", "")
+                                .replace("€", "")
+                                .replace("EUR", "")
+                                .replace("$", "")
+                                .strip()
+                            )
                             if amount_paid_str == "":
                                 amount_paid_decimal = 0.0
                             else:
                                 amount_paid_decimal = float(amount_paid_str)
-                    
+
                     if amount_paid_decimal < 0:
                         return Response(
                             {
@@ -1144,7 +1190,10 @@ def update_fcl_quote_status_view(request, pk):
                     quote.amount_paid = amount_paid_decimal
                 except (ValueError, TypeError) as e:
                     # Use original value for error message
-                    logger.error(f"Error converting amount_paid to float: {str(e)}, original_value={original_amount_paid_value}, original_type={type(original_amount_paid_value)}, repr={repr(original_amount_paid_value)}", exc_info=True)
+                    logger.error(
+                        f"Error converting amount_paid to float: {str(e)}, original_value={original_amount_paid_value}, original_type={type(original_amount_paid_value)}, repr={repr(original_amount_paid_value)}",
+                        exc_info=True,
+                    )
                     # Try to provide more helpful error message
                     error_msg = f"Invalid amount_paid value: {original_amount_paid_value} (type: {type(original_amount_paid_value).__name__}). Please provide a valid number."
                     if isinstance(original_amount_paid_value, (list, dict)):
@@ -1154,10 +1203,13 @@ def update_fcl_quote_status_view(request, pk):
                         try:
                             # Remove all non-numeric characters except decimal point and minus sign
                             import re
-                            cleaned = re.sub(r'[^\d.-]', '', original_amount_paid_value)
+
+                            cleaned = re.sub(r"[^\d.-]", "", original_amount_paid_value)
                             if cleaned:
                                 test_float = float(cleaned)
-                                logger.warning(f"Could extract number {test_float} from string '{original_amount_paid_value}', but original conversion failed")
+                                logger.warning(
+                                    f"Could extract number {test_float} from string '{original_amount_paid_value}', but original conversion failed"
+                                )
                         except:
                             pass
                     return Response(
@@ -1198,7 +1250,9 @@ def update_fcl_quote_status_view(request, pk):
         quote.refresh_from_db()
 
         # Get status display name
-        status_display = dict(FCLQuote.STATUS_CHOICES).get(new_status or old_status, new_status or old_status)
+        status_display = dict(FCLQuote.STATUS_CHOICES).get(
+            new_status or old_status, new_status or old_status
+        )
 
         # Prepare response data
         if new_status and old_status != new_status:
@@ -1207,7 +1261,7 @@ def update_fcl_quote_status_view(request, pk):
             message = "FCL quote payment information updated successfully."
         else:
             message = "FCL quote updated successfully."
-        
+
         response_data = {
             "success": True,
             "message": message,
@@ -4861,12 +4915,10 @@ def update_lcl_shipment_status_view(request, pk):
             if shipment.payment_status == "paid" and not shipment.invoice_file:
                 try:
                     from .document_service import (
-                        generate_consolidated_export_invoice,
                         generate_invoice,
                         save_invoice_to_storage,
                     )
                     from .email_service import (
-                        send_consolidated_export_invoice_email_to_admin,
                         send_invoice_email_to_admin,
                         send_invoice_email_to_user,
                     )
@@ -4922,16 +4974,18 @@ def update_lcl_shipment_status_view(request, pk):
                 and shipment.payment_status == "paid"
             ):
                 try:
-                    from .document_service import generate_consolidated_export_invoice
+                    from .document_service import (
+                        generate_consolidated_export_invoice_word,
+                    )
                     from .email_service import (
                         send_consolidated_export_invoice_email_to_admin,
                     )
 
-                    consolidated_pdf = generate_consolidated_export_invoice(
+                    consolidated_docx = generate_consolidated_export_invoice_word(
                         shipment, language="en"
                     )
                     admin_sent = send_consolidated_export_invoice_email_to_admin(
-                        shipment, consolidated_pdf
+                        shipment, consolidated_docx
                     )
                     if admin_sent:
                         logger.info(
@@ -5312,16 +5366,16 @@ def download_consolidated_export_invoice_view(request, pk):
             )
 
         # Import document service
-        from .document_service import generate_consolidated_export_invoice
+        from .document_service import generate_consolidated_export_invoice_word
 
         # Get language from request (default: 'en' for export invoice)
         language = request.GET.get("language", "en")
         if language not in ["ar", "en"]:
             language = "en"
 
-        # Generate consolidated export invoice PDF
+        # Generate consolidated export invoice Word document
         try:
-            pdf_bytes = generate_consolidated_export_invoice(
+            docx_bytes = generate_consolidated_export_invoice_word(
                 shipment, language=language
             )
         except ValueError as e:
@@ -5331,7 +5385,7 @@ def download_consolidated_export_invoice_view(request, pk):
             )
         except Exception as gen_error:
             logger.error(
-                f"Error generating consolidated export invoice PDF: {str(gen_error)}",
+                f"Error generating consolidated export invoice Word document: {str(gen_error)}",
                 exc_info=True,
             )
             return Response(
@@ -5347,7 +5401,7 @@ def download_consolidated_export_invoice_view(request, pk):
             from .email_service import send_consolidated_export_invoice_email_to_admin
 
             admin_sent = send_consolidated_export_invoice_email_to_admin(
-                shipment, pdf_bytes
+                shipment, docx_bytes
             )
             if admin_sent:
                 logger.info(
@@ -5362,12 +5416,15 @@ def download_consolidated_export_invoice_view(request, pk):
                 f"❌ Failed to send consolidated export invoice email: {str(email_error)}",
                 exc_info=True,
             )
-            # Don't fail if email fails - still return the PDF
+            # Don't fail if email fails - still return the Word document
 
-        # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        # Return Word document as response
+        response = HttpResponse(
+            docx_bytes,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
         response["Content-Disposition"] = (
-            f'inline; filename="Consolidated-Export-Invoice-{shipment.shipment_number}.pdf"'
+            f'inline; filename="Consolidated-Export-Invoice-{shipment.shipment_number}.docx"'
         )
         return response
 
@@ -5438,16 +5495,16 @@ def download_packing_list_view(request, pk):
             )
 
         # Import document service
-        from .document_service import generate_packing_list
+        from .document_service import generate_packing_list_word
 
         # Get language from request (default: 'en' for packing list)
         language = request.GET.get("language", "en")
         if language not in ["ar", "en"]:
             language = "en"
 
-        # Generate packing list PDF
+        # Generate packing list Word document
         try:
-            pdf_bytes = generate_packing_list(shipment, language=language)
+            docx_bytes = generate_packing_list_word(shipment, language=language)
         except ValueError as e:
             return Response(
                 {"success": False, "error": str(e)},
@@ -5455,7 +5512,8 @@ def download_packing_list_view(request, pk):
             )
         except Exception as gen_error:
             logger.error(
-                f"Error generating packing list PDF: {str(gen_error)}", exc_info=True
+                f"Error generating packing list Word document: {str(gen_error)}",
+                exc_info=True,
             )
             return Response(
                 {
@@ -5469,18 +5527,21 @@ def download_packing_list_view(request, pk):
         try:
             from .email_service import send_packing_list_email_to_admin
 
-            send_packing_list_email_to_admin(shipment, pdf_bytes)
+            send_packing_list_email_to_admin(shipment, docx_bytes)
             logger.info(
                 f"✅ Packing list email sent to admin for shipment {shipment.id}"
             )
         except Exception as email_error:
             logger.warning(f"Failed to send packing list email: {str(email_error)}")
-            # Don't fail if email fails - still return the PDF
+            # Don't fail if email fails - still return the Word document
 
-        # Return PDF as response
-        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        # Return Word document as response
+        response = HttpResponse(
+            docx_bytes,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
         response["Content-Disposition"] = (
-            f'inline; filename="Packing-List-{shipment.shipment_number}.pdf"'
+            f'inline; filename="Packing-List-{shipment.shipment_number}.docx"'
         )
         return response
 
@@ -5570,13 +5631,13 @@ def generate_bulk_customs_documents_view(request):
 
         # Generate document
         from .document_service import (
-            generate_consolidated_export_invoice_bulk,
-            generate_consolidated_packing_list,
-            generate_consolidated_packing_list_bulk,
-            generate_multiple_consolidated_invoices,
-            generate_multiple_consolidated_packing_lists,
-            split_shipments_by_limits,
             calculate_invoice_totals,
+            generate_consolidated_export_invoice_bulk_word,
+            generate_consolidated_packing_list_bulk_word,
+            generate_consolidated_packing_list_word,
+            generate_multiple_consolidated_invoices_word,
+            generate_multiple_consolidated_packing_lists_word,
+            split_shipments_by_limits,
         )
 
         if document_type == "packing_list":
@@ -5611,7 +5672,7 @@ def generate_bulk_customs_documents_view(request):
 
             if total_cbm > max_cbm_limit or total_weight > max_weight_limit:
                 # Total exceeds limits - split into multiple packing lists
-                zip_bytes = generate_multiple_consolidated_packing_lists(
+                zip_bytes = generate_multiple_consolidated_packing_lists_word(
                     shipments_list,
                     language=language,
                     max_cbm=max_cbm_limit,
@@ -5632,19 +5693,24 @@ def generate_bulk_customs_documents_view(request):
                 )
 
                 if len(groups) == 1:
-                    # Only one group - return as PDF
+                    # Only one group - return as Word document
                     date_str = timezone.now().strftime("%Y%m%d")
                     packing_list_number = f"PL-{date_str}-001"
-                    pdf_bytes = generate_consolidated_packing_list_bulk(
-                        groups[0], language=language, packing_list_number=packing_list_number
+                    docx_bytes = generate_consolidated_packing_list_bulk_word(
+                        groups[0],
+                        language=language,
+                        packing_list_number=packing_list_number,
                     )
-                    filename = f"Consolidated-Packing-List-{packing_list_number}.pdf"
-                    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+                    filename = f"Consolidated-Packing-List-{packing_list_number}.docx"
+                    response = HttpResponse(
+                        docx_bytes,
+                        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    )
                     response["Content-Disposition"] = f'inline; filename="{filename}"'
                     return response
                 else:
                     # Multiple groups - return as ZIP
-                    zip_bytes = generate_multiple_consolidated_packing_lists(
+                    zip_bytes = generate_multiple_consolidated_packing_lists_word(
                         shipments_list,
                         language=language,
                         max_cbm=max_cbm_limit,
@@ -5652,7 +5718,9 @@ def generate_bulk_customs_documents_view(request):
                     )
                     filename = f"Consolidated-Packing-Lists-{timezone.now().strftime('%Y%m%d')}.zip"
                     response = HttpResponse(zip_bytes, content_type="application/zip")
-                    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+                    response["Content-Disposition"] = (
+                        f'attachment; filename="{filename}"'
+                    )
                     response["Content-Length"] = str(len(zip_bytes))
                     response["Content-Transfer-Encoding"] = "binary"
                     return response
@@ -5690,7 +5758,7 @@ def generate_bulk_customs_documents_view(request):
 
             if total_cbm > max_cbm_limit or total_weight > max_weight_limit:
                 # Total exceeds limits - split into multiple invoices
-                zip_bytes = generate_multiple_consolidated_invoices(
+                zip_bytes = generate_multiple_consolidated_invoices_word(
                     shipments_list,
                     language=language,
                     max_cbm=max_cbm_limit,
@@ -5711,19 +5779,22 @@ def generate_bulk_customs_documents_view(request):
                 )
 
                 if len(groups) == 1:
-                    # Only one group - return as PDF
+                    # Only one group - return as Word document
                     date_str = timezone.now().strftime("%Y%m%d")
                     invoice_number = f"INV-{date_str}-001"
-                    pdf_bytes = generate_consolidated_export_invoice_bulk(
+                    docx_bytes = generate_consolidated_export_invoice_bulk_word(
                         groups[0], language=language, invoice_number=invoice_number
                     )
-                    filename = f"Consolidated-Export-Invoice-{invoice_number}.pdf"
-                    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+                    filename = f"Consolidated-Export-Invoice-{invoice_number}.docx"
+                    response = HttpResponse(
+                        docx_bytes,
+                        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    )
                     response["Content-Disposition"] = f'inline; filename="{filename}"'
                     return response
                 else:
                     # Multiple groups - return as ZIP
-                    zip_bytes = generate_multiple_consolidated_invoices(
+                    zip_bytes = generate_multiple_consolidated_invoices_word(
                         shipments_list,
                         language=language,
                         max_cbm=max_cbm_limit,

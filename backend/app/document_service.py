@@ -1,7 +1,7 @@
 """
 Document Generation Service
 
-This module handles generation of PDF documents (invoices, packing lists, etc.)
+This module handles generation of PDF and Word documents (invoices, packing lists, etc.)
 for LCL shipments.
 """
 
@@ -17,6 +17,12 @@ import qrcode
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils import timezone
+from docx import Document
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Inches, Pt, RGBColor
 from weasyprint import CSS, HTML
 from weasyprint.text.fonts import FontConfiguration
 
@@ -1925,15 +1931,15 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
         chargeable_weight = 0.0
         total_pieces = 0
         receipt_items = []
-        
+
         # Use calculate_invoice_totals to get proper product names and HS codes
         pricing = calculate_invoice_totals(shipment)
-        
+
         parcels_data = shipment.parcels if shipment.parcels else []
         for idx, parcel_data in enumerate(parcels_data):
             if not parcel_data or not isinstance(parcel_data, dict):
                 continue
-                
+
             try:
                 weight = float(parcel_data.get("weight", 0) or 0)
                 cbm = float(parcel_data.get("cbm", 0) or 0)
@@ -1941,7 +1947,7 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
                 width = float(parcel_data.get("width", 0) or 0)
                 height = float(parcel_data.get("height", 0) or 0)
                 repeat_count = int(parcel_data.get("repeatCount", 1) or 1)
-                
+
                 # Calculate volumetric weight: (L × W × H) / 6,000 or CBM × 167
                 if length > 0 and width > 0 and height > 0:
                     volumetric_weight = (length * width * height) / 6000
@@ -1949,20 +1955,20 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
                     volumetric_weight = cbm * 167
                 else:
                     volumetric_weight = 0
-                
+
                 # Chargeable weight = max(actual_weight, volumetric_weight)
                 parcel_chargeable = max(weight, volumetric_weight)
-                
+
                 # Add to totals (multiply by repeat_count)
                 total_weight += weight * repeat_count
                 chargeable_weight += parcel_chargeable * repeat_count
                 total_pieces += repeat_count
-                
+
                 # Get product name and HS code from pricing calculations if available
                 product_name_ar = None
                 product_name_en = None
                 hs_code = parcel_data.get("hs_code") or parcel_data.get("hsCode")
-                
+
                 # Try to find matching calculation from pricing
                 if idx < len(pricing.get("parcel_calculations", [])):
                     calc = pricing["parcel_calculations"][idx]
@@ -1970,19 +1976,24 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
                     product_name_en = calc.get("product_name_en")
                     if not hs_code:
                         hs_code = calc.get("hs_code")
-                
+
                 # Fallback to parcel data
                 if not product_name_ar and not product_name_en:
-                    product_name_ar = parcel_data.get("description") or parcel_data.get("productName")
+                    product_name_ar = parcel_data.get("description") or parcel_data.get(
+                        "productName"
+                    )
                     product_name_en = product_name_ar
-                
-                receipt_items.append({
-                    "product_name_ar": product_name_ar or "General Goods",
-                    "product_name_en": product_name_en or "General Goods",
-                    "hs_code": hs_code or "N/A",
-                    "quantity": repeat_count,
-                    "description": parcel_data.get("description") or parcel_data.get("notes"),
-                })
+
+                receipt_items.append(
+                    {
+                        "product_name_ar": product_name_ar or "General Goods",
+                        "product_name_en": product_name_en or "General Goods",
+                        "hs_code": hs_code or "N/A",
+                        "quantity": repeat_count,
+                        "description": parcel_data.get("description")
+                        or parcel_data.get("notes"),
+                    }
+                )
             except (TypeError, ValueError) as e:
                 logger.warning(f"Error calculating parcel totals: {str(e)}")
                 continue
@@ -2058,4 +2069,1976 @@ def save_receipt_to_storage(shipment: LCLShipment, pdf_bytes: bytes) -> str:
 
     except Exception as e:
         logger.error(f"Error saving receipt to storage: {str(e)}", exc_info=True)
+        raise
+
+
+# ============================================================================
+# Word Document Generation Functions
+# ============================================================================
+
+
+def _add_image_to_docx(doc, image_base64, width_inches=1.8):
+    """Add base64 image to Word document"""
+    try:
+        if not image_base64:
+            return None
+        image_data = base64.b64decode(image_base64)
+        image_stream = io.BytesIO(image_data)
+        paragraph = doc.add_paragraph()
+        run = paragraph.add_run()
+        run.add_picture(image_stream, width=Inches(width_inches))
+        return paragraph
+    except Exception as e:
+        logger.warning(f"Could not add image to Word document: {str(e)}")
+        return None
+
+
+def _set_cell_shading(cell, fill_color):
+    """Set cell background color/shading"""
+    try:
+        tcPr = cell._element.get_or_add_tcPr()
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:fill"), fill_color)
+        tcPr.append(shd)
+    except Exception as e:
+        logger.warning(f"Could not set cell shading: {str(e)}")
+
+
+def _add_table_row(doc, cells_data, header=False, widths=None):
+    """Add a table row to Word document"""
+    if not hasattr(doc, "_current_table"):
+        # Create new table
+        table = doc.add_table(rows=1, cols=len(cells_data))
+        table.style = "Light Grid Accent 1"
+        if widths:
+            for i, width in enumerate(widths):
+                if i < len(table.columns):
+                    table.columns[i].width = Inches(width)
+        doc._current_table = table
+    else:
+        # Add row to existing table
+        table = doc._current_table
+        table.add_row()
+
+    for i, cell_data in enumerate(cells_data):
+        if i < len(table.rows[-1].cells):
+            cell = table.rows[-1].cells[i]
+            cell.text = str(cell_data) if cell_data else ""
+            if header:
+                cell.paragraphs[0].runs[0].bold = True
+                cell.paragraphs[0].runs[0].font.size = Pt(9)
+                cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                # Dark background for header
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.color.rgb = RGBColor(255, 255, 255)
+                _set_cell_shading(cell, "1F2937")
+            else:
+                cell.paragraphs[0].runs[0].font.size = Pt(10)
+    return table
+
+
+def generate_packing_list_word(shipment: LCLShipment, language: str = "en") -> bytes:
+    """
+    Generate Packing List Word document for LCL shipment.
+
+    Args:
+        shipment: LCLShipment instance
+        language: kept for future use (currently template is EN)
+
+    Returns:
+        Word document bytes (.docx)
+    """
+    try:
+        # Reuse invoice pricing calculations
+        pricing = calculate_invoice_totals(shipment)
+        company_info = get_company_info()
+
+        # Create Word document
+        doc = Document()
+        doc.sections[0].page_width = Inches(8.5)
+        doc.sections[0].page_height = Inches(11)
+        # Increased margins to prevent content overflow
+        doc.sections[0].left_margin = Inches(0.5)
+        doc.sections[0].right_margin = Inches(0.5)
+        doc.sections[0].top_margin = Inches(0.5)
+        doc.sections[0].bottom_margin = Inches(0.5)
+
+        # Header section
+        header_table = doc.add_table(rows=1, cols=2)
+        header_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        # Adjusted widths to fit within page (usable width: 8.5 - 1.0 = 7.5 inches)
+        header_table.columns[0].width = Inches(4.0)
+        header_table.columns[1].width = Inches(3.5)
+
+        # Left column - Logo and company info
+        left_cell = header_table.rows[0].cells[0]
+        if company_info.get("logo_base64"):
+            _add_image_to_docx(left_cell, company_info["logo_base64"], width_inches=1.8)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run("MEDO-FREIGHT.EU SHIP. ROUTE. DELIVER")
+        run.bold = True
+        run.font.size = Pt(18)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run("Logistics Service Provider")
+        run.bold = True
+        run.font.size = Pt(12)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run(
+            "Medo Freight\nTitanlaan 1, 4624 AX Bergen op Zoom, The Netherlands\nKvk nr: 75251663\nTAX nr: NL002518102B41\nEORI number: NL1320963189\nTel: +31 6 39 788 989  E-mail: contact@medo-freight.eu\nWebsite: http://medo-freight.eu"
+        )
+        run.font.size = Pt(11)
+
+        # Right column - Barcode
+        right_cell = header_table.rows[0].cells[1]
+        tracking_url = f"{company_info['site_url']}/tracking"
+        barcode_base64 = generate_tracking_barcode(tracking_url)
+        if barcode_base64:
+            _add_image_to_docx(right_cell, barcode_base64, width_inches=2.8)
+
+        p = right_cell.add_paragraph()
+        run = p.add_run("Middle East Office / مكتب الشرق الأوسط")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        p = right_cell.add_paragraph()
+        run = p.add_run(
+            "Al Ikram Trading Co. / شركة الإكرام التجارية\nالرامسة (بجانب كراج البولمان) – الشرق الأوسط\nالمدينة الصناعية، الشيخ نجار (منطقة مكاتب الشحن الدولي)\nTel: +963 995 477 8188\nEmail: alikramtrading.co@gmail.com"
+        )
+        run.font.size = Pt(10)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        # Add horizontal line
+        p = doc.add_paragraph()
+        p.add_run("_" * 100)
+
+        # Title
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(
+            "Consolidated Export Packing List – Mixed Shipment (Personal & Commercial Goods)"
+        )
+        run.bold = True
+        run.font.size = Pt(20)
+
+        # Info grid table
+        info_table = doc.add_table(rows=1, cols=5)
+        info_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        # Adjusted widths to fit within page (total: 7.5 inches)
+        info_table.columns[0].width = Inches(1.5)
+        info_table.columns[1].width = Inches(1.5)
+        info_table.columns[2].width = Inches(1.5)
+        info_table.columns[3].width = Inches(1.5)
+        info_table.columns[4].width = Inches(1.5)
+
+        info_cells = [
+            "Invoice No.",
+            "Invoice Date",
+            "GST Reg No.",
+            "Your Order No.",
+            "Page No.",
+        ]
+        info_values = ["", "", "0.00%", "", "1"]
+        for i, (label, value) in enumerate(zip(info_cells, info_values)):
+            cell = info_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(14)
+            run.bold = True
+
+        # Address grid: For Account of Consignee / Deliver To Consignee
+        address_table = doc.add_table(rows=1, cols=2)
+        address_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        address_table.columns[0].width = Inches(3.75)
+        address_table.columns[1].width = Inches(3.75)
+
+        for i, label in enumerate(["For Account of Consignee", "Deliver To Consignee"]):
+            cell = address_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            # Empty value field
+            run = p.add_run("")
+            run.font.size = Pt(12)
+            cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+        # Customer No. / Currency table
+        customer_table = doc.add_table(rows=1, cols=2)
+        customer_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        customer_table.columns[0].width = Inches(3.75)
+        customer_table.columns[1].width = Inches(3.75)
+
+        customer_labels = ["Customer No.", "Currency"]
+        customer_values = ["", "EUR"]
+        for i, (label, value) in enumerate(zip(customer_labels, customer_values)):
+            cell = customer_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Payment Terms / Sales Area table
+        payment_table = doc.add_table(rows=1, cols=2)
+        payment_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        payment_table.columns[0].width = Inches(3.75)
+        payment_table.columns[1].width = Inches(3.75)
+
+        payment_labels = ["Payment Terms", "Sales Area"]
+        payment_values = ["", ""]
+        for i, (label, value) in enumerate(zip(payment_labels, payment_values)):
+            cell = payment_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Incoterms / Bank Details table
+        incoterms_table = doc.add_table(rows=1, cols=2)
+        incoterms_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        incoterms_table.columns[0].width = Inches(3.75)
+        incoterms_table.columns[1].width = Inches(3.75)
+
+        incoterms_labels = ["Incoterms", "Bank Details"]
+        incoterms_values = ["", ""]
+        for i, (label, value) in enumerate(zip(incoterms_labels, incoterms_values)):
+            cell = incoterms_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Shipping Details Grid (11 boxes in 2 rows)
+        shipping_labels = [
+            "Bill of Lading",
+            "Loading Port / City",
+            "Destination Port",
+            "Despatch",
+            "Mode / Vessel Name",
+            "Container No.",
+            "Voyage No.",
+            "ETD",
+            "ETA",
+            "Shipping",
+            "Seal No.",
+        ]
+        shipping_values = ["", "", "", "", "", "", "", "", "", "LCL", ""]
+
+        # Create shipping details table with 6 columns (will wrap to next row)
+        shipping_table = doc.add_table(rows=2, cols=6)
+        shipping_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        for i in range(6):
+            shipping_table.columns[i].width = Inches(1.25)
+
+        for idx, (label, value) in enumerate(zip(shipping_labels, shipping_values)):
+            row_idx = idx // 6
+            col_idx = idx % 6
+            if row_idx < 2 and col_idx < 6:
+                cell = shipping_table.rows[row_idx].cells[col_idx]
+                p = cell.add_paragraph()
+                run = p.add_run(label)
+                run.font.size = Pt(9)
+                run.bold = True
+                p = cell.add_paragraph()
+                run = p.add_run(value)
+                run.font.size = Pt(12)
+                run.bold = True
+
+        # Aggregate totals
+        total_cbm = 0.0
+        total_packages = 0
+        total_weight = 0.0
+
+        for item in pricing.get("parcel_calculations", []):
+            try:
+                cbm_value = float(item.get("cbm", 0) or 0)
+            except (TypeError, ValueError):
+                cbm_value = 0.0
+            total_cbm += cbm_value
+
+            try:
+                weight_value = float(item.get("weight", 0) or 0)
+            except (TypeError, ValueError):
+                weight_value = 0.0
+            repeat_count = int(item.get("repeat_count", 1) or 1)
+            total_weight += weight_value * repeat_count
+            total_packages += repeat_count
+
+        # Product table - adjusted widths to fit within 7.5 inches
+        product_table = doc.add_table(rows=1, cols=8)
+        product_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        product_table.columns[0].width = Inches(0.75)  # Product Code
+        product_table.columns[1].width = Inches(1.4)  # Client Name
+        product_table.columns[2].width = Inches(1.8)  # Description
+        product_table.columns[3].width = Inches(0.9)  # Shipment Type
+        product_table.columns[4].width = Inches(0.75)  # Origin
+        product_table.columns[5].width = Inches(0.75)  # HS Code
+        product_table.columns[6].width = Inches(0.6)  # CBM
+        product_table.columns[7].width = Inches(0.55)  # Unit
+
+        # Header row
+        headers = [
+            "Product Code",
+            "Client Name",
+            "Description",
+            "Shipment Type",
+            "Origin",
+            "HS Code",
+            "CBM",
+            "Unit",
+        ]
+        for i, header in enumerate(headers):
+            cell = product_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(header)
+            run.bold = True
+            run.font.size = Pt(9)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            # Dark background
+            _set_cell_shading(cell, "1F2937")
+            run.font.color.rgb = RGBColor(255, 255, 255)
+
+        # Data rows
+        for item in pricing.get("parcel_calculations", []):
+            row = product_table.add_row()
+            row.cells[0].text = shipment.shipment_number or ""
+            row.cells[1].text = shipment.sender_name or ""
+
+            desc_text = item.get("product_name_en", "")
+            if item.get("product_name_ar"):
+                desc_text += f"\n{item['product_name_ar']}"
+            row.cells[2].text = desc_text
+
+            shipment_type = item.get("shipment_type") or shipment.shipment_type
+            if shipment_type == "personal":
+                row.cells[3].text = "Personal / شخصي"
+            elif shipment_type == "commercial":
+                row.cells[3].text = "Commercial / تجاري"
+            else:
+                row.cells[3].text = "-"
+
+            row.cells[4].text = ""
+            row.cells[5].text = item.get("hs_code", "") or ""
+            row.cells[6].text = f"{item.get('cbm', 0):.3f}"
+            row.cells[7].text = "PCS"
+
+            # Center align some columns
+            for i in [3, 4, 5, 6, 7]:
+                row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Second product table - adjusted widths to fit within 7.5 inches
+        product_table2 = doc.add_table(rows=1, cols=5)
+        product_table2.alignment = WD_TABLE_ALIGNMENT.LEFT
+        product_table2.columns[0].width = Inches(1.3)  # Qty
+        product_table2.columns[1].width = Inches(1.5)  # Unit Price
+        product_table2.columns[2].width = Inches(1.5)  # Value
+        product_table2.columns[3].width = Inches(1.5)  # Gross Wt
+        product_table2.columns[4].width = Inches(1.7)  # Nett Wt
+
+        headers2 = ["Qty", "Unit Price", "Value", "Gross Wt", "Nett Wt"]
+        for i, header in enumerate(headers2):
+            cell = product_table2.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(header)
+            run.bold = True
+            run.font.size = Pt(9)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            _set_cell_shading(cell, "1F2937")
+            run.font.color.rgb = RGBColor(255, 255, 255)
+
+        for item in pricing.get("parcel_calculations", []):
+            row = product_table2.add_row()
+            row.cells[0].text = str(item.get("repeat_count", 1))
+
+            shipment_type = item.get("shipment_type") or shipment.shipment_type
+            if shipment_type == "commercial":
+                row.cells[1].text = ""
+                row.cells[2].text = ""
+            elif shipment_type == "personal":
+                row.cells[1].text = "€0.00"
+                row.cells[2].text = "€0.00"
+            else:
+                if item.get("price_per_kg"):
+                    row.cells[1].text = f"€{item['price_per_kg']:.2f}"
+                row.cells[2].text = f"€{item.get('price_by_weight', 0):.2f}"
+
+            row.cells[3].text = f"{item.get('weight', 0):.2f}"
+            row.cells[4].text = ""
+
+            # Right align price columns
+            for i in [1, 2, 3, 4]:
+                row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            row.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Totals table - adjusted widths to fit within 7.5 inches
+        totals_table = doc.add_table(rows=1, cols=3)
+        totals_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        totals_table.columns[0].width = Inches(2.5)
+        totals_table.columns[1].width = Inches(2.5)
+        totals_table.columns[2].width = Inches(2.5)
+
+        totals_labels = ["SALES TAX", "PACKAGES", "TOTAL INVOICE VALUE"]
+        totals_values = ["", str(total_packages), f"EUR {pricing['total_price']:.2f}"]
+
+        for i, (label, value) in enumerate(zip(totals_labels, totals_values)):
+            cell = totals_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Footer notes
+        p = doc.add_paragraph()
+        run = p.add_run("A - Legal & Customs Declaration\n")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.add_run(
+            "MEDO-B2B EU acts solely as a freight consolidator and export agent on behalf of multiple clients. "
+            "The declared values are for customs declaration purposes only and do not represent sales or transfer of ownership. "
+            "This shipment is handled under EU Export Compliance (EX-A). MEDO-B2B EU bears no ownership or sales relation "
+            "to the goods. All clients have submitted their own declaration forms confirming that their items are personal "
+            "or commercial as described.\n\n"
+        )
+
+        run = p.add_run("B - Freight & Service Terms\n")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.add_run(
+            "Payment is due only for freight and handling services, by bank transfer or cash, 100% prepaid before departure. "
+            "The consignee acknowledges that all goods were inspected and accepted before loading. No return, refund, or "
+            "complaint is accepted after the container has been sealed and departed. MEDO-B2B EU provides transport "
+            "services under CIF Incoterms (Cost, Insurance, Freight) unless otherwise agreed in writing. Our general "
+            "terms and conditions apply to all shipments and can be provided upon request."
+        )
+
+        # Signature section - adjusted widths to fit within 7.5 inches
+        sig_table = doc.add_table(rows=1, cols=2)
+        sig_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        sig_table.columns[0].width = Inches(3.75)
+        sig_table.columns[1].width = Inches(3.75)
+
+        for i in range(2):
+            cell = sig_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            if i == 0:
+                run = p.add_run("Authorized Signature & Stamp")
+            else:
+                run = p.add_run("Date")
+            run.bold = True
+            run.font.size = Pt(11)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+            # Add space for signature
+            for _ in range(5):
+                cell.add_paragraph()
+
+            p = cell.add_paragraph()
+            p.add_run("_" * 30)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Save to bytes
+        doc_bytes = io.BytesIO()
+        doc.save(doc_bytes)
+        doc_bytes.seek(0)
+
+        logger.info(
+            f"Successfully generated packing list Word document for shipment {shipment.id}"
+        )
+        return doc_bytes.getvalue()
+
+    except Exception as e:
+        logger.error(
+            f"Error generating packing list Word document: {str(e)}", exc_info=True
+        )
+        raise
+
+
+def generate_consolidated_export_invoice_word(
+    shipment: LCLShipment, language: str = "en"
+) -> bytes:
+    """
+    Generate Consolidated Export Invoice Word document for LCL shipment.
+
+    Args:
+        shipment: LCLShipment instance
+        language: kept for future use (currently template is EN)
+
+    Returns:
+        Word document bytes (.docx)
+    """
+    try:
+        # Reuse invoice pricing calculations
+        pricing = calculate_invoice_totals(shipment)
+        company_info = get_company_info()
+
+        # Create Word document
+        doc = Document()
+        doc.sections[0].page_width = Inches(8.5)
+        doc.sections[0].page_height = Inches(11)
+        # Increased margins to prevent content overflow
+        doc.sections[0].left_margin = Inches(0.5)
+        doc.sections[0].right_margin = Inches(0.5)
+        doc.sections[0].top_margin = Inches(0.5)
+        doc.sections[0].bottom_margin = Inches(0.5)
+
+        # Header section (same as packing list)
+        header_table = doc.add_table(rows=1, cols=2)
+        # Adjusted widths to fit within page (usable width: 8.5 - 1.0 = 7.5 inches)
+        header_table.columns[0].width = Inches(4.0)
+        header_table.columns[1].width = Inches(3.5)
+
+        left_cell = header_table.rows[0].cells[0]
+        if company_info.get("logo_base64"):
+            _add_image_to_docx(left_cell, company_info["logo_base64"], width_inches=1.8)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run("MEDO-FREIGHT.EU SHIP. ROUTE. DELIVER")
+        run.bold = True
+        run.font.size = Pt(18)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run("Logistics Service Provider")
+        run.bold = True
+        run.font.size = Pt(12)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run(
+            "Medo Freight\nTitanlaan 1, 4624 AX Bergen op Zoom, The Netherlands\nKvk nr: 75251663\nTAX nr: NL002518102B41\nEORI number: NL1320963189\nTel: +31 6 39 788 989  E-mail: contact@medo-freight.eu\nWebsite: http://medo-freight.eu"
+        )
+        run.font.size = Pt(11)
+
+        right_cell = header_table.rows[0].cells[1]
+        tracking_url = f"{company_info['site_url']}/tracking"
+        barcode_base64 = generate_tracking_barcode(tracking_url)
+        if barcode_base64:
+            _add_image_to_docx(right_cell, barcode_base64, width_inches=2.8)
+
+        p = right_cell.add_paragraph()
+        run = p.add_run("Middle East Office / مكتب الشرق الأوسط")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        p = right_cell.add_paragraph()
+        run = p.add_run(
+            "Al Ikram Trading Co. / شركة الإكرام التجارية\nالرامسة (بجانب كراج البولمان) – الشرق الأوسط\nالمدينة الصناعية، الشيخ نجار (منطقة مكاتب الشحن الدولي)\nTel: +963 995 477 8188\nEmail: alikramtrading.co@gmail.com"
+        )
+        run.font.size = Pt(10)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        p = doc.add_paragraph()
+        p.add_run("_" * 100)
+
+        # Title
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(
+            "Consolidated Export Invoice – Mixed Shipment (Personal & Commercial Goods)"
+        )
+        run.bold = True
+        run.font.size = Pt(20)
+
+        # Info grid table
+        info_table = doc.add_table(rows=1, cols=5)
+        # Adjusted widths to fit within page (total: 7.5 inches)
+        for i in range(5):
+            info_table.columns[i].width = Inches(1.5)
+
+        info_cells = [
+            "Invoice No.",
+            "Invoice Date",
+            "GST Reg No.",
+            "Your Order No.",
+            "Page No.",
+        ]
+        info_values = ["", "", "0.00%", "", "1"]
+        for i, (label, value) in enumerate(zip(info_cells, info_values)):
+            cell = info_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(14)
+            run.bold = True
+
+        # Address grid: For Account of Consignee / Deliver To Consignee
+        address_table = doc.add_table(rows=1, cols=2)
+        address_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        address_table.columns[0].width = Inches(3.75)
+        address_table.columns[1].width = Inches(3.75)
+
+        for i, label in enumerate(["For Account of Consignee", "Deliver To Consignee"]):
+            cell = address_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            # Empty value field
+            run = p.add_run("")
+            run.font.size = Pt(12)
+            cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+        # Customer No. / Currency table
+        customer_table = doc.add_table(rows=1, cols=2)
+        customer_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        customer_table.columns[0].width = Inches(3.75)
+        customer_table.columns[1].width = Inches(3.75)
+
+        customer_labels = ["Customer No.", "Currency"]
+        customer_values = ["", "EUR"]
+        for i, (label, value) in enumerate(zip(customer_labels, customer_values)):
+            cell = customer_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Payment Terms / Sales Area table
+        payment_table = doc.add_table(rows=1, cols=2)
+        payment_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        payment_table.columns[0].width = Inches(3.75)
+        payment_table.columns[1].width = Inches(3.75)
+
+        payment_labels = ["Payment Terms", "Sales Area"]
+        payment_values = ["", ""]
+        for i, (label, value) in enumerate(zip(payment_labels, payment_values)):
+            cell = payment_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Incoterms / Bank Details table
+        incoterms_table = doc.add_table(rows=1, cols=2)
+        incoterms_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        incoterms_table.columns[0].width = Inches(3.75)
+        incoterms_table.columns[1].width = Inches(3.75)
+
+        incoterms_labels = ["Incoterms", "Bank Details"]
+        incoterms_values = ["", ""]
+        for i, (label, value) in enumerate(zip(incoterms_labels, incoterms_values)):
+            cell = incoterms_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Shipping Details Grid (11 boxes in 2 rows)
+        shipping_labels = [
+            "Bill of Lading",
+            "Loading Port / City",
+            "Destination Port",
+            "Despatch",
+            "Mode / Vessel Name",
+            "Container No.",
+            "Voyage No.",
+            "ETD",
+            "ETA",
+            "Shipping",
+            "Seal No.",
+        ]
+        shipping_values = ["", "", "", "", "", "", "", "", "", "LCL", ""]
+
+        # Create shipping details table with 6 columns (will wrap to next row)
+        shipping_table = doc.add_table(rows=2, cols=6)
+        shipping_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        for i in range(6):
+            shipping_table.columns[i].width = Inches(1.25)
+
+        for idx, (label, value) in enumerate(zip(shipping_labels, shipping_values)):
+            row_idx = idx // 6
+            col_idx = idx % 6
+            if row_idx < 2 and col_idx < 6:
+                cell = shipping_table.rows[row_idx].cells[col_idx]
+                p = cell.add_paragraph()
+                run = p.add_run(label)
+                run.font.size = Pt(9)
+                run.bold = True
+                p = cell.add_paragraph()
+                run = p.add_run(value)
+                run.font.size = Pt(12)
+                run.bold = True
+
+        # Aggregate totals
+        total_cbm = 0.0
+        total_packages = 0
+        total_weight = 0.0
+        shipment_types = []
+
+        for item in pricing.get("parcel_calculations", []):
+            try:
+                cbm_value = float(item.get("cbm", 0) or 0)
+            except (TypeError, ValueError):
+                cbm_value = 0.0
+            total_cbm += cbm_value
+
+            try:
+                weight_value = float(item.get("weight", 0) or 0)
+            except (TypeError, ValueError):
+                weight_value = 0.0
+            repeat_count = int(item.get("repeat_count", 1) or 1)
+            total_weight += weight_value * repeat_count
+            total_packages += repeat_count
+
+            if shipment.parcels:
+                for parcel in shipment.parcels:
+                    if isinstance(parcel, dict):
+                        parcel_type = parcel.get("shipmentType") or parcel.get(
+                            "shipment_type"
+                        )
+                        if parcel_type:
+                            shipment_types.append(parcel_type)
+
+        unique_types = list(set(shipment_types))
+        is_personal_only = len(unique_types) == 1 and unique_types[0] == "personal"
+        is_commercial_only = len(unique_types) == 1 and unique_types[0] == "commercial"
+        is_mixed = len(unique_types) > 1
+
+        # Product table (same structure as packing list) - adjusted widths to fit within 7.5 inches
+        product_table = doc.add_table(rows=1, cols=8)
+        product_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        product_table.columns[0].width = Inches(0.75)  # Product Code
+        product_table.columns[1].width = Inches(1.4)  # Client Name
+        product_table.columns[2].width = Inches(1.8)  # Description
+        product_table.columns[3].width = Inches(0.9)  # Shipment Type
+        product_table.columns[4].width = Inches(0.75)  # Origin
+        product_table.columns[5].width = Inches(0.75)  # HS Code
+        product_table.columns[6].width = Inches(0.6)  # CBM
+        product_table.columns[7].width = Inches(0.55)  # Unit
+
+        headers = [
+            "Product Code",
+            "Client Name",
+            "Description",
+            "Shipment Type",
+            "Origin",
+            "HS Code",
+            "CBM",
+            "Unit",
+        ]
+        for i, header in enumerate(headers):
+            cell = product_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(header)
+            run.bold = True
+            run.font.size = Pt(9)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            _set_cell_shading(cell, "1F2937")
+            run.font.color.rgb = RGBColor(255, 255, 255)
+
+        for item in pricing.get("parcel_calculations", []):
+            row = product_table.add_row()
+            row.cells[0].text = shipment.shipment_number or ""
+            row.cells[1].text = shipment.sender_name or ""
+
+            desc_text = item.get("product_name_en", "")
+            if item.get("product_name_ar"):
+                desc_text += f"\n{item['product_name_ar']}"
+            row.cells[2].text = desc_text
+
+            shipment_type = item.get("shipment_type") or shipment.shipment_type
+            if shipment_type == "personal":
+                row.cells[3].text = "Personal / شخصي"
+            elif shipment_type == "commercial":
+                row.cells[3].text = "Commercial / تجاري"
+            else:
+                row.cells[3].text = "-"
+
+            row.cells[4].text = ""
+            row.cells[5].text = item.get("hs_code", "") or ""
+            row.cells[6].text = f"{item.get('cbm', 0):.3f}"
+            row.cells[7].text = "PCS"
+
+            for i in [3, 4, 5, 6, 7]:
+                row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Second product table - adjusted widths to fit within 7.5 inches
+        product_table2 = doc.add_table(rows=1, cols=5)
+        product_table2.alignment = WD_TABLE_ALIGNMENT.LEFT
+        product_table2.columns[0].width = Inches(1.3)  # Qty
+        product_table2.columns[1].width = Inches(1.5)  # Unit Price
+        product_table2.columns[2].width = Inches(1.5)  # Value
+        product_table2.columns[3].width = Inches(1.5)  # Gross Wt
+        product_table2.columns[4].width = Inches(1.7)  # Nett Wt
+
+        headers2 = ["Qty", "Unit Price", "Value", "Gross Wt", "Nett Wt"]
+        for i, header in enumerate(headers2):
+            cell = product_table2.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(header)
+            run.bold = True
+            run.font.size = Pt(9)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            _set_cell_shading(cell, "1F2937")
+            run.font.color.rgb = RGBColor(255, 255, 255)
+
+        for item in pricing.get("parcel_calculations", []):
+            row = product_table2.add_row()
+            row.cells[0].text = str(item.get("repeat_count", 1))
+
+            shipment_type = item.get("shipment_type") or shipment.shipment_type
+            if shipment_type == "commercial":
+                row.cells[1].text = ""
+                row.cells[2].text = ""
+            elif shipment_type == "personal":
+                row.cells[1].text = "€0.00"
+                row.cells[2].text = "€0.00"
+            else:
+                if item.get("price_per_kg"):
+                    row.cells[1].text = f"€{item['price_per_kg']:.2f}"
+                row.cells[2].text = f"€{item.get('price_by_weight', 0):.2f}"
+
+            row.cells[3].text = f"{item.get('weight', 0):.2f}"
+            row.cells[4].text = ""
+
+            for i in [1, 2, 3, 4]:
+                row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            row.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Totals table - adjusted widths to fit within 7.5 inches
+        totals_table = doc.add_table(rows=1, cols=3)
+        totals_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        totals_table.columns[0].width = Inches(2.5)
+        totals_table.columns[1].width = Inches(2.5)
+        totals_table.columns[2].width = Inches(2.5)
+
+        totals_labels = ["SALES TAX", "PACKAGES", "TOTAL INVOICE VALUE"]
+        totals_values = ["", str(total_packages), f"EUR {pricing['total_price']:.2f}"]
+
+        for i, (label, value) in enumerate(zip(totals_labels, totals_values)):
+            cell = totals_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Footer notes
+        p = doc.add_paragraph()
+        run = p.add_run("A - Legal & Customs Declaration\n")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.add_run(
+            "MEDO-B2B EU acts solely as a freight consolidator and export agent on behalf of multiple clients. "
+            "The declared values are for customs declaration purposes only and do not represent sales or transfer of ownership. "
+            "This shipment is handled under EU Export Compliance (EX-A). MEDO-B2B EU bears no ownership or sales relation "
+            "to the goods. All clients have submitted their own declaration forms confirming that their items are personal "
+            "or commercial as described.\n\n"
+        )
+
+        run = p.add_run("B - Freight & Service Terms\n")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.add_run(
+            "Payment is due only for freight and handling services, by bank transfer or cash, 100% prepaid before departure. "
+            "The consignee acknowledges that all goods were inspected and accepted before loading. No return, refund, or "
+            "complaint is accepted after the container has been sealed and departed. MEDO-B2B EU provides transport "
+            "services under CIF Incoterms (Cost, Insurance, Freight) unless otherwise agreed in writing. Our general "
+            "terms and conditions apply to all shipments and can be provided upon request."
+        )
+
+        # Signature section - adjusted widths to fit within 7.5 inches
+        sig_table = doc.add_table(rows=1, cols=2)
+        sig_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        sig_table.columns[0].width = Inches(3.75)
+        sig_table.columns[1].width = Inches(3.75)
+
+        for i in range(2):
+            cell = sig_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            if i == 0:
+                run = p.add_run("Authorized Signature & Stamp")
+            else:
+                run = p.add_run("Date")
+            run.bold = True
+            run.font.size = Pt(11)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+            for _ in range(5):
+                cell.add_paragraph()
+
+            p = cell.add_paragraph()
+            p.add_run("_" * 30)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Save to bytes
+        doc_bytes = io.BytesIO()
+        doc.save(doc_bytes)
+        doc_bytes.seek(0)
+
+        logger.info(
+            f"Successfully generated consolidated export invoice Word document for shipment {shipment.id}"
+        )
+        return doc_bytes.getvalue()
+
+    except Exception as e:
+        logger.error(
+            f"Error generating consolidated export invoice Word document: {str(e)}",
+            exc_info=True,
+        )
+        raise
+
+
+def generate_consolidated_packing_list_word(
+    shipments: List[LCLShipment], language: str = "en"
+) -> bytes:
+    """
+    Generate Consolidated Packing List Word document for multiple LCL shipments.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: kept for future use (currently template is EN)
+
+    Returns:
+        Word document bytes (.docx)
+    """
+    try:
+        if not shipments:
+            raise ValueError("No shipments provided for consolidated packing list")
+
+        company_info = get_company_info()
+
+        # Create Word document
+        doc = Document()
+        doc.sections[0].page_width = Inches(8.5)
+        doc.sections[0].page_height = Inches(11)
+        # Increased margins to prevent content overflow
+        doc.sections[0].left_margin = Inches(0.5)
+        doc.sections[0].right_margin = Inches(0.5)
+        doc.sections[0].top_margin = Inches(0.5)
+        doc.sections[0].bottom_margin = Inches(0.5)
+
+        # Header (same as single shipment)
+        header_table = doc.add_table(rows=1, cols=2)
+        # Adjusted widths to fit within page (usable width: 8.5 - 1.0 = 7.5 inches)
+        header_table.columns[0].width = Inches(4.0)
+        header_table.columns[1].width = Inches(3.5)
+
+        left_cell = header_table.rows[0].cells[0]
+        if company_info.get("logo_base64"):
+            _add_image_to_docx(left_cell, company_info["logo_base64"], width_inches=1.8)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run("MEDO-FREIGHT.EU SHIP. ROUTE. DELIVER")
+        run.bold = True
+        run.font.size = Pt(18)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run("Logistics Service Provider")
+        run.bold = True
+        run.font.size = Pt(12)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run(
+            "Medo Freight\nTitanlaan 1, 4624 AX Bergen op Zoom, The Netherlands\nKvk nr: 75251663\nTAX nr: NL002518102B41\nEORI number: NL1320963189\nTel: +31 6 39 788 989  E-mail: contact@medo-freight.eu\nWebsite: http://medo-freight.eu"
+        )
+        run.font.size = Pt(11)
+
+        right_cell = header_table.rows[0].cells[1]
+        tracking_url = f"{company_info['site_url']}/tracking"
+        barcode_base64 = generate_tracking_barcode(tracking_url)
+        if barcode_base64:
+            _add_image_to_docx(right_cell, barcode_base64, width_inches=2.8)
+
+        p = right_cell.add_paragraph()
+        run = p.add_run("Middle East Office / مكتب الشرق الأوسط")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        p = right_cell.add_paragraph()
+        run = p.add_run(
+            "Al Ikram Trading Co. / شركة الإكرام التجارية\nالرامسة (بجانب كراج البولمان) – الشرق الأوسط\nالمدينة الصناعية، الشيخ نجار (منطقة مكاتب الشحن الدولي)\nTel: +963 995 477 8188\nEmail: alikramtrading.co@gmail.com"
+        )
+        run.font.size = Pt(10)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        p = doc.add_paragraph()
+        p.add_run("_" * 100)
+
+        # Title
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(
+            "Consolidated Export Packing List – Mixed Shipment (Personal & Commercial Goods)"
+        )
+        run.bold = True
+        run.font.size = Pt(20)
+
+        # Info grid
+        info_table = doc.add_table(rows=1, cols=5)
+        for i in range(5):
+            info_table.columns[i].width = Inches(1.7)
+
+        info_cells = [
+            "Invoice No.",
+            "Invoice Date",
+            "GST Reg No.",
+            "Your Order No.",
+            "Page No.",
+        ]
+        info_values = ["", "", "0.00%", "", "1"]
+        for i, (label, value) in enumerate(zip(info_cells, info_values)):
+            cell = info_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(14)
+            run.bold = True
+
+        # Aggregate data from all shipments
+        grand_total_cbm = 0.0
+        grand_total_packages = 0
+        grand_total_weight = 0.0
+        grand_total_value = 0.0
+        all_shipment_data = []
+
+        for shipment in shipments:
+            pricing = calculate_invoice_totals(shipment)
+
+            total_cbm = 0.0
+            total_packages = 0
+            total_weight = 0.0
+            total_value = 0.0
+
+            shipment_items = []
+            for item in pricing.get("parcel_calculations", []):
+                try:
+                    cbm_value = float(item.get("cbm", 0) or 0)
+                except (TypeError, ValueError):
+                    cbm_value = 0.0
+                total_cbm += cbm_value
+
+                try:
+                    weight_value = float(item.get("weight", 0) or 0)
+                except (TypeError, ValueError):
+                    weight_value = 0.0
+                repeat_count = int(item.get("repeat_count", 1) or 1)
+                total_weight += weight_value * repeat_count
+                total_packages += repeat_count
+
+                try:
+                    price_value = float(item.get("price_by_weight", 0) or 0)
+                except (TypeError, ValueError):
+                    price_value = 0.0
+                total_value += price_value
+
+                shipment_items.append(
+                    {
+                        "shipment_number": shipment.shipment_number
+                        or f"#{shipment.id}",
+                        "product_name_en": item.get("product_name_en", ""),
+                        "product_name_ar": item.get("product_name_ar", ""),
+                        "hs_code": item.get("hs_code", ""),
+                        "cbm": float(item.get("cbm", 0) or 0),
+                        "repeat_count": int(item.get("repeat_count", 1) or 1),
+                        "price_by_weight": float(item.get("price_by_weight", 0) or 0),
+                        "weight": float(item.get("weight", 0) or 0),
+                    }
+                )
+
+            grand_total_cbm += total_cbm
+            grand_total_packages += total_packages
+            grand_total_weight += total_weight
+            grand_total_value += total_value
+
+            all_shipment_data.append(
+                {
+                    "shipment": shipment,
+                    "pricing": pricing,
+                    "items": shipment_items,
+                    "total_cbm": total_cbm,
+                    "total_packages": total_packages,
+                    "total_weight": total_weight,
+                    "total_value": total_value,
+                }
+            )
+
+        # Product table - adjusted widths to fit within 7.5 inches
+        product_table = doc.add_table(rows=1, cols=8)
+        product_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        product_table.columns[0].width = Inches(0.75)  # Product Code
+        product_table.columns[1].width = Inches(1.4)  # Client Name
+        product_table.columns[2].width = Inches(1.8)  # Description
+        product_table.columns[3].width = Inches(0.9)  # Shipment Type
+        product_table.columns[4].width = Inches(0.75)  # Origin
+        product_table.columns[5].width = Inches(0.75)  # HS Code
+        product_table.columns[6].width = Inches(0.6)  # CBM
+        product_table.columns[7].width = Inches(0.55)  # Unit
+
+        headers = [
+            "Product Code",
+            "Client Name",
+            "Description",
+            "Shipment Type",
+            "Origin",
+            "HS Code",
+            "CBM",
+            "Unit",
+        ]
+        for i, header in enumerate(headers):
+            cell = product_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(header)
+            run.bold = True
+            run.font.size = Pt(9)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            _set_cell_shading(cell, "1F2937")
+            run.font.color.rgb = RGBColor(255, 255, 255)
+
+        for shipment_info in all_shipment_data:
+            for item in shipment_info["items"]:
+                row = product_table.add_row()
+                row.cells[0].text = item["shipment_number"]
+                row.cells[1].text = shipment_info["shipment"].sender_name or ""
+
+                desc_text = item["product_name_en"]
+                if item["product_name_ar"]:
+                    desc_text += f"\n{item['product_name_ar']}"
+                row.cells[2].text = desc_text
+
+                # Get shipment type from shipment
+                shipment_type = shipment_info["shipment"].shipment_type
+                if shipment_type == "personal":
+                    row.cells[3].text = "Personal / شخصي"
+                elif shipment_type == "commercial":
+                    row.cells[3].text = "Commercial / تجاري"
+                else:
+                    row.cells[3].text = "-"
+
+                row.cells[4].text = ""
+                row.cells[5].text = item["hs_code"] or ""
+                row.cells[6].text = f"{item['cbm']:.3f}"
+                row.cells[7].text = "PCS"
+
+                for i in [3, 4, 5, 6, 7]:
+                    row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Second product table - adjusted widths to fit within 7.5 inches
+        product_table2 = doc.add_table(rows=1, cols=5)
+        product_table2.alignment = WD_TABLE_ALIGNMENT.LEFT
+        product_table2.columns[0].width = Inches(1.3)  # Qty
+        product_table2.columns[1].width = Inches(1.5)  # Unit Price
+        product_table2.columns[2].width = Inches(1.5)  # Value
+        product_table2.columns[3].width = Inches(1.5)  # Gross Wt
+        product_table2.columns[4].width = Inches(1.7)  # Nett Wt
+
+        headers2 = ["Qty", "Unit Price", "Value", "Gross Wt", "Nett Wt"]
+        for i, header in enumerate(headers2):
+            cell = product_table2.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(header)
+            run.bold = True
+            run.font.size = Pt(9)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            _set_cell_shading(cell, "1F2937")
+            run.font.color.rgb = RGBColor(255, 255, 255)
+
+        for shipment_info in all_shipment_data:
+            for item in shipment_info["items"]:
+                row = product_table2.add_row()
+                row.cells[0].text = str(item["repeat_count"])
+
+                shipment_type = shipment_info["shipment"].shipment_type
+                if shipment_type == "commercial":
+                    row.cells[1].text = ""
+                    row.cells[2].text = ""
+                elif shipment_type == "personal":
+                    row.cells[1].text = "€0.00"
+                    row.cells[2].text = "€0.00"
+                else:
+                    row.cells[2].text = f"€{item['price_by_weight']:.2f}"
+
+                row.cells[3].text = f"{item['weight']:.2f}"
+                row.cells[4].text = ""
+
+                for i in [1, 2, 3, 4]:
+                    row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                row.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Totals table - adjusted widths to fit within 7.5 inches
+        totals_table = doc.add_table(rows=1, cols=3)
+        totals_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        totals_table.columns[0].width = Inches(2.5)
+        totals_table.columns[1].width = Inches(2.5)
+        totals_table.columns[2].width = Inches(2.5)
+
+        totals_labels = ["SALES TAX", "PACKAGES", "TOTAL INVOICE VALUE"]
+        totals_values = ["", str(grand_total_packages), f"EUR {grand_total_value:.2f}"]
+
+        for i, (label, value) in enumerate(zip(totals_labels, totals_values)):
+            cell = totals_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Footer notes
+        p = doc.add_paragraph()
+        run = p.add_run("A - Legal & Customs Declaration\n")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.add_run(
+            "MEDO-B2B EU acts solely as a freight consolidator and export agent on behalf of multiple clients. "
+            "The declared values are for customs declaration purposes only and do not represent sales or transfer of ownership. "
+            "This shipment is handled under EU Export Compliance (EX-A). MEDO-B2B EU bears no ownership or sales relation "
+            "to the goods. All clients have submitted their own declaration forms confirming that their items are personal "
+            "or commercial as described.\n\n"
+        )
+
+        run = p.add_run("B - Freight & Service Terms\n")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.add_run(
+            "Payment is due only for freight and handling services, by bank transfer or cash, 100% prepaid before departure. "
+            "The consignee acknowledges that all goods were inspected and accepted before loading. No return, refund, or "
+            "complaint is accepted after the container has been sealed and departed. MEDO-B2B EU provides transport "
+            "services under CIF Incoterms (Cost, Insurance, Freight) unless otherwise agreed in writing. Our general "
+            "terms and conditions apply to all shipments and can be provided upon request."
+        )
+
+        # Signature section - adjusted widths to fit within 7.5 inches
+        sig_table = doc.add_table(rows=1, cols=2)
+        sig_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        sig_table.columns[0].width = Inches(3.75)
+        sig_table.columns[1].width = Inches(3.75)
+
+        for i in range(2):
+            cell = sig_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            if i == 0:
+                run = p.add_run("Authorized Signature & Stamp")
+            else:
+                run = p.add_run("Date")
+            run.bold = True
+            run.font.size = Pt(11)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+            for _ in range(5):
+                cell.add_paragraph()
+
+            p = cell.add_paragraph()
+            p.add_run("_" * 30)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Save to bytes
+        doc_bytes = io.BytesIO()
+        doc.save(doc_bytes)
+        doc_bytes.seek(0)
+
+        logger.info(
+            f"Successfully generated consolidated packing list Word document for {len(shipments)} shipments"
+        )
+        return doc_bytes.getvalue()
+
+    except Exception as e:
+        logger.error(
+            f"Error generating consolidated packing list Word document: {str(e)}",
+            exc_info=True,
+        )
+        raise
+
+
+def generate_consolidated_export_invoice_bulk_word(
+    shipments: List[LCLShipment],
+    language: str = "en",
+    invoice_number: Optional[str] = None,
+) -> bytes:
+    """
+    Generate Consolidated Export Invoice Word document for multiple LCL shipments.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: kept for future use (currently template is EN)
+        invoice_number: Optional invoice number
+
+    Returns:
+        Word document bytes (.docx)
+    """
+    try:
+        if not shipments:
+            raise ValueError("No shipments provided for consolidated export invoice")
+
+        company_info = get_company_info()
+
+        # Create Word document
+        doc = Document()
+        doc.sections[0].page_width = Inches(8.5)
+        doc.sections[0].page_height = Inches(11)
+        # Increased margins to prevent content overflow
+        doc.sections[0].left_margin = Inches(0.5)
+        doc.sections[0].right_margin = Inches(0.5)
+        doc.sections[0].top_margin = Inches(0.5)
+        doc.sections[0].bottom_margin = Inches(0.5)
+
+        # Header (same structure)
+        header_table = doc.add_table(rows=1, cols=2)
+        # Adjusted widths to fit within page (usable width: 8.5 - 1.0 = 7.5 inches)
+        header_table.columns[0].width = Inches(4.0)
+        header_table.columns[1].width = Inches(3.5)
+
+        left_cell = header_table.rows[0].cells[0]
+        if company_info.get("logo_base64"):
+            _add_image_to_docx(left_cell, company_info["logo_base64"], width_inches=1.8)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run("MEDO-FREIGHT.EU SHIP. ROUTE. DELIVER")
+        run.bold = True
+        run.font.size = Pt(18)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run("Logistics Service Provider")
+        run.bold = True
+        run.font.size = Pt(12)
+
+        p = left_cell.add_paragraph()
+        run = p.add_run(
+            "Medo Freight\nTitanlaan 1, 4624 AX Bergen op Zoom, The Netherlands\nKvk nr: 75251663\nTAX nr: NL002518102B41\nEORI number: NL1320963189\nTel: +31 6 39 788 989  E-mail: contact@medo-freight.eu\nWebsite: http://medo-freight.eu"
+        )
+        run.font.size = Pt(11)
+
+        right_cell = header_table.rows[0].cells[1]
+        tracking_url = f"{company_info['site_url']}/tracking"
+        barcode_base64 = generate_tracking_barcode(tracking_url)
+        if barcode_base64:
+            _add_image_to_docx(right_cell, barcode_base64, width_inches=2.8)
+
+        p = right_cell.add_paragraph()
+        run = p.add_run("Middle East Office / مكتب الشرق الأوسط")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        p = right_cell.add_paragraph()
+        run = p.add_run(
+            "Al Ikram Trading Co. / شركة الإكرام التجارية\nالرامسة (بجانب كراج البولمان) – الشرق الأوسط\nالمدينة الصناعية، الشيخ نجار (منطقة مكاتب الشحن الدولي)\nTel: +963 995 477 8188\nEmail: alikramtrading.co@gmail.com"
+        )
+        run.font.size = Pt(10)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        p = doc.add_paragraph()
+        p.add_run("_" * 100)
+
+        # Title
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(
+            "Consolidated Export Invoice – Mixed Shipment (Personal & Commercial Goods)"
+        )
+        run.bold = True
+        run.font.size = Pt(20)
+
+        # Info grid
+        info_table = doc.add_table(rows=1, cols=5)
+        info_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        # Adjusted widths to fit within page (total: 7.5 inches)
+        for i in range(5):
+            info_table.columns[i].width = Inches(1.5)
+
+        invoice_num = (
+            invoice_number
+            or f"INV-{timezone.now().strftime('%Y%m%d')}-{len(shipments)}"
+        )
+        info_cells = [
+            "Invoice No.",
+            "Invoice Date",
+            "GST Reg No.",
+            "Your Order No.",
+            "Page No.",
+        ]
+        info_values = [invoice_num, "", "0.00%", "", "1"]
+        for i, (label, value) in enumerate(zip(info_cells, info_values)):
+            cell = info_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(14)
+            run.bold = True
+
+        # Address grid: For Account of Consignee / Deliver To Consignee
+        address_table = doc.add_table(rows=1, cols=2)
+        address_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        address_table.columns[0].width = Inches(3.75)
+        address_table.columns[1].width = Inches(3.75)
+
+        for i, label in enumerate(["For Account of Consignee", "Deliver To Consignee"]):
+            cell = address_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            # Empty value field
+            run = p.add_run("")
+            run.font.size = Pt(12)
+            cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+        # Customer No. / Currency table
+        customer_table = doc.add_table(rows=1, cols=2)
+        customer_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        customer_table.columns[0].width = Inches(3.75)
+        customer_table.columns[1].width = Inches(3.75)
+
+        customer_labels = ["Customer No.", "Currency"]
+        customer_values = ["", "EUR"]
+        for i, (label, value) in enumerate(zip(customer_labels, customer_values)):
+            cell = customer_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Payment Terms / Sales Area table
+        payment_table = doc.add_table(rows=1, cols=2)
+        payment_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        payment_table.columns[0].width = Inches(3.75)
+        payment_table.columns[1].width = Inches(3.75)
+
+        payment_labels = ["Payment Terms", "Sales Area"]
+        payment_values = ["", ""]
+        for i, (label, value) in enumerate(zip(payment_labels, payment_values)):
+            cell = payment_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Incoterms / Bank Details table
+        incoterms_table = doc.add_table(rows=1, cols=2)
+        incoterms_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        incoterms_table.columns[0].width = Inches(3.75)
+        incoterms_table.columns[1].width = Inches(3.75)
+
+        incoterms_labels = ["Incoterms", "Bank Details"]
+        incoterms_values = ["", ""]
+        for i, (label, value) in enumerate(zip(incoterms_labels, incoterms_values)):
+            cell = incoterms_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Shipping Details Grid (11 boxes in 2 rows)
+        shipping_labels = [
+            "Bill of Lading",
+            "Loading Port / City",
+            "Destination Port",
+            "Despatch",
+            "Mode / Vessel Name",
+            "Container No.",
+            "Voyage No.",
+            "ETD",
+            "ETA",
+            "Shipping",
+            "Seal No.",
+        ]
+        shipping_values = ["", "", "", "", "", "", "", "", "", "LCL", ""]
+
+        # Create shipping details table with 6 columns (will wrap to next row)
+        shipping_table = doc.add_table(rows=2, cols=6)
+        shipping_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        for i in range(6):
+            shipping_table.columns[i].width = Inches(1.25)
+
+        for idx, (label, value) in enumerate(zip(shipping_labels, shipping_values)):
+            row_idx = idx // 6
+            col_idx = idx % 6
+            if row_idx < 2 and col_idx < 6:
+                cell = shipping_table.rows[row_idx].cells[col_idx]
+                p = cell.add_paragraph()
+                run = p.add_run(label)
+                run.font.size = Pt(9)
+                run.bold = True
+                p = cell.add_paragraph()
+                run = p.add_run(value)
+                run.font.size = Pt(12)
+                run.bold = True
+
+        # Aggregate data from all shipments
+        grand_total_cbm = 0.0
+        grand_total_packages = 0
+        grand_total_weight = 0.0
+        grand_total_value = 0.0
+        all_shipment_data = []
+        all_shipment_types = []
+
+        for shipment in shipments:
+            pricing = calculate_invoice_totals(shipment)
+
+            total_cbm = 0.0
+            total_packages = 0
+            total_weight = 0.0
+            total_value = 0.0
+            shipment_types = []
+
+            shipment_items = []
+            for idx, item in enumerate(pricing.get("parcel_calculations", [])):
+                try:
+                    cbm_value = float(item.get("cbm", 0) or 0)
+                except (TypeError, ValueError):
+                    cbm_value = 0.0
+                total_cbm += cbm_value
+
+                try:
+                    weight_value = float(item.get("weight", 0) or 0)
+                except (TypeError, ValueError):
+                    weight_value = 0.0
+                repeat_count = int(item.get("repeat_count", 1) or 1)
+                total_weight += weight_value * repeat_count
+                total_packages += repeat_count
+
+                try:
+                    price_value = float(item.get("price_by_weight", 0) or 0)
+                except (TypeError, ValueError):
+                    price_value = 0.0
+                total_value += price_value
+
+                # Get shipment type
+                shipment_type = item.get("shipment_type")
+                if (
+                    not shipment_type
+                    and shipment.parcels
+                    and idx < len(shipment.parcels)
+                ):
+                    parcel = shipment.parcels[idx]
+                    if isinstance(parcel, dict):
+                        shipment_type = parcel.get("shipmentType") or parcel.get(
+                            "shipment_type"
+                        )
+                if not shipment_type:
+                    shipment_type = shipment.shipment_type
+
+                if shipment_type:
+                    shipment_types.append(shipment_type)
+
+                shipment_items.append(
+                    {
+                        "shipment_number": shipment.shipment_number
+                        or f"#{shipment.id}",
+                        "product_name_en": item.get("product_name_en", ""),
+                        "product_name_ar": item.get("product_name_ar", ""),
+                        "hs_code": item.get("hs_code", ""),
+                        "cbm": float(item.get("cbm", 0) or 0),
+                        "repeat_count": int(item.get("repeat_count", 1) or 1),
+                        "price_by_weight": float(item.get("price_by_weight", 0) or 0),
+                        "price_per_kg": float(item.get("price_per_kg", 0) or 0),
+                        "weight": float(item.get("weight", 0) or 0),
+                        "shipment_type": shipment_type,
+                    }
+                )
+
+            all_shipment_types.extend(shipment_types)
+
+            grand_total_cbm += total_cbm
+            grand_total_packages += total_packages
+            grand_total_weight += total_weight
+            grand_total_value += total_value
+
+            unique_types = list(set(shipment_types))
+            is_personal_only = len(unique_types) == 1 and unique_types[0] == "personal"
+            is_commercial_only = (
+                len(unique_types) == 1 and unique_types[0] == "commercial"
+            )
+            is_mixed = len(unique_types) > 1
+
+            all_shipment_data.append(
+                {
+                    "shipment": shipment,
+                    "pricing": pricing,
+                    "items": shipment_items,
+                    "total_cbm": total_cbm,
+                    "total_packages": total_packages,
+                    "total_weight": total_weight,
+                    "total_value": total_value,
+                    "is_personal_only": is_personal_only,
+                    "is_commercial_only": is_commercial_only,
+                    "is_mixed": is_mixed,
+                }
+            )
+
+        # Product table - adjusted widths to fit within 7.5 inches
+        product_table = doc.add_table(rows=1, cols=8)
+        product_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        product_table.columns[0].width = Inches(0.75)  # Product Code
+        product_table.columns[1].width = Inches(1.4)  # Client Name
+        product_table.columns[2].width = Inches(1.8)  # Description
+        product_table.columns[3].width = Inches(0.9)  # Shipment Type
+        product_table.columns[4].width = Inches(0.75)  # Origin
+        product_table.columns[5].width = Inches(0.75)  # HS Code
+        product_table.columns[6].width = Inches(0.6)  # CBM
+        product_table.columns[7].width = Inches(0.55)  # Unit
+
+        headers = [
+            "Product Code",
+            "Client Name",
+            "Description",
+            "Shipment Type",
+            "Origin",
+            "HS Code",
+            "CBM",
+            "Unit",
+        ]
+        for i, header in enumerate(headers):
+            cell = product_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(header)
+            run.bold = True
+            run.font.size = Pt(9)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            _set_cell_shading(cell, "1F2937")
+            run.font.color.rgb = RGBColor(255, 255, 255)
+
+        for shipment_info in all_shipment_data:
+            for item in shipment_info["items"]:
+                row = product_table.add_row()
+                row.cells[0].text = item["shipment_number"]
+                row.cells[1].text = shipment_info["shipment"].sender_name or ""
+
+                desc_text = item["product_name_en"]
+                if item["product_name_ar"]:
+                    desc_text += f"\n{item['product_name_ar']}"
+                row.cells[2].text = desc_text
+
+                shipment_type = item["shipment_type"]
+                if shipment_type == "personal":
+                    row.cells[3].text = "Personal / شخصي"
+                elif shipment_type == "commercial":
+                    row.cells[3].text = "Commercial / تجاري"
+                else:
+                    row.cells[3].text = "-"
+
+                row.cells[4].text = ""
+                row.cells[5].text = item["hs_code"] or ""
+                row.cells[6].text = f"{item['cbm']:.3f}"
+                row.cells[7].text = "PCS"
+
+                for i in [3, 4, 5, 6, 7]:
+                    row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Second product table - adjusted widths to fit within 7.5 inches
+        product_table2 = doc.add_table(rows=1, cols=5)
+        product_table2.alignment = WD_TABLE_ALIGNMENT.LEFT
+        product_table2.columns[0].width = Inches(1.3)  # Qty
+        product_table2.columns[1].width = Inches(1.5)  # Unit Price
+        product_table2.columns[2].width = Inches(1.5)  # Value
+        product_table2.columns[3].width = Inches(1.5)  # Gross Wt
+        product_table2.columns[4].width = Inches(1.7)  # Nett Wt
+
+        headers2 = ["Qty", "Unit Price", "Value", "Gross Wt", "Nett Wt"]
+        for i, header in enumerate(headers2):
+            cell = product_table2.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(header)
+            run.bold = True
+            run.font.size = Pt(9)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            _set_cell_shading(cell, "1F2937")
+            run.font.color.rgb = RGBColor(255, 255, 255)
+
+        for shipment_info in all_shipment_data:
+            for item in shipment_info["items"]:
+                row = product_table2.add_row()
+                row.cells[0].text = str(item["repeat_count"])
+
+                shipment_type = item["shipment_type"]
+                if shipment_type == "commercial":
+                    row.cells[1].text = ""
+                    row.cells[2].text = ""
+                elif shipment_type == "personal":
+                    row.cells[1].text = "€0.00"
+                    row.cells[2].text = "€0.00"
+                else:
+                    if item["price_per_kg"]:
+                        row.cells[1].text = f"€{item['price_per_kg']:.2f}"
+                    row.cells[2].text = f"€{item['price_by_weight']:.2f}"
+
+                row.cells[3].text = f"{item['weight']:.2f}"
+                row.cells[4].text = ""
+
+                for i in [1, 2, 3, 4]:
+                    row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                row.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Totals table - adjusted widths to fit within 7.5 inches
+        totals_table = doc.add_table(rows=1, cols=3)
+        totals_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        totals_table.columns[0].width = Inches(2.5)
+        totals_table.columns[1].width = Inches(2.5)
+        totals_table.columns[2].width = Inches(2.5)
+
+        totals_labels = ["SALES TAX", "PACKAGES", "TOTAL INVOICE VALUE"]
+        totals_values = ["", str(grand_total_packages), f"EUR {grand_total_value:.2f}"]
+
+        for i, (label, value) in enumerate(zip(totals_labels, totals_values)):
+            cell = totals_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            run = p.add_run(label)
+            run.font.size = Pt(10)
+            run.bold = True
+            p = cell.add_paragraph()
+            run = p.add_run(value)
+            run.font.size = Pt(18)
+            run.bold = True
+
+        # Footer notes
+        p = doc.add_paragraph()
+        run = p.add_run("A - Legal & Customs Declaration\n")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.add_run(
+            "MEDO-B2B EU acts solely as a freight consolidator and export agent on behalf of multiple clients. "
+            "The declared values are for customs declaration purposes only and do not represent sales or transfer of ownership. "
+            "This shipment is handled under EU Export Compliance (EX-A). MEDO-B2B EU bears no ownership or sales relation "
+            "to the goods. All clients have submitted their own declaration forms confirming that their items are personal "
+            "or commercial as described.\n\n"
+        )
+
+        run = p.add_run("B - Freight & Service Terms\n")
+        run.bold = True
+        run.font.size = Pt(11)
+        p.add_run(
+            "Payment is due only for freight and handling services, by bank transfer or cash, 100% prepaid before departure. "
+            "The consignee acknowledges that all goods were inspected and accepted before loading. No return, refund, or "
+            "complaint is accepted after the container has been sealed and departed. MEDO-B2B EU provides transport "
+            "services under CIF Incoterms (Cost, Insurance, Freight) unless otherwise agreed in writing. Our general "
+            "terms and conditions apply to all shipments and can be provided upon request."
+        )
+
+        # Signature section - adjusted widths to fit within 7.5 inches
+        sig_table = doc.add_table(rows=1, cols=2)
+        sig_table.alignment = WD_TABLE_ALIGNMENT.LEFT
+        sig_table.columns[0].width = Inches(3.75)
+        sig_table.columns[1].width = Inches(3.75)
+
+        for i in range(2):
+            cell = sig_table.rows[0].cells[i]
+            p = cell.add_paragraph()
+            if i == 0:
+                run = p.add_run("Authorized Signature & Stamp")
+            else:
+                run = p.add_run("Date")
+            run.bold = True
+            run.font.size = Pt(11)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+            for _ in range(5):
+                cell.add_paragraph()
+
+            p = cell.add_paragraph()
+            p.add_run("_" * 30)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Save to bytes
+        doc_bytes = io.BytesIO()
+        doc.save(doc_bytes)
+        doc_bytes.seek(0)
+
+        logger.info(
+            f"Successfully generated consolidated export invoice Word document for {len(shipments)} shipments"
+        )
+        return doc_bytes.getvalue()
+
+    except Exception as e:
+        logger.error(
+            f"Error generating consolidated export invoice Word document: {str(e)}",
+            exc_info=True,
+        )
+        raise
+
+
+def generate_consolidated_packing_list_bulk_word(
+    shipments: List[LCLShipment],
+    language: str = "en",
+    packing_list_number: Optional[str] = None,
+) -> bytes:
+    """
+    Generate Consolidated Packing List Word document for multiple LCL shipments.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: kept for future use (currently template is EN)
+        packing_list_number: Optional packing list number
+
+    Returns:
+        Word document bytes (.docx)
+    """
+    # Reuse the consolidated packing list function
+    return generate_consolidated_packing_list_word(shipments, language)
+
+
+def generate_multiple_consolidated_packing_lists_word(
+    shipments: List[LCLShipment],
+    language: str = "en",
+    max_cbm: float = 65.0,
+    max_weight_kg: float = 24000.0,
+) -> bytes:
+    """
+    Generate multiple consolidated packing lists split by CBM and weight limits,
+    and return them as a ZIP file containing Word documents.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: Language for packing lists (default: 'en')
+        max_cbm: Maximum CBM per packing list (default: 65.0)
+        max_weight_kg: Maximum weight per packing list (default: 24000.0)
+
+    Returns:
+        ZIP file bytes containing all Word documents
+    """
+    import zipfile
+    from datetime import datetime
+
+    try:
+        groups = split_shipments_by_limits(shipments, max_cbm, max_weight_kg)
+
+        if not groups:
+            raise ValueError("No shipment groups created")
+
+        zip_buffer = io.BytesIO()
+        date_str = datetime.now().strftime("%Y%m%d")
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for idx, group in enumerate(groups, start=1):
+                packing_list_number = f"PL-{date_str}-{idx:03d}"
+                docx_bytes = generate_consolidated_packing_list_bulk_word(
+                    group,
+                    language=language,
+                    packing_list_number=packing_list_number,
+                )
+                filename = f"Consolidated-Packing-List-{packing_list_number}.docx"
+                zip_file.writestr(filename, docx_bytes)
+
+        zip_buffer.seek(0)
+        zip_bytes = zip_buffer.getvalue()
+
+        logger.info(
+            f"Successfully generated {len(groups)} packing lists and compressed into ZIP file"
+        )
+        return zip_bytes
+
+    except Exception as e:
+        logger.error(
+            f"Error generating multiple consolidated packing lists: {str(e)}",
+            exc_info=True,
+        )
+        raise
+
+
+def generate_multiple_consolidated_invoices_word(
+    shipments: List[LCLShipment],
+    language: str = "en",
+    max_cbm: float = 65.0,
+    max_weight_kg: float = 24000.0,
+) -> bytes:
+    """
+    Generate multiple consolidated export invoices split by CBM and weight limits,
+    and return them as a ZIP file containing Word documents.
+
+    Args:
+        shipments: List of LCLShipment instances
+        language: Language for invoices (default: 'en')
+        max_cbm: Maximum CBM per invoice (default: 65.0)
+        max_weight_kg: Maximum weight per invoice (default: 24000.0)
+
+    Returns:
+        ZIP file bytes containing all Word documents
+    """
+    import zipfile
+    from datetime import datetime
+
+    try:
+        groups = split_shipments_by_limits(shipments, max_cbm, max_weight_kg)
+
+        if not groups:
+            raise ValueError("No shipment groups created")
+
+        zip_buffer = io.BytesIO()
+        date_str = datetime.now().strftime("%Y%m%d")
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for idx, group in enumerate(groups, start=1):
+                invoice_number = f"INV-{date_str}-{idx:03d}"
+                docx_bytes = generate_consolidated_export_invoice_bulk_word(
+                    group, language=language, invoice_number=invoice_number
+                )
+                filename = f"Consolidated-Export-Invoice-{invoice_number}.docx"
+                zip_file.writestr(filename, docx_bytes)
+
+        zip_buffer.seek(0)
+        zip_bytes = zip_buffer.getvalue()
+
+        logger.info(
+            f"Successfully generated {len(groups)} invoices and compressed into ZIP file"
+        )
+        return zip_bytes
+
+    except Exception as e:
+        logger.error(
+            f"Error generating multiple consolidated invoices: {str(e)}", exc_info=True
+        )
         raise
