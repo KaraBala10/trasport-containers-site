@@ -171,6 +171,9 @@ def calculate_invoice_totals(shipment: LCLShipment) -> Dict:
             )
             if not parcel_shipment_type and shipment.shipment_type:
                 parcel_shipment_type = shipment.shipment_type
+            # Ensure shipment_type is always set (even if None, it will be passed to template)
+            if not parcel_shipment_type:
+                parcel_shipment_type = None  # Explicitly set to None if not found
 
             # Collect declared value for insurance
             if parcel_data.get("wantsInsurance") or parcel_data.get(

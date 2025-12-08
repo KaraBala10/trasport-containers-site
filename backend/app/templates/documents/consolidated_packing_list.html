@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Consolidated Export Packing List – Mixed Shipment (Personal &amp; Commercial Goods)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         @page {
             size: A4;
@@ -36,9 +39,9 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 20px;
+            gap: 30px;
             border-bottom: 3px solid #111827;
-            padding-bottom: 15px;
+            padding-bottom: 20px;
             margin-bottom: 20px;
             page-break-inside: avoid;
         }
@@ -46,8 +49,9 @@
         .logo-title {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             flex: 1;
+            min-width: 0;
         }
 
         .logo {
@@ -64,6 +68,7 @@
             letter-spacing: 0.1em;
             color: #111827;
             line-height: 1.2;
+            margin-bottom: 8px;
         }
 
         .shipper-block {
@@ -91,6 +96,18 @@
         .barcode-container {
             text-align: right;
             min-width: 280px;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
+        }
+
+        .barcode-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
         }
 
         .barcode-container img {
@@ -112,6 +129,33 @@
             font-weight: 600;
             margin-top: 6px;
             text-align: center;
+        }
+
+        .ikram-info {
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 12px;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .ikram-title {
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #374151;
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+            text-align: right;
+        }
+
+        .ikram-details {
+            font-size: 10px;
+            color: #4b5563;
+            line-height: 1.6;
+            font-weight: 500;
+            font-family: 'Cairo', 'Arial', sans-serif;
+            direction: rtl;
+            text-align: right;
         }
 
         .section-title {
@@ -479,8 +523,9 @@
                     medo-freight.eu Ship. Route. Deliver
                 </div>
                 <div class="shipper-block">
-                    <div class="shipper-title">Shipper Address</div>
+                    <div class="shipper-title">Logistics Service Provider</div>
                     <div class="shipper-details">
+                        <strong>Medo Freight</strong><br>
                         Titanlaan 1, 4624 AX Bergen op Zoom, The Netherlands<br>
                         Kvk nr: 75251663<br>
                         TAX nr: NL002518102B41<br>
@@ -492,16 +537,28 @@
             </div>
 
             <div class="barcode-container">
-                {% if barcode_base64 %}
-                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Shipment Barcode" />
-                    <div class="barcode-label">
-                        {% if shipment %}
-                            Shipment: {{ shipment.shipment_number }}
-                        {% elif shipments %}
-                            Multiple Shipments
-                        {% endif %}
+                <div class="barcode-wrapper">
+                    {% if barcode_base64 %}
+                        <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Shipment Barcode" />
+                        <div class="barcode-label">
+                            {% if shipment %}
+                                Shipment: {{ shipment.shipment_number }}
+                            {% elif shipments %}
+                                Multiple Shipments
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="ikram-info">
+                    <div class="ikram-title">Middle East Office / مكتب الشرق الأوسط</div>
+                    <div class="ikram-details">
+                        <strong>Al Ikram Trading Co. / شركة الإكرام التجارية</strong><br>
+                        الرامسة (بجانب كراج البولمان) – الشرق الأوسط<br>
+                        المدينة الصناعية، الشيخ نجار (منطقة مكاتب الشحن الدولي)<br>
+                        <span style="direction: ltr; text-align: right; display: block; margin-top: 4px;">Tel: +963 995 477 8188<br>
+                        Email: alikramtrading.co@gmail.com</span>
                     </div>
-                {% endif %}
+                </div>
             </div>
         </div>
 
@@ -509,7 +566,7 @@
             <tr>
                 <td style="width: 20%;">
                     <div class="info-label">Packing List No.</div>
-                    <div class="info-value">{% if packing_list_number %}{{ packing_list_number }}{% else %}{{ invoice_date|date:"Ymd" }}{% endif %}</div>
+                    <div class="info-value"></div>
                 </td>
                 <td style="width: 20%;">
                     <div class="info-label">Packing List Date</div>
@@ -656,12 +713,14 @@
             <!-- First table: Columns 1-6 -->
             <table class="light-border-table product-table">
                 <tr>
-                    <th style="width: 13%;">Product Code</th>
-                    <th style="width: 40%;">Description</th>
-                    <th style="width: 17%;" class="text-center">Origin</th>
-                    <th style="width: 13%;" class="text-center">HS Code</th>
-                    <th style="width: 12%;" class="text-center">CBM</th>
-                    <th style="width: 8%;" class="text-center">Unit</th>
+                    <th style="width: 10%;">Product Code</th>
+                    <th style="width: 20%;">Client Name</th>
+                    <th style="width: 25%;">Description</th>
+                    <th style="width: 12%;" class="text-center">Shipment Type</th>
+                    <th style="width: 10%;" class="text-center">Origin</th>
+                    <th style="width: 10%;" class="text-center">HS Code</th>
+                    <th style="width: 8%;" class="text-center">CBM</th>
+                    <th style="width: 5%;" class="text-center">Unit</th>
                 </tr>
                 {% if shipment_data %}
                     {# Bulk mode: multiple shipments #}
@@ -671,10 +730,22 @@
                                 <td class="small-text">
                                     {{ item.shipment_number|default:"" }}
                                 </td>
+                                <td class="small-text">
+                                    {{ shipment_info.shipment.sender_name|default:"" }}
+                                </td>
                                 <td class="small-text description-cell">
                                     <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
                                     {% if item.product_name_ar %}
                                         <br><span style="color: #6b7280; font-size: 8px;">{{ item.product_name_ar }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small-text text-center">
+                                    {% if item.shipment_type == "personal" %}
+                                        Personal / شخصي
+                                    {% elif item.shipment_type == "commercial" %}
+                                        Commercial / تجاري
+                                    {% else %}
+                                        -
                                     {% endif %}
                                 </td>
                                 <td class="small-text text-center empty-cell"></td>
@@ -691,7 +762,7 @@
                         {% endfor %}
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                            <td colspan="8" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
                                 No shipment data available.
                             </td>
                         </tr>
@@ -703,10 +774,38 @@
                             <td class="small-text">
                                 {{ shipment.shipment_number|default_if_none:"" }}
                             </td>
+                            <td class="small-text">
+                                {% if shipment.sender_name %}
+                                    {{ shipment.sender_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
                             <td class="small-text description-cell">
                                 <strong>{{ item.product_name_en|default_if_none:"" }}</strong>
                                 {% if item.product_name_ar %}
                                     <br><span style="color: #6b7280; font-size: 8px;">{{ item.product_name_ar }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small-text text-center">
+                                {% if item.shipment_type %}
+                                    {% if item.shipment_type == "personal" %}
+                                        Personal / شخصي
+                                    {% elif item.shipment_type == "commercial" %}
+                                        Commercial / تجاري
+                                    {% else %}
+                                        {{ item.shipment_type }}
+                                    {% endif %}
+                                {% elif shipment.shipment_type %}
+                                    {% if shipment.shipment_type == "personal" %}
+                                        Personal / شخصي
+                                    {% elif shipment.shipment_type == "commercial" %}
+                                        Commercial / تجاري
+                                    {% else %}
+                                        {{ shipment.shipment_type }}
+                                    {% endif %}
+                                {% else %}
+                                    -
                                 {% endif %}
                             </td>
                             <td class="small-text text-center empty-cell"></td>
@@ -722,7 +821,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
+                            <td colspan="8" class="small-text text-center" style="padding: 20px; color: #9ca3af;">
                                 No parcel breakdown available.
                             </td>
                         </tr>
