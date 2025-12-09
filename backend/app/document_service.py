@@ -497,7 +497,7 @@ def generate_invoice(shipment: LCLShipment, language: str = "ar") -> bytes:
             "pricing": pricing,
             "language": language,
             "invoice_date": shipment.paid_at or shipment.created_at,
-            "invoice_number": shipment.shipment_number,
+            "invoice_number": "",
             "status_display": status_display,
             "remaining_amount": round(remaining_amount, 2),
             "tracking_url": tracking_url,
@@ -596,7 +596,7 @@ def generate_consolidated_export_invoice(
             "pricing": pricing,
             "language": language,
             "invoice_date": shipment.paid_at or shipment.created_at,
-            "invoice_number": shipment.shipment_number,
+            "invoice_number": "",
             "tracking_url": tracking_url,
             "barcode_base64": barcode_base64,
             "total_cbm": total_cbm,
@@ -2448,15 +2448,13 @@ def generate_packing_list_word(shipment: LCLShipment, language: str = "en") -> b
                 row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         # Second product table - adjusted widths to fit within 7.5 inches
-        product_table2 = doc.add_table(rows=1, cols=5)
+        product_table2 = doc.add_table(rows=1, cols=3)
         product_table2.alignment = WD_TABLE_ALIGNMENT.LEFT
-        product_table2.columns[0].width = Inches(1.3)  # Qty
-        product_table2.columns[1].width = Inches(1.5)  # Unit Price
-        product_table2.columns[2].width = Inches(1.5)  # Value
-        product_table2.columns[3].width = Inches(1.5)  # Gross Wt
-        product_table2.columns[4].width = Inches(1.7)  # Nett Wt
+        product_table2.columns[0].width = Inches(2.5)  # Qty
+        product_table2.columns[1].width = Inches(2.5)  # Gross Wt
+        product_table2.columns[2].width = Inches(2.5)  # Nett Wt
 
-        headers2 = ["Qty", "Unit Price", "Value", "Gross Wt", "Nett Wt"]
+        headers2 = ["Qty", "Gross Wt", "Nett Wt"]
         for i, header in enumerate(headers2):
             cell = product_table2.rows[0].cells[i]
             p = cell.add_paragraph()
@@ -2470,36 +2468,21 @@ def generate_packing_list_word(shipment: LCLShipment, language: str = "en") -> b
         for item in pricing.get("parcel_calculations", []):
             row = product_table2.add_row()
             row.cells[0].text = str(item.get("repeat_count", 1))
+            row.cells[1].text = f"{item.get('weight', 0):.2f}"
+            row.cells[2].text = ""
 
-            shipment_type = item.get("shipment_type") or shipment.shipment_type
-            if shipment_type == "commercial":
-                row.cells[1].text = ""
-                row.cells[2].text = ""
-            elif shipment_type == "personal":
-                row.cells[1].text = "€0.00"
-                row.cells[2].text = "€0.00"
-            else:
-                if item.get("price_per_kg"):
-                    row.cells[1].text = f"€{item['price_per_kg']:.2f}"
-                row.cells[2].text = f"€{item.get('price_by_weight', 0):.2f}"
-
-            row.cells[3].text = f"{item.get('weight', 0):.2f}"
-            row.cells[4].text = ""
-
-            # Right align price columns
-            for i in [1, 2, 3, 4]:
+            # Right align weight columns
+            for i in [1, 2]:
                 row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
             row.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         # Totals table - adjusted widths to fit within 7.5 inches
-        totals_table = doc.add_table(rows=1, cols=3)
+        totals_table = doc.add_table(rows=1, cols=1)
         totals_table.alignment = WD_TABLE_ALIGNMENT.LEFT
-        totals_table.columns[0].width = Inches(2.5)
-        totals_table.columns[1].width = Inches(2.5)
-        totals_table.columns[2].width = Inches(2.5)
+        totals_table.columns[0].width = Inches(7.5)
 
-        totals_labels = ["SALES TAX", "PACKAGES", "TOTAL INVOICE VALUE"]
-        totals_values = ["", str(total_packages), f"EUR {pricing['total_price']:.2f}"]
+        totals_labels = ["PACKAGES"]
+        totals_values = [str(total_packages)]
 
         for i, (label, value) in enumerate(zip(totals_labels, totals_values)):
             cell = totals_table.rows[0].cells[i]
@@ -2511,6 +2494,17 @@ def generate_packing_list_word(shipment: LCLShipment, language: str = "en") -> b
             run = p.add_run(value)
             run.font.size = Pt(18)
             run.bold = True
+
+        # Disclaimer
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(
+            "This packing list is issued for cargo identification purposes only.\n\n"
+            "All packages have been checked, weighed, and sealed before loading"
+        )
+        run.font.size = Pt(11)
+        run.bold = True
+        p = doc.add_paragraph()
 
         # Footer notes
         p = doc.add_paragraph()
@@ -3261,15 +3255,13 @@ def generate_consolidated_packing_list_word(
                     row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         # Second product table - adjusted widths to fit within 7.5 inches
-        product_table2 = doc.add_table(rows=1, cols=5)
+        product_table2 = doc.add_table(rows=1, cols=3)
         product_table2.alignment = WD_TABLE_ALIGNMENT.LEFT
-        product_table2.columns[0].width = Inches(1.3)  # Qty
-        product_table2.columns[1].width = Inches(1.5)  # Unit Price
-        product_table2.columns[2].width = Inches(1.5)  # Value
-        product_table2.columns[3].width = Inches(1.5)  # Gross Wt
-        product_table2.columns[4].width = Inches(1.7)  # Nett Wt
+        product_table2.columns[0].width = Inches(2.5)  # Qty
+        product_table2.columns[1].width = Inches(2.5)  # Gross Wt
+        product_table2.columns[2].width = Inches(2.5)  # Nett Wt
 
-        headers2 = ["Qty", "Unit Price", "Value", "Gross Wt", "Nett Wt"]
+        headers2 = ["Qty", "Gross Wt", "Nett Wt"]
         for i, header in enumerate(headers2):
             cell = product_table2.rows[0].cells[i]
             p = cell.add_paragraph()
@@ -3284,33 +3276,21 @@ def generate_consolidated_packing_list_word(
             for item in shipment_info["items"]:
                 row = product_table2.add_row()
                 row.cells[0].text = str(item["repeat_count"])
+                row.cells[1].text = f"{item['weight']:.2f}"
+                row.cells[2].text = ""
 
-                shipment_type = shipment_info["shipment"].shipment_type
-                if shipment_type == "commercial":
-                    row.cells[1].text = ""
-                    row.cells[2].text = ""
-                elif shipment_type == "personal":
-                    row.cells[1].text = "€0.00"
-                    row.cells[2].text = "€0.00"
-                else:
-                    row.cells[2].text = f"€{item['price_by_weight']:.2f}"
-
-                row.cells[3].text = f"{item['weight']:.2f}"
-                row.cells[4].text = ""
-
-                for i in [1, 2, 3, 4]:
+                # Right align weight columns
+                for i in [1, 2]:
                     row.cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 row.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         # Totals table - adjusted widths to fit within 7.5 inches
-        totals_table = doc.add_table(rows=1, cols=3)
+        totals_table = doc.add_table(rows=1, cols=1)
         totals_table.alignment = WD_TABLE_ALIGNMENT.LEFT
-        totals_table.columns[0].width = Inches(2.5)
-        totals_table.columns[1].width = Inches(2.5)
-        totals_table.columns[2].width = Inches(2.5)
+        totals_table.columns[0].width = Inches(7.5)
 
-        totals_labels = ["SALES TAX", "PACKAGES", "TOTAL INVOICE VALUE"]
-        totals_values = ["", str(grand_total_packages), f"EUR {grand_total_value:.2f}"]
+        totals_labels = ["PACKAGES"]
+        totals_values = [str(grand_total_packages)]
 
         for i, (label, value) in enumerate(zip(totals_labels, totals_values)):
             cell = totals_table.rows[0].cells[i]
@@ -3322,6 +3302,17 @@ def generate_consolidated_packing_list_word(
             run = p.add_run(value)
             run.font.size = Pt(18)
             run.bold = True
+
+        # Disclaimer
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(
+            "This packing list is issued for cargo identification purposes only.\n\n"
+            "All packages have been checked, weighed, and sealed before loading"
+        )
+        run.font.size = Pt(11)
+        run.bold = True
+        p = doc.add_paragraph()
 
         # Footer notes
         p = doc.add_paragraph()
