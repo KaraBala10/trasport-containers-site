@@ -1638,12 +1638,6 @@ export default function CreateShipmentPage() {
                         return;
                       }
 
-                      // If payment method is Stripe (for sy-eu), use handleStripePayment
-                      if (paymentMethod === "stripe") {
-                        await handleStripePayment();
-                        return;
-                      }
-
                       setIsCreatingShipment(true);
                       try {
                         // Prepare shipment data for new API
