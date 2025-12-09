@@ -506,8 +506,9 @@ def generate_invoice(shipment: LCLShipment, language: str = "ar") -> bytes:
             "signature_base64": signature_base64,
         }
 
-        # Render HTML template
-        html_string = render_to_string("documents/invoice.html", context)
+        # Render HTML template - choose template based on direction
+        template_name = "documents/invoice_eu_sy.html" if shipment.direction == "eu-sy" else "documents/invoice.html"
+        html_string = render_to_string(template_name, context)
 
         # Generate PDF using WeasyPrint
         font_config = FontConfiguration()
@@ -1633,9 +1634,10 @@ def generate_shipping_labels(
                 "barcode_base64": barcode_base64 or "",
             }
 
-            # Render label template
+            # Render label template - choose template based on direction
             try:
-                label_html = render_to_string("documents/shipping_label.html", context)
+                label_template_name = "documents/shipping_label_eu_sy.html" if shipment.direction == "eu-sy" else "documents/shipping_label.html"
+                label_html = render_to_string(label_template_name, context)
                 if label_html and len(label_html.strip()) > 0:
                     all_labels_html.append(label_html)
                 else:
@@ -2033,8 +2035,9 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
             "receipt_items": receipt_items,
         }
 
-        # Render HTML template
-        html_string = render_to_string("documents/receipt.html", context)
+        # Render HTML template - choose template based on direction
+        template_name = "documents/receipt_eu_sy.html" if shipment.direction == "eu-sy" else "documents/receipt.html"
+        html_string = render_to_string(template_name, context)
 
         # Generate PDF using WeasyPrint
         font_config = FontConfiguration()

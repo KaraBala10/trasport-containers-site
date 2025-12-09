@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Shipping Receipt - {{ receipt_number }}</title>
+    <!-- Combined Google Fonts: Cairo for Arabic, Libre Barcode for barcode, Roboto for English -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Libre+Barcode+39+Text&family=Roboto:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --brand-color: #d40511;
+            --brand-dark: #cc0000;
+            --text-black: #000000;
+            --text-dark: #333333;
+            --text-grey: #666666;
+            --border-color: #000000;
+            --bg-grey: #f0f0f0;
+            --font-family: 'Roboto', 'Arial', 'Helvetica', sans-serif;
+            --font-arabic: 'Cairo', 'Roboto', 'Arial', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        @page {
+            size: A4;
+            margin: 10mm;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            font-family: var(--font-family);
+            font-size: 12px;
+            color: var(--text-black);
+        }
+
+        .page-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: white;
+            padding: 10mm;
+            position: relative;
+        }
+
+        /* Header Section */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--text-black);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .brand-section {
+            flex: 1;
+            min-width: 0;
+            max-width: 50%;
+        }
+
+        .brand-section h1 {
+            font-size: 22px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin: 0;
+            letter-spacing: -0.5px;
+            color: var(--brand-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+            font-family: var(--font-arabic);
+        }
+
+        .brand-section .subtitle {
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--text-grey);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        .document-info {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            flex: 0 0 auto;
+            min-width: 180px;
+        }
+
+        .qr-code {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 5px;
+        }
+
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .barcode-area {
+            margin-bottom: 5px;
+        }
+
+        .barcode-area img {
+            max-width: 200px;
+            height: auto;
+            max-height: 50px;
+        }
+
+        .tracking-number {
+            font-size: 16px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .document-info .info-line {
+            margin-top: 5px;
+            font-size: 11px;
+        }
+
+        /* Combined Grid for Parties */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .party-box {
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            min-height: 80px;
+        }
+
+        .box-header {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: var(--text-grey);
+            margin-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 2px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .company-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 3px;
+            display: block;
+            color: var(--brand-dark);
+        }
+
+        .address-lines {
+            line-height: 1.3;
+            font-size: 10px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .arabic-text {
+            font-family: var(--font-arabic);
+            direction: rtl;
+        }
+
+        /* Shipment Details Grid */
+        .shipment-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 800px) {
+            .shipment-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .grid-item {
+            padding: 8px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .grid-item:last-child {
+            border-right: none;
+        }
+
+        .grid-label {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: var(--text-grey);
+        }
+
+        .grid-value {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* Main Content Table */
+        .table-container {
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            min-height: 200px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: var(--text-black);
+            color: white;
+            font-size: 10px;
+            text-transform: uppercase;
+            padding: 8px;
+            text-align: left;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 11px;
+            vertical-align: top;
+        }
+
+        /* Footer Section */
+        .footer {
+            border-top: 2px solid var(--text-black);
+            padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--text-grey);
+            margin-top: auto;
+        }
+
+        .legal-text {
+            flex: 1;
+            padding-right: 20px;
+            line-height: 1.5;
+        }
+
+        .signature-box {
+            width: 200px;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 5px;
+            height: 30px;
+        }
+
+        .signature-image {
+            max-width: 180px;
+            max-height: 70px;
+            margin: 8px auto;
+            display: block;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+            }
+
+            .page-container {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-container">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="brand-section">
+                {% if company.logo_base64 %}
+                <div style="margin-bottom: 8px;">
+                    <img src="data:image/png;base64,{{ company.logo_base64 }}" alt="Logo" style="max-width: 140px; max-height: 70px; object-fit: contain;">
+                </div>
+                {% endif %}
+                <h1>Medo-Freight EU</h1>
+                <div class="subtitle">Ship · Route · Deliver</div>
+                <div style="margin-top: 6px; font-size: 9px; line-height: 1.4; color: var(--text-dark); direction: ltr; text-align: left;">
+                    <div style="margin-bottom: 2px;">Titanlaan 1, 4624 AX Bergen op Zoom</div>
+                    <div style="margin-bottom: 2px;">The Netherlands</div>
+                    <div style="margin-top: 3px;">
+                        <strong>Kvk:</strong> 75251663 | <strong>TAX:</strong> NL002518102B41<br>
+                        <strong>EORI:</strong> NL1320963189<br>
+                        <strong>Tel:</strong> +31 6 39 788 989 | <strong>Email:</strong> contact@medo-freight.eu
+                    </div>
+                </div>
+            </div>
+
+            <div class="document-info">
+                {% if qr_code_base64 %}
+                <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" class="qr-code">
+                {% endif %}
+                {% if barcode_base64 %}
+                <div class="barcode-area">
+                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
+                </div>
+                {% endif %}
+                <div class="tracking-number">RECEIPT #: {{ receipt_number }}</div>
+                <div class="info-line"><b>Date:</b> {{ receipt_date|date:"M d, Y" }}</div>
+                <div class="info-line">
+                    <b>Origin:</b> EUROPE (EU)
+                </div>
+                <div class="info-line">
+                    <b>Destination:</b> MIDDLE EAST (ME)
+                </div>
+            </div>
+        </header>
+
+        <!-- ROW 1: SENDER & RECEIVER (Actual Parties) -->
+        <section class="info-grid">
+            <!-- Sender -->
+            <div class="party-box">
+                <div class="box-header">Sender / Shipper <span>[Origin Party]</span></div>
+                <span class="company-name" style="color: var(--text-grey); font-style: italic;">
+                    {{ shipment.sender_name|default:"[Client/Sender Name]" }}
+                </span>
+                <div class="address-lines">
+                    {{ shipment.sender_address|default:"[Sender Address Line 1]" }}<br>
+                    {{ shipment.sender_city|default:"[City]" }}, Europe<br>
+                    {% if shipment.sender_phone %}
+                    <strong>Phone:</strong> {{ shipment.sender_phone }}<br>
+                    {% endif %}
+                    {% if shipment.sender_email %}
+                    <strong>Email:</strong> {{ shipment.sender_email }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Receiver -->
+            <div class="party-box">
+                <div class="box-header">Receiver / Consignee <span>[Destination Party]</span></div>
+                <span class="company-name" style="color: var(--text-grey); font-style: italic;">
+                    {{ shipment.receiver_name|default:"[Client/Receiver Name]" }}
+                </span>
+                <div class="address-lines">
+                    {{ shipment.receiver_address|default:"[Receiver Address Line 1]" }}<br>
+                    {{ shipment.receiver_city|default:"[City]" }}, Middle East<br>
+                    {% if shipment.receiver_phone %}
+                    <strong>Phone:</strong> {{ shipment.receiver_phone }}<br>
+                    {% endif %}
+                    {% if shipment.receiver_email %}
+                    <strong>Email:</strong> {{ shipment.receiver_email }}
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <!-- Shipment Details Stats -->
+        <section class="shipment-grid">
+            <div class="grid-item">
+                <span class="grid-label">Total Weight</span>
+                <span class="grid-value">{{ total_weight|default:0|floatformat:2 }} KG</span>
+            </div>
+            <div class="grid-item">
+                <span class="grid-label">Total Pieces</span>
+                <span class="grid-value">{{ total_pieces|default:0 }}</span>
+            </div>
+            <div class="grid-item">
+                <span class="grid-label">Total CBM</span>
+                <span class="grid-value">{{ total_cbm|default:0|floatformat:3 }} m³</span>
+            </div>
+            <div class="grid-item">
+                <span class="grid-label">Service Type</span>
+                <span class="grid-value">LCL SHIPPING</span>
+            </div>
+        </section>
+
+        <!-- Content Table (No Prices) -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Description of Goods</th>
+                        <th style="width: 20%;">HS Code</th>
+                        <th style="width: 15%;">Qty</th>
+                        <th style="width: 25%;">CBM</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if receipt_items %}
+                        {% for item in receipt_items %}
+                            <tr>
+                                <td>
+                                    <strong>
+                                        {% if language == 'ar' %}
+                                            {{ item.product_name_ar }}
+                                        {% else %}
+                                            {{ item.product_name_en }}
+                                        {% endif %}
+                                    </strong>
+                                    {% if item.description %}
+                                    <br>
+                                    <span style="color: #666; font-size: 10px;">{{ item.description }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.hs_code|default:"N/A" }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.cbm|default:0|floatformat:3 }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% elif shipment.parcels %}
+                        {% for parcel in shipment.parcels %}
+                            <tr>
+                                <td>
+                                    <strong>
+                                        {% if parcel.description %}
+                                            {{ parcel.description }}
+                                        {% elif parcel.productName %}
+                                            {{ parcel.productName }}
+                                        {% else %}
+                                            General Goods
+                                        {% endif %}
+                                    </strong>
+                                    {% if parcel.notes %}
+                                    <br>
+                                    <span style="color: #666; font-size: 10px;">{{ parcel.notes }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if parcel.hsCode %}
+                                        {{ parcel.hsCode }}
+                                    {% elif parcel.hs_code %}
+                                        {{ parcel.hs_code }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ parcel.repeatCount|default:1 }}</td>
+                                <td>{{ parcel.cbm|default:0|floatformat:3 }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #666; font-style: italic;">
+                                No parcel information available
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer / Legal -->
+        <footer class="footer">
+            <div class="legal-text">
+                <strong>Terms and Conditions:</strong><br>
+                By signing this document, the shipper agrees to the standard terms and conditions of carriage. Liability
+                is limited as per the Warsaw Convention or Montreal Convention, whichever is applicable. Goods are
+                subject to customs clearance and may be inspected by authorities. Claims must be filed within 14 days of
+                receipt.
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>Logistics Provider Signature</div>
+                {% if signature_base64 %}
+                <img src="data:image/png;base64,{{ signature_base64 }}" alt="Company Signature" class="signature-image">
+                {% endif %}
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>Receiver Signature & Date</div>
+            </div>
+        </footer>
+
+    </div>
+
+</body>
+
+</html>
+

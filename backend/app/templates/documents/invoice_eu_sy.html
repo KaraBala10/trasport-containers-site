@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="{{ language }}" dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فاتورة رسمية | Invoice {{ invoice_number }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        /* stylelint-disable */
+        :root {
+            --primary-color: #0f172a;
+            --secondary-color: #334155;
+            --accent-color: #0ea5e9;
+            --text-color: #1e293b;
+            --text-light: #64748b;
+            --bg-color: #f8fafc;
+            --white: #ffffff;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --font-ar: 'Cairo', sans-serif;
+            --font-en: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: var(--font-ar);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+        
+        body[dir="rtl"] {
+            direction: rtl;
+        }
+        
+        body[dir="ltr"] {
+            direction: ltr;
+        }
+
+        .invoice-container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background-color: var(--white);
+            padding: 40px;
+            position: relative;
+        }
+
+        .en-text {
+            font-family: var(--font-en);
+            direction: ltr;
+            display: inline-block;
+        }
+
+        .bilingual-row {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bilingual-row span:last-child {
+            font-size: 0.85em;
+            color: var(--text-light);
+            font-family: var(--font-en);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .logo-section h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: var(--font-en);
+            letter-spacing: -0.5px;
+        }
+
+        .logo-section .tagline {
+            color: var(--accent-color);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: var(--font-en);
+            margin-bottom: 0;
+        }
+
+        .invoice-meta {
+            text-align: left;
+        }
+        
+        body[dir="ltr"] .invoice-meta {
+            text-align: right;
+        }
+
+        .invoice-meta h2 {
+            font-size: 2.5rem;
+            color: var(--border-color);
+            text-transform: uppercase;
+            font-family: var(--font-en);
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: auto auto;
+            gap: 5px 20px;
+            font-size: 0.9rem;
+        }
+
+        .meta-label {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .meta-value {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-family: var(--font-en);
+            text-align: right;
+        }
+        
+        body[dir="ltr"] .meta-value {
+            text-align: left;
+        }
+
+        .addresses-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .address-box {
+            flex: 1;
+        }
+
+        .address-box h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .company-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .address-details p {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-bottom: 3px;
+        }
+
+        .shipment-info-bar {
+            background-color: var(--bg-color);
+            border-radius: 6px;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1rem;
+        }
+
+        .status-badge {
+            background-color: #dcfce7;
+            color: #15803d;
+            padding: 2px 10px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .table-container {
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            table-layout: auto;
+            word-wrap: break-word;
+        }
+
+        thead th {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 8px 6px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            line-height: 1.3;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        body[dir="ltr"] thead th {
+            text-align: left;
+        }
+
+        thead th:first-child {
+            border-top-right-radius: 4px;
+        }
+        
+        body[dir="ltr"] thead th:first-child {
+            border-top-right-radius: 0;
+            border-top-left-radius: 4px;
+        }
+        
+        thead th:last-child {
+            border-top-left-radius: 4px;
+        }
+        
+        body[dir="ltr"] thead th:last-child {
+            border-top-left-radius: 0;
+            border-top-right-radius: 4px;
+        }
+
+        tbody td {
+            padding: 8px 6px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            font-size: 0.8rem;
+        }
+
+        .product-cell {
+            width: 18%;
+            min-width: 0;
+        }
+
+        .product-name {
+            font-weight: 700;
+            display: block;
+            color: var(--primary-color);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .product-meta {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .num-cell {
+            font-family: var(--font-en);
+            text-align: center;
+            white-space: nowrap;
+            font-size: 0.85rem;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .type-badge.personal {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .type-badge.commercial {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .totals-section {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 0;
+        }
+
+        .totals-box {
+            width: 300px;
+            background-color: var(--bg-color);
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .total-row span:first-child {
+            flex: 1;
+            margin-right: 10px;
+            min-width: 0;
+        }
+
+        .total-row span:last-child {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .total-row.final {
+            border-top: 2px solid var(--border-color);
+            padding-top: 8px;
+            margin-top: 8px;
+            margin-bottom: 0;
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--primary-color);
+        }
+
+        .signatures-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+            page-break-inside: avoid;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 200px;
+        }
+
+        .signature-line {
+            height: 1px;
+            background-color: var(--text-color);
+            margin-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        .signature-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .qr-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .qr-placeholder {
+            width: 80px;
+            height: 80px;
+            background-color: var(--white);
+            border: 1px solid var(--border-color);
+            margin: 0 auto 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--text-light);
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .invoice-container {
+                max-width: 100%;
+                padding: 20px;
+            }
+        }
+        /* stylelint-enable */
+    </style>
+</head>
+
+<body dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+
+    <div class="invoice-container">
+        <!-- Header -->
+        <header class="header-top">
+            <div class="logo-section">
+                <h1>Medo-Freight EU</h1>
+                <div class="tagline">SHIP · ROUTE · DELIVER</div>
+                <div style="margin-top: 6px; font-size: 0.85rem; color: var(--text-light); font-weight: 600;">Logistics Service Provider</div>
+                <div style="margin-top: 10px; font-size: 0.8rem; color: var(--secondary-color); line-height: 1.5;">
+                    <p style="margin: 3px 0;" class="en-text">Titanlaan 1, 4624 AX Bergen op Zoom</p>
+                    <p style="margin: 3px 0;" class="en-text">The Netherlands</p>
+                    <p style="margin: 3px 0;" class="en-text"><strong>Kvk:</strong> 75251663 | <strong>TAX:</strong> NL002518102B41</p>
+                    <p style="margin: 3px 0;" class="en-text"><strong>EORI:</strong> NL1320963189</p>
+                    <p style="margin: 6px 0 0 0;" class="en-text">contact@medo-freight.eu | +31 6 39 788 989</p>
+                </div>
+            </div>
+            <div class="invoice-meta">
+                <h2>INVOICE</h2>
+                <div class="meta-grid">
+                    <div class="meta-label">رقم الفاتورة / Invoice #:</div>
+                    <div class="meta-value">{% if invoice_number %}{{ invoice_number }}{% else %}{{ shipment.shipment_number }}{% endif %}</div>
+
+                    <div class="meta-label">رقم الشحنة / Shipment #:</div>
+                    <div class="meta-value">{% if shipment.shipment_number %}{{ shipment.shipment_number }}{% else %}LCL-{{ shipment.id }}{% endif %}</div>
+
+                    <div class="meta-label">التاريخ / Date:</div>
+                    <div class="meta-value">{{ invoice_date|date:"Y-m-d" }}</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Shipment & Payment Info -->
+        <section class="shipment-info-bar">
+            <div class="info-item">
+                <span class="info-label">الاتجاه / Direction</span>
+                <span class="info-value en-text">
+                    {% if shipment.direction == 'eu-sy' %}
+                    Europe <span style="color:var(--accent-color)">&#8594;</span> Syria
+                    {% else %}
+                    Syria <span style="color:var(--accent-color)">&#8594;</span> Europe
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">طريقة الدفع / Payment Method</span>
+                <span class="info-value">
+                    {% if shipment.payment_method == 'cash' %}نقدي / Cash
+                    {% elif shipment.payment_method == 'stripe' %}إلكتروني / Electronic
+                    {% else %}N/A{% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">تاريخ الدفع / Payment Date</span>
+                <span class="info-value en-text">
+                    {% if shipment.paid_at %}{{ shipment.paid_at|date:"Y-m-d" }}{% else %}{{ invoice_date|date:"Y-m-d" }}{% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">حالة الدفع / Status</span>
+                <span class="status-badge">
+                    {% if shipment.payment_status == 'paid' %}مدفوع / PAID{% else %}قيد الانتظار / PENDING{% endif %}
+                </span>
+            </div>
+        </section>
+
+        <!-- Items Table -->
+        <section class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>المنتج<br>/ Product</th>
+                        <th>HS<br>Code</th>
+                        <th>النوع<br>/ Type</th>
+                        <th>عدد<br>الطرود<br>/ Parcels</th>
+                        <th>الأبعاد<br>/ Dims (cm)</th>
+                        <th>الوزن<br>/ Weight</th>
+                        <th>CBM</th>
+                        <th>السعر<br>/ Rate</th>
+                        <th>الإجمالي<br>/ Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for calc in pricing.parcel_calculations %}
+                    <tr>
+                        <td class="product-cell">
+                            <span class="product-name">{% if language == 'ar' %}{{ calc.product_name_ar }}{% else %}{{ calc.product_name_en }}{% endif %}</span>
+                        </td>
+                        <td class="num-cell">{% if calc.hs_code %}{{ calc.hs_code }}{% else %}-{% endif %}</td>
+                        <td class="num-cell">
+                            {% if calc.shipment_type %}
+                            <span class="type-badge {% if calc.shipment_type == 'personal' %}personal{% else %}commercial{% endif %}">
+                                {% if calc.shipment_type == 'personal' %}شخصي / Personal{% else %}تجاري / Commercial{% endif %}
+                            </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="num-cell">{{ calc.repeat_count|default:1 }}</td>
+                        <td class="num-cell">
+                            {% if not calc.is_electronics %}
+                            {{ calc.length }}×{{ calc.width }}×{{ calc.height }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="num-cell">{{ calc.weight }} kg</td>
+                        <td class="num-cell">
+                            {% if calc.cbm %}
+                            {{ calc.cbm|floatformat:3 }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="num-cell">€{{ calc.price_per_kg }} / kg</td>
+                        <td class="num-cell" style="font-weight:bold;">€{{ calc.price_by_weight }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Totals and Signatures -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 40px; margin-top: 20px; page-break-inside: avoid;">
+            <!-- Totals -->
+            <section class="totals-section" style="flex: 0 0 auto; max-width: 350px; margin-bottom: 0;">
+                <div class="totals-box">
+                    <div class="total-row">
+                        <span>السعر الأساسي /<br>Base Price</span>
+                        <span class="en-text">€{{ pricing.base_lcl_price }}</span>
+                    </div>
+                    {% if pricing.packaging_cost > 0 %}
+                    <div class="total-row">
+                        <span>التغليف /<br>Packaging</span>
+                        <span class="en-text">€{{ pricing.packaging_cost }}</span>
+                    </div>
+                    {% endif %}
+                    {% if pricing.insurance_cost > 0 %}
+                    <div class="total-row">
+                        <span>التأمين /<br>Insurance</span>
+                        <span class="en-text">€{{ pricing.insurance_cost }}</span>
+                    </div>
+                    {% endif %}
+                    {% if pricing.syria_transport_cost > 0 %}
+                    <div class="total-row">
+                        <span>نقل سوريا /<br>Syria Transport</span>
+                        <span class="en-text">€{{ pricing.syria_transport_cost }}</span>
+                    </div>
+                    {% endif %}
+                    {% with subtotal=pricing.base_lcl_price|add:pricing.packaging_cost|add:pricing.insurance_cost|add:pricing.syria_transport_cost %}
+                    <div class="total-row" style="border-top: 1px solid var(--border-color); padding-top: 6px; margin-top: 6px;">
+                        <span>المجموع الفرعي /<br>Subtotal</span>
+                        <span class="en-text">€{{ subtotal|floatformat:2 }}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>الضرائب /<br>Tax (0%)</span>
+                        <span class="en-text">€0.00</span>
+                    </div>
+                    <div class="total-row final">
+                        <span>الإجمالي /<br>Total Amount</span>
+                        <span class="en-text">€{{ shipment.total_price }}</span>
+                    </div>
+                    {% endwith %}
+                    <div style="text-align: center; font-size: 0.8rem; color: var(--text-light); margin-top: 10px;">
+                        الأسعار باليورو | All prices in EUR
+                    </div>
+                </div>
+            </section>
+
+            <!-- Signatures -->
+            <section class="signatures-section" style="flex: 0 0 auto; min-width: 200px; align-items: center;">
+                <div class="qr-section" style="margin-bottom: 25px;">
+                    {% if qr_code_base64 %}
+                    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" style="width: 80px; height: 80px; border: 1px solid var(--border-color); padding: 5px; margin-bottom: 10px;">
+                    {% else %}
+                    <div class="qr-placeholder">QR Code</div>
+                    {% endif %}
+                    {% if barcode_base64 %}
+                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode" style="max-width: 150px; height: auto; border: 1px solid var(--border-color); padding: 5px; margin-bottom: 5px;">
+                    {% endif %}
+                    <div style="font-size: 0.75rem; font-weight: bold;">{% if invoice_number %}{{ invoice_number }}{% else %}{{ shipment.shipment_number }}{% endif %}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-light);">تتبع الشحنة / Track Shipment</div>
+                </div>
+
+                <div class="signature-box" style="margin-bottom: 30px;">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">توقيع الشركة<br>Company Signature</div>
+                </div>
+
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">توقيع العميل<br>Client Signature</div>
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
+

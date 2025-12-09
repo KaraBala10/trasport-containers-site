@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipping Label 4x6 - Medo-Freight EU</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Roboto+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #000000;
+            --border-thick: 3px solid var(--primary);
+            --border-thin: 1px solid var(--primary);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        @page {
+            size: 4in 6in;
+            margin: 0;
+        }
+
+        body {
+            width: 4in;
+            height: 6in;
+            font-family: 'Inter', sans-serif;
+            background: white;
+            color: black;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .label-container {
+            width: 100%;
+            height: 100%;
+            border: 2px solid black;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border-bottom: var(--border-thick);
+            flex: 0 0 auto;
+            min-height: 0;
+        }
+
+        .brand {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .brand h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            line-height: 1;
+            margin: 0;
+            padding: 0;
+        }
+
+        .brand span {
+            font-size: 0.5rem;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            display: block;
+            margin-top: 1px;
+        }
+
+        .brand .company-name {
+            font-size: 0.55rem;
+            font-weight: 700;
+            margin-top: 2px;
+            display: block;
+        }
+
+        .service-type {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            border: 3px solid black;
+            padding: 0 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        /* Tracking Section */
+        .tracking-section {
+            text-align: center;
+            padding: 6px 0;
+            border-bottom: var(--border-thick);
+            flex: 0 0 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .codes-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            position: relative;
+        }
+
+        .barcode {
+            height: 35px;
+            flex: 1;
+            max-width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .barcode img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
+
+        .qr-code {
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            right: 10px;
+        }
+
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .tracking-number {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Addresses Grid */
+        .address-grid {
+            display: flex;
+            border-bottom: var(--border-thick);
+            flex: 0 0 auto;
+            min-height: 0;
+        }
+
+        .addr-box {
+            flex: 1;
+            padding: 5px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .addr-box:first-child {
+            border-right: var(--border-thin);
+        }
+
+        .addr-label {
+            font-size: 0.55rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+            background: black;
+            color: white;
+            display: inline-block;
+            padding: 1px 3px;
+            align-self: flex-start;
+            white-space: nowrap;
+        }
+
+        .addr-content {
+            font-size: 0.7rem;
+            line-height: 1.2;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .addr-name {
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 1px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Collection Centers Info */
+        .collection-info {
+            border-bottom: var(--border-thick);
+            padding: 5px 8px;
+            font-size: 0.6rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 0 0 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .collection-header {
+            font-weight: 800;
+            text-transform: uppercase;
+            border-bottom: 1px solid black;
+            margin-bottom: 3px;
+            padding-bottom: 1px;
+            font-size: 0.6rem;
+        }
+
+        .collection-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            gap: 6px;
+        }
+
+        .collection-col {
+            width: 48%;
+            flex: 1;
+            min-width: 0;
+            word-wrap: break-word;
+        }
+
+        .col-title {
+            font-weight: 700;
+            text-decoration: underline;
+            margin-bottom: 1px;
+            display: block;
+            font-size: 0.6rem;
+        }
+
+        /* Footer Details */
+        .footer-details {
+            display: flex;
+            flex: 0 0 auto;
+            min-height: 0;
+        }
+
+        .detail-item {
+            flex: 1;
+            border-right: var(--border-thin);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3px;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .detail-item:last-child {
+            border-right: none;
+        }
+
+        .detail-label {
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 1px;
+            text-align: center;
+        }
+
+        .detail-value {
+            font-size: 0.85rem;
+            font-weight: 800;
+            font-family: 'Oswald', sans-serif;
+            text-align: center;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        @media print {
+            @page {
+                size: 4in 6in;
+                margin: 0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .label-container {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="label-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="brand">
+                <h1>Medo-Freight EU</h1>
+                <span class="company-name">Ship · Route · Deliver</span>
+            </div>
+            <div class="service-type">LCL</div>
+        </div>
+
+        <!-- Tracking -->
+        <div class="tracking-section">
+            <div class="codes-container">
+                {% if barcode_base64 %}
+                <div class="barcode">
+                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode">
+                </div>
+                {% else %}
+                <div class="barcode"></div>
+                {% endif %}
+                {% if qr_code_base64 %}
+                <div class="qr-code">
+                    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
+                </div>
+                {% endif %}
+            </div>
+            <div class="tracking-number">{{ shipment.shipment_number|default:"______" }}</div>
+        </div>
+
+        <!-- From / To -->
+        <div class="address-grid">
+            <div class="addr-box">
+                <span class="addr-label">FROM</span>
+                <div class="addr-content">
+                    <span class="addr-name">{{ shipment.sender_name|default:"-" }}</span>
+                    {% if shipment.sender_address %}<span>{{ shipment.sender_address }}</span><br>{% endif %}
+                    <span>{{ shipment.sender_city|default:"" }}{% if shipment.sender_country %}, {{ shipment.sender_country }}{% endif %}</span><br>
+                    {% if shipment.sender_phone %}<span>Tel: {{ shipment.sender_phone }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="addr-box">
+                <span class="addr-label">TO</span>
+                <div class="addr-content">
+                    <span class="addr-name">{{ shipment.receiver_name|default:"-" }}</span>
+                    {% if shipment.receiver_address %}<span>{{ shipment.receiver_address }}</span><br>{% endif %}
+                    <span>{{ shipment.receiver_city|default:"" }}{% if shipment.receiver_country %}, {{ shipment.receiver_country }}{% endif %}</span><br>
+                    {% if shipment.receiver_phone %}<span>Tel: {{ shipment.receiver_phone }}</span>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection Centers -->
+        <div class="collection-info">
+            <div class="collection-header">COLLECTION CENTERS</div>
+            <div class="collection-row">
+                <div class="collection-col">
+                    <span class="col-title">Small (&lt;20kg)</span>
+                    Wattweg 5, 4622 RA<br>
+                    <strong>Storage: 0220-0221</strong>
+                </div>
+                <div class="collection-col">
+                    <span class="col-title">Large (50+kg)</span>
+                    Meekrapweg 2, 4571 RX, Axel<br>
+                    <strong>Storage: A2</strong><br>
+                    <span style="font-size: 0.6rem;">Pallets & Mobile Platforms</span>
+                </div>
+            </div>
+            <div style="margin-top: 1px; font-size: 0.55rem;">
+                Email: contact@medo-freight.eu
+            </div>
+        </div>
+
+        <!-- Footer Details -->
+        <div class="footer-details">
+            <div class="detail-item">
+                <span class="detail-label">Packages</span>
+                <span class="detail-value">{% if parcel.repeat_count %}{{ parcel.repeat_count }}{% else %}1{% endif %}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Weight</span>
+                <span class="detail-value">{% if parcel.weight %}{{ parcel.weight }}{% else %}0{% endif %} kg</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Volume (CBM)</span>
+                <span class="detail-value">{% if parcel.cbm %}{{ parcel.cbm|floatformat:3 }}{% else %}0{% endif %} m³</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
+
