@@ -1930,6 +1930,7 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
         total_weight = 0.0
         chargeable_weight = 0.0
         total_pieces = 0
+        total_cbm = 0.0
         receipt_items = []
 
         # Use calculate_invoice_totals to get proper product names and HS codes
@@ -1948,6 +1949,10 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
                 height = float(parcel_data.get("height", 0) or 0)
                 repeat_count = int(parcel_data.get("repeatCount", 1) or 1)
 
+                # Calculate CBM if not provided: (L × W × H) / 1,000,000
+                if cbm == 0 and length > 0 and width > 0 and height > 0:
+                    cbm = (length * width * height) / 1000000
+
                 # Calculate volumetric weight: (L × W × H) / 6,000 or CBM × 167
                 if length > 0 and width > 0 and height > 0:
                     volumetric_weight = (length * width * height) / 6000
@@ -1963,6 +1968,7 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
                 total_weight += weight * repeat_count
                 chargeable_weight += parcel_chargeable * repeat_count
                 total_pieces += repeat_count
+                total_cbm += cbm * repeat_count
 
                 # Get product name and HS code from pricing calculations if available
                 product_name_ar = None
@@ -1976,6 +1982,9 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
                     product_name_en = calc.get("product_name_en")
                     if not hs_code:
                         hs_code = calc.get("hs_code")
+                    # Get CBM from calculation if available
+                    if not cbm and calc.get("cbm"):
+                        cbm = float(calc.get("cbm", 0))
 
                 # Fallback to parcel data
                 if not product_name_ar and not product_name_en:
@@ -1990,6 +1999,7 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
                         "product_name_en": product_name_en or "General Goods",
                         "hs_code": hs_code or "N/A",
                         "quantity": repeat_count,
+                        "cbm": round(cbm, 3),
                         "description": parcel_data.get("description")
                         or parcel_data.get("notes"),
                     }
@@ -2019,6 +2029,7 @@ def generate_receipt(shipment: LCLShipment, language: str = "en") -> bytes:
             "total_weight": round(total_weight, 2),
             "chargeable_weight": round(chargeable_weight, 2),
             "total_pieces": total_pieces,
+            "total_cbm": round(total_cbm, 3),
             "receipt_items": receipt_items,
         }
 
