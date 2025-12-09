@@ -497,7 +497,7 @@ def generate_invoice(shipment: LCLShipment, language: str = "ar") -> bytes:
             "pricing": pricing,
             "language": language,
             "invoice_date": shipment.paid_at or shipment.created_at,
-            "invoice_number": "",
+            "invoice_number": shipment.shipment_number or f"INV-{shipment.id}",
             "status_display": status_display,
             "remaining_amount": round(remaining_amount, 2),
             "tracking_url": tracking_url,

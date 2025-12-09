@@ -83,7 +83,7 @@
             align-items: flex-start;
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .logo-section h1 {
@@ -96,11 +96,12 @@
 
         .logo-section .tagline {
             color: var(--accent-color);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
             letter-spacing: 2px;
             text-transform: uppercase;
             font-family: var(--font-en);
+            margin-bottom: 0;
         }
 
         .invoice-meta {
@@ -184,7 +185,8 @@
             padding: 15px 25px;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
+            margin-top: 0;
+            margin-bottom: 25px;
             border: 1px solid var(--border-color);
         }
 
@@ -220,21 +222,27 @@
 
         .table-container {
             margin-bottom: 30px;
-            page-break-before: always;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            table-layout: auto;
+            word-wrap: break-word;
         }
 
         thead th {
             background-color: var(--primary-color);
             color: var(--white);
-            padding: 12px;
-            text-align: right;
+            padding: 8px 6px;
+            text-align: center;
             font-weight: 600;
+            font-size: 0.75rem;
+            line-height: 1.3;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         
         body[dir="ltr"] thead th {
@@ -249,7 +257,7 @@
             border-top-right-radius: 0;
             border-top-left-radius: 4px;
         }
-
+        
         thead th:last-child {
             border-top-left-radius: 4px;
         }
@@ -260,19 +268,27 @@
         }
 
         tbody td {
-            padding: 12px;
+            padding: 8px 6px;
             border-bottom: 1px solid var(--border-color);
-            vertical-align: top;
+            vertical-align: middle;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            font-size: 0.8rem;
         }
 
         .product-cell {
-            max-width: 250px;
+            width: 18%;
+            min-width: 0;
         }
 
         .product-name {
             font-weight: 700;
             display: block;
             color: var(--primary-color);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
         }
 
         .product-meta {
@@ -285,6 +301,8 @@
         .num-cell {
             font-family: var(--font-en);
             text-align: center;
+            white-space: nowrap;
+            font-size: 0.85rem;
         }
 
         .type-badge {
@@ -307,39 +325,58 @@
 
         .totals-section {
             display: flex;
-            justify-content: flex-end;
-            margin-bottom: 40px;
+            justify-content: flex-start;
+            margin-bottom: 0;
         }
 
         .totals-box {
             width: 300px;
             background-color: var(--bg-color);
-            padding: 20px;
+            padding: 15px;
             border-radius: 4px;
         }
 
         .total-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .total-row span:first-child {
+            flex: 1;
+            margin-right: 10px;
+            min-width: 0;
+        }
+
+        .total-row span:last-child {
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .total-row.final {
             border-top: 2px solid var(--border-color);
-            padding-top: 10px;
-            margin-top: 10px;
+            padding-top: 8px;
+            margin-top: 8px;
+            margin-bottom: 0;
             font-weight: 800;
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: var(--primary-color);
         }
 
         .signatures-section {
             display: flex;
-            justify-content: space-between;
-            margin-top: 60px;
-            padding-top: 20px;
-            border-top: 1px dashed var(--border-color);
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+            page-break-inside: avoid;
         }
 
         .signature-box {
@@ -398,49 +435,31 @@
         <!-- Header -->
         <header class="header-top">
             <div class="logo-section">
-                <h1>Medo-Freight EU</h1>
-                <div class="tagline">SHIP · ROUTE · DELIVER</div>
-                <div style="margin-top: 5px; font-size: 0.9rem; color: var(--text-light);">مزود الخدمات اللوجستية |
-                    Logistics Service Provider</div>
+                <h1>شركة إكرام التجارية</h1>
+                <div class="tagline">AL IKRAM TRADING CO.</div>
+                <div style="margin-top: 6px; font-size: 0.85rem; color: var(--text-light); font-weight: 600;">مزود الخدمات اللوجستية | Logistics Service Provider</div>
+                <div style="margin-top: 10px; font-size: 0.8rem; color: var(--secondary-color); line-height: 1.5;">
+                    <p style="margin: 3px 0;">مكتب الرمسة | Ramsa Office</p>
+                    <p style="margin: 3px 0;">الرمسة (بجانب كراج بولمان) – الشرق الأوسط</p>
+                    <p style="margin: 3px 0;">مكتب المدينة الصناعية | Industrial City Office</p>
+                    <p style="margin: 3px 0;">الشيخ نجار (منطقة مكاتب الشحن الدولي)</p>
+                    <p style="margin: 6px 0 0 0;" class="en-text">alikramtrading.co@gmail.com | +963 995 477 8188</p>
+                </div>
             </div>
             <div class="invoice-meta">
                 <h2>INVOICE</h2>
                 <div class="meta-grid">
                     <div class="meta-label">رقم الفاتورة / Invoice #:</div>
-                    <div class="meta-value">{{ invoice_number }}</div>
+                    <div class="meta-value">{% if invoice_number %}{{ invoice_number }}{% else %}{{ shipment.shipment_number }}{% endif %}</div>
 
                     <div class="meta-label">رقم الشحنة / Shipment #:</div>
-                    <div class="meta-value">{{ invoice_number }}</div>
+                    <div class="meta-value">{% if shipment.shipment_number %}{{ shipment.shipment_number }}{% else %}LCL-{{ shipment.id }}{% endif %}</div>
 
                     <div class="meta-label">التاريخ / Date:</div>
                     <div class="meta-value">{{ invoice_date|date:"Y-m-d" }}</div>
                 </div>
             </div>
         </header>
-
-        <!-- Addresses -->
-        <section class="addresses-section">
-            <div class="address-box">
-                <span class="company-name en-text">Medo-Freight EU</span>
-                <div class="address-details en-text">
-                    <p>Titanlaan 1, 4624 AX Bergen op Zoom</p>
-                    <p>The Netherlands</p>
-                    <p><strong>Kvk:</strong> 75251663 | <strong>TAX:</strong> NL002518102B41</p>
-                    <p><strong>EORI:</strong> NL1320963189</p>
-                    <p>contact@medo-freight.eu | +31 6 39 788 989</p>
-                </div>
-            </div>
-            <div class="address-box" style="text-align: right;">
-                <span class="company-name">شركة إكرام التجارية | AL IKRAM TRADING CO.</span>
-                <div class="address-details">
-                    <p>مكتب الرمسة | Ramsa Office</p>
-                    <p>الرمسة (بجانب كراج بولمان) – الشرق الأوسط</p>
-                    <p>مكتب المدينة الصناعية | Industrial City Office</p>
-                    <p>الشيخ نجار (منطقة مكاتب الشحن الدولي)</p>
-                    <p class="en-text" style="margin-top:5px;">alikramtrading.co@gmail.com | +963 995 477 8188</p>
-                </div>
-            </div>
-        </section>
 
         <!-- Shipment & Payment Info -->
         <section class="shipment-info-bar">
@@ -481,14 +500,15 @@
             <table>
                 <thead>
                     <tr>
-                        <th>المنتج / Product</th>
-                        <th>HS Code</th>
-                        <th>النوع / Type</th>
-                        <th>الأبعاد / Dims (cm)</th>
-                        <th>الوزن / Weight</th>
+                        <th>المنتج<br>/ Product</th>
+                        <th>HS<br>Code</th>
+                        <th>النوع<br>/ Type</th>
+                        <th>عدد<br>الطرود<br>/ Parcels</th>
+                        <th>الأبعاد<br>/ Dims (cm)</th>
+                        <th>الوزن<br>/ Weight</th>
                         <th>CBM</th>
-                        <th>السعر / Rate</th>
-                        <th>الإجمالي / Total</th>
+                        <th>السعر<br>/ Rate</th>
+                        <th>الإجمالي<br>/ Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -496,9 +516,6 @@
                     <tr>
                         <td class="product-cell">
                             <span class="product-name">{% if language == 'ar' %}{{ calc.product_name_ar }}{% else %}{{ calc.product_name_en }}{% endif %}</span>
-                            {% if calc.repeat_count > 1 %}
-                            <span class="product-meta en-text">Qty: {{ calc.repeat_count }}</span>
-                            {% endif %}
                         </td>
                         <td class="num-cell">{% if calc.hs_code %}{{ calc.hs_code }}{% else %}-{% endif %}</td>
                         <td class="num-cell">
@@ -508,6 +525,7 @@
                             </span>
                             {% else %}-{% endif %}
                         </td>
+                        <td class="num-cell">{{ calc.repeat_count|default:1 }}</td>
                         <td class="num-cell">
                             {% if not calc.is_electronics %}
                             {{ calc.length }}×{{ calc.width }}×{{ calc.height }}
@@ -527,76 +545,79 @@
             </table>
         </section>
 
-        <!-- Totals -->
-        <section class="totals-section">
-            <div class="totals-box">
-                <div class="total-row">
-                    <span>السعر الأساسي / Base Price</span>
-                    <span class="en-text">€{{ pricing.base_lcl_price }}</span>
+        <!-- Totals and Signatures -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 40px; margin-top: 20px; page-break-inside: avoid;">
+            <!-- Totals -->
+            <section class="totals-section" style="flex: 0 0 auto; max-width: 350px; margin-bottom: 0;">
+                <div class="totals-box">
+                    <div class="total-row">
+                        <span>السعر الأساسي /<br>Base Price</span>
+                        <span class="en-text">€{{ pricing.base_lcl_price }}</span>
+                    </div>
+                    {% if pricing.packaging_cost > 0 %}
+                    <div class="total-row">
+                        <span>التغليف /<br>Packaging</span>
+                        <span class="en-text">€{{ pricing.packaging_cost }}</span>
+                    </div>
+                    {% endif %}
+                    {% if pricing.insurance_cost > 0 %}
+                    <div class="total-row">
+                        <span>التأمين /<br>Insurance</span>
+                        <span class="en-text">€{{ pricing.insurance_cost }}</span>
+                    </div>
+                    {% endif %}
+                    {% if pricing.syria_transport_cost > 0 %}
+                    <div class="total-row">
+                        <span>نقل سوريا /<br>Syria Transport</span>
+                        <span class="en-text">€{{ pricing.syria_transport_cost }}</span>
+                    </div>
+                    {% endif %}
+                    {% with subtotal=pricing.base_lcl_price|add:pricing.packaging_cost|add:pricing.insurance_cost|add:pricing.syria_transport_cost %}
+                    <div class="total-row" style="border-top: 1px solid var(--border-color); padding-top: 6px; margin-top: 6px;">
+                        <span>المجموع الفرعي /<br>Subtotal</span>
+                        <span class="en-text">€{{ subtotal|floatformat:2 }}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>الضرائب /<br>Tax (0%)</span>
+                        <span class="en-text">€0.00</span>
+                    </div>
+                    <div class="total-row final">
+                        <span>الإجمالي /<br>Total Amount</span>
+                        <span class="en-text">€{{ shipment.total_price }}</span>
+                    </div>
+                    {% endwith %}
+                    <div style="text-align: center; font-size: 0.8rem; color: var(--text-light); margin-top: 10px;">
+                        الأسعار باليورو | All prices in EUR
+                    </div>
                 </div>
-                {% if pricing.packaging_cost > 0 %}
-                <div class="total-row">
-                    <span>التغليف / Packaging</span>
-                    <span class="en-text">€{{ pricing.packaging_cost }}</span>
-                </div>
-                {% endif %}
-                {% if pricing.insurance_cost > 0 %}
-                <div class="total-row">
-                    <span>التأمين / Insurance</span>
-                    <span class="en-text">€{{ pricing.insurance_cost }}</span>
-                </div>
-                {% endif %}
-                {% if pricing.syria_transport_cost > 0 %}
-                <div class="total-row">
-                    <span>نقل سوريا / Syria Transport</span>
-                    <span class="en-text">€{{ pricing.syria_transport_cost }}</span>
-                </div>
-                {% endif %}
-                {% with subtotal=pricing.base_lcl_price|add:pricing.packaging_cost|add:pricing.insurance_cost|add:pricing.syria_transport_cost %}
-                <div class="total-row" style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
-                    <span>المجموع الفرعي / Subtotal</span>
-                    <span class="en-text">€{{ subtotal|floatformat:2 }}</span>
-                </div>
-                <div class="total-row">
-                    <span>الضرائب / Tax (0%)</span>
-                    <span class="en-text">€0.00</span>
-                </div>
-                <div class="total-row final">
-                    <span>الإجمالي / Total Amount</span>
-                    <span class="en-text">€{{ shipment.total_price }}</span>
-                </div>
-                {% endwith %}
-                <div style="text-align: center; font-size: 0.8rem; color: var(--text-light); margin-top: 10px;">
-                    الأسعار باليورو | All prices in EUR
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Signatures -->
-        <section class="signatures-section">
-            <div class="signature-box">
-                <div class="signature-line"></div>
-                <div class="signature-label">توقيع العميل<br>Client Signature</div>
-            </div>
+            <!-- Signatures -->
+            <section class="signatures-section" style="flex: 0 0 auto; min-width: 200px; align-items: center;">
+                <div class="qr-section" style="margin-bottom: 25px;">
+                    {% if qr_code_base64 %}
+                    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" style="width: 80px; height: 80px; border: 1px solid var(--border-color); padding: 5px; margin-bottom: 10px;">
+                    {% else %}
+                    <div class="qr-placeholder">QR Code</div>
+                    {% endif %}
+                    {% if barcode_base64 %}
+                    <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode" style="max-width: 150px; height: auto; border: 1px solid var(--border-color); padding: 5px; margin-bottom: 5px;">
+                    {% endif %}
+                    <div style="font-size: 0.75rem; font-weight: bold;">{% if invoice_number %}{{ invoice_number }}{% else %}{{ shipment.shipment_number }}{% endif %}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-light);">تتبع الشحنة / Track Shipment</div>
+                </div>
 
-            <div class="qr-section">
-                {% if qr_code_base64 %}
-                <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" style="width: 80px; height: 80px; border: 1px solid var(--border-color); padding: 5px; margin-bottom: 10px;">
-                {% else %}
-                <div class="qr-placeholder">QR Code</div>
-                {% endif %}
-                {% if barcode_base64 %}
-                <img src="data:image/png;base64,{{ barcode_base64 }}" alt="Barcode" style="max-width: 150px; height: auto; border: 1px solid var(--border-color); padding: 5px; margin-bottom: 5px;">
-                {% endif %}
-                <div style="font-size: 0.75rem; font-weight: bold;">{{ invoice_number }}</div>
-                <div style="font-size: 0.7rem; color: var(--text-light);">تتبع الشحنة / Track Shipment</div>
-            </div>
+                <div class="signature-box" style="margin-bottom: 30px;">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">توقيع الشركة<br>Company Signature</div>
+                </div>
 
-            <div class="signature-box">
-                <div class="signature-line"></div>
-                <div class="signature-label">توقيع الشركة<br>Company Signature</div>
-            </div>
-        </section>
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">توقيع العميل<br>Client Signature</div>
+                </div>
+            </section>
+        </div>
 
     </div>
 
