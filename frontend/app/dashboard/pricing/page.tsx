@@ -54,6 +54,20 @@ export default function AdminPricingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [selectedUnit, setSelectedUnit] = useState<"per_kg" | "per_piece">("per_kg");
+  
+  // Pagination state
+  const [pricesPage, setPricesPage] = useState(1);
+  const [packagingPage, setPackagingPage] = useState(1);
+  const [pricesPagination, setPricesPagination] = useState<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+  } | null>(null);
+  const [packagingPagination, setPackagingPagination] = useState<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+  } | null>(null);
 
   const translations = useMemo(
     () => ({
@@ -88,6 +102,12 @@ export default function AdminPricingPage() {
         deleteSuccess: "تم الحذف بنجاح",
         noData: "لا توجد بيانات",
         backToDashboard: "العودة إلى لوحة التحكم",
+        previous: "السابق",
+        next: "التالي",
+        page: "الصفحة",
+        of: "من",
+        showing: "عرض",
+        items: "عنصر",
       },
       en: {
         title: "Pricing Management",
@@ -120,6 +140,12 @@ export default function AdminPricingPage() {
         deleteSuccess: "Deleted successfully",
         noData: "No data available",
         backToDashboard: "Back to Dashboard",
+        previous: "Previous",
+        next: "Next",
+        page: "Page",
+        of: "of",
+        showing: "Showing",
+        items: "items",
       },
     }),
     []
@@ -151,33 +177,49 @@ export default function AdminPricingPage() {
     setError("");
     try {
       if (activeTab === "prices") {
-        const response = await apiService.adminGetPrices();
+        const response = await apiService.adminGetPrices(pricesPage);
         // DRF ListCreateAPIView with pagination returns {count, next, previous, results: [...]}
         // Without pagination, it returns array directly
         let data = [];
         if (response.data && Array.isArray(response.data)) {
+          // No pagination - direct array
           data = response.data;
+          setPricesPagination(null);
         } else if (
           response.data &&
           response.data.results &&
           Array.isArray(response.data.results)
         ) {
+          // Paginated response
           data = response.data.results;
+          setPricesPagination({
+            count: response.data.count || 0,
+            next: response.data.next || null,
+            previous: response.data.previous || null,
+          });
         }
         setPrices(data);
       } else {
-        const response = await apiService.adminGetPackagingPrices();
+        const response = await apiService.adminGetPackagingPrices(packagingPage);
         // DRF ListCreateAPIView with pagination returns {count, next, previous, results: [...]}
         // Without pagination, it returns array directly
         let data = [];
         if (response.data && Array.isArray(response.data)) {
+          // No pagination - direct array
           data = response.data;
+          setPackagingPagination(null);
         } else if (
           response.data &&
           response.data.results &&
           Array.isArray(response.data.results)
         ) {
+          // Paginated response
           data = response.data.results;
+          setPackagingPagination({
+            count: response.data.count || 0,
+            next: response.data.next || null,
+            previous: response.data.previous || null,
+          });
         }
         setPackagingPrices(data);
       }
@@ -192,13 +234,15 @@ export default function AdminPricingPage() {
       // Set empty arrays on error
       if (activeTab === "prices") {
         setPrices([]);
+        setPricesPagination(null);
       } else {
         setPackagingPrices([]);
+        setPackagingPagination(null);
       }
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, activeTab, t.error]);
+  }, [isAdmin, activeTab, pricesPage, packagingPage, t.error]);
 
   useEffect(() => {
     if (isAdmin && mounted) {
@@ -234,6 +278,8 @@ export default function AdminPricingPage() {
       }
       setShowPriceForm(false);
       setEditingPrice(null);
+      // Reset to first page after creating new price to see it
+      setPricesPage(1);
       await fetchData();
     } catch (err: any) {
       setError(err.response?.data?.error || t.error);
@@ -268,6 +314,8 @@ export default function AdminPricingPage() {
       }
       setShowPackagingForm(false);
       setEditingPackagingPrice(null);
+      // Reset to first page after creating new packaging to see it
+      setPackagingPage(1);
       await fetchData();
     } catch (err: any) {
       setError(err.response?.data?.error || t.error);
@@ -366,6 +414,7 @@ export default function AdminPricingPage() {
                   onClick={() => {
                     setActiveTab("prices");
                     setError(""); // Clear error when switching tabs
+                    setPricesPage(1); // Reset to first page when switching tabs
                   }}
                   className={`px-6 py-3 font-semibold transition-colors ${
                     activeTab === "prices"
@@ -379,6 +428,7 @@ export default function AdminPricingPage() {
                   onClick={() => {
                     setActiveTab("packaging");
                     setError(""); // Clear error when switching tabs
+                    setPackagingPage(1); // Reset to first page when switching tabs
                   }}
                   className={`px-6 py-3 font-semibold transition-colors ${
                     activeTab === "packaging"
@@ -672,6 +722,48 @@ export default function AdminPricingPage() {
                           </tbody>
                         </table>
                       </div>
+                      
+                      {/* Pagination Controls for Prices */}
+                      {pricesPagination && (
+                        <div className="px-4 py-4 border-t border-gray-200 flex items-center justify-between">
+                          <div className="text-sm text-gray-700">
+                            {t.showing} {prices.length} {t.items}
+                            {pricesPagination.count > 0 && (
+                              <> ({pricesPagination.count} {language === "ar" ? "إجمالي" : "total"})</>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                if (pricesPage > 1) {
+                                  setPricesPage(pricesPage - 1);
+                                }
+                              }}
+                              disabled={!pricesPagination.previous || pricesPage === 1}
+                              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {t.previous}
+                            </button>
+                            <span className="px-4 py-2 text-sm text-gray-700">
+                              {t.page} {pricesPage}
+                              {pricesPagination.count > 0 && (
+                                <> {t.of} {Math.ceil(pricesPagination.count / 20)}</>
+                              )}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (pricesPagination.next) {
+                                  setPricesPage(pricesPage + 1);
+                                }
+                              }}
+                              disabled={!pricesPagination.next}
+                              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {t.next}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -867,6 +959,48 @@ export default function AdminPricingPage() {
                           </tbody>
                         </table>
                       </div>
+                      
+                      {/* Pagination Controls for Packaging Prices */}
+                      {packagingPagination && (
+                        <div className="px-4 py-4 border-t border-gray-200 flex items-center justify-between">
+                          <div className="text-sm text-gray-700">
+                            {t.showing} {packagingPrices.length} {t.items}
+                            {packagingPagination.count > 0 && (
+                              <> ({packagingPagination.count} {language === "ar" ? "إجمالي" : "total"})</>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                if (packagingPage > 1) {
+                                  setPackagingPage(packagingPage - 1);
+                                }
+                              }}
+                              disabled={!packagingPagination.previous || packagingPage === 1}
+                              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {t.previous}
+                            </button>
+                            <span className="px-4 py-2 text-sm text-gray-700">
+                              {t.page} {packagingPage}
+                              {packagingPagination.count > 0 && (
+                                <> {t.of} {Math.ceil(packagingPagination.count / 20)}</>
+                              )}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (packagingPagination.next) {
+                                  setPackagingPage(packagingPage + 1);
+                                }
+                              }}
+                              disabled={!packagingPagination.next}
+                              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {t.next}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

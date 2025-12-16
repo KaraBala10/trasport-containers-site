@@ -327,8 +327,11 @@ export const apiService = {
   },
 
   // Admin CRUD endpoints for Price
-  adminGetPrices: () => {
-    return apiClient.get('/admin/prices/');
+  adminGetPrices: (page?: number, pageSize?: number) => {
+    const params: any = {};
+    if (page !== undefined) params.page = page;
+    if (pageSize !== undefined) params.page_size = pageSize;
+    return apiClient.get('/admin/prices/', { params });
   },
   adminCreatePrice: (data: {
     ar_item: string;
@@ -355,8 +358,11 @@ export const apiService = {
   },
 
   // Admin CRUD endpoints for PackagingPrice
-  adminGetPackagingPrices: () => {
-    return apiClient.get('/admin/packaging-prices/');
+  adminGetPackagingPrices: (page?: number, pageSize?: number) => {
+    const params: any = {};
+    if (page !== undefined) params.page = page;
+    if (pageSize !== undefined) params.page_size = pageSize;
+    return apiClient.get('/admin/packaging-prices/', { params });
   },
   adminCreatePackagingPrice: (data: {
     ar_option: string;
