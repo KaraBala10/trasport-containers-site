@@ -1690,20 +1690,25 @@ def get_regular_products_view(request):
     """API endpoint to get regular products with per_kg pricing unit"""
     try:
         # Get all products where minimum_shipping_unit is 'per_kg'
-        regular_products = Price.objects.filter(minimum_shipping_unit="per_kg").values(
-            "id",
-            "ar_item",
-            "en_item",
-            "price_per_kg",
-            "minimum_shipping_weight",
-            "minimum_shipping_unit",
-            "one_cbm",
+        # Convert to list immediately to bypass any pagination
+        regular_products = list(
+            Price.objects.filter(minimum_shipping_unit="per_kg")
+            .order_by("ar_item", "en_item")
+            .values(
+                "id",
+                "ar_item",
+                "en_item",
+                "price_per_kg",
+                "minimum_shipping_weight",
+                "minimum_shipping_unit",
+                "one_cbm",
+            )
         )
 
         return Response(
             {
                 "success": True,
-                "products": list(regular_products),
+                "products": regular_products,
             },
             status=status.HTTP_200_OK,
         )
@@ -1723,21 +1728,24 @@ def get_per_piece_products_view(request):
     """API endpoint to get products with per_piece pricing unit (Electronics)"""
     try:
         # Get all products where minimum_shipping_unit is 'per_piece'
-        per_piece_products = Price.objects.filter(
-            minimum_shipping_unit="per_piece"
-        ).values(
-            "id",
-            "ar_item",
-            "en_item",
-            "price_per_kg",
-            "minimum_shipping_weight",
-            "minimum_shipping_unit",
+        # Convert to list immediately to bypass any pagination
+        per_piece_products = list(
+            Price.objects.filter(minimum_shipping_unit="per_piece")
+            .order_by("ar_item", "en_item")
+            .values(
+                "id",
+                "ar_item",
+                "en_item",
+                "price_per_kg",
+                "minimum_shipping_weight",
+                "minimum_shipping_unit",
+            )
         )
 
         return Response(
             {
                 "success": True,
-                "products": list(per_piece_products),
+                "products": per_piece_products,
             },
             status=status.HTTP_200_OK,
         )

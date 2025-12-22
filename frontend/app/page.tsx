@@ -170,25 +170,6 @@ export default function Home() {
             </p>
             <p className="text-xl mb-8 font-medium">{t.heroDescription}</p>
 
-            {/* Launch Announcement */}
-            <div
-              className="mb-12"
-              role="region"
-              aria-label={
-                language === "ar"
-                  ? "إعلان الإطلاق الرسمي"
-                  : "Official launch announcement"
-              }
-            >
-              <div className="bg-primary-yellow/20 backdrop-blur-sm rounded-lg px-8 py-6 border-2 border-primary-yellow/50 inline-block">
-                <p className="text-3xl md:text-4xl font-bold text-white">
-                  {language === "ar"
-                    ? "🎉 انطلقنا رسمياً 🎉"
-                    : "🎉 We're Officially Launched 🎉"}
-                </p>
-              </div>
-            </div>
-
             {/* CTA Buttons */}
             <div
               className="flex flex-wrap gap-4 justify-center"
