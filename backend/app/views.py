@@ -4381,21 +4381,22 @@ class LCLShipmentView(generics.CreateAPIView):
         payment_method = shipment_data.get("payment_method")
 
         if direction == "eu-sy":
-            # For EU to Syria: Only allow creation if payment method is Stripe
-            if payment_method != "stripe":
-                logger.warning(
-                    f"❌ Shipment creation rejected for eu-sy direction: payment_method={payment_method} (must be 'stripe')"
+            # For EU to Syria: Allow both Stripe and cash payment
+            # If payment method is cash, set amount_paid to 0 (pay later)
+            if payment_method == "cash":
+                shipment_data["amount_paid"] = 0
+                shipment_data["payment_status"] = "pending"
+                logger.info(
+                    f"✅ EU to Syria shipment creation with cash payment (pay later): payment_method={payment_method}"
                 )
-                return Response(
-                    {
-                        "success": False,
-                        "error": "For shipments from Europe to Syria, Stripe payment is required. Please select Stripe as your payment method.",
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
+            elif payment_method == "stripe":
+                logger.info(
+                    f"✅ EU to Syria shipment creation with Stripe: payment_method={payment_method}"
                 )
-            logger.info(
-                f"✅ EU to Syria shipment creation allowed: payment_method={payment_method}"
-            )
+            else:
+                logger.info(
+                    f"✅ EU to Syria shipment creation: payment_method={payment_method}"
+                )
         elif direction == "sy-eu":
             # For Syria to Europe: Allow creation with 0 paid_amount
             # Set amount_paid to 0 if not provided

@@ -64,7 +64,7 @@ apiClient.interceptors.response.use(
             // Refresh token failed, logout user
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
-            window.location.href = '/auth';
+            window.location.href = '/login';
             return Promise.reject(refreshError);
           }
         }

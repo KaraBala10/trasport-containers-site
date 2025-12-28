@@ -44,7 +44,9 @@ export default function CreateShipmentPage() {
   const [recaptchaToken, setRecaptchaToken] = useState<string>("");
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [direction, setDirection] = useState<ShippingDirection | null>(null);
-  const [shipmentType, setShipmentType] = useState<"personal" | "commercial">("personal");
+  const [shipmentType, setShipmentType] = useState<"personal" | "commercial">(
+    "personal"
+  );
   const [sender, setSender] = useState<PersonInfo | null>(null);
   const [receiver, setReceiver] = useState<PersonInfo | null>(null);
   const [parcels, setParcels] = useState<Parcel[]>([]);
@@ -234,11 +236,6 @@ export default function CreateShipmentPage() {
     // Payment method is required
     if (!paymentMethod) return false;
 
-    // For eu-sy direction, only Stripe is allowed
-    if (direction === "eu-sy" && paymentMethod !== "stripe") {
-      return false;
-    }
-
     // If internal-transfer is selected, validate required fields
     if (paymentMethod === "internal-transfer") {
       return (
@@ -250,20 +247,9 @@ export default function CreateShipmentPage() {
 
     // For stripe and cash, just having payment method is enough
     return true;
-  }, [
-    paymentMethod,
-    direction,
-    transferSenderName,
-    transferReference,
-    transferSlip,
-  ]);
+  }, [paymentMethod, transferSenderName, transferReference, transferSlip]);
 
-  // Auto-select Stripe payment for eu-sy direction
-  useEffect(() => {
-    if (direction === "eu-sy" && currentStep >= 7 && !paymentMethod) {
-      setPaymentMethod("stripe");
-    }
-  }, [direction, currentStep, paymentMethod]);
+  // Note: Payment method is now optional for eu-sy direction (users can pay later)
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -683,7 +669,8 @@ export default function CreateShipmentPage() {
         direction === "sy-eu" ? "Syria" : sender.country || "";
 
       // Use shipment type selected in step 1
-      const calculatedShipmentType: "personal" | "commercial" = shipmentType || "personal";
+      const calculatedShipmentType: "personal" | "commercial" =
+        shipmentType || "personal";
 
       const shipmentData = {
         direction: direction,
@@ -691,7 +678,8 @@ export default function CreateShipmentPage() {
         sender_email: sender.email,
         sender_phone: sender.phone,
         sender_address: `${sender.street} ${sender.streetNumber}`.trim(),
-        sender_city: direction === "sy-eu" ? sender.province || "" : sender.city || "",
+        sender_city:
+          direction === "sy-eu" ? sender.province || "" : sender.city || "",
         sender_postal_code: sender.postalCode || "",
         sender_country: senderCountry,
         receiver_name: receiver.fullName,
@@ -1558,16 +1546,7 @@ export default function CreateShipmentPage() {
                 direction={direction}
                 paymentMethod={paymentMethod}
                 onPaymentMethodChange={(method) => {
-                  // For eu-sy direction, only allow Stripe
-                  if (
-                    direction === "eu-sy" &&
-                    method !== "stripe" &&
-                    method !== null
-                  ) {
-                    setPaymentMethod("stripe");
-                  } else {
-                    setPaymentMethod(method);
-                  }
+                  setPaymentMethod(method);
                 }}
                 transferSenderName={transferSenderName}
                 transferReference={transferReference}
